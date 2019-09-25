@@ -63,7 +63,8 @@ Add them to 'User\Documents\Tdarr\Plugins\Local'. In Tdarr, select 'Local' in th
   
  
      Example file object:
-      { _id: 'C:/Users/H/Desktop/Test Input1/SampleVideo.mp4',
+     var file = {
+       _id: 'C:/Users/H/Desktop/Test Input1/SampleVideo.mp4',
        DB: 'ZRPDmnmpyuAEQi7nG',
        HealthCheck: 'Not attempted',
        TranscodeDecisionMaker: 'Not attempted',
