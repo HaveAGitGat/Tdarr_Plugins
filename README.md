@@ -30,27 +30,27 @@ For the plugin link, you need to create a new github repository for your plugin.
 5. Configure 'function plugin(file)' with logic on whether to transcode the file or not. 'file' is an object with hundreds of file properties extracted using FFprobe and ExiTool. The following response object MUST be returned by your plugin. The values shown are the default values:
 
 
-    var response = {
+        var response = {
 
-    processFile: false, //If set to false, the file will be skipped. Set to true to have the file transcoded.
-    preset: '', //HandBrake/FFmpeg CLI aguments you'd like to use. 
+        processFile: false, //If set to false, the file will be skipped. Set to true to have the file transcoded.
+        preset: '', //HandBrake/FFmpeg CLI aguments you'd like to use. 
                  //For FFmpeg, the input arguments come first followed by a comma, followed by the output argument.
                  // Examples
                       //HandBrake
                           // '-Z "Very Fast 1080p30"'
                       //FFmpeg
                           // '-sn,-map_metadata -1 -c:v copy -c:a copy'
-    container: '.mp4', // The container of the transcoded output file.
-    handBrakeMode: false, //Set whether to use HandBrake or FFmpeg for transcoding
-    FFmpegMode: false,
-    reQueueAfter: false, //If you can't do all tasks in one pass, set this to true. The file will be re-added to the transcode queue
+        container: '.mp4', // The container of the transcoded output file.
+        handBrakeMode: false, //Set whether to use HandBrake or FFmpeg for transcoding
+        FFmpegMode: false,
+        reQueueAfter: false, //If you can't do all tasks in one pass, set this to true. The file will be re-added to the transcode queue
                         //afterwards for additional processing. See Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle
                         //In that plugin, several passes are used to remove subs, metadata and add an aac track.
-    infoLog: '',        //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if 
+        infoLog: '',        //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if 
                         //it has been skipped.
                         // Give reasons why it has been skipped ('File has no title metadata, File meets conditions!')
 
-  }
+       }
   
   
   Please see the bottom of this README for the structure of an example file object:
