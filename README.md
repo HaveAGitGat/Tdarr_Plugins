@@ -27,7 +27,7 @@ Update the rest of the plugin details inisde 'function details()' in the plugin.
 (If local plugin, skip)
 For the plugin link, you need to create a new github repository for your plugin. This is so that others can commit bug fixes etc and star your repo if they like it which will show on the Tdarr community plugins tab.
 
-5. Configure 'function plugin(file)' with logic on whether to transcode the file or not. 'file' is an object with hundreds of file properties extracted using FFprobe and ExiTool. The following response object MUST be returned by your plugin. The values shown are the default values:
+5. Configure 'function plugin(file)' with logic on whether to transcode the file or not. 'file' is an object with hundreds of file properties extracted using FFprobe and ExifTool. The following response object MUST be returned by your plugin. The values shown are the default values:
 
 
         var response = {
