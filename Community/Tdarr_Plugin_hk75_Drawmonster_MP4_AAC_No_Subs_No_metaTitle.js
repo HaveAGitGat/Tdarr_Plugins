@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle",
     Name: "Drawmonster MP4 AAC, No Subs, No title meta data ",
     Type: "Video",
-    Description: `This plugin removes subs, metadata (if a title exists) and adds an AAC track if one doesn't exist. The output container is mp4. \n\n
+    Description: `(BUG) This plugin removes subs, metadata (if a title exists) and adds an AAC track if one doesn't exist. The output container is mp4. \n\n
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle"
