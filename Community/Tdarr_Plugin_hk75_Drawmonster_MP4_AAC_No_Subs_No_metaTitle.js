@@ -53,7 +53,7 @@ function plugin(file) {
      var jsonString = JSON.stringify(file)
 
 
-     console.log("file.meta.Title:"+file.meta.Title)
+   
 
 
      ///
