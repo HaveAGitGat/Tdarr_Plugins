@@ -2,14 +2,12 @@
 
 Steps for creating a Tdarr community or local plugin.
 
-1.
-Download Tdarr_Plugin_nc7x_Example.js from the following repository:
+1.Download Tdarr_Plugin_nc7x_Example.js from the following repository:
 
 https://github.com/HaveAGitGat/Tdarr_Plugin_nc7x_Example
 
 
-2.
-Determine an id for your plugin. Every id must start with 'Tdarr_Plugin_xxxx' where xxxx is a random mini id containing the following:
+2.Determine an id for your plugin. Every id must start with 'Tdarr_Plugin_xxxx' where xxxx is a random mini id containing the following:
     Numeric digits (0-9)
     Uppercase letters (A-Z)
     Lowercase letters (a-z)
@@ -20,11 +18,9 @@ https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/Community
 
 Your plugin id inside the file must be exactly the same as the plugin filename.
 
-3.
-Update the rest of the plugin details inisde 'function details()' in the plugin.
+3.Update the rest of the plugin details inisde 'function details()' in the plugin.
 
-4.
-(If local plugin, skip)
+4.(If local plugin, skip)
 For the plugin link, you need to create a new github repository for your plugin. This is so that others can commit bug fixes etc and star your repo if they like it which will show on the Tdarr community plugins tab.
 
 5. Configure 'function plugin(file)' with logic on whether to transcode the file or not. 'file' is an object with hundreds of file properties extracted using FFprobe and ExifTool. The following response object MUST be returned by your plugin. The values shown are the default values:
@@ -56,8 +52,7 @@ For the plugin link, you need to create a new github repository for your plugin.
   Please see the bottom of this README for the structure of an example file object:
   
  
- 6.
- Once you have finished configuring your plugin, 
+ 6.Once you have finished configuring your plugin, 
  
  For community plugins:
  Create a pull request to have your plugin added to:
