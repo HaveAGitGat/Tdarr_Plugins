@@ -18,7 +18,7 @@ https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/Community
 
 Your plugin id inside the file must be exactly the same as the plugin filename.
 
-3.Update the rest of the plugin details inisde 'function details()' in the plugin.
+3.Update the rest of the plugin details inside 'function details()' in the plugin.
 
 4.(If local plugin, skip)
 For the plugin link, you need to create a new github repository for your plugin. This is so that others can commit bug fixes etc and star your repo if they like it which will show on the Tdarr community plugins tab.
