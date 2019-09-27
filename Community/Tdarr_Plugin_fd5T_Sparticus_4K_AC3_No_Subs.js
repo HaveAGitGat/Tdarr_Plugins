@@ -52,77 +52,63 @@ function plugin(file) {
   } else {
 
 
-    var jsonString = JSON.stringify(file)
-
     var ffmpegDataString = JSON.stringify(file.ffProbeData)
 
     var ac3TrackCount = (ffmpegDataString.match(/ac3/g) || []).length;
 
 
-    var hasAC3Commentary = false
+    var AC3CommentaryCount = 0
 
-
-
-
+    var hasSubs = false
 
 
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
       try {
 
-
         if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase() == "commentary") {
 
-          hasAC3Commentary = true
+          AC3CommentaryCount++
+        }
+
+        if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
+
+          hasSubs = true
+
         }
 
       } catch (err) { }
     }
 
 
-    var hasOneAC3TrackCommentary
+    var hasOnlyAC3TrackCommentaries
 
 
-
-
-    if (!!hasAC3Commentary && ac3TrackCount == 1) {
-
-      hasOneAC3TrackCommentary = true
-
+    if (ac3TrackCount > 0 && AC3CommentaryCount == ac3TrackCount ) {
+      hasOnlyAC3TrackCommentaries = true
     } else {
-
-      hasOneAC3TrackCommentary = false
-
+      hasOnlyAC3TrackCommentaries = false
     }
 
 
     var hasNoAC3Track
 
     if (ac3TrackCount == 0) {
-
       hasNoAC3Track = true
-
     } else {
-
       hasNoAC3Track = false
-
     }
 
 
-
-
-
-    if (hasOneAC3TrackCommentary && jsonString.includes("subrip")) {
-
-      response.infoLog += "File has only one AC3 track (commentary) and has subs"
+    if (hasOnlyAC3TrackCommentaries && hasSubs) {
+      response.infoLog += "File has only AC3 track Commentaries and has subs"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
     }
 
-    if (hasNoAC3Track && jsonString.includes("subrip")) {
-
+    if (hasNoAC3Track && hasSubs) {
       response.infoLog += "File has no AC3 track and has subs"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
       response.reQueueAfter = true;
@@ -132,27 +118,24 @@ function plugin(file) {
 
 
 
-    if (!!hasOneAC3TrackCommentary == true) {
-
-      response.infoLog += " File has only one AC3 track (commentary)!"
+    if (!!hasOnlyAC3TrackCommentaries == true) {
+      response.infoLog += " File has only AC3 track Commentaries!"
       response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
 
     } else {
-      response.infoLog += " File does not have only one AC3 track (commentary)!"
+      response.infoLog += " File does not have only AC3 track Commentaries!"
     }
 
 
     if (hasNoAC3Track) {
-
       response.infoLog += " File has no AC3 track!"
       response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
-
     } else {
       response.infoLog += " File has AC3 track!"
     }
@@ -160,14 +143,12 @@ function plugin(file) {
 
 
 
-    if (jsonString.includes("subrip")) {
-
+    if (hasSubs) {
       response.infoLog += " File has subs!"
       response.preset = '-sn, -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
-
     } else {
       response.infoLog += " File has no subs"
     }
