@@ -9,7 +9,7 @@ function details() {
     Type: "Video",
     Description: `This plugin removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is mp4. \n\n
 `,
-    Version: "1.00",
+    Version: "1.02",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle"
   }
 
@@ -53,12 +53,28 @@ function plugin(file) {
      var jsonString = JSON.stringify(file)
 
 
+     var hasSubs = false
+
+
+     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+ 
+       try {
+
+         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
+ 
+           hasSubs = true
+ 
+         }
+       } catch (err) { }
+     }
+
+
    
 
 
      ///
 
-     if((file.meta.Title != "undefined") && !jsonString.includes("aac") && jsonString.includes("subrip")){
+     if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
 
       response.infoLog += " File has title metadata and no aac and subs"
       response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
@@ -67,7 +83,7 @@ function plugin(file) {
       return response
      }
 
-     if(!jsonString.includes("aac") && jsonString.includes("subrip")){
+     if(!jsonString.includes("aac") && hasSubs){
 
       response.infoLog += "File has no aac track and has subs"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
@@ -77,7 +93,7 @@ function plugin(file) {
      }
 
 
-     if(file.meta.Title != "undefined" && jsonString.includes("subrip")){
+     if(file.meta.Title != "undefined" && hasSubs){
 
       response.infoLog += "File has title and has subs"
       response.preset = '-sn,-map_metadata -1 -c:v copy -c:a copy'
@@ -112,7 +128,7 @@ function plugin(file) {
       response.infoLog += " File has aac track"
      }
 
-     if(jsonString.includes("subrip")){
+     if(hasSubs){
 
       response.infoLog += " File has subs"
       response.preset = '-sn, -c:v copy -c:a copy'
