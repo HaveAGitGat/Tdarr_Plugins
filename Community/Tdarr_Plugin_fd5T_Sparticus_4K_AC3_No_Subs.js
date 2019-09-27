@@ -70,6 +70,10 @@ function plugin(file) {
 
           AC3CommentaryCount++
         }
+      } catch (err) { }
+
+      try {
+
 
         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
 
@@ -78,6 +82,8 @@ function plugin(file) {
         }
 
       } catch (err) { }
+
+     
     }
 
 
