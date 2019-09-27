@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_fd5T_Sparticus_4K_AC3_No_Subs",
     Name: "Sparticus 4K +AC3 No Subs Original container",
     Type: "Video",
-    Description: `This plugin for 4K video removes subs and adds a main AC3 track if only a commentary AC3 track exists. The output container is the same as the original file. \n\n
+    Description: `This plugin for 4K video removes subs. If no AC3 track exists, it adds one. If only an AC3 commentary track exists, it adds a new AC3 main track. The output container is the same as the original file. \n\n
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_ac3_No_Subs_No_metaTitle"
@@ -22,13 +22,13 @@ function plugin(file) {
 
   var response = {
 
-     processFile : false,
-     preset : '',
-     container : '.mp4',
-     handBrakeMode : false,
-     FFmpegMode : false,
-     reQueueAfter : false,
-     infoLog : '',
+    processFile: false,
+    preset: '',
+    container: '.mp4',
+    handBrakeMode: false,
+    FFmpegMode: false,
+    reQueueAfter: false,
+    infoLog: '',
 
   }
 
@@ -49,93 +49,132 @@ function plugin(file) {
 
     return response
 
-  } else { 
+  } else {
 
-     var jsonString = JSON.stringify(file)
 
-     var ffmpegDataString = JSON.stringify(file.ffProbeData)
+    var jsonString = JSON.stringify(file)
+
+    var ffmpegDataString = JSON.stringify(file.ffProbeData)
 
     var ac3TrackCount = (ffmpegDataString.match(/ac3/g) || []).length;
 
 
     var hasAC3Commentary = false
 
-   
 
 
-  
-     
-     for(var i = 0; i < file.ffProbeData.streams.length; i++){
-
-      try{
 
 
-      if(file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase() == "commentary"){
 
-        hasAC3Commentary = true
-      }
+    for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
-      }catch(err){}
-      }
+      try {
 
 
-      var hasOneAC3TrackCommentary
+        if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase() == "commentary") {
+
+          hasAC3Commentary = true
+        }
+
+      } catch (err) { }
+    }
 
 
-      
+    var hasOneAC3TrackCommentary
 
-      if(!!hasAC3Commentary && ac3TrackCount == 1){
 
-        hasOneAC3TrackCommentary = true
 
-      }else{
 
-        hasOneAC3TrackCommentary = false
+    if (!!hasAC3Commentary && ac3TrackCount == 1) {
 
-      }
+      hasOneAC3TrackCommentary = true
 
-    
+    } else {
 
-     if(hasOneAC3TrackCommentary && jsonString.includes("subrip")){
+      hasOneAC3TrackCommentary = false
 
-      response.infoLog += "File has one AC3 track (commentary) and has subs"
+    }
+
+
+    var hasNoAC3Track
+
+    if (ac3TrackCount == 0) {
+
+      hasNoAC3Track = true
+
+    } else {
+
+      hasNoAC3Track = false
+
+    }
+
+
+
+
+
+    if (hasOneAC3TrackCommentary && jsonString.includes("subrip")) {
+
+      response.infoLog += "File has only one AC3 track (commentary) and has subs"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
-     }
+    }
+
+    if (hasNoAC3Track && jsonString.includes("subrip")) {
+
+      response.infoLog += "File has no AC3 track and has subs"
+      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response
+    }
 
 
 
-     if(!!hasOneAC3TrackCommentary == true){
+    if (!!hasOneAC3TrackCommentary == true) {
 
-      response.infoLog += " File has one AC3 track (commentary)"
+      response.infoLog += " File has only one AC3 track (commentary)!"
       response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
 
-     }else{
-      response.infoLog += " File does not have one AC3 track (commentary)"
-     }
+    } else {
+      response.infoLog += " File does not have only one AC3 track (commentary)!"
+    }
+
+
+    if (hasNoAC3Track) {
+
+      response.infoLog += " File has no AC3 track!"
+      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response
+
+    } else {
+      response.infoLog += " File has AC3 track!"
+    }
 
 
 
-     if(jsonString.includes("subrip")){
 
-      response.infoLog += " File has subs"
+    if (jsonString.includes("subrip")) {
+
+      response.infoLog += " File has subs!"
       response.preset = '-sn, -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
 
-     }else{
+    } else {
       response.infoLog += " File has no subs"
-     }
+    }
 
 
-     response.infoLog += " File meets conditions!"
-     return response
+    response.infoLog += " File meets conditions!"
+    return response
 
   }
 }
