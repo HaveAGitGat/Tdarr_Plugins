@@ -20,6 +20,8 @@ Your plugin id inside the file must be exactly the same as the plugin filename.
 
 3.Update the rest of the plugin details inside 'function details()' in the plugin.
 
+IMPORTANT: Think carefully about what you'd like your plugin to do. You cannot change the aim of a community plugin at a later date as others may be using the plugin. After the plugin has been submitted to community plugins, you can only fix bugs, clarify details and improve plugin performance.
+
 4.(If local plugin, skip)
 For the plugin link, you need to create a new github repository for your plugin. This is so that others can commit bug fixes etc and star your repo if they like it which will show on the Tdarr community plugins tab.
 
