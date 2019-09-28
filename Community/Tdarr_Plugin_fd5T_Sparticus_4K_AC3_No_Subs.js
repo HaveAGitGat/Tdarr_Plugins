@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_fd5T_Sparticus_4K_AC3_No_Subs",
     Name: "Sparticus 4K +AC3 No Subs Original container",
     Type: "Video",
-    Description: `This plugin for 4K video removes subs. If no AC3 track exists, it adds one. If only an AC3 commentary track exists, it adds a new AC3 main track. The output container is the same as the original file. \n\n
+    Description: `This plugin for 4K video removes subs. If no AC3 track exists, it adds one (max 5.1 channels). If only an AC3 commentary track exists, it adds a new AC3 main track (max 5.1 channels). The output container is the same as the original file. \n\n
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_ac3_No_Subs_No_metaTitle"
@@ -108,7 +108,7 @@ function plugin(file) {
 
     if (hasOnlyAC3TrackCommentaries && hasSubs) {
       response.infoLog += "File has only AC3 track Commentaries and has subs"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
+      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -116,7 +116,7 @@ function plugin(file) {
 
     if (hasNoAC3Track && hasSubs) {
       response.infoLog += "File has no AC3 track and has subs"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
+      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -126,7 +126,7 @@ function plugin(file) {
 
     if (!!hasOnlyAC3TrackCommentaries == true) {
       response.infoLog += " File has only AC3 track Commentaries!"
-      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
+      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -138,7 +138,7 @@ function plugin(file) {
 
     if (hasNoAC3Track) {
       response.infoLog += " File has no AC3 track!"
-      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3'
+      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
