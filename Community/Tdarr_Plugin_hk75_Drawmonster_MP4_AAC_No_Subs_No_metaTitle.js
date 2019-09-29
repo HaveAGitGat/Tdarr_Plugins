@@ -9,7 +9,7 @@ function details() {
     Type: "Video",
     Description: `This plugin removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is mp4. \n\n
 `,
-    Version: "1.02",
+    Version: "1.03",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle"
   }
 
