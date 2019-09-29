@@ -141,6 +141,23 @@ function plugin(file) {
      }
 
 
+     if( file.container != 'mp4'){
+
+      response.infoLog += " File is not in mp4 container!"
+      response.preset = ', -c:v copy -c:a copy'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response
+
+
+     }else{
+
+      response.infoLog += " File is in mp4 container!"
+
+
+     }
+
+
      response.infoLog += " File meets conditions!"
      return response
 
