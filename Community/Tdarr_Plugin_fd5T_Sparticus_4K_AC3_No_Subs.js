@@ -37,8 +37,6 @@ function plugin(file) {
   response.FFmpegMode = true
 
 
-
-
   if (file.fileMedium !== "video" || file.video_resolution !== "4KUHD") {
 
 
@@ -54,9 +52,10 @@ function plugin(file) {
 
     var ffmpegDataString = JSON.stringify(file.ffProbeData)
 
-    var ac3TrackCount = (ffmpegDataString.match(/ac3/g) || []).length;
+    //var ac3TrackCount = (ffmpegDataString.match(/ac3/g) || []).length;
 
 
+    var ac3TrackCount = 0
     var AC3CommentaryCount = 0
 
     var hasSubs = false
@@ -72,25 +71,29 @@ function plugin(file) {
         }
       } catch (err) { }
 
+
+      try {
+        if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3") {
+          ac3TrackCount++
+        }
+      } catch (err) { }
+
       try {
 
 
-        if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
-
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
           hasSubs = true
-
         }
-
       } catch (err) { }
 
-     
+
     }
 
 
     var hasOnlyAC3TrackCommentaries
 
 
-    if (ac3TrackCount > 0 && AC3CommentaryCount == ac3TrackCount ) {
+    if (ac3TrackCount > 0 && AC3CommentaryCount == ac3TrackCount) {
       hasOnlyAC3TrackCommentaries = true
     } else {
       hasOnlyAC3TrackCommentaries = false
@@ -106,9 +109,16 @@ function plugin(file) {
     }
 
 
+    var channels = file.ffProbeData.streams[1].channels
+
+    if (channels > 6){
+      channels = 6
+    }
+
+
     if (hasOnlyAC3TrackCommentaries && hasSubs) {
       response.infoLog += "File has only AC3 track Commentaries and has subs"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
+      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -116,7 +126,7 @@ function plugin(file) {
 
     if (hasNoAC3Track && hasSubs) {
       response.infoLog += "File has no AC3 track and has subs"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
+      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -126,7 +136,7 @@ function plugin(file) {
 
     if (!!hasOnlyAC3TrackCommentaries == true) {
       response.infoLog += " File has only AC3 track Commentaries!"
-      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
+      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -138,7 +148,7 @@ function plugin(file) {
 
     if (hasNoAC3Track) {
       response.infoLog += " File has no AC3 track!"
-      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
+      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
