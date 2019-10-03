@@ -12,7 +12,6 @@ function details() {
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_s7x8_winsome_h265"
   }
-
 }
 
 function plugin(file) {
@@ -51,7 +50,7 @@ function plugin(file) {
   } else {
 
     var jsonString = JSON.stringify(file)
-    response.container = '.' + file.container
+    response.container = '.mkv'
 
 
     if (file.ffProbeData.streams[0].codec_name == 'hevc') {
@@ -84,48 +83,57 @@ function plugin(file) {
       }
 
 
-      if (hasEngTrack) {
+      if(!hasEngTrack){
 
-        response.infoLog += " File is already hevc and has English language track in  AC3,EAC3 or DTS!"
-        response.processFile = false;
-        return response
-
-
-      } else {
-
-        response.infoLog += " File is already hevc and doesn't have English language track in AC3,EAC3 or DTS!"
         response.processFile = true;
         response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -b:a:0 192k -ac 2'
-        response.reQueueAfter = true;
+        response.container = '.mkv'
+        response.handBrakeMode =false
         response.FFmpegMode = true
+        response.reQueueAfter = true;
+        response.infoLog += " File is already hevc and doesn't have English language track in AC3,EAC3 or DTS!"
         return response
 
+      }else{
 
+        response.infoLog += " File is already hevc and has English language track in  AC3,EAC3 or DTS!"
 
 
       }
 
+
+      if( file.container != 'mkv'){
+
+        response.processFile = true;
+        response.preset = ', -c:v copy -c:a copy'
+        response.container = '.mkv'
+        response.handBrakeMode =false
+        response.FFmpegMode = true
+        response.reQueueAfter = true;
+        response.infoLog += " File is not in mkv container!"
+        return response
+  
+       }else{
+  
+        response.infoLog += " File is in mkv container!"
+        
+       }
+
+       response.processFile = false;
+       return response
+
     } else {
 
-
-
-      response.infoLog += " File isn't in hevc!"
       response.processFile = true;
       response.preset = '-Z "H.265 MKV 2160p60"'
-      response.reQueueAfter = true;
+      response.container = '.mkv'
       response.handBrakeMode = true
-
+      response.FFmpegMode = true
+      response.reQueueAfter = true;
+      response.infoLog += " File isn't in hevc!"
       return response
 
     }
-
-
-
-
-
-
-
-
   }
 }
 
