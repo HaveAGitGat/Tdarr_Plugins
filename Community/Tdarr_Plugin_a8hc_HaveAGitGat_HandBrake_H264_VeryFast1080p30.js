@@ -43,7 +43,7 @@ function plugin(file) {
 
     console.log("File is not video")
 
-    response.infoLog += " File is not video"
+    response.infoLog += " File is not video \n"
     response.processFile = false;
 
     return response
@@ -71,7 +71,7 @@ function plugin(file) {
 
      if(file.ffProbeData.streams[0].codec_name != 'h264'){
 
-      response.infoLog += " File is not in h264!"
+      response.infoLog += " File is not in h264! \n"
       response.preset = '-Z "Very Fast 1080p30"'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -79,7 +79,7 @@ function plugin(file) {
       return response
 
      }else{
-      response.infoLog += " File is already in h264!"
+      response.infoLog += " File is already in h264! \n"
      }
 
 
@@ -87,7 +87,7 @@ function plugin(file) {
 
      if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
 
-      response.infoLog += " File has title metadata and no aac and subs"
+      response.infoLog += " File has title metadata and no aac and subs \n"
       response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -97,7 +97,7 @@ function plugin(file) {
 
      if(!jsonString.includes("aac") && hasSubs){
 
-      response.infoLog += "File has no aac track and has subs"
+      response.infoLog += "File has no aac track and has subs \n"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -108,7 +108,7 @@ function plugin(file) {
 
      if(file.meta.Title != "undefined" && hasSubs){
 
-      response.infoLog += "File has title and has subs"
+      response.infoLog += "File has title and has subs \n"
       response.preset = '-sn,-map_metadata -1 -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -121,7 +121,7 @@ function plugin(file) {
  ///
      if(file.meta.Title != undefined ){
 
-      response.infoLog += " File has title metadata"
+      response.infoLog += " File has title metadata \n"
       response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -133,7 +133,7 @@ function plugin(file) {
 
      if(!jsonString.includes("aac")){
 
-      response.infoLog += " File has no aac track"
+      response.infoLog += " File has no aac track \n"
       response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -141,12 +141,12 @@ function plugin(file) {
       return response
 
      }else{
-      response.infoLog += " File has aac track"
+      response.infoLog += " File has aac track \n"
      }
 
      if(hasSubs){
 
-      response.infoLog += " File has subs"
+      response.infoLog += " File has subs \n"
       response.preset = '-sn, -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -154,11 +154,11 @@ function plugin(file) {
       return response
 
      }else{
-      response.infoLog += " File has no subs"
+      response.infoLog += " File has no subs \n"
      }
 
 
-     response.infoLog += " File meets conditions!"
+     response.infoLog += " File meets conditions! \n"
      return response
 
   }

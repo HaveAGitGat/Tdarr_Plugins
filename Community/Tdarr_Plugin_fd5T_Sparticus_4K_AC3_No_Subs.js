@@ -44,7 +44,7 @@ function plugin(file) {
 
     console.log("File is not a 4K video")
 
-    response.infoLog += " File is not a 4K video"
+    response.infoLog += " File is not a 4K video \n"
     response.processFile = false;
 
     return response
@@ -107,7 +107,7 @@ function plugin(file) {
 
 
     if (hasOnlyAC3TrackCommentaries && hasSubs) {
-      response.infoLog += "File has only AC3 track Commentaries and has subs"
+      response.infoLog += "File has only AC3 track Commentaries and has subs \n"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -115,7 +115,7 @@ function plugin(file) {
     }
 
     if (hasNoAC3Track && hasSubs) {
-      response.infoLog += "File has no AC3 track and has subs"
+      response.infoLog += "File has no AC3 track and has subs \n"
       response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -125,42 +125,42 @@ function plugin(file) {
 
 
     if (!!hasOnlyAC3TrackCommentaries == true) {
-      response.infoLog += " File has only AC3 track Commentaries!"
+      response.infoLog += " File has only AC3 track Commentaries! \n"
       response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
 
     } else {
-      response.infoLog += " File does not have only AC3 track Commentaries!"
+      response.infoLog += " File does not have only AC3 track Commentaries! \n"
     }
 
 
     if (hasNoAC3Track) {
-      response.infoLog += " File has no AC3 track!"
+      response.infoLog += " File has no AC3 track! \n"
       response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac 6'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
     } else {
-      response.infoLog += " File has AC3 track!"
+      response.infoLog += " File has AC3 track! \n"
     }
 
 
 
 
     if (hasSubs) {
-      response.infoLog += " File has subs!"
+      response.infoLog += " File has subs! \n"
       response.preset = '-sn, -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
     } else {
-      response.infoLog += " File has no subs"
+      response.infoLog += " File has no subs \n"
     }
 
 
-    response.infoLog += " File meets conditions!"
+    response.infoLog += " File meets conditions! \n"
     return response
 
   }
