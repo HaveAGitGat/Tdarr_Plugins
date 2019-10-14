@@ -69,7 +69,7 @@ function plugin(file) {
 
 //
 
-     if(file.ffProbeData.streams[0].codec_name != 'h264' || file.ffProbeData.streams[0].width > 720 || file.ffProbeData.streams[0].height > 480 ){
+     if(file.ffProbeData.streams[0].codec_name != 'h264' || file.ffProbeData.streams[0].width > 1920 || file.ffProbeData.streams[0].height > 1080 ){
 
       response.processFile = true;
       response.preset = '-Z "H.264 MKV 1080p30"'
