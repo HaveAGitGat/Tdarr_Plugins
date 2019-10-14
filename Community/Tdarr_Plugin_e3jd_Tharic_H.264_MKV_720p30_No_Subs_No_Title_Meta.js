@@ -72,16 +72,16 @@ function plugin(file) {
      if(file.ffProbeData.streams[0].codec_name != 'h264' || file.ffProbeData.streams[0].width > 1280 || file.ffProbeData.streams[0].height > 720 ){
 
       response.processFile = true;
-      response.preset = '-Z "H.264 MKV 720p3030"'
+      response.preset = '-Z "H.264 MKV 720p30"'
       response.container = '.mkv'
       response.handBrakeMode =true
       response.FFmpegMode = false
       response.reQueueAfter = true;
-      response.infoLog += " File is not h264 720p30!"
+      response.infoLog += " File is not h264 720p!"
       return response
      }else{
 
-      response.infoLog += " File is h264 720p30!"
+      response.infoLog += " File is h264 720p!"
 
      }
 //
