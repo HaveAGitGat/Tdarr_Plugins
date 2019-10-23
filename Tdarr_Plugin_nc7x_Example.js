@@ -33,9 +33,7 @@ function plugin(file) {
     container: '.mp4', // The container of the transcoded output file.
     handBrakeMode: false, //Set whether to use HandBrake or FFmpeg for transcoding
     FFmpegMode: false,
-    reQueueAfter: false, //If you can't do all tasks in one pass, set this to true. The file will be re-added to the transcode queue
-                        //afterwards for additional processing. See Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle
-                        //In that plugin, several passes are used to remove subs, metadata and add an aac track.
+    reQueueAfter: true, //Leave as true. File will be re-qeued afterwards and pass through the plugin filter again to make sure it meets conditions.
     infoLog: '',        //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if 
                         //it has been skipped.
                         // Give reasons why it has been skipped ('File has no title metadata, File meets conditions!')
@@ -65,7 +63,6 @@ function plugin(file) {
 
       response.infoLog += " File has title metadata"
       response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
-      response.reQueueAfter = true;
       response.processFile = true;
       return response
     } else {
