@@ -9,7 +9,7 @@ function details() {
     Type: "Video",
     Description: `(BUG) This plugin for 4K video removes subs. If no AC3 track exists, it adds one (max 5.1 channels). If only an AC3 commentary track exists, it adds a new AC3 main track (max 5.1 channels). The output container is the same as the original file. \n\n
 `,
-    Version: "1.00",
+    Version: "1.01",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_ac3_No_Subs_No_metaTitle"
   }
 
@@ -118,7 +118,7 @@ function plugin(file) {
 
     if (hasOnlyAC3TrackCommentaries && hasSubs) {
       response.infoLog += "File has only AC3 track Commentaries and has subs \n"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
+      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -126,7 +126,7 @@ function plugin(file) {
 
     if (hasNoAC3Track && hasSubs) {
       response.infoLog += "File has no AC3 track and has subs \n"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
+      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -161,7 +161,7 @@ function plugin(file) {
 
     if (hasSubs) {
       response.infoLog += " File has subs! \n"
-      response.preset = '-sn, -c:v copy -c:a copy'
+      response.preset = ',-sn -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
