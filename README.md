@@ -3,7 +3,7 @@
 There are two types of plugin:
 
     Community: Plugins uploaded to this repo that anyone can use and will appear in the 'Plugins' tab in Tdarr.
-    Local: Plugins only on your computer located 'Plugins/Local' within your Tdarr documents folder.
+    Local: Plugins only on your computer located in 'Plugins/Local' within your Tdarr documents folder.
 
 Steps for creating a community or local plugin.
 
