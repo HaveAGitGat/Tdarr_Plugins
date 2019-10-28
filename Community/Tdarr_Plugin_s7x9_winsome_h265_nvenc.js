@@ -125,7 +125,7 @@ function plugin(file) {
     } else {
 
       response.processFile = true;
-      response.preset = '-Z "H.265 MKV 2160p60" --all-audio'
+      response.preset = '-Z "H.265 MKV 2160p60" --all-audio -e nvenc_h265'
       response.container = '.mkv'
       response.handBrakeMode = true
       response.FFmpegMode = true
