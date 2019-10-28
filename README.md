@@ -1,6 +1,11 @@
 # Tdarr_Plugins
 
-Steps for creating a Tdarr community or local plugin.
+There are two types of plugin:
+
+    Community: Plugins uploaded to this repo that anyone can use and will appear in the 'Plugins' tab in Tdarr.
+    Local: Plugins only on your computer located 'Plugins/Local' within your Tdarr documents folder.
+
+Steps for creating a community or local plugin.
 
 1.Download Tdarr_Plugin_nc7x_Example.js from the following repository:
 
