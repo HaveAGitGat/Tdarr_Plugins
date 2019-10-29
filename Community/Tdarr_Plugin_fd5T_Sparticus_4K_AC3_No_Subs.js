@@ -9,7 +9,7 @@ function details() {
     Type: "Video",
     Description: `(BUG) This plugin for 4K video removes subs. If no AC3 track exists, it adds one (max 5.1 channels). If only an AC3 commentary track exists, it adds a new AC3 main track (max 5.1 channels). The output container is the same as the original file. \n\n
 `,
-    Version: "1.01",
+    Version: "1.02",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_ac3_No_Subs_No_metaTitle"
   }
 
