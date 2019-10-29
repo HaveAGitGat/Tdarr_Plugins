@@ -65,7 +65,7 @@ function plugin(file) {
 
       try {
 
-        if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase() == "commentary") {
+        if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase().includes("commentary")) {
 
           AC3CommentaryCount++
         }
