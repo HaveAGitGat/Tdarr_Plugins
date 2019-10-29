@@ -9,7 +9,7 @@ function details() {
     Type: "Video",
     Description: `(BUG) This plugin for 4K video removes subs. If no AC3 track exists, it adds one (max 5.1 channels). If only an AC3 commentary track exists, it adds a new AC3 main track (max 5.1 channels). The output container is the same as the original file. \n\n
 `,
-    Version: "1.03",
+    Version: "1.04",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk75_Drawmonster_MP4_ac3_No_Subs_No_metaTitle"
   }
 
@@ -60,33 +60,51 @@ function plugin(file) {
 
     var hasSubs = false
 
+    var commentaryStreamIdx = false
+    var audioIdx = -1
+
 
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
+
+      //keep track of audio streams for when removing commentary track
+      try {
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
+          audioIdx++
+        }
+      } catch (err) { }
+
+
+      //check if commentary track and assing audio stream number
+      try {
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].tags.title.toLowerCase().includes("commentary")) {
+          commentaryStreamIdx = audioIdx
+        }
+      } catch (err) { }
+
+
+       //check if commentary AC3 track
       try {
 
         if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase().includes("commentary")) {
-
           AC3CommentaryCount++
         }
       } catch (err) { }
 
 
+      //check if AC3 track
       try {
         if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3") {
           ac3TrackCount++
         }
       } catch (err) { }
 
+       //check if subs track
       try {
-
-
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
           hasSubs = true
         }
       } catch (err) { }
-
-
     }
 
 
@@ -109,9 +127,9 @@ function plugin(file) {
     }
 
 
+    //max 5.1 audio in AC3 output
     var channels = file.ffProbeData.streams[1].channels
-
-    if (channels > 6){
+    if (channels > 6) {
       channels = 6
     }
 
@@ -132,6 +150,15 @@ function plugin(file) {
       return response
     }
 
+    if (commentaryStreamIdx !== false) {
+
+      response.infoLog += `☒File has AC3 commentary track in stream ${commentaryStreamIdx} \n`
+      response.preset = `,-map 0 -map -0:a:${commentaryStreamIdx} -codec copy`
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response
+
+    }
 
 
     if (!!hasOnlyAC3TrackCommentaries == true) {
