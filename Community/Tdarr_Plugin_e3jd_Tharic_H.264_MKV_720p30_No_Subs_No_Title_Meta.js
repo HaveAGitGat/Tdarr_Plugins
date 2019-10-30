@@ -43,7 +43,7 @@ function plugin(file) {
 
     console.log("File is not video")
 
-    response.infoLog += " File is not video"
+    response.infoLog += "☒File is not video \n"
     response.processFile = false;
 
     return response
@@ -77,11 +77,11 @@ function plugin(file) {
       response.handBrakeMode =true
       response.FFmpegMode = false
       response.reQueueAfter = true;
-      response.infoLog += " File is not h264 720p!"
+      response.infoLog += "☒File is not h264 720p! \n"
       return response
      }else{
 
-      response.infoLog += " File is h264 720p!"
+      response.infoLog += "☑File is h264 720p! \n"
 
      }
 //
@@ -94,10 +94,10 @@ function plugin(file) {
       response.handBrakeMode =false
       response.FFmpegMode = true
       response.reQueueAfter = true;
-      response.infoLog += "File has title and has subs"
+      response.infoLog += "☒File has title and has subs \n"
       return response
      }else{
-      response.infoLog += "File has no title and has no subs"
+      response.infoLog += "☑File has no title and has no subs \n"
 
      }
 
@@ -110,12 +110,12 @@ function plugin(file) {
       response.handBrakeMode =false
       response.FFmpegMode = true
       response.reQueueAfter = true;
-      response.infoLog += " File has title metadata"
+      response.infoLog += "☒File has title metadata \n"
       return response
 
 
      }else{
-      response.infoLog += " File has no title metadata"
+      response.infoLog += "☑File has no title metadata \n"
      }
 
 
@@ -127,11 +127,11 @@ function plugin(file) {
       response.handBrakeMode =false
       response.FFmpegMode = true
       response.reQueueAfter = true;
-      response.infoLog += " File has subs"
+      response.infoLog += "☒File has subs \n"
       return response
 
      }else{
-      response.infoLog += " File has no subs"
+      response.infoLog += "☑File has no subs \n"
      }
 
 
@@ -144,19 +144,19 @@ function plugin(file) {
       response.handBrakeMode =false
       response.FFmpegMode = true
       response.reQueueAfter = true;
-      response.infoLog += " File is not in mkv container!"
+      response.infoLog += "☒File is not in mkv container! \n"
       return response
 
 
      }else{
 
-      response.infoLog += " File is in mkv container!"
+      response.infoLog += "☑File is in mkv container! \n"
 
      }
 
 
      response.processFile = false;
-     response.infoLog += " File meets conditions!"
+     response.infoLog += "☑File meets conditions! \n"
      return response
 
   }

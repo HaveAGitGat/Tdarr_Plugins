@@ -39,7 +39,7 @@ function plugin(file) {
 
     console.log("File is not video")
 
-    response.infoLog += " File is not video \n"
+    response.infoLog += "☒File is not video \n"
     response.processFile = false;
 
     return response
@@ -65,18 +65,18 @@ function plugin(file) {
 
      if(hasSubs){
 
-      response.infoLog += " File has subs \n"
+      response.infoLog += "☒File has subs \n"
       response.preset = '-sn, -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
 
      }else{
-      response.infoLog += " File has no subs \n"
+      response.infoLog += "☑File has no subs \n"
      }
 
 
-     response.infoLog += " File meets conditions! \n"
+     response.infoLog += "☑File meets conditions! \n"
      return response
 
   }

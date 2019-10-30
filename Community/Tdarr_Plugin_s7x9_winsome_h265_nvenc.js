@@ -42,7 +42,7 @@ function plugin(file) {
 
     console.log("File is not video")
 
-    response.infoLog += " File is not video"
+    response.infoLog += "☒File is not video \n"
     response.processFile = false;
 
     return response
@@ -91,12 +91,12 @@ function plugin(file) {
         response.handBrakeMode =false
         response.FFmpegMode = true
         response.reQueueAfter = true;
-        response.infoLog += " File is already hevc and doesn't have English language track in AC3,EAC3 or DTS!"
+        response.infoLog += "☒File is already hevc and doesn't have English language track in AC3,EAC3 or DTS! \n"
         return response
 
       }else{
 
-        response.infoLog += " File is already hevc and has English language track in  AC3,EAC3 or DTS!"
+        response.infoLog += "☑File is already hevc and has English language track in  AC3,EAC3 or DTS! \n"
 
 
       }
@@ -110,12 +110,12 @@ function plugin(file) {
         response.handBrakeMode =false
         response.FFmpegMode = true
         response.reQueueAfter = true;
-        response.infoLog += " File is not in mkv container!"
+        response.infoLog += "☒File is not in mkv container! \n"
         return response
   
        }else{
   
-        response.infoLog += " File is in mkv container!"
+        response.infoLog += "☑File is in mkv container! \n"
         
        }
 
@@ -130,7 +130,7 @@ function plugin(file) {
       response.handBrakeMode = true
       response.FFmpegMode = true
       response.reQueueAfter = true;
-      response.infoLog += " File isn't in hevc!"
+      response.infoLog += "☒File isn't in hevc! \n"
       return response
 
     }
