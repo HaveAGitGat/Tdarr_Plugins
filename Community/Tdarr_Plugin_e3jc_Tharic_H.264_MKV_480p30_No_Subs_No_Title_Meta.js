@@ -89,7 +89,7 @@ function plugin(file) {
      if(file.meta.Title != "undefined" && hasSubs){
 
       response.processFile = true;
-      response.preset = '-sn,-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy'
       response.container = '.mkv'
       response.handBrakeMode =false
       response.FFmpegMode = true
@@ -122,7 +122,7 @@ function plugin(file) {
      if(hasSubs){
 
       response.processFile = true;
-      response.preset = '-sn, -c:v copy -c:a copy'
+      response.preset = ',-sn  -c:v copy -c:a copy'
       response.container = '.mkv'
       response.handBrakeMode =false
       response.FFmpegMode = true

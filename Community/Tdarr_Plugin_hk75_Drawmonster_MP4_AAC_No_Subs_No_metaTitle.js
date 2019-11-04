@@ -86,7 +86,7 @@ function plugin(file) {
      if(!jsonString.includes("aac") && hasSubs){
 
       response.infoLog += "☒File has no aac track and has subs \n"
-      response.preset = '-sn,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
+      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -96,7 +96,7 @@ function plugin(file) {
      if(file.meta.Title != "undefined" && hasSubs){
 
       response.infoLog += "☒File has title and has subs \n"
-      response.preset = '-sn,-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -131,7 +131,7 @@ function plugin(file) {
      if(hasSubs){
 
       response.infoLog += "☒File has subs \n"
-      response.preset = '-sn, -c:v copy -c:a copy'
+      response.preset = ',-sn  -c:v copy -c:a copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
