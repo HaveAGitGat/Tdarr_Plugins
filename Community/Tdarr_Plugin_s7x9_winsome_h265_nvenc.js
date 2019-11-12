@@ -56,71 +56,108 @@ function plugin(file) {
     if (file.ffProbeData.streams[0].codec_name == 'hevc') {
 
 
-      var hasEngTrack = false
+      var hasPreferredLangTrack = false
+      var hasPreferredLangInRequiredCodecs = false
+      var hasAnyInRequiredCodecs = false
+
+      var audioIdx = -1
+      var engTrackIdx = -1
+
+      var requiredAudioCodecs = "ac3,eac3,dts"
+      var preferredLangTrack = "eng"
+      var preferredCodec = "ac3"
 
 
-      // for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
-      //   try {
-      //     if ( (file.ffProbeData.streams[i].codec_name == "ac3" || file.ffProbeData.streams[i].codec_name == "eac3" ||  file.ffProbeData.streams[i].codec_name == "dts") && file.ffProbeData.streams[i].tags.language == 'eng') {
+      for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
-      //       hasEngTrack = true
+        try {
+          if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
+            audioIdx++
+          }
+        } catch (err) { }
 
-      //     }
-      //   } catch (err) {
 
-      //    }
-      // }
+        try {
+          if (requiredAudioCodecs.includes(file.ffProbeData.streams[i].codec_name)) {
+            hasAnyInRequiredCodecs = true
 
-      try {
-        if ((file.ffProbeData.streams[1].codec_name == "ac3" || file.ffProbeData.streams[1].codec_name == "eac3" || file.ffProbeData.streams[1].codec_name == "dts")) {
+          }
+        } catch (err) { }
 
-          hasEngTrack = true
 
-        }
-      } catch (err) {
+        try {
+          if ((requiredAudioCodecs.includes(file.ffProbeData.streams[i].codec_name)) && file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack)) {
+            hasPreferredLangInRequiredCodecs = true
 
+          }
+        } catch (err) { }
+
+        try {
+          if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack)) {
+            hasPreferredLangTrack = true
+            engTrackIdx = audioIdx
+
+          }
+        } catch (err) { }
       }
 
 
-      if(!hasEngTrack){
+
+      if (hasPreferredLangInRequiredCodecs) {
+
+        response.infoLog += `☑File already has ${preferredLangTrack} language track in ${requiredAudioCodecs}! \n`
+
+      } else if (hasPreferredLangTrack) {
 
         response.processFile = true;
-        response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -b:a:0 192k -ac 2'
+        response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`
         response.container = '.mkv'
-        response.handBrakeMode =false
+        response.handBrakeMode = false
         response.FFmpegMode = true
         response.reQueueAfter = true;
-        response.infoLog += "☒File is already hevc and doesn't have English language track in AC3,EAC3 or DTS! \n"
+        response.infoLog += `☒File has ${preferredLangTrack} language track but not in ${requiredAudioCodecs}! \n`
         return response
 
-      }else{
+      } else if (!hasAnyInRequiredCodecs) {
 
-        response.infoLog += "☑File is already hevc and has English language track in  AC3,EAC3 or DTS! \n"
+        if (audioIdx == -1) {
+          response.infoLog += `☒File does not have any audio streams. Can't create ${preferredCodec} track. \n`
 
+        } else {
 
+          response.processFile = true;
+          response.preset = `,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`
+          response.container = '.mkv'
+          response.handBrakeMode = false
+          response.FFmpegMode = true
+          response.reQueueAfter = true;
+          response.infoLog += `☒File has no language track in ${requiredAudioCodecs}. No ${preferredLangTrack} track marked so transcoding audio track 1 into ${preferredCodec}! \n`
+          return response
+
+        }
       }
 
 
-      if( file.container != 'mkv'){
+      if (file.container != 'mkv') {
 
         response.processFile = true;
         response.preset = ', -c:v copy -c:a copy'
         response.container = '.mkv'
-        response.handBrakeMode =false
+        response.handBrakeMode = false
         response.FFmpegMode = true
         response.reQueueAfter = true;
         response.infoLog += "☒File is not in mkv container! \n"
         return response
-  
-       }else{
-  
-        response.infoLog += "☑File is in mkv container! \n"
-        
-       }
 
-       response.processFile = false;
-       return response
+      } else {
+
+        response.infoLog += "☑File is in mkv container! \n"
+
+      }
+
+      response.processFile = false;
+      return response
 
     } else {
 
