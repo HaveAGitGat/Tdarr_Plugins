@@ -165,7 +165,7 @@ function plugin(file) {
       response.preset = '-Z "H.265 MKV 2160p60" --all-audio -e nvenc_h265'
       response.container = '.mkv'
       response.handBrakeMode = true
-      response.FFmpegMode = true
+      response.FFmpegMode = false
       response.reQueueAfter = true;
       response.infoLog += "☒File isn't in hevc! \n"
       return response
