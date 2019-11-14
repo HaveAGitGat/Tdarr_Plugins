@@ -93,7 +93,7 @@ function plugin(file) {
         } catch (err) { }
 
         try {
-          if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack)) {
+          if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack) && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
             hasPreferredLangTrack = true
             engTrackIdx = audioIdx
 
