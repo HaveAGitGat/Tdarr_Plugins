@@ -114,19 +114,11 @@ function plugin(file) {
      }
 
 
-     if( file.container != 'mp4'){
-      response.infoLog += "☒File is not in mp4 container! \n"
-      response.preset = ', -c:v copy -c:a copy'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      return response
-     }else{
-      response.infoLog += "☑File is in mp4 container! \n"
-     }
 
 
 
-     
+
+
 
      if (hasPreferredLangInRequiredCodecs) {
 
@@ -163,12 +155,13 @@ function plugin(file) {
     }
 
 
+
      
 
      if(file.meta.Title != "undefined" && hasSubs){
 
       response.infoLog += "☒File has title and has subs \n"
-      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-sn -map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -180,7 +173,7 @@ function plugin(file) {
      if(file.meta.Title != undefined ){
 
       response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -193,13 +186,25 @@ function plugin(file) {
      if(hasSubs){
 
       response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn  -c:v copy -c:a copy'
+      response.preset = ',-sn -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
 
      }else{
       response.infoLog += "☑File has no subs \n"
+     }
+
+     
+
+     if( file.container != 'mp4'){
+      response.infoLog += "☒File is not in mp4 container! \n"
+      response.preset = ', -map 0 -c copy'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response
+     }else{
+      response.infoLog += "☑File is in mp4 container! \n"
      }
 
 

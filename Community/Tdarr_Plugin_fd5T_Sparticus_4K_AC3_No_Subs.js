@@ -188,7 +188,7 @@ function plugin(file) {
 
     if (hasSubs) {
       response.infoLog += "☒File has subs! \n"
-      response.preset = ',-sn -c:v copy -c:a copy'
+      response.preset = ',-sn -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
