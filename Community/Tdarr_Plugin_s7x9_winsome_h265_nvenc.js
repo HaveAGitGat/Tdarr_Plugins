@@ -142,7 +142,7 @@ function plugin(file) {
       if (file.container != 'mkv') {
 
         response.processFile = true;
-        response.preset = ', -c:v copy -c:a copy'
+        response.preset = ', -map 0 -c copy'
         response.container = '.mkv'
         response.handBrakeMode = false
         response.FFmpegMode = true
@@ -162,7 +162,7 @@ function plugin(file) {
     } else {
 
       response.processFile = true;
-      response.preset = '-Z "H.265 MKV 2160p60" --all-audio -e nvenc_h265'
+      response.preset = '-Z "H.265 MKV 2160p60" --all-audio --all-subtitles -e nvenc_h265'
       response.container = '.mkv'
       response.handBrakeMode = true
       response.FFmpegMode = false
