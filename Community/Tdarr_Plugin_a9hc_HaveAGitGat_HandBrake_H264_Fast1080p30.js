@@ -10,7 +10,7 @@ function details() {
     Description: `This plugin transcodes into H264 using HandBrake's 'Fast 1080p30' preset if the file is not in H264 already. It removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30.js"
   }
 
 }
@@ -88,7 +88,7 @@ function plugin(file) {
      if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
 
       response.infoLog += "☒File has title metadata and no aac and subs \n"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       response.FFmpegMode = true
@@ -109,7 +109,7 @@ function plugin(file) {
      if(file.meta.Title != "undefined" && hasSubs){
 
       response.infoLog += "☒File has title and has subs \n"
-      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-sn -map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       response.FFmpegMode = true
@@ -122,7 +122,7 @@ function plugin(file) {
      if(file.meta.Title != undefined ){
 
       response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       response.FFmpegMode = true
@@ -147,7 +147,7 @@ function plugin(file) {
      if(hasSubs){
 
       response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn  -c:v copy -c:a copy'
+      response.preset = ',-sn  -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       response.FFmpegMode = true

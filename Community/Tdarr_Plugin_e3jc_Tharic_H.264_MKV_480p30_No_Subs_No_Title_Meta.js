@@ -10,7 +10,7 @@ function details() {
     Description: `This plugin removes subs, metadata (if a title exists) and makes sure the video is h264 480p mkv. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_e3jc_Tharic_H.264_MKV_480p30_No_Subs_No_Title_Meta"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e3jc_Tharic_H.264_MKV_480p30_No_Subs_No_Title_Meta.js"
   }
 
 }
@@ -89,7 +89,7 @@ function plugin(file) {
      if(file.meta.Title != "undefined" && hasSubs){
 
       response.processFile = true;
-      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-sn -map_metadata -1 -map 0 -c copy'
       response.container = '.mkv'
       response.handBrakeMode =false
       response.FFmpegMode = true
@@ -105,7 +105,7 @@ function plugin(file) {
      if(file.meta.Title != undefined ){
 
       response.processFile = true;
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-map_metadata -1 -map 0 -c copy'
       response.container = '.mkv'
       response.handBrakeMode =false
       response.FFmpegMode = true
@@ -122,7 +122,7 @@ function plugin(file) {
      if(hasSubs){
 
       response.processFile = true;
-      response.preset = ',-sn  -c:v copy -c:a copy'
+      response.preset = ',-sn  -map 0 -c copy'
       response.container = '.mkv'
       response.handBrakeMode =false
       response.FFmpegMode = true
@@ -139,7 +139,7 @@ function plugin(file) {
 
 
       response.processFile = true;
-      response.preset = ', -c:v copy -c:a copy'
+      response.preset = ', -map 0 -c copy'
       response.container = '.mkv'
       response.handBrakeMode =false
       response.FFmpegMode = true

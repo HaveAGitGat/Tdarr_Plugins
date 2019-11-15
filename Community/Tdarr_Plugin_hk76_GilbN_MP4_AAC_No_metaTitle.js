@@ -10,7 +10,7 @@ function details() {
     Description: `This plugin removes metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is mp4. \n\n
 `,
     Version: "1.01",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_hk76_GilbN_MP4_AAC_No_metaTitle"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_hk76_GilbN_MP4_AAC_No_metaTitle.js"
   }
 
 }
@@ -55,7 +55,7 @@ function plugin(file) {
     if (file.container != 'mp4') {
 
       response.infoLog += "☒File is not in mp4 container! \n"
-      response.preset = ', -c:v copy -c:a copy'
+      response.preset = ', -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -69,7 +69,7 @@ function plugin(file) {
     if (file.meta.Title != undefined) {
 
       response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response

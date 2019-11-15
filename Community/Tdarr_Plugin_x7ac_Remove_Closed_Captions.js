@@ -9,7 +9,7 @@ function details() {
     Operation: "Remux",
     Description: "If detected, closed captions (XDS,608,708) will be removed.",
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_x7ac_Remove_Closed_Captions"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ac_Remove_Closed_Captions.js"
   }
 
 
@@ -52,7 +52,7 @@ function plugin(file) {
        response = {
           
         processFile : true,
-        preset : ',-codec copy -bsf:v "filter_units=remove_types=6"',
+        preset : ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
         container : '.' + file.container ,
         handBrakeMode : false,
         FFmpegMode : true,

@@ -10,7 +10,7 @@ function details() {
     Description: `This plugin removes metadata (if a title exists). The output container is mp4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_a37x_Drawmonster_MP4_No_Title_Meta"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a37x_Drawmonster_MP4_No_Title_Meta.js"
   }
 
 }
@@ -63,7 +63,7 @@ function plugin(file) {
      if(file.meta.Title != undefined ){
 
       response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.preset = ',-map_metadata -1 -map 0 -c copy'
       response.reQueueAfter = true;
       response.processFile = true;
       return response
