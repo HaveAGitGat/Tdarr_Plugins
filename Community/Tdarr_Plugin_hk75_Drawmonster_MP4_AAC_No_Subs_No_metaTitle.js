@@ -113,6 +113,21 @@ function plugin(file) {
 
      }
 
+
+     if( file.container != 'mp4'){
+      response.infoLog += "☒File is not in mp4 container! \n"
+      response.preset = ', -c:v copy -c:a copy'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response
+     }else{
+      response.infoLog += "☑File is in mp4 container! \n"
+     }
+
+
+
+     
+
      if (hasPreferredLangInRequiredCodecs) {
 
       response.infoLog += `☑File already has ${preferredLangTrack} language track in ${requiredAudioCodecs}! \n`
@@ -188,21 +203,7 @@ function plugin(file) {
      }
 
 
-     if( file.container != 'mp4'){
 
-      response.infoLog += "☒File is not in mp4 container! \n"
-      response.preset = ', -c:v copy -c:a copy'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      return response
-
-
-     }else{
-
-      response.infoLog += "☑File is in mp4 container! \n"
-
-
-     }
 
 
      response.infoLog += "☑File meets conditions! \n"
