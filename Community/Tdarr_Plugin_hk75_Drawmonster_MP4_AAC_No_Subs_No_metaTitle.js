@@ -9,7 +9,7 @@ function details() {
     Type: "Video",
     Description: `This plugin removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (English or any) doesn't exist. The output container is mp4. \n\n
 `,
-    Version: "1.05",
+    Version: "1.06",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle.js"
   }
 
@@ -127,7 +127,7 @@ function plugin(file) {
     } else if (hasPreferredLangTrack) {
 
       response.processFile = true;
-      response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`
+      response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2 -strict -2`
       response.container = '.mp4'
       response.handBrakeMode = false
       response.FFmpegMode = true
@@ -143,7 +143,7 @@ function plugin(file) {
       } else {
 
         response.processFile = true;
-        response.preset = `,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`
+        response.preset = `,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2 -strict -2`
         response.container = '.mp4'
         response.handBrakeMode = false
         response.FFmpegMode = true
