@@ -136,7 +136,7 @@ function plugin(file) {
 
     if (hasOnlyAC3TrackCommentaries && hasSubs) {
       response.infoLog += "☒File has no AC3 main track (has AC3 commentary) and has subs \n"
-      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
+      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
@@ -144,7 +144,7 @@ function plugin(file) {
 
     if (hasNoAC3Track && hasSubs) {
       response.infoLog += "☒File has no AC3 main track and has subs \n"
-      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
+      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:d? -c copy -c:a:0 ac3 -ac ' + channels
       response.reQueueAfter = true;
       response.processFile = true;
       return response
