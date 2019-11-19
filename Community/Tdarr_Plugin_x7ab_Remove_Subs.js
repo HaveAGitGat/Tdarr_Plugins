@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_x7ab_Remove_Subs",
     Name: "Tdarr_Plugin_x7ab_Remove_Subs ",
     Type: "Video",
-    Description: `This plugin removes subs. The output container is the same as the original. \n\n`,
+    Description: `This plugin removes subtitles. The output container is the same as the original. \n\n`,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ab_Remove_Subs.js"
   }
