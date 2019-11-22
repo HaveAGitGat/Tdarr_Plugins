@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_fd5T_Sparticus_4K_AC3_No_Subs",
     Name: "Sparticus 4K +AC3 No Subs Original container",
     Type: "Video",
-    Description: `This plugin for 4K video removes subs. If no AC3 track exists, it adds one (max 5.1 channels). If only an AC3 commentary track exists, it adds a new AC3 main track (max 5.1 channels). The output container is the same as the original file. \n\n
+    Description: `[Contains built-in filter] This plugin for 4K video removes subs. If no AC3 track exists, it adds one (max 5.1 channels). If only an AC3 commentary track exists, it adds a new AC3 main track (max 5.1 channels). The output container is the same as the original file. \n\n
 `,
     Version: "1.04",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_fd5T_Sparticus_4K_AC3_No_Subs.js"
@@ -48,11 +48,6 @@ function plugin(file) {
     return response
 
   } else {
-
-
-    var ffmpegDataString = JSON.stringify(file.ffProbeData)
-
-    //var ac3TrackCount = (ffmpegDataString.match(/ac3/g) || []).length;
 
 
     var ac3TrackCount = 0

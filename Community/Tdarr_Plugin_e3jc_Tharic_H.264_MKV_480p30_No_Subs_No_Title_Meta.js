@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_e3jc_Tharic_H.264_MKV_480p30_No_Subs_No_Title_Meta",
     Name: "H.264 MKV 480p30, No Subs No, Title Meta",
     Type: "Video",
-    Description: `This plugin removes subs, metadata (if a title exists) and makes sure the video is h264 480p mkv. \n\n
+    Description: `[Contains built-in filter] This plugin removes subs, metadata (if a title exists) and makes sure the video is h264 480p mkv. \n\n
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e3jc_Tharic_H.264_MKV_480p30_No_Subs_No_Title_Meta.js"

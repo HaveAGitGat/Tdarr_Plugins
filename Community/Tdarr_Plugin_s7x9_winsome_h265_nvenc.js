@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_s7x9_winsome_h265_nvenc",
     Name: "Winsome H265 NVENC",
     Type: "Video",
-    Description: `This plugin transcodes all videos to h265 using nvenc (if not in h265 already) and remuxes if not in mkv. If the English language track is not in AC3,EAC3 or DTS then an AC3 track is added.\n\n
+    Description: `[Contains built-in filter] This plugin transcodes all videos to h265 using nvenc (if not in h265 already) and remuxes if not in mkv. If the English language track is not in AC3,EAC3 or DTS then an AC3 track is added.\n\n
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_s7x9_winsome_h265_nvenc.js"
