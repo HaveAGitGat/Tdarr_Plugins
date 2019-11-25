@@ -10,7 +10,7 @@ function details() {
     Operation:"Transcode",
     Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using default settings. Audio/subtitles not affected.  \n\n`,
     Version: "1.00",
-    Link: ""
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js"
   }
 
 }
