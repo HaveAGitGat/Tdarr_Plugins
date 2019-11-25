@@ -4,13 +4,13 @@
 function details() {
 
   return {
-    id: "Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js",
+    id: "Tdarr_Plugin_z2ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js",
     Name: "TheRealShadoh FFmpeg Subs Slow, video MP4, audio AAC, keep subs. ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin transcodes into H264 using FFmpeg's 'Slow' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js"
+    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z2ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js"
   }
 
 }
