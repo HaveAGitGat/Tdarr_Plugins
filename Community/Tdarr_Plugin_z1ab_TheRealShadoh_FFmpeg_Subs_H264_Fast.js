@@ -4,13 +4,13 @@
 function details() {
 
   return {
-    id: "Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js",
-    Name: "TheRealShadoh FFmpeg Subs Slow, video MP4, audio AAC, keep subs. ",
+    id: "Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Fast.js",
+    Name: "TheRealShadoh FFmpeg Subs Fast, video MP4, audio AAC, keep subs. ",
     Type: "Video",
-    Description: `[Contains built-in filter] This plugin transcodes into H264 using FFmpeg's 'Slow' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
+    Description: `[Contains built-in filter] This plugin transcodes into H264 using FFmpeg's 'Fast' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js"
+    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Fast.js"
   }
 
 }
@@ -22,13 +22,13 @@ function plugin(file) {
 
   var response = {
 
-     processFile : false,
-     preset : '',
-     container : '.mp4',
-     handBrakeMode : false,
-     FFmpegMode : false,
-     reQueueAfter : false,
-     infoLog : '',
+    processFile : false,
+    preset : '',
+    container : '.mp4',
+    handBrakeMode : false,
+    FFmpegMode : false,
+    reQueueAfter : false,
+    infoLog : '',
 
   }
 
@@ -66,7 +66,7 @@ function plugin(file) {
      if(file.ffProbeData.streams[0].codec_name != 'h264'){
 
       response.infoLog += "☒File is not in h264! \n"
-      response.preset = ', -map_metadata -1 -map 0:v -map 0:s? -map 0:a -c:v libx264 -preset slow -c:a aac -c:s mov_text'
+      response.preset = ', -map_metadata -1 -map 0:v -map 0:s? -map 0:a -c:v libx264 -preset fast -c:a aac -c:s mov_text'
       response.reQueueAfter = true;
       response.processFile = true;
       response.FFmpegMode = true
@@ -151,7 +151,7 @@ function plugin(file) {
       response.infoLog += "☑File has no subs \n"
      }
 
-
+     response.processFile = false;
      response.infoLog += "☑File meets conditions! \n"
      return response
 

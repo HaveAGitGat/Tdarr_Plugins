@@ -22,13 +22,13 @@ function plugin(file) {
 
   var response = {
 
-     processFile : false,
-     preset : '',
-     container : '.mp4',
-     handBrakeMode : false,
-     FFmpegMode : false,
-     reQueueAfter : false,
-     infoLog : '',
+    processFile : false,
+    preset : '',
+    container : '.mp4',
+    handBrakeMode : false,
+    FFmpegMode : false,
+    reQueueAfter : false,
+    infoLog : '',
 
   }
 
@@ -151,7 +151,7 @@ function plugin(file) {
       response.infoLog += "☑File has no subs \n"
      }
 
-
+     response.processFile = false;
      response.infoLog += "☑File meets conditions! \n"
      return response
 

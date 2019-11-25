@@ -151,7 +151,7 @@ function plugin(file) {
       response.infoLog += "☑File has no subs \n"
      }
 
-
+     response.processFile = false;
      response.infoLog += "☑File meets conditions! \n"
      return response
 
