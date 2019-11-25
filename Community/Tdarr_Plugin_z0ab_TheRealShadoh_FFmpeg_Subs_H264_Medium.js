@@ -79,7 +79,7 @@ function plugin(file) {
 
      ///
 
-     if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
+     if((file.meta.Title != undefined) && !jsonString.includes("aac") && hasSubs){
 
       response.infoLog += "☒File has title metadata and no aac and subs \n"
       response.preset = ', -map_metadata -1 -map 0:v -map 0:s? -map 0:a -c:v copy -c:a aac -c:s mov_text'
@@ -100,7 +100,7 @@ function plugin(file) {
      }
 
 
-     if(file.meta.Title != "undefined" && hasSubs){
+     if(file.meta.Title != undefined && hasSubs){
 
       response.infoLog += "☒File has title and has subs \n"
       response.preset = ', -map_metadata -1 -map 0:v -map 0:s? -map 0:a -c:v copy -c:a copy -c:s mov_text'
@@ -151,7 +151,6 @@ function plugin(file) {
       response.infoLog += "☑File has no subs \n"
      }
 
-     response.processFile = false;
      response.infoLog += "☑File meets conditions! \n"
      return response
 
