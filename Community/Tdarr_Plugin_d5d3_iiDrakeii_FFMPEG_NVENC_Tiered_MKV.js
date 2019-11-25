@@ -71,7 +71,7 @@ function plugin(file) {
 	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
 	}		
 	else {
-	  response.preset = `-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
 	}
 
 	transcode = 1;
@@ -108,7 +108,7 @@ function plugin(file) {
 	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
 	}		
 	else {
-	  response.preset = `-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
 	}
 
 	transcode = 1;
@@ -145,7 +145,7 @@ function plugin(file) {
 	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
 	}		
 	else {
-	  response.preset = `-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
 	}
 
 	transcode = 1;
