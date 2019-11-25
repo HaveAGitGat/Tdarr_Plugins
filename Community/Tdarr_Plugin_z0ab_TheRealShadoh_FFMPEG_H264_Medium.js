@@ -7,7 +7,7 @@ function details() {
     id: "Tdarr_Plugin_z0ab_TheRealShadoh_FFMPEG_H264_Medium.js",
     Name: "TheRealShadoh FFMPEG Medium, video MP4, audio AAC, keep subs. ",
     Type: "Video",
-    Description: `[Contains built-in filter] This plugin transcodes into H264 using FFMPEG's Medium' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. Filter logic from "Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30". \n\n
+    Description: `[Contains built-in filter] This plugin transcodes into H264 using FFMPEG's 'Medium' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
     Version: "1.00",
     Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z0ab_TheRealShadoh_FFMPEG_H264_Medium.js"
@@ -32,13 +32,7 @@ function plugin(file) {
 
   }
 
-
-
-
-
-
-
-  if (file.fileMedium !== "video") {
+  if (file.fileMedium !== "video"){
 
 
     console.log("File is not video")
