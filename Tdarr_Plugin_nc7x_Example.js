@@ -7,8 +7,7 @@ function details() {
     id: "Tdarr_Plugin_nc7x_Example",
     Name: "No title meta data ",
     Type: "Video",
-    Description: `This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n
-`,
+    Description: `This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n`,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_nc7x_Example"
   }
@@ -50,20 +49,17 @@ function plugin(file) {
     console.log("File is not video")
 
     response.infoLog += " File is not video"
-    response.processFile = false;
+    response.processFile = false
 
     return response
 
   } else {
 
-   // var jsonString = JSON.stringify(file)
-
-
     if (file.meta.Title != undefined) {
 
       response.infoLog += " File has title metadata"
       response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
-      response.processFile = true;
+      response.processFile = true
       return response
     } else {
       response.infoLog += " File has no title metadata"
@@ -77,7 +73,6 @@ function plugin(file) {
 }
 
 module.exports.details = details;
-
 module.exports.plugin = plugin;
 
 //Example file object:
