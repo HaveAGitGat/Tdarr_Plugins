@@ -27,16 +27,16 @@ function plugin(file) {
 //check if the file is a video, if not the function will be stopped immediately
   if (file.fileMedium !== "video") {
     response.processFile = false
-    response.infoLog += "☒File is not a video! \n"
+    response.infoLog += "â˜’File is not a video! \n"
     return response
   } else {
-    response.infoLog += "☑File is a video! \n"
+    response.infoLog += "â˜‘File is a video! \n"
   }
 
 //check if the file is already hevc, it will not be transcoded if true and the function will be stopped immediately
   if (file.ffProbeData.streams[0].codec_name == 'hevc') {
     response.processFile = false
-    response.infoLog += "☒File is already in hevc! \n"
+    response.infoLog += "â˜’File is already in hevc! \n"
     return response
   }
 
@@ -44,34 +44,34 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "480p" || file.video_resolution === "576p" ) {
 	if (file.video_codec_name == 'h263') {
-	  response.preset = `-c:v h263_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v h263_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	} 
 	else if (file.video_codec_name == 'h264') {
-	  response.preset = `-c:v h264_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v h264_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mjpeg') {
-	  response.preset = `-c:v mjpeg_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mjpeg_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg1') {
-	  response.preset = `-c:v mpeg1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg2') {
-	  response.preset = `-c:v mpeg2_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg2_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg4') {
-	  response.preset = `-c:v mpeg4_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg4_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}	
 	else if (file.video_codec_name == 'vc1') {
-	  response.preset = `-c:v vc1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vc1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'vp8') {
-	  response.preset = `-c:v vp8_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vp8_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'vp9') {
-	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}		
 	else {
-	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -crf 32 -preset slow -c:a copy -c:s copy`
+	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 
 	transcode = 1;
@@ -81,34 +81,34 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "720p") {
 	if (file.video_codec_name == 'h263') {
-	  response.preset = `-c:v h263_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v h263_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	} 
 	else if (file.video_codec_name == 'h264') {
-	  response.preset = `-c:v h264_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v h264_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mjpeg') {
-	  response.preset = `-c:v mjpeg_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mjpeg_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg1') {
-	  response.preset = `-c:v mpeg1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg2') {
-	  response.preset = `-c:v mpeg2_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg2_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg4') {
-	  response.preset = `-c:v mpeg4_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg4_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}	
 	else if (file.video_codec_name == 'vc1') {
-	  response.preset = `-c:v vc1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vc1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'vp8') {
-	  response.preset = `-c:v vp8_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vp8_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'vp9') {
-	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}		
 	else {
-	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -crf 30 -preset slow -c:a copy -c:s copy`
+	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 
 	transcode = 1;
@@ -118,34 +118,34 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "1080p") {
     if (file.video_codec_name == 'h263') {
-	  response.preset = `-c:v h263_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v h263_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
     } 
 	else if (file.video_codec_name == 'h264') {
-	  response.preset = `-c:v h264_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v h264_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mjpeg') {
-	  response.preset = `-c:v mjpeg_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mjpeg_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg1') {
-	  response.preset = `-c:v mpeg1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg2') {
-	  response.preset = `-c:v mpeg2_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg2_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'mpeg4') {
-	  response.preset = `-c:v mpeg4_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v mpeg4_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
  	}	
 	else if (file.video_codec_name == 'vc1') {
-	  response.preset = `-c:v vc1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vc1_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'vp8') {
-	  response.preset = `-c:v vp8_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vp8_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 	else if (file.video_codec_name == 'vp9') {
-	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `-c:v vp9_cuvid,-c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}		
 	else {
-	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -crf 28 -preset slow -c:a copy -c:s copy`
+	  response.preset = `, -c:v nvenc_hevc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
 	}
 
 	transcode = 1;
@@ -157,8 +157,8 @@ function plugin(file) {
     response.processFile = true;
     response.FFmpegMode = true
 	response.reQueueAfter = true;
-	response.infoLog += `☒File is ${file.video_resolution} but is not hevc!\n`
-	response.infoLog += `☒File will be transcoded!\n`
+	response.infoLog += `â˜’File is ${file.video_resolution} but is not hevc!\n`
+	response.infoLog += `â˜’File will be transcoded!\n`
   } 
 
   return response
