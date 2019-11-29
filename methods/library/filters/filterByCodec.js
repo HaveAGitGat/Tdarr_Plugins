@@ -41,7 +41,7 @@ function filterByCodec(file, mode, codecs) {
 
                 var response = {
                     outcome: true,
-                    note: `☒Codec not excluded \\n`
+                    note: `☑Codec not excluded \\n`
                 }
                 return response
 
