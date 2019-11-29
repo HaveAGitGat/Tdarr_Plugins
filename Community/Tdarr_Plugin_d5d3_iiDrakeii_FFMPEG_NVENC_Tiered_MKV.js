@@ -20,7 +20,7 @@ function plugin(file) {
     container: '.mkv',
     handBrakeMode: false,
     FFmpegMode: false,
-    reQueueAfter: false,
+    reQueueAfter: true,
     infoLog: ''
   }
 
