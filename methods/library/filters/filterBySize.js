@@ -25,7 +25,7 @@ function filterBySize(file, lowerBound, upperBound) {
     } catch (err) {
         var response = {
             outcome: false,
-            note:  `library.filters.filterBySize error: ${err.stack} \\n`
+            note:  `library.filters.filterBySize error: ${err} \\n`
         }
         return response
     }

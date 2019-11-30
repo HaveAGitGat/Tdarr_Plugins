@@ -50,7 +50,7 @@ function filterByCodec(file, mode, codecs) {
 
         var response = {
             outcome: false,
-            note:  `library.filters.filterByCodec error: ${err.stack} \\n`
+            note:  `library.filters.filterByCodec error: ${err} \\n`
         }
         return response
         

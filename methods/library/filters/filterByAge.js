@@ -30,7 +30,7 @@ function filterByAge(file, ageCutOff_Seconds) {
     } catch (err) {
         var response = {
             outcome: false,
-            note: `library.filters.filterByAge error: ${err.stack} \\n`
+            note: `library.filters.filterByAge error: ${err} \\n`
         }
         return response
     }

@@ -24,7 +24,7 @@ function filterByMedium(file, medium) {
     } catch (err) {
         var response = {
             outcome: false,
-            note:  `library.filters.filterByMedium error: ${err.stack} \\n`
+            note:  `library.filters.filterByMedium error: ${err} \\n`
         }
         return response
     }

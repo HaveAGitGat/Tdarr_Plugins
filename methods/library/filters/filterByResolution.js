@@ -48,7 +48,7 @@ function filterByResolution(file, mode, resolution) {
     } catch (err) {
         var response = {
             outcome: false,
-            note:  `library.filters.filterByResolution error: ${err.stack} \\n`
+            note:  `library.filters.filterByResolution error: ${err} \\n`
         }
         return response
     }

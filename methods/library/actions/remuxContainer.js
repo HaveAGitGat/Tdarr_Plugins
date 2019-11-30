@@ -28,7 +28,7 @@ function remuxContainer(file, container) {
     } catch (err) {
         var response = {
             processFile: false, 
-            note:`library.actions.remuxContainer error: ${err.stack} \\n`
+            note:`library.actions.remuxContainer error: ${err} \\n`
         }
         return response
     }
