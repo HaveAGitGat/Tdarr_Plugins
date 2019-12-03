@@ -8,16 +8,8 @@ if (fs.existsSync(path.join(process.cwd() + "/npm"))) {
 const importFresh = require(rootModules+'import-fresh');
 
 
-var filterByAge = importFresh('./library/filters/filterByAge.js')
-var filterByCodec = importFresh('./library/filters/filterByCodec.js')
-var filterByMedium = importFresh('./library/filters/filterByMedium.js')
-var filterByResolution = importFresh('./library/filters/filterByResolution.js')
-var filterBySize = importFresh('./library/filters/filterBySize.js')
-
-
-
-module.exports.filterByAge = filterByAge
-module.exports.filterByCodec = filterByCodec
-module.exports.filterByMedium = filterByMedium
-module.exports.filterByResolution = filterByResolution
-module.exports.filterBySize = filterBySize
+module.exports.filterByAge = importFresh('./library/filters/filterByAge.js')
+module.exports.filterByCodec = importFresh('./library/filters/filterByCodec.js')
+module.exports.filterByMedium = importFresh('./library/filters/filterByMedium.js')
+module.exports.filterByResolution = importFresh('./library/filters/filterByResolution.js')
+module.exports.filterBySize = importFresh('./library/filters/filterBySize.js')

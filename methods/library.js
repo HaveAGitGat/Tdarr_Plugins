@@ -7,9 +7,5 @@ if (fs.existsSync(path.join(process.cwd() + "/npm"))) {
 }
 const importFresh = require(rootModules+'import-fresh');
 
-var filters = importFresh('./filters.js')
-var actions = importFresh('./actions.js')
-
-module.exports.filters = filters
-module.exports.actions = actions
-
+module.exports.filters = importFresh('./filters.js')
+module.exports.actions = importFresh('./actions.js')

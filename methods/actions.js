@@ -8,6 +8,6 @@ if (fs.existsSync(path.join(process.cwd() + "/npm"))) {
 const importFresh = require(rootModules+'import-fresh');
 
 
-var remuxContainer = importFresh('./library/actions/remuxContainer.js')
+module.exports.remuxContainer = importFresh('./library/actions/remuxContainer.js')
+module.exports.transcodeStandardiseAudioCodecs = importFresh('./library/actions/transcodeStandardiseAudioCodecs.js')
 
-module.exports.remuxContainer = remuxContainer
