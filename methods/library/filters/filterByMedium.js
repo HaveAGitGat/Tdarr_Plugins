@@ -8,7 +8,7 @@ function filterByMedium(file, medium) {
 
             var response = {
                 outcome: false,
-                note: `☒File is not ${medium} \\n`
+                note: `☒File is not ${medium} \n`
             }
             return response
 
@@ -16,7 +16,7 @@ function filterByMedium(file, medium) {
 
             var response = {
                 outcome: true,
-                note: `☑File is ${medium} \\n`
+                note: `☑File is ${medium} \n`
             }
             return response
         }
@@ -24,7 +24,7 @@ function filterByMedium(file, medium) {
     } catch (err) {
         var response = {
             outcome: false,
-            note:  `library.filters.filterByMedium error: ${err} \\n`
+            note:  `library.filters.filterByMedium error: ${err} \n`
         }
         return response
     }

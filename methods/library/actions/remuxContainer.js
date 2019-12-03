@@ -9,7 +9,7 @@ function remuxContainer(file, container) {
 
             var response = {
                 processFile: true,
-                note:`File is not in ${container} \\n`
+                note:`File is not in ${container} \n`
             }
             return response
 
@@ -17,7 +17,7 @@ function remuxContainer(file, container) {
 
             var response = {
                 processFile: false,
-                note:`File is already in ${container} \\n`
+                note:`File is already in ${container} \n`
             }
             return response
 
@@ -28,7 +28,7 @@ function remuxContainer(file, container) {
     } catch (err) {
         var response = {
             processFile: false, 
-            note:`library.actions.remuxContainer error: ${err} \\n`
+            note:`library.actions.remuxContainer error: ${err} \n`
         }
         return response
     }

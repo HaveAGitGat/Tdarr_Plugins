@@ -13,7 +13,7 @@ function filterByAge(file, ageCutOff_Seconds) {
 
             var response = {
                 outcome: false,
-                note: `☒File creation date is older than specified requirement. \\n`
+                note: `☒File creation date is older than specified requirement. \n`
             }
             return response
 
@@ -21,7 +21,7 @@ function filterByAge(file, ageCutOff_Seconds) {
 
             var response = {
                 outcome: true,
-                note: `☑File creation date is within specified requirement. \\n`
+                note: `☑File creation date is within specified requirement. \n`
             }
             return response
 
@@ -30,7 +30,7 @@ function filterByAge(file, ageCutOff_Seconds) {
     } catch (err) {
         var response = {
             outcome: false,
-            note: `library.filters.filterByAge error: ${err} \\n`
+            note: `library.filters.filterByAge error: ${err} \n`
         }
         return response
     }

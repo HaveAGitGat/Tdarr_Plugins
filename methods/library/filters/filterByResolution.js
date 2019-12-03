@@ -10,7 +10,7 @@ function filterByResolution(file, mode, resolution) {
 
                 var response = {
                     outcome: false,
-                    note: `☒File is in excluded resolution. \\n`
+                    note: `☒File is in excluded resolution. \n`
                 }
                 return response
 
@@ -18,7 +18,7 @@ function filterByResolution(file, mode, resolution) {
 
                 var response = {
                     outcome: true,
-                    note: `☑File is not in excluded resolution. \\n`
+                    note: `☑File is not in excluded resolution. \n`
                 }
                 return response
 
@@ -30,7 +30,7 @@ function filterByResolution(file, mode, resolution) {
 
                 var response = {
                     outcome: true,
-                    note: `☑File is in included resolution. \\n`
+                    note: `☑File is in included resolution. \n`
                 }
                 return response
 
@@ -38,7 +38,7 @@ function filterByResolution(file, mode, resolution) {
 
                 var response = {
                     outcome: false,
-                    note: `☒File is not in included resolution. \\n`
+                    note: `☒File is not in included resolution. \n`
                 }
                 return response
 
@@ -48,7 +48,7 @@ function filterByResolution(file, mode, resolution) {
     } catch (err) {
         var response = {
             outcome: false,
-            note:  `library.filters.filterByResolution error: ${err} \\n`
+            note:  `library.filters.filterByResolution error: ${err} \n`
         }
         return response
     }

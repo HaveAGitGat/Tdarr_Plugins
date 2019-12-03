@@ -13,7 +13,7 @@ function filterByCodec(file, mode, codecs) {
 
                 var response = {
                     outcome: true,
-                    note: `☑Codec included \\n`
+                    note: `☑Codec included \n`
                 }
                 return response
 
@@ -21,7 +21,7 @@ function filterByCodec(file, mode, codecs) {
 
                 var response = {
                     outcome: false,
-                    note: `☒Codec excluded \\n`
+                    note: `☒Codec excluded \n`
                 }
                 return response
 
@@ -33,7 +33,7 @@ function filterByCodec(file, mode, codecs) {
 
                 var response = {
                     outcome: false,
-                    note: `☒Codec excluded \\n`
+                    note: `☒Codec excluded \n`
                 }
                 return response
 
@@ -41,7 +41,7 @@ function filterByCodec(file, mode, codecs) {
 
                 var response = {
                     outcome: true,
-                    note: `☑Codec not excluded \\n`
+                    note: `☑Codec not excluded \n`
                 }
                 return response
 
@@ -50,7 +50,7 @@ function filterByCodec(file, mode, codecs) {
 
         var response = {
             outcome: false,
-            note:  `library.filters.filterByCodec error: ${err} \\n`
+            note:  `library.filters.filterByCodec error: ${err} \n`
         }
         return response
         
@@ -60,7 +60,7 @@ function filterByCodec(file, mode, codecs) {
         console.log(err)
         var response = {
             outcome: false,
-            note: `Filter error hello! ${err}\\n`
+            note: `Filter error hello! ${err}\n`
         }
         return response
     }

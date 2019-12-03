@@ -8,7 +8,7 @@ function filterBySize(file, lowerBound, upperBound) {
 
             var response = {
                 outcome: true,
-                note: `☑File size is within filter limits. \\n`
+                note: `☑File size is within filter limits. \n`
             }
             return response
 
@@ -16,7 +16,7 @@ function filterBySize(file, lowerBound, upperBound) {
 
             var response = {
                 outcome: false,
-                note: `☒File size is not within filter limits. \\n`
+                note: `☒File size is not within filter limits. \n`
             }
             return response
 
@@ -25,7 +25,7 @@ function filterBySize(file, lowerBound, upperBound) {
     } catch (err) {
         var response = {
             outcome: false,
-            note:  `library.filters.filterBySize error: ${err} \\n`
+            note:  `library.filters.filterBySize error: ${err} \n`
         }
         return response
     }
