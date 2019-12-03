@@ -1,4 +1,3 @@
-
 function details() {
   return {
     id: "Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV",
@@ -60,7 +59,7 @@ function plugin(file) {
       response.preset = `-c:v mpeg2_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -preset slow -c:a copy -c:s copy`
     }
     else if (file.video_codec_name == 'mpeg4') {
-      response.preset = `-c:v mpeg4_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -preset slow -c:a copy -c:s copy`
+      response.preset = `,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -preset slow -c:a copy -c:s copy`
     }  
     else if (file.video_codec_name == 'vc1') {
       response.preset = `-c:v vc1_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -preset slow -c:a copy -c:s copy`
@@ -97,7 +96,7 @@ function plugin(file) {
       response.preset = `-c:v mpeg2_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -preset slow -c:a copy -c:s copy`
     }
     else if (file.video_codec_name == 'mpeg4') {
-      response.preset = `-c:v mpeg4_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -preset slow -c:a copy -c:s copy`
+      response.preset = `,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -preset slow -c:a copy -c:s copy`
     }  
     else if (file.video_codec_name == 'vc1') {
       response.preset = `-c:v vc1_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -preset slow -c:a copy -c:s copy`
@@ -134,7 +133,7 @@ function plugin(file) {
       response.preset = `-c:v mpeg2_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
     }
     else if (file.video_codec_name == 'mpeg4') {
-      response.preset = `-c:v mpeg4_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
+      response.preset = `,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
     }  
     else if (file.video_codec_name == 'vc1') {
       response.preset = `-c:v vc1_cuvid,-c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 32 -preset slow -c:a copy -c:s copy`
