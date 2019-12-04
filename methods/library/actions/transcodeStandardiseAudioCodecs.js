@@ -3,25 +3,26 @@
 module.exports = function transcodeStandardiseAudioCodecs(file, audioEncoder) {
 
 
-    try {
-
-        var audioIdx = -1
-        var hasNonSpecifiedAudioCodecStream = false
-        var ffmpegCommandInsert = ''
-
-
         //Function required responses
         // preset
         // processFile
         // note
 
+    try {
 
-
+        var audioIdx = -1
+        var hasNonSpecifiedAudioCodecStream = false
+        var ffmpegCommandInsert = ''
         var audioCodec = audioEncoder
 
         if (audioEncoder == 'dca') {
             audioCodec = 'dts'
         }
+
+        if (audioEncoder == 'libmp3lame') {
+            audioCodec = 'mp3'
+        }
+
 
 
 
