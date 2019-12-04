@@ -1,8 +1,8 @@
 
 
-module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, channelCount) {
+module.exports = function transcodeKeepOneAudioStream(file, audioEncoder, langTag, channelCount) {
 
-    // response.preset = library.actions.transcodeAddAudioStream(file, 'aac', 'en', 1).preset
+    // response.preset = library.actions.transcodeKeepOneAudioStream(file, 'aac', 'en', 1).preset
 
     //Function required responses
     // preset
@@ -22,6 +22,11 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
             audioCodec = 'mp3'
         }
 
+        var reqLang = langTag
+
+        var numberOfAudioStreams = file.ffProbeData.streams.filter(stream => stream.codec_type == 'audio').length
+
+
         //Step 1: Check if the file already has the required stream codec/langtag/channel count
 
         var hasStreamAlready = file.ffProbeData.streams.filter(stream => {
@@ -36,13 +41,38 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
             return false
         })
 
-        if (hasStreamAlready.length > 0) {
+        if (numberOfAudioStreams == 1 && hasStreamAlready.length == 1) {
+
+
 
             return {
                 preset: '',
                 processFile: false,
-                note: `File already has ${langTag} stream in ${audioEncoder}, ${channelCount} channels\n`
+                note: `File already has ${langTag} stream in ${audioEncoder}, ${channelCount} channels. It is the only track! \n`
             }
+
+
+        } else if (hasStreamAlready.length >= 1) {
+
+            var audioStreamToKeep = hasStreamAlready[0].index
+            var ffmpegCommandInsert = ''
+            for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+
+                try {
+                    if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && i !== audioStreamToKeep) {
+                        ffmpegCommandInsert += ` -map -0:a:${i}`
+
+                    }
+                } catch (err) { }
+
+            }
+
+            return {
+                preset: `, -map 0 ${ffmpegCommandInsert} -c copy`,
+                processFile: true,
+                note: `File already has ${langTag} stream in ${audioEncoder}, ${channelCount} channels. It is not the only track, removing others. \n`
+            }
+
         }
 
 
@@ -116,26 +146,30 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
                     return false
                 })
 
-                if (hasStreamAlready.length > 0) {
+                if (numberOfAudioStreams == 1 && hasStreamAlready.length == 1) {
 
                     return {
                         preset: '',
                         processFile: false,
-                        note: `File already has ${langTag} stream in ${audioEncoder}, ${channelCount} channels \n`
+                        note: `The required stream already exists. It is the only audio stream. \n`
                     }
 
+                } else if (hasStreamAlready.length >= 1) {
 
+                    return {
+                        preset: `,-map 0:v -map 0:${hasStreamAlready[0].index} -map 0:s? -map 0:d? -c copy`,
+                        processFile: true,
+                        note: `The required stream already exists. Removing others. \n`
+                    }
 
                 } else {
 
 
                     return {
-                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount}`,
+                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount}`,
                         processFile: true,
-                        note: `The required channel count ${channelCount} is lower than the highest available channel count (${highestChannelCount.channels}). Adding! \n`
+                        note: `The required channel count ${channelCount} is lower than the highest available channel count (${highestChannelCount.channels}). Adding it and removing others! \n`
                     }
-
-
 
                 }
 
@@ -158,19 +192,28 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
                     return false
                 })
 
-                if (hasStreamAlready.length > 0) {
+                if (numberOfAudioStreams == 1 && hasStreamAlready.length == 1) {
 
                     return {
                         preset: '',
                         processFile: false,
-                        note: `File already has ${langTag} stream in ${audioEncoder}, ${highestChannelCount.channels} channels (Highest available) \n`
+                        note: `The best ${reqLang} stream already exists. It is the only audio stream. \n`
                     }
+
+                } else if (hasStreamAlready.length >= 1) {
+
+                    return {
+                        preset: `,-map 0:v -map 0:${hasStreamAlready[0].index} -map 0:s? -map 0:d? -c copy`,
+                        processFile: true,
+                        note: `The best ${reqLang}  stream already exists. Removing others. \n`
+                    }
+
                 } else {
 
                     return {
-                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels}`,
+                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels}`,
                         processFile: true,
-                        note: `The required channel count (${channelCount}) is higher than the highest channel available in specified lang tag (${highestChannelCount.channels}). Adding lower channel track. \n`
+                        note: `The required channel count (${channelCount}) is higher than the highest channel available in specified lang tag (${highestChannelCount.channels}). Adding lower channel track, removing others. \n`
                     }
 
                 }
@@ -233,23 +276,31 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
                     return false
                 })
 
-                if (hasStreamAlready.length > 0) {
+                if (numberOfAudioStreams == 1 && hasStreamAlready.length == 1) {
 
                     return {
                         preset: '',
                         processFile: false,
-                        note: `File already has ${langTag} stream in ${audioEncoder}, ${channelCount} channels \n`
+                        note: `No ${reqLang} streams. The required und stream already exists. It is the only audio stream. \n`
                     }
 
 
+
+                } else if (hasStreamAlready.length >= 1) {
+
+                    return {
+                        preset: `,-map 0:v -map 0:${hasStreamAlready[0].index} -map 0:s? -map 0:d? -c copy`,
+                        processFile: true,
+                        note: `No ${reqLang} streams. The required und stream already exists. Removing others. \n`
+                    }
 
                 } else {
 
 
                     return {
-                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount}`,
+                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount}`,
                         processFile: true,
-                        note: `The required channel count ${channelCount} is lower than the highest available channel count (${highestChannelCount.channels}). Adding! \n`
+                        note: `No ${reqLang} streams. The required channel count ${channelCount} is lower than the highest available channel count (${highestChannelCount.channels}).Adding it and removing others! \n`
                     }
 
 
@@ -275,30 +326,31 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
                     return false
                 })
 
-                if (hasStreamAlready.length > 0) {
+                if (numberOfAudioStreams == 1 && hasStreamAlready.length == 1) {
 
                     return {
                         preset: '',
                         processFile: false,
-                        note: `File already has ${langTag} stream in ${audioEncoder}, ${highestChannelCount.channels} channels (Highest available) \n`
+                        note: `No ${reqLang} streams. The best und stream already exists. It is the only audio stream. \n`
                     }
+                } else if (hasStreamAlready.length >= 1) {
+
+                    return {
+                        preset: `,-map 0:v -map 0:${hasStreamAlready[0].index} -map 0:s? -map 0:d? -c copy`,
+                        processFile: true,
+                        note: `No ${reqLang} streams. The best stream already exists. Removing others. \n`
+                    }
+
                 } else {
 
                     return {
-                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels}`,
+                        preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels}`,
                         processFile: true,
-                        note: `The required channel count (${channelCount}) is higher than the highest channel available in specified lang tag (${highestChannelCount.channels}). Adding lower channel track. \n`
+                        note: `No ${reqLang} streams. The required channel count (${channelCount}) is higher than the highest channel available in specified lang tag (${highestChannelCount.channels}). Adding lower channel track, removing others. \n`
                     }
-
                 }
-
             }
         }
-
-
-
-
-
 
 
     } catch (err) {
@@ -306,7 +358,7 @@ module.exports = function transcodeAddAudioStream(file, audioEncoder, langTag, c
         return {
             preset: '',
             processFile: false,
-            note: `library.actions.transcodeAddAudioStream error: ${err} \n`
+            note: `library.actions.transcodeKeepOneAudioStream error: ${err} \n`
         }
 
     }
