@@ -9,7 +9,7 @@ function details() {
       Operation:"Remux",
       Description: `Add subtitles. READ THIS!! You must run "npm install iso-639-2" in the folder "/home/Tdarr/Documents" for this plugin to work. This is a plugin that will check for subtitles, they should be named according to the ISO 639-2 language code.`,
       Version: "1.00",
-      Link: "",
+      Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Add_Subtitles.js",
     }
 }
 
