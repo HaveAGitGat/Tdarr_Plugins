@@ -85,6 +85,19 @@ function plugin(file) {
 
      ///
 
+if(hasSubs){
+
+      response.infoLog += "☒File has subs \n"
+      response.preset = ',-sn  -map 0 -c copy'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      response.FFmpegMode = true
+      return response
+
+     }else{
+      response.infoLog += "☑File has no subs \n"
+     }
+
      if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
 
       response.infoLog += "☒File has title metadata and no aac and subs \n"
@@ -142,19 +155,6 @@ function plugin(file) {
 
      }else{
       response.infoLog += "☑File has aac track \n"
-     }
-
-     if(hasSubs){
-
-      response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn  -map 0 -c copy'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      response.FFmpegMode = true
-      return response
-
-     }else{
-      response.infoLog += "☑File has no subs \n"
      }
 
 
