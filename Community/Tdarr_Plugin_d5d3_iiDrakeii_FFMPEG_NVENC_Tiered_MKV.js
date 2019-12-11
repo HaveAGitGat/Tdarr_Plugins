@@ -89,7 +89,7 @@ function plugin(file) {
 //file will be encoded if the resolution is 1080p
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "1080p") {
-    response.preset += `, -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v 2500k -maxrate:v 5000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v 2500k -maxrate:v 5000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
     transcode = 1;
   }
    
