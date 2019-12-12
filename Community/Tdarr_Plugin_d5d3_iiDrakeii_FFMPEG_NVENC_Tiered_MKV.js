@@ -4,8 +4,8 @@ function details() {
     Name: "Tiered FFMPEG NVENC settings depending on resolution",
     Type: "Video",
     Operation:"Transcode",
-    Description: `[Contains built-in filter] This plugin uses different FFMPEG NVENC transcoding settings for 480p,576p,720p and 1080p. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
-    Version: "1.06",
+    Description: `[Contains built-in filter] This plugin uses different FFMPEG NVENC transcoding settings for 480p,576p,720p,1080p and 4KUHD. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
+    Version: "1.07",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV.js"
   }
 }
@@ -45,7 +45,7 @@ function plugin(file) {
     response.preset = `-c:v h263_cuvid`
   }
   else if (file.video_codec_name == 'h264') {
-    if (file.ffProbeData.streams[0].profile != 'High 10') { //if a h264 coded video is not HDR
+    if (file.ffProbeData.streams[0].profile != 'High 10') { //Remove HW Decoding for High 10 Profile
       response.preset = `-c:v h264_cuvid`
     }
   }
@@ -90,6 +90,12 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "1080p") {
     response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v 2500k -maxrate:v 5000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
+    transcode = 1;
+  }
+  //file will be encoded if the resolution is 4K
+//codec will be checked so it can be transcoded correctly
+  if(file.video_resolution === "4KUHD") {
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v 14000k -maxrate:v 20000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
     transcode = 1;
   }
    
