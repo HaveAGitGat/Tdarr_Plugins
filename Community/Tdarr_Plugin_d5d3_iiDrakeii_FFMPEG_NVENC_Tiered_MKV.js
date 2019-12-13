@@ -5,14 +5,17 @@ function details() {
     Type: "Video",
     Operation:"Transcode",
     Description: `[Contains built-in filter] This plugin uses different FFMPEG NVENC transcoding settings for 480p,576p,720p,1080p and 4KUHD. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
-    Version: "1.07",
+    Version: "1.08",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV.js"
   }
 }
    
 function plugin(file) {
   var transcode = 0; //if this var changes to 1 the file will be transcoded
- 
+  var bitrateprobe = 0;  //bitrate from ffprobe
+  var bitratetarget = 0;
+  var bitratemax = 0;
+  var bitratecheck = 0;
 //default values that will be returned
   var response = {
     processFile: false,
@@ -29,7 +32,9 @@ function plugin(file) {
     response.processFile = false
     response.infoLog += "☒File is not a video! \n"
     return response
-  } else {
+  } 
+  else {
+	bitrateprobe = file.ffProbeData.streams[0].bit_rate  
     response.infoLog += "☑File is a video! \n"
   }
    
@@ -75,28 +80,65 @@ function plugin(file) {
 //file will be encoded if the resolution is 480p or 576p
 //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v 500k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
+	bitratecheck = 1000000;
+    if(bitrateprobe < bitratecheck) {
+	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratemax = bitratetarget + 500;	// Set max bitrate to 6MB Higher	
+    }
+    else {
+	  bitratetarget = 1000;
+	  bitratemax = 1500;
+    }
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
     transcode = 1;
   }
    
 //file will be encoded if the resolution is 720p
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "720p") {
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v 2000k -maxrate:v 4000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
+	bitratecheck = 2000000;
+    if(bitrateprobe < bitratecheck) {
+	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratemax = bitratetarget + 2000;	// Set max bitrate to 6MB Higher	
+    }
+    else {
+	  bitratetarget = 2000;
+	  bitratemax = 4000;
+    }
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
     transcode = 1;
   }
-     
+  
 //file will be encoded if the resolution is 1080p
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "1080p") {
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v 2500k -maxrate:v 5000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
+	bitratecheck = 2500000;
+    if(bitrateprobe < bitratecheck) {
+	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratemax = bitratetarget + 2500;	// Set max bitrate to 6MB Higher	
+    }
+  else {
+	  bitratetarget = 2500;
+	  bitratemax = 5000;
+    }
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
     transcode = 1;
   }
-  //file will be encoded if the resolution is 4K
+  
+ //file will be encoded if the resolution is 4K
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "4KUHD") {
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v 14000k -maxrate:v 20000k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -c:a copy -c:s copy`
-    transcode = 1;
+	bitratecheck = 14000000;
+    if(bitrateprobe < bitratecheck) {
+	  bitratetarget = parseInt((bitrateprobe * .7) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratemax = bitratetarget + 6000;	// Set max bitrate to 6MB Higher	
+    }
+    else {
+	  bitratetarget = 14000;
+	  bitratemax = 20000;
+    }
+  response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
+  transcode = 1;
   }
    
 //check if the file is eligible for transcoding
@@ -106,7 +148,13 @@ function plugin(file) {
     response.FFmpegMode = true
     response.reQueueAfter = true;
     response.infoLog += `☒File is ${file.video_resolution} but is not hevc!\n`
-    response.infoLog += `File is being transcoded!\n`
+    if(bitrateprobe < bitratecheck) {
+	response.infoLog += `File bitrate is LOWER than the Default Target Bitrate!\n`
+	}
+    else {
+	response.infoLog += `File bitrate is HIGHER than the Default Target Bitrate!\n`
+	}
+	response.infoLog += `File is being transcoded!\n`
   }
  
   return response
