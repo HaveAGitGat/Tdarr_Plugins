@@ -81,7 +81,7 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
 	bitratecheck = 1000000;
-    if(bitrateprobe < bitratecheck) {
+    if(bitrateprobe != null && bitrateprobe < bitratecheck) {
 	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 500;	// Set max bitrate to 6MB Higher	
     }
@@ -97,7 +97,7 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "720p") {
 	bitratecheck = 2000000;
-    if(bitrateprobe < bitratecheck) {
+    if(bitrateprobe != null && bitrateprobe < bitratecheck) {
 	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 2000;	// Set max bitrate to 6MB Higher	
     }
@@ -113,7 +113,7 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "1080p") {
 	bitratecheck = 2500000;
-    if(bitrateprobe < bitratecheck) {
+    if(bitrateprobe != null && bitrateprobe < bitratecheck) {
 	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 2500;	// Set max bitrate to 6MB Higher	
     }
@@ -129,7 +129,7 @@ function plugin(file) {
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "4KUHD") {
 	bitratecheck = 14000000;
-    if(bitrateprobe < bitratecheck) {
+    if(bitrateprobe != null && bitrateprobe < bitratecheck) {
 	  bitratetarget = parseInt((bitrateprobe * .7) / 1024); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 6000;	// Set max bitrate to 6MB Higher	
     }
