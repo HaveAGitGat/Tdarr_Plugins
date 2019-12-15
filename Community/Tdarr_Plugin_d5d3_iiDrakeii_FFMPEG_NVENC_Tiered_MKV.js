@@ -16,6 +16,7 @@ function plugin(file) {
   var bitratetarget = 0;
   var bitratemax = 0;
   var bitratecheck = 0;
+  var audioIdx = -1;
 //default values that will be returned
   var response = {
     processFile: false,
@@ -82,7 +83,7 @@ function plugin(file) {
   if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
 	bitratecheck = 1000000;
     if(bitrateprobe != null && bitrateprobe < bitratecheck) {
-	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratetarget = parseInt((bitrateprobe * .8) / 1000); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 500;	// Set max bitrate to 6MB Higher	
     }
     else {
@@ -98,7 +99,7 @@ function plugin(file) {
   if(file.video_resolution === "720p") {
 	bitratecheck = 2000000;
     if(bitrateprobe != null && bitrateprobe < bitratecheck) {
-	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratetarget = parseInt((bitrateprobe * .8) / 1000); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 2000;	// Set max bitrate to 6MB Higher	
     }
     else {
@@ -114,7 +115,7 @@ function plugin(file) {
   if(file.video_resolution === "1080p") {
 	bitratecheck = 2500000;
     if(bitrateprobe != null && bitrateprobe < bitratecheck) {
-	  bitratetarget = parseInt((bitrateprobe * .8) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratetarget = parseInt((bitrateprobe * .8) / 1000); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 2500;	// Set max bitrate to 6MB Higher	
     }
   else {
@@ -130,7 +131,7 @@ function plugin(file) {
   if(file.video_resolution === "4KUHD") {
 	bitratecheck = 14000000;
     if(bitrateprobe != null && bitrateprobe < bitratecheck) {
-	  bitratetarget = parseInt((bitrateprobe * .7) / 1024); // Lower Bitrate to 60% of original and convert to KB
+	  bitratetarget = parseInt((bitrateprobe * .7) / 1000); // Lower Bitrate to 60% of original and convert to KB
 	  bitratemax = bitratetarget + 6000;	// Set max bitrate to 6MB Higher	
     }
     else {
@@ -140,21 +141,37 @@ function plugin(file) {
   response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
   transcode = 1;
   }
-   
+  //mitigate TrueHD audio causing Too many packets error
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+      try {
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
+          audioIdx++
+        }
+      } catch (err) { }
+	  try {
+  if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "truehd" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
+    response.preset += ` -max_muxing_queue_size 1024`
+    }
+	  }
+	  catch (err) { }
+    }
 //check if the file is eligible for transcoding
 //if true the neccessary response values will be changed
   if (transcode == 1) {
     response.processFile = true;
     response.FFmpegMode = true
     response.reQueueAfter = true;
-    response.infoLog += `☒File is ${file.video_resolution} but is not hevc!\n`
+    response.infoLog += `☒File is ${file.video_resolution}!\n`
+    response.infoLog += `☒File is not hevc!\n`
+    response.infoLog += `☒File bitrate is${parseInt(bitrateprobe / 1000)}kb!\n`
     if(bitrateprobe < bitratecheck) {
 	response.infoLog += `File bitrate is LOWER than the Default Target Bitrate!\n`
 	}
     else {
 	response.infoLog += `File bitrate is HIGHER than the Default Target Bitrate!\n`
 	}
-	response.infoLog += `File is being transcoded!\n`
+    response.infoLog += `☒Target Bitrate set to ${bitratetarget}kb!\n`
+    response.infoLog += `File is being transcoded!\n`
   }
  
   return response
