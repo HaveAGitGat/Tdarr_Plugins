@@ -90,7 +90,7 @@ function plugin(file) {
 	  bitratetarget = 1000;
 	  bitratemax = 1500;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
     transcode = 1;
   }
    
@@ -106,7 +106,7 @@ function plugin(file) {
 	  bitratetarget = 2000;
 	  bitratemax = 4000;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
     transcode = 1;
   }
   
@@ -122,7 +122,7 @@ function plugin(file) {
 	  bitratetarget = 2500;
 	  bitratemax = 5000;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
     transcode = 1;
   }
   
@@ -138,7 +138,7 @@ function plugin(file) {
 	  bitratetarget = 14000;
 	  bitratemax = 20000;
     }
-  response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy`;
+  response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
   transcode = 1;
   }
   //mitigate TrueHD audio causing Too many packets error
@@ -163,7 +163,7 @@ function plugin(file) {
     response.reQueueAfter = true;
     response.infoLog += `☒File is ${file.video_resolution}!\n`
     response.infoLog += `☒File is not hevc!\n`
-    response.infoLog += `☒File bitrate is${parseInt(bitrateprobe / 1000)}kb!\n`
+    response.infoLog += `☒File bitrate is ${parseInt(bitrateprobe / 1000)}kb!\n`
     if(bitrateprobe < bitratecheck) {
 	response.infoLog += `File bitrate is LOWER than the Default Target Bitrate!\n`
 	}
