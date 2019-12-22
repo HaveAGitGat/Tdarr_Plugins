@@ -16,7 +16,6 @@ function plugin(file) {
   var bitratetarget = 0;
   var bitratemax = 0;
   var bitratecheck = 0;
-  var audioIdx = -1;
 //default values that will be returned
   var response = {
     processFile: false,
@@ -143,14 +142,15 @@ function plugin(file) {
   }
   //mitigate TrueHD audio causing Too many packets error
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-      try {
-        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-          audioIdx++
-        }
-      } catch (err) { }
 	  try {
   if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "truehd" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
     response.preset += ` -max_muxing_queue_size 1024`
+    }
+	  }
+	  catch (err) { }
+	  	  try {
+  if ((file.ffProbeData.streams[i].codec_name.toLowerCase() == "png" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "bmp") && file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" ) {
+    response.preset += ` -map -0:v:1`
     }
 	  }
 	  catch (err) { }
