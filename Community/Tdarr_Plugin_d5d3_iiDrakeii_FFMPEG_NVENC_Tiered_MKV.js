@@ -16,7 +16,7 @@ function plugin(file) {
   var bitratetarget = 0;
   var bitratemax = 0;
   var bitratecheck = 0;
-  var audioIdx = -1;
+  var subcli = `-c:s copy`
 //default values that will be returned
   var response = {
     processFile: false,
@@ -90,10 +90,18 @@ function plugin(file) {
 	  bitratetarget = 1000;
 	  bitratemax = 1500;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli} -dn`;
     transcode = 1;
   }
-   
+//Set Subtitle Var before adding encode cli
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  	  	  try {
+  if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "mov_text" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" ) {
+    subcli = `-c:s srt`
+    }
+	  }
+	  catch (err) { }
+  } 
 //file will be encoded if the resolution is 720p
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "720p") {
@@ -106,10 +114,9 @@ function plugin(file) {
 	  bitratetarget = 2000;
 	  bitratemax = 4000;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli} -dn`;
     transcode = 1;
   }
-  
 //file will be encoded if the resolution is 1080p
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "1080p") {
@@ -122,11 +129,10 @@ function plugin(file) {
 	  bitratetarget = 2500;
 	  bitratemax = 5000;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
+    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli} -dn`;
     transcode = 1;
   }
-  
- //file will be encoded if the resolution is 4K
+//file will be encoded if the resolution is 4K
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "4KUHD") {
 	bitratecheck = 14000000;
@@ -141,20 +147,22 @@ function plugin(file) {
   response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
   transcode = 1;
   }
-  //mitigate TrueHD audio causing Too many packets error
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-      try {
-        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-          audioIdx++
-        }
-      } catch (err) { }
 	  try {
+  //mitigate TrueHD audio causing Too many packets error		  
   if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "truehd" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
     response.preset += ` -max_muxing_queue_size 1024`
     }
 	  }
 	  catch (err) { }
+//mitigate errors due to embeded pictures	  
+	  	  try {
+  if ((file.ffProbeData.streams[i].codec_name.toLowerCase() == "png" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "bmp" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mjpeg") && file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" ) {
+    response.preset += ` -map -0:v:1`
     }
+	  }
+	  catch (err) { }
+  }
 //check if the file is eligible for transcoding
 //if true the neccessary response values will be changed
   if (transcode == 1) {
@@ -175,7 +183,6 @@ function plugin(file) {
   }
  
   return response
-}
-   
+  }
 module.exports.details = details;
 module.exports.plugin = plugin;
