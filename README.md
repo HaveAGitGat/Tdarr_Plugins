@@ -56,7 +56,7 @@ For the plugin link, I'll add this once you create a PR to community  plugins.
        }
   
   
-  Please see the bottom of this README for the structure of an example file object:
+  Please see the bottom of this README for the structure of an example file object. To see a specific file's details, search for the file in the search tab and click the 'i' info button.
   
  
  6.Once you have finished configuring your plugin, 
