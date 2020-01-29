@@ -122,7 +122,7 @@ function plugin(file) {
       response.FFmpegMode = true
       return response
      }else{
-      response.infoLog += "☑File has no title metadata"
+      response.infoLog += "☑File has no title metadata \n"
      }
 
      if(!jsonString.includes("aac")){
