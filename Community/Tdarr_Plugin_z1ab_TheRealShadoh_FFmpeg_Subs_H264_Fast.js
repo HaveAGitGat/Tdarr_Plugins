@@ -53,12 +53,10 @@ function plugin(file) {
      for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
        try {
-
-         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
-
-           hasSubs = true
-
-         }
+        let streamData = file.ffProbeData.streams[i];
+        if(streamData.codec_type.toLowerCase() == "subtitle" && streamData.codec_name != "mov_text"){
+          hasSubs = true
+        }
        } catch (err) { }
      }
 
@@ -121,7 +119,7 @@ function plugin(file) {
       response.FFmpegMode = true
       return response
      }else{
-      response.infoLog += "☑File has no title metadata"
+      response.infoLog += "☑File has no title metadata \n"
      }
 
      if(!jsonString.includes("aac")){
@@ -138,16 +136,16 @@ function plugin(file) {
      }
 
      if(hasSubs){
-
-      response.infoLog += "☒File has subs \n"
+       
+      response.infoLog += "☒File has incompatible subs \n"
       response.preset = ', -map 0:v -map 0:s? -map 0:a -c:v copy -c:a copy -c:s mov_text'
       response.reQueueAfter = true;
       response.processFile = true;
       response.FFmpegMode = true
       return response
 
-     }else{
-      response.infoLog += "☑File has no subs \n"
+     }else{      
+       response.infoLog += "☑File has no/compatible subs \n"
      }
 
      response.infoLog += "☑File meets conditions! \n"
