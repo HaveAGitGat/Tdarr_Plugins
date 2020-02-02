@@ -1,5 +1,4 @@
 const fs = require('fs');
-const iso6392 = require('/home/Tdarr/Documents/node_modules/iso-639-2');
 
 function details() {
     return {
@@ -14,6 +13,9 @@ function details() {
 }
 
 function plugin(file) {
+    //Additional packages used here so details function above will still work if packages aren't installed
+    const iso6392 = require('/home/Tdarr/Documents/node_modules/iso-639-2');
+    
     var i = 0; //int for counting lang[position]
     var sub = 0; //becomes first subtitle stream
     var lang = iso6392; //languages to check against
