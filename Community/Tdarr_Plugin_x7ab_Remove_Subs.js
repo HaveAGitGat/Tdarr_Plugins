@@ -5,6 +5,7 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_x7ab_Remove_Subs",
+    Stage: "Pre-processing",
     Name: "Remove subtitles ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin removes subtitles if detected. The output container is the same as the original. \n\n`,

@@ -1,6 +1,7 @@
 function details() {
   return {
     id: "Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV",
+    Stage: "Pre-processing",
     Name: "Tiered FFMPEG NVENC settings depending on resolution",
     Type: "Video",
     Operation:"Transcode",

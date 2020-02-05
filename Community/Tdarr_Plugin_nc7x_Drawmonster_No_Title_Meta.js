@@ -5,6 +5,7 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_nc7x_Drawmonster_No_Title_Meta",
+    Stage: "Pre-processing",
     Name: "Drawmonster No title meta data ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n

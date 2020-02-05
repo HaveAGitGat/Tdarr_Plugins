@@ -5,6 +5,7 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_075b_FFMPEG_HEVC_Generic_Video_Audio_Only",
+    Stage: "Pre-processing",
     Name: "FFMPEG H265 Video + Audio Kept Only",
     Type: "Video",
     Operation:"Transcode",

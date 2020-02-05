@@ -5,6 +5,7 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_e3jd_Tharic_H.264_MKV_720p30_No_Subs_No_Title_Meta",
+    Stage: "Pre-processing",
     Name: "H.264 MKV 720p30, No Subs No, Title Meta",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin removes subs, metadata (if a title exists) and makes sure the video is h264 720p mkv. \n\n

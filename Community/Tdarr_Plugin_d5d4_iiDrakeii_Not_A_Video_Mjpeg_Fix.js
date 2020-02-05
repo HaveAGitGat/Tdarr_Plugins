@@ -1,6 +1,7 @@
 function details() {
   return {
     id: "Tdarr_Plugin_d5d4_iiDrakeii_Not_A_Video_Mjpeg_Fix",
+    Stage: "Pre-processing",
     Name: "Mjpeg Stream False Not A Video Fixer",
     Type: "Video",
     Operation:"",

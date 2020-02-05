@@ -5,6 +5,7 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_075a_FFMPEG_HEVC_Generic",
+    Stage: "Pre-processing",
     Name: "FFMPEG H265",
     Type: "Video",
     Operation:"Transcode",

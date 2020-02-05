@@ -4,6 +4,7 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_x7ac_Remove_Closed_Captions",
+    Stage: "Pre-processing",
     Name: "Remove closed captions",
     Type: "Video",
     Operation: "Remux",
