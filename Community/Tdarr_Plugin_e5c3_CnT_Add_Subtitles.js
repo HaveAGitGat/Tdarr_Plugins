@@ -125,8 +125,6 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         response.infoLog += `No new subtitle languages were found\n`;
     }
 
-    //response.infoLog += `The ffmpeg string is: ${response.preset}\n`
-
     return response
 }
 
