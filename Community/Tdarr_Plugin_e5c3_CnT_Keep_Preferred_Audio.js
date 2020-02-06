@@ -4,6 +4,7 @@ const fs = require('fs');
 function details() {
     return {
         id: "Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio",
+        Stage: "Pre-processing",
         Name: "Keep Preffered Audio",
         Type: "Video",
         Operation:"Remove Audio",
