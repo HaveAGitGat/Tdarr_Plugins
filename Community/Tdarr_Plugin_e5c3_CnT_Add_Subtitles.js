@@ -4,6 +4,7 @@ const execSync = require('child_process').execSync;
 function details() {
     return {
       id: "Tdarr_Plugin_e5c3_CnT_Add_Subtitles",
+      Stage: "Pre-processing",
       Name: "Add subtitles to MKV files",
       Type: "Video",
       Operation:"Remux",
