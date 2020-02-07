@@ -30,8 +30,10 @@ function plugin(file, librarySettings, inputs, otherArguments) {
     } else {
         var languages = inputs.languages.split(','); //these languages should be kept, named according to ISO 639-2 language scheme
     }
-    if (inputs.special !== null) {
+    if (inputs.special !== "") {
         var special = inputs.special.split(',');
+    } else {
+        var special = ``;
     }
     if (languages.length >= special.length) {
         var length = languages.length;
