@@ -16,11 +16,11 @@ module.exports.details = function details() {
     Inputs: [ //(Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
     {
       name: 'language',
-      tooltip: `Enter one language tag here for the language of the subtitles you'd like to keep. For example: eng`
+      tooltip: `Enter one language tag here for the language of the subtitles you'd like to keep. \nExample:\n eng \nExample:\n fr \nExample:\n de` //Each line following `Example:` will be clearly formatted
     },
     {
       name: 'channels',
-      tooltip: `Desired audio channel number. For example: 2`
+      tooltip: `Desired audio channel number. \nExample:\n 2` 
     },
   ]
 

@@ -13,11 +13,11 @@ function details() {
         Inputs: [
             {
             name: 'languages',
-            tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\nIt could look like: "eng","dut"`
+            tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\nExample:\n eng,dut`
             },
             {
             name: 'special',
-            tooltip: `This is if you want a specific language to be logged to a file in your Tdarr documents folder.\nIt will add the name of the file that is being processed if this language(s) has been found.\nThe file is created the first time it finds a file with the language.\nIt could look like: "eng","dut"\nThe languages don't have to be in "languages".`
+            tooltip: `This is if you want a specific language to be logged to a file in your Tdarr documents folder.\nIt will add the name of the file that is being processed if this language(s) has been found.\nThe file is created the first time it finds a file with the language. \nThe languages don't have to be in "languages". \nExample:\n eng,dut `
             }
         ]
     }
