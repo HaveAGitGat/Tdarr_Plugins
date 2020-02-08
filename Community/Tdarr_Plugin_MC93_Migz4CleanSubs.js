@@ -2,7 +2,7 @@ function details() {
   return {
     id: "Tdarr_Plugin_MC93_Migz4CleanSubs",
 	Stage: "Pre-processing",
-    Name: "Migz-Clean subtitle streams.",
+    Name: "Migz-Clean subtitle streams",
     Type: "subtitless",
 	Operation: "Clean",
     Description: `[TESTING] This plugin keeps only specified language subtitle tracks & can tag those that have an unknown language. \n\n`,
