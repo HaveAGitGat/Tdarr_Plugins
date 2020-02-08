@@ -6,7 +6,7 @@ module.exports.details = function details() {
   return {
     id: "Tdarr_Plugin_075a_Transcode_Customisable",
     Stage: "Pre-processing",
-    Name: "Transcode Customisable",
+    Name: "Video Transcode Customisable",
     Type: "",
     Operation: "Transcode",
     Description: `[TESTING][Contains built-in filter] Specify codec filter and transcode arguments for HandBrake or FFmpeg  \n\n`,
@@ -19,6 +19,18 @@ module.exports.details = function details() {
 
         \\nFor example, if you're transcoding into hevc (h265), then add a filter to prevent hevc being transcoded so your newly transcoded files won't be infinitely looped/processed. \\n
 
+        
+        \\nCommon video codecs:
+
+        \\nmpeg4
+        \\nhevc
+        \\nh264
+        \\nmpeg2video
+        \\ntheora
+        \\nvp8
+        \\nvp9
+        
+        
         \\nExample:\\n
 
         hevc
