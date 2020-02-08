@@ -13,7 +13,7 @@ function details() {
       Inputs: [
         {
         name: 'install_packages',
-        tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \nExample:\n yes`
+        tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`
         },
     ]
     }
