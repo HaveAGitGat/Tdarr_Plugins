@@ -2,7 +2,7 @@ function details() {
   return {
     id: "Tdarr_Plugin_MC93_Migz6OrderStreams",
 	Stage: "Pre-processing",
-    Name: "Migz-Organize Streams.",
+    Name: "Migz-Organize Streams",
     Type: "Streams",
 	Operation: "Organize",
     Description: `[TESTING]Organizes streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n`,
