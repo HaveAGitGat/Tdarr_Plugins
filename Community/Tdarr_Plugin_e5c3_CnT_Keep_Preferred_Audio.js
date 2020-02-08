@@ -13,7 +13,7 @@ function details() {
         Inputs: [
             {
             name: 'languages',
-            tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\nExample:\n eng,dut`
+            tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\\nExample:\\n eng,dut`
             },
             {
             name: 'special',
