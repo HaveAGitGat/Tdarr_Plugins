@@ -34,14 +34,6 @@ function plugin(file, librarySettings, inputs) {
     infoLog: ''
   }
 
-  var bitrateSettings = ""
-  var filesize = (file.file_size / 1000)
-  var duration = (file.meta.Duration * 0.0166667)
-  var targetBitrate = ~~((file.file_size / (duration * 0.0075)) / 2)
-  var minimumBitrate = ~~(targetBitrate * 0.7)
-  var maximumBitrate = ~~(targetBitrate * 1.3)
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
-  
   if (inputs.container == "") {
       response.infoLog += "☒Container has not been configured within plugin settings, please configure required options. Skipping this plugin. \n"
       response.processFile = false
@@ -55,8 +47,27 @@ function plugin(file, librarySettings, inputs) {
       response.infoLog += "☒File is not a video. \n"
       return response
     }
+
+  if (typeof file.meta.Duration != 'undefined') {
+	  var duration = (file.meta.Duration * 0.0166667)
+  } else {
+	  var duration = (file.ffProbeData.streams[0].duration * 0.0166667)
+  }
+
+  var bitrateSettings = ""
+  var filesize = (file.file_size / 1000)
+  var targetBitrate = ~~((file.file_size / (duration * 0.0075)) / 2)
+  var minimumBitrate = ~~(targetBitrate * 0.7)
+  var maximumBitrate = ~~(targetBitrate * 1.3)
   
-response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
+  if (targetBitrate == "0") {
+	  response.processFile = false
+      response.infoLog += "☒Target bitrate could not be calculated. Skipping this plugin. \n"
+      return response
+  }
+  
+  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
+  response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
 
   if (file.ffProbeData.streams[0].codec_name == 'hevc' && file.container == inputs.container) {
       response.processFile = false
@@ -99,7 +110,11 @@ response.infoLog += `Container for output selected as ${inputs.container}. \n Cu
     response.preset = `-c:v vp9_cuvid`
   }
   
-  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096`
+  if (inputs.container == "mkv") {
+	  extraArguments = "-map -0:d "
+  }
+  
+  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
   response.processFile = true
   response.infoLog += `☒File is not hevc. Transcoding. \n`
   return response

@@ -6,14 +6,13 @@ function details() {
     Type: "Video",
 	Operation: "Clean",
     Description: `[TESTING]This plugin removes video title metadata if it exists. \n\n`,
-    Version: "1.00",
+    Version: "1.10",
     Link: ""
   }
 }
 
 function plugin(file) {
   var response = {
-
      processFile : false,
      preset : '',
      container: '.' + file.container,
@@ -35,18 +34,24 @@ function plugin(file) {
     return response
   }
   
-  if(file.meta.Title != undefined ){
-	  ffmpegCommandInsert += ` -metadata title="" `
-	  convert = true
-  }
+  try {
+    if (typeof file.meta.Title != 'undefined' ){
+	    ffmpegCommandInsert += ` -metadata title="" `
+		response.infoLog += "1"
+	    convert = true
+    }
+  } catch (err) { }
   
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
-		    if (file.ffProbeData.streams[i].tags.title != undefined) {
-			    ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `
-	  	        convert = true
-            }
-			videoIdx++
+		    try {
+		         if (typeof file.ffProbeData.streams[i].tags.title != 'undefined') {
+			     ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `
+				 response.infoLog += "2"
+	  	         convert = true
+                }
+			} catch (err) { }
+     		videoIdx++
 		}
     }
   
