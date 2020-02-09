@@ -97,7 +97,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
 
 
-  var codecs_to_transcode = inputs.codecs_to_transcode
+  var codecs_to_transcode = inputs.codecs_to_transcode.split(',')
   var hasStreamsToTranscode = false
 
 
@@ -107,7 +107,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
       file.ffProbeData.streams[i].codec_name &&
-      codecs_to_transcode.toLowerCase().includes(file.ffProbeData.streams[i].codec_name.toLowerCase())
+      codecs_to_transcode.includes(file.ffProbeData.streams[i].codec_name.toLowerCase())
     ) {
 
       ffmpegCommand += `  -map 0:${i} -c:${i} ${encoder} `
