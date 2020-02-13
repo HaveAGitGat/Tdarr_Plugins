@@ -68,7 +68,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
           audioIdx++
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
 
       //check if commentary track and assing audio stream number
@@ -76,7 +78,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].tags.title.toLowerCase().includes("commentary")) {
           commentaryStreamIdx = audioIdx
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
 
        //check if commentary AC3 track
@@ -85,7 +89,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3" && file.ffProbeData.streams[i].tags.title.toLowerCase().includes("commentary")) {
           AC3CommentaryCount++
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
 
       //check if AC3 track
@@ -93,14 +99,18 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "ac3") {
           ac3TrackCount++
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
        //check if subs track
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
           hasSubs = true
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
     }
 
 

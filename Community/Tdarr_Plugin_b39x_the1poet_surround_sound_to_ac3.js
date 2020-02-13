@@ -58,7 +58,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
           audioIdx++
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
 
       try {
@@ -67,7 +69,9 @@ function plugin(file) {
           hasnonAC3SurroundTrack = true
 
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
     }
 

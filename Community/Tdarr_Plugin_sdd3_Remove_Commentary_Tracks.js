@@ -56,7 +56,9 @@ function plugin(file) {
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
         audioIdx++
       }
-    } catch (err) { }
+    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
 
     //check if commentary track and passing audio stream number

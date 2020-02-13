@@ -75,7 +75,9 @@ function plugin(file, librarySettings, inputs) {
             if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
                 subtitleIdx++
             }
-	    } catch (err) { }
+	    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
        try {
 		    if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && language.indexOf(file.ffProbeData.streams[i].tags.language.toLowerCase()) === -1) {
@@ -83,7 +85,9 @@ function plugin(file, librarySettings, inputs) {
                 response.infoLog += `☒Subtitle stream detected as being an unwanted language, removing. Subtitle stream 0:s:${subtitleIdx} - ${file.ffProbeData.streams[i].tags.language.toLowerCase()} \n`
                 convert = true
 		    }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
 	
        try {
             if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description'))) {
@@ -91,7 +95,9 @@ function plugin(file, librarySettings, inputs) {
                 response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${SubtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`
                 convert = true
         }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
 
        try {
             if (inputs.tag_title != "") {
@@ -101,7 +107,9 @@ function plugin(file, librarySettings, inputs) {
                     convert = true
 	            }
 			}
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
 	  
         try {
              if (typeof file.ffProbeData.streams[i].tags.language == 'undefined' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
@@ -109,7 +117,9 @@ function plugin(file, librarySettings, inputs) {
                  response.infoLog += `☒Subtitle stream detected as having no language tagged, tagging as ${inputs.tag_title}. \n`
                  convert = true
                 }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
     }
   if (convert === true ) {
       response.processFile = true;

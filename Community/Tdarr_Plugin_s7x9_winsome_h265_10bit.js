@@ -77,7 +77,9 @@ function plugin(file) {
           if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
             audioIdx++
           }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
 
 
         try {
@@ -85,7 +87,9 @@ function plugin(file) {
             hasAnyInRequiredCodecs = true
 
           }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
 
 
         try {
@@ -93,7 +97,9 @@ function plugin(file) {
             hasPreferredLangInRequiredCodecs = true
 
           }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
 
         try {
           if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack) && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
@@ -101,7 +107,9 @@ function plugin(file) {
             engTrackIdx = audioIdx
 
           }
-        } catch (err) { }
+        } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
       }
 
 

@@ -41,7 +41,9 @@ function plugin(file) {
 		response.infoLog += "1"
 	    convert = true
     }
-  } catch (err) { }
+  } catch (err) { 
+         console.error(JSON.stringify(err));
+}
   
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
@@ -51,7 +53,9 @@ function plugin(file) {
 				 response.infoLog += "2"
 	  	         convert = true
                 }
-			} catch (err) { }
+			} catch (err) { 
+         console.error(JSON.stringify(err));
+}
      		videoIdx++
 		}
     }

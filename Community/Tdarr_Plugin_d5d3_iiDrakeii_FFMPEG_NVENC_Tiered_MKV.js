@@ -102,7 +102,9 @@ function plugin(file) {
     subcli = `-c:s srt`
     }
 	  }
-	  catch (err) { }
+	  catch (err) { 
+         console.error(JSON.stringify(err));
+}
   } 
 //file will be encoded if the resolution is 720p
 //codec will be checked so it can be transcoded correctly
@@ -156,14 +158,18 @@ function plugin(file) {
     response.preset += ` -max_muxing_queue_size 1024`
     }
 	  }
-	  catch (err) { }
+	  catch (err) { 
+         console.error(JSON.stringify(err));
+}
 //mitigate errors due to embeded pictures	  
 	  	  try {
   if ((file.ffProbeData.streams[i].codec_name.toLowerCase() == "png" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "bmp" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mjpeg") && file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" ) {
     response.preset += ` -map -0:v:1`
     }
 	  }
-	  catch (err) { }
+	  catch (err) { 
+         console.error(JSON.stringify(err));
+}
   }
 //check if the file is eligible for transcoding
 //if true the neccessary response values will be changed

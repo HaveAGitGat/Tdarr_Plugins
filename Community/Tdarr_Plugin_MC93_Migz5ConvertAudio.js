@@ -76,7 +76,9 @@ function plugin(file, librarySettings, inputs) {
         has8Channel = true
         } 
       }
-    } catch (err) { }
+    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
   }
   
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {

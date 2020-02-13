@@ -59,7 +59,9 @@ function plugin(file) {
         if(streamData.codec_type.toLowerCase() == "subtitle" && streamData.codec_name != "mov_text"){
           hasSubs = true
         }
-       } catch (err) { }
+       } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
      }
 
 

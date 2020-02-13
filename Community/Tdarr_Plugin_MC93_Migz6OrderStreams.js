@@ -70,7 +70,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
           subtitleIdx++
         }
-      } catch (err) { }
+      } catch (err) { 
+         console.error(JSON.stringify(err));
+}
     }
   
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -78,7 +80,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" && file.ffProbeData.streams[i].codec_name.toLowerCase() != "mjpeg") {
           ffmpegCommandInsert += `-map 0:${i} `
         }
-	 } catch (err) { }
+	 } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	}
 	
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -86,7 +90,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels == "2") {
           ffmpegCommandInsert += `-map 0:${i} `
         }
-	 } catch (err) { }
+	 } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	}
 	
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -94,7 +100,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels == "6") {
           ffmpegCommandInsert += `-map 0:${i} `
         }
-	 } catch (err) { }
+	 } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	}
 	
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -102,7 +110,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels == "8") {
           ffmpegCommandInsert += `-map 0:${i} `
         }
-	 } catch (err) { }
+	 } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	}
 	
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -110,7 +120,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels != "2" && file.ffProbeData.streams[i].channels != "6" && file.ffProbeData.streams[i].channels != "8") {
           ffmpegCommandInsert += `-map 0:${i} `
         }
-	 } catch (err) { }
+	 } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	}
 	
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -118,7 +130,9 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
           ffmpegCommandInsert += `-map 0:${i} `
         }
-	 } catch (err) { }
+	 } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	}
 
         if (convert == true) {

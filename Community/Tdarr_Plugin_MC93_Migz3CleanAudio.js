@@ -92,7 +92,9 @@ function plugin(file, librarySettings, inputs) {
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
         audioIdx++
       }
-    } catch (err) { }
+    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
     try {
 		if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && language.indexOf(file.ffProbeData.streams[i].tags.language.toLowerCase()) === -1) {
@@ -101,7 +103,9 @@ function plugin(file, librarySettings, inputs) {
             response.infoLog += `☒Audio stream detected as being an unwanted language, removing. Audio stream 0:a:${audioIdx} - ${file.ffProbeData.streams[i].tags.language.toLowerCase()} \n`
             convert = true
 		}
-    } catch (err) { }
+    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
     try {
       if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description'))) {
@@ -110,7 +114,9 @@ function plugin(file, librarySettings, inputs) {
         response.infoLog += `☒Audio stream detected as being Commentary or Description, removing. Audio stream 0:a:${audioIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`
         convert = true
       }
-    } catch (err) { }
+    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
     try {
     if (inputs.tag_language != "") {
@@ -126,7 +132,9 @@ function plugin(file, librarySettings, inputs) {
           convert = true
         }
     }
-    } catch (err) { }
+    } catch (err) { 
+         console.error(JSON.stringify(err));
+}
 
 	try {
       if (typeof file.ffProbeData.streams[i].tags.title == 'undefined' && inputs.tag_title.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
@@ -146,7 +154,9 @@ function plugin(file, librarySettings, inputs) {
           convert = true
           }
 	    }
-	} catch (err) { }
+	} catch (err) { 
+         console.error(JSON.stringify(err));
+}
 	
   }
 

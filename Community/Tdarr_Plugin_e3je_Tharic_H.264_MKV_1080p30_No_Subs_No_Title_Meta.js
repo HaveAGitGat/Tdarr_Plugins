@@ -65,7 +65,9 @@ function plugin(file) {
            hasSubs = true
  
          }
-       } catch (err) { }
+       } catch (err) { 
+         console.error(JSON.stringify(err));
+       }
      }
 
 

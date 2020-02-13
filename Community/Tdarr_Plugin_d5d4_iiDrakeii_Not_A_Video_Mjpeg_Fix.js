@@ -33,7 +33,9 @@ function plugin(file) {
 	response.infoLog = "☒File is not a video but has Mjpeg Stream! \n"
     }
 	  }
-	  catch (err) { }
+	  catch (err) { 
+         console.error(JSON.stringify(err));
+}
   }
   //If preset is not set check if file is video and stop (reque if it is a video)
 	if (response.preset != `,-map 0 -map -0:v:1 -c:v copy -c:a copy -c:s copy`) {
