@@ -12,6 +12,7 @@ module.exports.details = function details() {
     Description: `This plugin does some stuff after all plugins have been executed. \n\n`,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_aaaa_Post_Proc_Example",
+    Tags:"ffmpeg,h265", //Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
 
     Inputs: [ //(Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
     {
