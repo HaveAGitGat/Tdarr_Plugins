@@ -115,7 +115,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     var allSubtitleTracks = file.ffProbeData.streams.filter((stream) => stream.codec_type.toLowerCase() == "subtitle");
 
 
-    var streamIdx;
+    var streamIdx = null;
 
     for (var i = 0; i < allSubtitleTracks.length; i++) {
 
@@ -125,6 +125,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
         }
     }
+
+    if (streamIdx === null)
+        throw "Error: Could not find stremIdx";
 
     ffmpegCommand += ` -map 0:s:${streamIdx} -disposition:s:${streamIdx} default`;
 

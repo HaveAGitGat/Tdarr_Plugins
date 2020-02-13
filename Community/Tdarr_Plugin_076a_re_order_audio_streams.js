@@ -114,7 +114,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     var allAudioTracks = file.ffProbeData.streams.filter((stream) => stream.codec_type.toLowerCase() == "audio");
 
 
-    var streamIdx;
+    var streamIdx = null;
 
     for (var i = 0; i < allAudioTracks.length; i++) {
 
@@ -124,6 +124,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
         }
     }
+
+    if (streamIdx === null)
+        throw "Error: Could not find stremIdx";
 
     ffmpegCommand += ` -map 0:a:${streamIdx} -disposition:a:${streamIdx} default`;
 

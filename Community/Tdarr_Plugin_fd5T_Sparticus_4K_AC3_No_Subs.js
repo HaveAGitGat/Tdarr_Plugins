@@ -113,24 +113,8 @@ function plugin(file) {
         }
 
 
-        var hasOnlyAC3TrackCommentaries;
-
-
-        if (ac3TrackCount > 0 && AC3CommentaryCount == ac3TrackCount) {
-            hasOnlyAC3TrackCommentaries = true;
-        } else {
-            hasOnlyAC3TrackCommentaries = false;
-        }
-
-
-        var hasNoAC3Track;
-
-        if (ac3TrackCount == 0) {
-            hasNoAC3Track = true;
-        } else {
-            hasNoAC3Track = false;
-        }
-
+        var hasOnlyAC3TrackCommentaries = Boolean(ac3TrackCount > 0 && AC3CommentaryCount == ac3TrackCount);
+        var hasNoAC3Track = (ac3TrackCount == 0);
 
         // Max 5.1 audio in AC3 output
         var {channels} = file.ffProbeData.streams[1];
