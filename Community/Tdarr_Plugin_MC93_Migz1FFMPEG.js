@@ -66,9 +66,6 @@ function plugin(file, librarySettings, inputs) {
       response.infoLog += "☒Target bitrate could not be calculated. Skipping this plugin. \n"
       return response
   }
-  
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
-  response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
 
   if (file.ffProbeData.streams[0].codec_name == 'hevc' && file.container == inputs.container) {
       response.processFile = false
@@ -82,6 +79,9 @@ function plugin(file, librarySettings, inputs) {
       response.processFile = true;
       return response
     }
+	
+  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
+  response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
  
 //codec will be checked so it can be transcoded correctly
   if (file.video_codec_name == 'h263') {
