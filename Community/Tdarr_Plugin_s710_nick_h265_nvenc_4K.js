@@ -12,7 +12,7 @@ function details() {
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_s710_nick_h265_nvenc_4K.js",
-    Tags:'pre-processing,ffmpeg,h265,nvenc h265',
+    Tags:'pre-processing,ffmpeg,nvenc h265',
   }
 }
 

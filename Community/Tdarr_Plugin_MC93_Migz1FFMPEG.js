@@ -8,7 +8,7 @@ function details() {
     Description: `[TESTING]Files will be transcoded using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
     Version: "2.00",
   Link: "",
-  Tags:'pre-processing,ffmpeg,video only,h265,nvenc h265,configurable',
+  Tags:'pre-processing,ffmpeg,video only,nvenc h265,configurable',
 	Inputs: [
      {
        name: 'container',
