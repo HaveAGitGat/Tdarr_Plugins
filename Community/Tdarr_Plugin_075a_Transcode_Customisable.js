@@ -81,7 +81,7 @@ module.exports.details = function details() {
         -Z "Very Fast 480p30"
         
         \\nExample:\\n
-        --preset-import-file "C:\Users\HaveAGitGat\Desktop\testpreset.json" -Z "My Preset"
+        --preset-import-file "C:\\Users\\HaveAGitGat\\Desktop\\testpreset.json" -Z "My Preset"
         
         \\nYou can learn more about HandBrake presets here:
 
