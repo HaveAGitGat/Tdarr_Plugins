@@ -56,7 +56,7 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         infoLog: 'Removing unwanted audio...\n'
     };
 
-    for (i = 0; i < file.ffProbeData.streams.length; i++) {
+    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
             // Check for non-english tracks
             if (file.ffProbeData.streams[i].tags.language) {
