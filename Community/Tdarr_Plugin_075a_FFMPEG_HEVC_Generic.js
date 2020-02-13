@@ -2,51 +2,51 @@
 
 function details() {
 
-  return {
-    id: "Tdarr_Plugin_075a_FFMPEG_HEVC_Generic",
-    Stage: "Pre-processing",
-    Name: "FFMPEG H265",
-    Type: "Video",
-    Operation:"Transcode",
-    Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using default settings. Audio/subtitles not affected.  \n\n`,
-    Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js",
-    Tags:'pre-processing,ffmpeg,h265,video,video only'
-  };
+    return {
+        id: "Tdarr_Plugin_075a_FFMPEG_HEVC_Generic",
+        Stage: "Pre-processing",
+        Name: "FFMPEG H265",
+        Type: "Video",
+        Operation: "Transcode",
+        Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using default settings. Audio/subtitles not affected.  \n\n`,
+        Version: "1.00",
+        Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js",
+        Tags: 'pre-processing,ffmpeg,h265,video,video only'
+    };
 
 }
 
 function plugin(file) {
 
 
-  // Must return this object
+    // Must return this object
 
-  var response = {
+    var response = {
 
-    processFile: false,
-    preset: '',
-    container: '.mp4',
-    handBrakeMode: false,
-    FFmpegMode: false,
-    reQueueAfter: false,
-    infoLog: ''
+        processFile: false,
+        preset: '',
+        container: '.mp4',
+        handBrakeMode: false,
+        FFmpegMode: false,
+        reQueueAfter: false,
+        infoLog: ''
 
-  };
+    };
 
-  if (file.fileMedium !== "video") {
-    response.processFile = false;
-    response.infoLog += "☒File is not a video! \n";
-    return response;
-  } else {
-    response.infoLog += "☑File is a video! \n";
-  }
+    if (file.fileMedium !== "video") {
+        response.processFile = false;
+        response.infoLog += "☒File is not a video! \n";
+        return response;
+    } else {
+        response.infoLog += "☑File is a video! \n";
+    }
 
 
-  if (file.ffProbeData.streams[0].codec_name == 'hevc') {
-    response.processFile = false;
-    response.infoLog += "☑File is already in hevc! \n";
-    return response;
-  }
+    if (file.ffProbeData.streams[0].codec_name == 'hevc') {
+        response.processFile = false;
+        response.infoLog += "☑File is already in hevc! \n";
+        return response;
+    }
 
 
     response.processFile = true;

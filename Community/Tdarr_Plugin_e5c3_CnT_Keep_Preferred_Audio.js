@@ -1,4 +1,4 @@
-const {exec} = require('child_process');
+const { exec } = require('child_process');
 const fs = require('fs');
 
 function details() {
@@ -6,19 +6,19 @@ function details() {
         id: "Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio",
         Name: "Keep Preffered Audio",
         Type: "Video",
-        Operation:"Remove Audio",
+        Operation: "Remove Audio",
         Description: "Plugin that checks for unwanted audio, per 1.104 beta you can change the languages yourself from within Tdarr!\nUntill you enter a value it keep english tracks by default.\nUndefined languages are kept to prevent videos without sound.\nIf you would like to keep track of the languages you have for each file you can use the 'special' option.\nCreated by @control#0405",
         Version: "1.1",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Remove_non_English_Audio.js",
-        Tags:'pre-processing,ffmpeg,audio only,configurable',
+        Tags: 'pre-processing,ffmpeg,audio only,configurable',
         Inputs: [
             {
-            name: 'languages',
-            tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\\nExample:\\n eng,dut`
+                name: 'languages',
+                tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\\nExample:\\n eng,dut`
             },
             {
-            name: 'special',
-            tooltip: `This is if you want a specific language to be logged to a file in your Tdarr documents folder.\nIt will add the name of the file that is being processed if this language(s) has been found.\nThe file is created the first time it finds a file with the language. \nThe languages don't have to be in "languages". \\nExample:\\n eng,dut `
+                name: 'special',
+                tooltip: `This is if you want a specific language to be logged to a file in your Tdarr documents folder.\nIt will add the name of the file that is being processed if this language(s) has been found.\nThe file is created the first time it finds a file with the language. \nThe languages don't have to be in "languages". \\nExample:\\n eng,dut `
             }
         ]
     };
@@ -34,9 +34,9 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         var special = inputs.special.split(',');
     }
     if (languages.length >= special.length) {
-        var {length} = languages;
+        var { length } = languages;
     } else {
-        var {length} = special;
+        var { length } = special;
     }
     console.log(languages);
     var transcode = 0; // If this becomes '1' it will be transcoded
@@ -86,9 +86,9 @@ function plugin(file, librarySettings, inputs, otherArguments) {
                         }
                     }
                 } else {
-                        response.preset += ` -map 0:${i}`;
-                        response.infoLog += `Added undefined: ${i}\n`;
-                        wanted++;
+                    response.preset += ` -map 0:${i}`;
+                    response.infoLog += `Added undefined: ${i}\n`;
+                    wanted++;
                 }
             } else {
                 response.preset += ` -map 0:${i}`;

@@ -11,7 +11,7 @@ module.exports.details = function details() {
     Description: `[TESTING][Contains built-in filter]This plugin renames 264 files to 265 or vice versa depending on codec. \n\n`,
     Version: "1.00",
     Link: "",
-    Tags:"post-processing"
+    Tags: "post-processing"
 
   };
 

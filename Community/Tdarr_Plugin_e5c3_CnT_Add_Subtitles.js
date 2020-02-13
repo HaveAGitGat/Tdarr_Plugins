@@ -1,22 +1,22 @@
 const fs = require('fs');
-const {execSync} = require('child_process');
+const { execSync } = require('child_process');
 
 function details() {
     return {
-      id: "Tdarr_Plugin_e5c3_CnT_Add_Subtitles",
-      Name: "Add subtitles to MKV files",
-      Type: "Video",
-      Operation:"Remux",
-      Description: `This plugin will check for subtitles, they should be named according to the ISO 639-2 language code.\nA subtitle could look like this: eng.srt\n If there are subtitles found they will be added with FFMPEG, if there are no subs of that language found.\n On first run node module iso-639-2 will be installed in the documents folder.\n Created by @control#0405`,
-      Version: "1.3",
-      Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Add_Subtitles.js",
-      Tags:'pre-processing,ffmpeg,subtitle only,configurable',
-      Inputs: [
-        {
-        name: 'install_packages',
-        tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`
-        }
-    ]
+        id: "Tdarr_Plugin_e5c3_CnT_Add_Subtitles",
+        Name: "Add subtitles to MKV files",
+        Type: "Video",
+        Operation: "Remux",
+        Description: `This plugin will check for subtitles, they should be named according to the ISO 639-2 language code.\nA subtitle could look like this: eng.srt\n If there are subtitles found they will be added with FFMPEG, if there are no subs of that language found.\n On first run node module iso-639-2 will be installed in the documents folder.\n Created by @control#0405`,
+        Version: "1.3",
+        Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Add_Subtitles.js",
+        Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
+        Inputs: [
+            {
+                name: 'install_packages',
+                tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`
+            }
+        ]
     };
 }
 
@@ -64,7 +64,7 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         if (file.ffProbeData.streams[sub].codec_type.toLowerCase() == "subtitle") {
             found_subtitle_stream = 1;
         } else {
-        sub++;
+            sub++;
         }
     }
 
