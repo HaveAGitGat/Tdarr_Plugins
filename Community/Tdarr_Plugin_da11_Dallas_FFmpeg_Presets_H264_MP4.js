@@ -7,6 +7,7 @@ function details() {
     Description: `This plugin transcodes into H264 with an MP4 container using the FFmpeg preset you select (slow,medium,fast,veryfast). It maintains all compatible subtitles and audio tracks. \n\n`,
     Version: "1.00",
     Link: "https://github.com/JackDallas/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4.js",
+    Tags:'pre-processing,ffmpeg,h264,video only,configurable',
     Inputs: [
       {
         name: 'FFmpeg_preset',
