@@ -92,7 +92,7 @@ function plugin(file, librarySettings, inputs) {
         try {
             if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description'))) {
                 ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-                response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${SubtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`;
+                response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${subtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`;
                 convert = true;
             }
         } catch (err) {
