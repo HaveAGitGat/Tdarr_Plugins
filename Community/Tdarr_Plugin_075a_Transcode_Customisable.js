@@ -1,6 +1,5 @@
 
 
-
 module.exports.details = function details() {
 
   return {
@@ -130,17 +129,16 @@ module.exports.details = function details() {
         .mkv
         
         `
-      },
+      }
     ]
-  }
+  };
 
-}
+};
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
 
-
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -150,59 +148,55 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
-    infoLog: '',
+    infoLog: ''
 
-  }
+  };
 
-  if (inputs.codecs_to_exclude === undefined
-    || inputs.cli === undefined
-    || inputs.transcode_arguments === undefined
-    || inputs.output_container === undefined) {
+  if (inputs.codecs_to_exclude === undefined ||
+    inputs.cli === undefined ||
+    inputs.transcode_arguments === undefined ||
+    inputs.output_container === undefined) {
 
-    response.processFile = false
-    response.infoLog += "☒ Inputs not entered! \n"
-    return response
+    response.processFile = false;
+    response.infoLog += "☒ Inputs not entered! \n";
+    return response;
 
 
   }
 
 
   if (inputs.codecs_to_exclude.includes(file.ffProbeData.streams[0].codec_name)) {
-    response.processFile = false
-    response.infoLog += `☑File is already in ${file.ffProbeData.streams[0].codec_name}! \n`
-    return response
+    response.processFile = false;
+    response.infoLog += `☑File is already in ${file.ffProbeData.streams[0].codec_name}! \n`;
+    return response;
   }
 
 
-
-
-  //transcode settings
+  // Transcode settings
 
   if (inputs.cli == `handbrake`) {
-    response.handBrakeMode = true
-    response.FFmpegMode = false
+    response.handBrakeMode = true;
+    response.FFmpegMode = false;
   } else if (inputs.cli == `ffmpeg`) {
-    response.handBrakeMode = false
-    response.FFmpegMode = true
+    response.handBrakeMode = false;
+    response.FFmpegMode = true;
 
   } else {
-    response.processFile = false
-    response.infoLog += "☒ CLI not input correctly! \n"
-    return response
+    response.processFile = false;
+    response.infoLog += "☒ CLI not input correctly! \n";
+    return response;
 
   }
-
 
 
   response.processFile = true;
-  response.preset = inputs.transcode_arguments
-  response.container = inputs.output_container
+  response.preset = inputs.transcode_arguments;
+  response.container = inputs.output_container;
 
   response.reQueueAfter = true;
-  response.infoLog += `☒File is not in desired codec! \n`
-  return response
+  response.infoLog += `☒File is not in desired codec! \n`;
+  return response;
 
 
-
-}
+};
 

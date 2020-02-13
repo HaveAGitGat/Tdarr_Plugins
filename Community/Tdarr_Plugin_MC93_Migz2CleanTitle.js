@@ -8,8 +8,8 @@ function details() {
     Description: `[TESTING]This plugin removes video title metadata if it exists. \n\n`,
     Version: "1.10",
     Link: "",
-    Tags:'pre-processing,ffmpeg,video only',
-  }
+    Tags:'pre-processing,ffmpeg,video only'
+  };
 }
 
 function plugin(file) {
@@ -20,55 +20,55 @@ function plugin(file) {
      handBrakeMode : false,
      FFmpegMode : true,
      reQueueAfter : false,
-     infoLog : '',
+     infoLog : ''
 
-  }
-  
-  var ffmpegCommandInsert = ''
-  var videoIdx = 0
-  var convert = false
+  };
+
+  var ffmpegCommandInsert = '';
+  var videoIdx = 0;
+  var convert = false;
 
   if (file.fileMedium !== "video") {
-    console.log("File is not video")
-    response.infoLog += "☒File is not video \n"
+    console.log("File is not video");
+    response.infoLog += "☒File is not video \n";
     response.processFile = false;
-    return response
+    return response;
   }
-  
+
   try {
-    if (typeof file.meta.Title != 'undefined' ){
-	    ffmpegCommandInsert += ` -metadata title="" `
-		response.infoLog += "1"
-	    convert = true
+    if (typeof file.meta.Title != 'undefined') {
+	    ffmpegCommandInsert += ` -metadata title="" `;
+		response.infoLog += "1";
+	    convert = true;
     }
-  } catch (err) { 
+  } catch (err) {
          console.error(JSON.stringify(err));
 }
-  
+
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
 		    try {
 		         if (typeof file.ffProbeData.streams[i].tags.title != 'undefined') {
-			     ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `
-				 response.infoLog += "2"
-	  	         convert = true
+			     ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `;
+				 response.infoLog += "2";
+	  	         convert = true;
                 }
-			} catch (err) { 
+			} catch (err) {
          console.error(JSON.stringify(err));
 }
-     		videoIdx++
+     		videoIdx++;
 		}
     }
-  
-   if(convert == true){
-    response.infoLog += "☒File has title metadata \n"
-    response.preset = `,${ffmpegCommandInsert} -c copy`
+
+   if (convert == true) {
+    response.infoLog += "☒File has title metadata \n";
+    response.preset = `,${ffmpegCommandInsert} -c copy`;
     response.reQueueAfter = true;
     response.processFile = true;
-    }else{
-    response.infoLog += "☑File has no title metadata \n"
+    } else {
+    response.infoLog += "☑File has no title metadata \n";
     }
-    return response
+    return response;
 }
 
 module.exports.details = details;

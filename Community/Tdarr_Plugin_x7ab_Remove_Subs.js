@@ -1,6 +1,5 @@
 
 
-
 function details() {
 
   return {
@@ -11,15 +10,15 @@ function details() {
     Description: `[Contains built-in filter] This plugin removes subtitles if detected. The output container is the same as the original. \n\n`,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ab_Remove_Subs.js",
-    Tags:'pre-processing,ffmpeg,subtitle only',
-  }
+    Tags:'pre-processing,ffmpeg,subtitle only'
+  };
 
 }
 
 function plugin(file) {
 
 
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -29,59 +28,56 @@ function plugin(file) {
      handBrakeMode : false,
      FFmpegMode : false,
      reQueueAfter : false,
-     infoLog : '',
+     infoLog : ''
 
-  }
-
-  
-
+  };
 
 
   if (file.fileMedium !== "video") {
 
-    console.log("File is not video")
+    console.log("File is not video");
 
-    response.infoLog += "☒File is not video \n"
+    response.infoLog += "☒File is not video \n";
     response.processFile = false;
 
-    return response
+    return response;
 
-  } else { 
+  } else {
 
 
-    response.FFmpegMode = true
-    response.container = '.' + file.container
+    response.FFmpegMode = true;
+    response.container = '.' + file.container;
 
-     var hasSubs = false
+     var hasSubs = false;
 
      for (var i = 0; i < file.ffProbeData.streams.length; i++) {
- 
+
        try {
-         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
- 
-           hasSubs = true
- 
+         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
+
+           hasSubs = true;
+
          }
-       } catch (err) { 
+       } catch (err) {
          console.error(JSON.stringify(err));
        }
      }
 
-     if(hasSubs){
+     if (hasSubs) {
 
-      response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn -map 0 -c copy'
+      response.infoLog += "☒File has subs \n";
+      response.preset = ',-sn -map 0 -c copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      return response
+      return response;
 
-     }else{
-      response.infoLog += "☑File has no subs \n"
+     } else {
+      response.infoLog += "☑File has no subs \n";
      }
 
 
-     response.infoLog += "☑File meets conditions! \n"
-     return response
+     response.infoLog += "☑File meets conditions! \n";
+     return response;
 
   }
 }

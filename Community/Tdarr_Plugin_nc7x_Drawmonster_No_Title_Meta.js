@@ -1,6 +1,5 @@
 
 
-
 function details() {
 
   return {
@@ -12,15 +11,15 @@ function details() {
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_nc7x_Drawmonster_No_Title_Meta.js",
-    Tags:'pre-processing,ffmpeg',
-  }
+    Tags:'pre-processing,ffmpeg'
+  };
 
 }
 
 function plugin(file) {
 
 
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -30,43 +29,43 @@ function plugin(file) {
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
-    infoLog: '',
+    infoLog: ''
 
-  }
+  };
 
-  response.container = '.' + file.container
-  response.FFmpegMode = true
+  response.container = '.' + file.container;
+  response.FFmpegMode = true;
 
 
   if (file.fileMedium !== "video") {
 
 
-    console.log("File is not video")
+    console.log("File is not video");
 
-    response.infoLog += "☒File is not video \n"
+    response.infoLog += "☒File is not video \n";
     response.processFile = false;
 
-    return response
+    return response;
 
   } else {
 
-   // var jsonString = JSON.stringify(file)
+   // Var jsonString = JSON.stringify(file)
 
 
     if (file.meta.Title != undefined) {
 
-      response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -map 0 -c copy'
+      response.infoLog += "☒File has title metadata \n";
+      response.preset = ',-map_metadata -1 -map 0 -c copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      return response
+      return response;
     } else {
-      response.infoLog += "☑File has no title metadata \n"
+      response.infoLog += "☑File has no title metadata \n";
     }
 
 
-    response.infoLog += "☑File meets conditions! \n"
-    return response
+    response.infoLog += "☑File meets conditions! \n";
+    return response;
 
   }
 }

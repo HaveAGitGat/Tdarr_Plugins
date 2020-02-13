@@ -1,6 +1,5 @@
 
 
-
 function details() {
 
   return {
@@ -12,15 +11,15 @@ function details() {
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30.js",
-    Tags:'pre-processing,handbrake,ffmpeg,h264',
-  }
+    Tags:'pre-processing,handbrake,ffmpeg,h264'
+  };
 
 }
 
 function plugin(file) {
 
 
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -30,141 +29,134 @@ function plugin(file) {
      handBrakeMode : false,
      FFmpegMode : false,
      reQueueAfter : false,
-     infoLog : '',
+     infoLog : ''
 
-  }
-
-
-  
-
-
+  };
 
 
   if (file.fileMedium !== "video") {
 
 
-    console.log("File is not video")
+    console.log("File is not video");
 
-    response.infoLog += "☒File is not video \n"
+    response.infoLog += "☒File is not video \n";
     response.processFile = false;
 
-    return response
+    return response;
 
-  } else { 
+  } else {
 
-     var jsonString = JSON.stringify(file)
+     var jsonString = JSON.stringify(file);
 
 
-     var hasSubs = false
+     var hasSubs = false;
 
 
      for (var i = 0; i < file.ffProbeData.streams.length; i++) {
- 
+
        try {
 
-         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
- 
-           hasSubs = true
- 
+         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
+
+           hasSubs = true;
+
          }
-       } catch (err) { 
+       } catch (err) {
          console.error(JSON.stringify(err));
        }
      }
 
 
-     if(file.ffProbeData.streams[0].codec_name != 'h264'){
+     if (file.ffProbeData.streams[0].codec_name != 'h264') {
 
-      response.infoLog += "☒File is not in h264! \n"
-      response.preset = '-Z "Fast 1080p30"'
+      response.infoLog += "☒File is not in h264! \n";
+      response.preset = '-Z "Fast 1080p30"';
       response.reQueueAfter = true;
       response.processFile = true;
-      response.handBrakeMode = true
-      return response
+      response.handBrakeMode = true;
+      return response;
 
-     }else{
-      response.infoLog += "☑File is already in h264! \n"
+     } else {
+      response.infoLog += "☑File is already in h264! \n";
      }
 
 
-     ///
+     // /
 
-if(hasSubs){
+if (hasSubs) {
 
-      response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn  -map 0 -c copy'
+      response.infoLog += "☒File has subs \n";
+      response.preset = ',-sn  -map 0 -c copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      response.FFmpegMode = true
-      return response
+      response.FFmpegMode = true;
+      return response;
 
-     }else{
-      response.infoLog += "☑File has no subs \n"
+     } else {
+      response.infoLog += "☑File has no subs \n";
      }
 
-     if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
+     if ((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs) {
 
-      response.infoLog += "☒File has title metadata and no aac and subs \n"
-      response.preset = ',-map_metadata -1 -map 0 -c copy'
+      response.infoLog += "☒File has title metadata and no aac and subs \n";
+      response.preset = ',-map_metadata -1 -map 0 -c copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      response.FFmpegMode = true
-      return response
+      response.FFmpegMode = true;
+      return response;
      }
 
-     if(!jsonString.includes("aac") && hasSubs){
+     if (!jsonString.includes("aac") && hasSubs) {
 
-      response.infoLog += "☒File has no aac track and has subs \n"
-      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
+      response.infoLog += "☒File has no aac track and has subs \n";
+      response.preset = ',-sn -map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2';
       response.reQueueAfter = true;
       response.processFile = true;
-      response.FFmpegMode = true
-      return response
-     }
-
-
-     if(file.meta.Title != "undefined" && hasSubs){
-
-      response.infoLog += "☒File has title and has subs \n"
-      response.preset = ',-sn -map_metadata -1 -map 0 -c copy'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      response.FFmpegMode = true
-      return response
+      response.FFmpegMode = true;
+      return response;
      }
 
 
+     if (file.meta.Title != "undefined" && hasSubs) {
 
- ///
-     if(file.meta.Title != undefined ){
-
-      response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -map 0 -c copy'
+      response.infoLog += "☒File has title and has subs \n";
+      response.preset = ',-sn -map_metadata -1 -map 0 -c copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      response.FFmpegMode = true
-      return response
-     }else{
-      response.infoLog += "☑File has no title metadata"
-     }
-
-     if(!jsonString.includes("aac")){
-
-      response.infoLog += "☒File has no aac track \n"
-      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      response.FFmpegMode = true
-      return response
-
-     }else{
-      response.infoLog += "☑File has aac track \n"
+      response.FFmpegMode = true;
+      return response;
      }
 
 
+ // /
+     if (file.meta.Title != undefined) {
 
-     response.infoLog += "☑File meets conditions! \n"
-     return response
+      response.infoLog += "☒File has title metadata \n";
+      response.preset = ',-map_metadata -1 -map 0 -c copy';
+      response.reQueueAfter = true;
+      response.processFile = true;
+      response.FFmpegMode = true;
+      return response;
+     } else {
+      response.infoLog += "☑File has no title metadata";
+     }
+
+     if (!jsonString.includes("aac")) {
+
+      response.infoLog += "☒File has no aac track \n";
+      response.preset = ',-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -b:a:0 192k -ac 2';
+      response.reQueueAfter = true;
+      response.processFile = true;
+      response.FFmpegMode = true;
+      return response;
+
+     } else {
+      response.infoLog += "☑File has aac track \n";
+     }
+
+
+     response.infoLog += "☑File meets conditions! \n";
+     return response;
 
   }
 }

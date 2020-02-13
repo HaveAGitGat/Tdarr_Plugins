@@ -1,6 +1,5 @@
 
 
-
 module.exports.details = function details() {
 
   return {
@@ -42,73 +41,75 @@ module.exports.details = function details() {
       \\nExample:\\n
       3ff1ae1c39a2a2a397315e15266dea48
       `
-      },
+      }
     ]
-  }
-}
+  };
+};
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
 
+  const request = require('request');
 
-  const request = require('request')
-
-  const IP = inputs.server_ip
-  const port = inputs.port
-  const APIKey = inputs.radarr_api_key
-
-
-  var term = file.file.split("/")
-  term = term[term.length - 1]
-  term = term.split(".")
-  term = term[term.length - 2]
-  term = encodeURI(term)
+  const IP = inputs.server_ip;
+  const {port} = inputs;
+  const APIKey = inputs.radarr_api_key;
 
 
-  console.log(IP)
-  console.log(term)
+  var term = file.file.split("/");
+  term = term[term.length - 1];
+  term = term.split(".");
+  term = term[term.length - 2];
+  term = encodeURI(term);
+
+
+  console.log(IP);
+  console.log(term);
 
   request.get(`http://${IP}:${port}/api/movie/lookup?term=${term}&apikey=${APIKey}`, {
     json: {
     }
   }, (error, res, body) => {
     if (error) {
-      console.error(error)
+      console.error(error);
     }
-    //  console.log(`statusCode: ${res.statusCode}`)
-    //console.log(body)
+
+    /*
+     *   Console.log(`statusCode: ${res.statusCode}`)
+     * console.log(body)
+     */
 
 
-    var response = body[0]
-    console.log(response.title) //Shrek
+    var response = body[0];
+    console.log(response.title); // Shrek
 
 
-    response.profileId = 6
-    response.path = file.file
-    response.qualityProfile = 6
+    response.profileId = 6;
+    response.path = file.file;
+    response.qualityProfile = 6;
 
 
     request.post(`http://${IP}:${port}/api/movie?apikey=${APIKey}`, {
       json: response
     }, (error, res, body) => {
       if (error) {
-        console.error(error)
+        console.error(error);
       }
-      console.log(`statusCode: ${res.statusCode}`)
-      // console.log(body)
-    })
+      console.log(`statusCode: ${res.statusCode}`);
+      // Console.log(body)
+    });
 
-  })
+  });
 
 
-  //Optional response if you need to modify database
+  // Optional response if you need to modify database
   var response = {
     file,
     removeFromDB: false,
-    updateDB: false,
-  }
+    updateDB: false
+  };
 
-  //return response
+  // Return response
 
-}
+};
 

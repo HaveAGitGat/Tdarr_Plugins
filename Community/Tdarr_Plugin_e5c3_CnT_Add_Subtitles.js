@@ -1,5 +1,5 @@
 const fs = require('fs');
-const execSync = require('child_process').execSync;
+const {execSync} = require('child_process');
 
 function details() {
     return {
@@ -15,51 +15,51 @@ function details() {
         {
         name: 'install_packages',
         tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`
-        },
+        }
     ]
-    }
+    };
 }
 
 function plugin(file, librarySettings, inputs, otherArguments) {
-    //default response
+    // Default response
     var response = {
-        processFile: false, 
+        processFile: false,
         preset: `,`,
         container: '.mkv',
         handBrakeMode: false,
         FFmpegMode: false,
         reQueueAfter: false,
-        infoLog: `Searching new subtitles...\n`,
-    }
+        infoLog: `Searching new subtitles...\n`
+    };
 
     if (inputs.install_packages == "yes") {
         if (!fs.existsSync(`${otherArguments.homePath}/Tdarr/node_modules/iso-639-2`)) {
             execSync(`cd ${otherArguments.homePath}/Tdarr \n npm install iso-639-2`);
-        } 
+        }
     } else {
-        response.infoLog = `Please take a look at the input options\n A extra nodemodule is required.`
+        response.infoLog = `Please take a look at the input options\n A extra nodemodule is required.`;
         return response;
     }
 
     if (fs.existsSync(`/home/Tdarr/Documents/Tdarr/node_modules/iso-639-2`)) {
         var iso6392 = require('/home/Tdarr/Documents/Tdarr/node_modules/iso-639-2');
     } else {
-        response.infoLog += `Nodemodule iso-639-2 isn't installed!\nTry Again`
+        response.infoLog += `Nodemodule iso-639-2 isn't installed!\nTry Again`;
         return response;
     }
 
-    var i = 0; //int for counting lang[position]
+    var i = 0; // Int for counting lang[position]
     var found_subtitle_stream = 0;
-    var sub = 0; //becomes first subtitle stream
-    var lang = iso6392; //languages to check against
-    var path = file.meta.Directory; //path of media folder
-    var exist = 0; //if the language exists should be added this becomes 1
-    var new_subs = 0 //count the new subs
-    var added_subs = 0; //counts the amount of subs that have been mapped
+    var sub = 0; // Becomes first subtitle stream
+    var lang = iso6392; // Languages to check against
+    var path = file.meta.Directory; // Path of media folder
+    var exist = 0; // If the language exists should be added this becomes 1
+    var new_subs = 0; // Count the new subs
+    var added_subs = 0; // Counts the amount of subs that have been mapped
     var preset_import = '';
     var preset_meta = '';
 
-    //find first subtitle stream
+    // Find first subtitle stream
     while (found_subtitle_stream == 0 && sub < file.ffProbeData.streams.length) {
         if (file.ffProbeData.streams[sub].codec_type.toLowerCase() == "subtitle") {
             found_subtitle_stream = 1;
@@ -67,20 +67,20 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         sub++;
         }
     }
-    
+
     response.infoLog += `Path: ${path}\n`;
     for (i = 0; i < lang.length; i++) {
-        //check if srt file exists in folder
+        // Check if srt file exists in folder
         if (fs.existsSync(`${path}/${lang[i].iso6392B}.srt`)) {
             response.infoLog += `Found subtitle ${lang[i].name}.srt\n`;
 
             if (found_subtitle_stream == 1) {
-                //check if language already exists
+                // Check if language already exists
                 for (sub_stream = sub; sub_stream < file.ffProbeData.streams.length; sub_stream++) {
-                    //response.infoLog += `does ${lang[i].name} exist in stream ${sub_stream}?\n`
+                    // Response.infoLog += `does ${lang[i].name} exist in stream ${sub_stream}?\n`
                     if (file.ffProbeData.streams[sub_stream].tags.language) {
                         if (file.ffProbeData.streams[sub_stream].tags.language.toLowerCase() == lang[i].iso6392B) {
-                            //response.infoLog += `YES\n`
+                            // Response.infoLog += `YES\n`
                             exist = 1;
                             response.infoLog += `Language already exists in stream ${sub_stream}\n It will not be added\n`;
                         }
@@ -89,29 +89,32 @@ function plugin(file, librarySettings, inputs, otherArguments) {
             } else {
                 exist = 0;
             }
-            
-            //add if it hasn't found the language
+
+            // Add if it hasn't found the language
             if (exist != 1) {
                 preset_import += ` -sub_charenc "UTF-8" -f srt -i "${path}/${lang[i].iso6392B}.srt"`;
                 preset_meta += ` -metadata:s:s:${new_subs} language=${lang[i].iso6392B}`;
                 new_subs++;
             }
-        } 
-        //else {
-        //    response.infoLog += `did not find sub ${lang[i].iso6392B}.srt\n`
-        //}
+        }
+
+        /*
+         * Else {
+         *     response.infoLog += `did not find sub ${lang[i].iso6392B}.srt\n`
+         * }
+         */
         exist = 0;
     }
 
-    response.preset += ` ${preset_import}${preset_meta} -map 0:v -map 0:a`
-    
-    //map new subs
+    response.preset += ` ${preset_import}${preset_meta} -map 0:v -map 0:a`;
+
+    // Map new subs
     while (added_subs < new_subs) {
         added_subs++;
         response.preset += ` -map ${added_subs}:s`;
     }
 
-    //if new subs have been found they will be added
+    // If new subs have been found they will be added
     if (new_subs > 0) {
         response.FFmpegMode = true;
         response.processFile = true;
@@ -125,9 +128,9 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         response.infoLog += `No new subtitle languages were found\n`;
     }
 
-    //response.infoLog += `The ffmpeg string is: ${response.preset}\n`
+    // Response.infoLog += `The ffmpeg string is: ${response.preset}\n`
 
-    return response
+    return response;
 }
 
 module.exports.details = details;

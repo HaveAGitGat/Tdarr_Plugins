@@ -1,6 +1,5 @@
 
 
-
 function details() {
 
   return {
@@ -12,14 +11,14 @@ function details() {
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_s710_nick_h265_nvenc_4K.js",
-    Tags:'pre-processing,ffmpeg,nvenc h265',
-  }
+    Tags:'pre-processing,ffmpeg,nvenc h265'
+  };
 }
 
 function plugin(file) {
 
 
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -29,120 +28,116 @@ function plugin(file) {
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
-    infoLog: '',
+    infoLog: ''
 
-  }
-
-
-  response.FFmpegMode = true
+  };
 
 
+  response.FFmpegMode = true;
 
 
   if (file.fileMedium !== "video") {
 
 
-    console.log("File is not video")
+    console.log("File is not video");
 
-    response.infoLog += "☒File is not video \n"
+    response.infoLog += "☒File is not video \n";
     response.processFile = false;
 
-    return response
+    return response;
 
   } else {
 
-    var jsonString = JSON.stringify(file)
-    response.container = '.mkv'
+    var jsonString = JSON.stringify(file);
+    response.container = '.mkv';
 
 
     if (file.ffProbeData.streams[0].codec_name == 'hevc' || file.video_resolution !== "4KUHD") {
 
-      var hasPreferredLangTrack = false
-      var hasPreferredLangInRequiredCodecs = false
-      var hasAnyInRequiredCodecs = false
+      var hasPreferredLangTrack = false;
+      var hasPreferredLangInRequiredCodecs = false;
+      var hasAnyInRequiredCodecs = false;
 
-      var audioIdx = -1
-      var engTrackIdx = -1
+      var audioIdx = -1;
+      var engTrackIdx = -1;
 
-      var requiredAudioCodecs = "ac3,eac3,dts"
-      var preferredLangTrack = "eng"
-      var preferredCodec = "ac3"
-
+      var requiredAudioCodecs = "ac3,eac3,dts";
+      var preferredLangTrack = "eng";
+      var preferredCodec = "ac3";
 
 
       for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
         try {
           if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-            audioIdx++
+            audioIdx++;
           }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
 
 
         try {
           if (requiredAudioCodecs.includes(file.ffProbeData.streams[i].codec_name)) {
-            hasAnyInRequiredCodecs = true
+            hasAnyInRequiredCodecs = true;
 
           }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
 
 
         try {
           if ((requiredAudioCodecs.includes(file.ffProbeData.streams[i].codec_name)) && file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack)) {
-            hasPreferredLangInRequiredCodecs = true
+            hasPreferredLangInRequiredCodecs = true;
 
           }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
 
         try {
           if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack) && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-            hasPreferredLangTrack = true
-            engTrackIdx = audioIdx
+            hasPreferredLangTrack = true;
+            engTrackIdx = audioIdx;
 
           }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
       }
 
 
-
       if (hasPreferredLangInRequiredCodecs) {
 
-        response.infoLog += `☑File already has ${preferredLangTrack} language track in ${requiredAudioCodecs}! \n`
+        response.infoLog += `☑File already has ${preferredLangTrack} language track in ${requiredAudioCodecs}! \n`;
 
       } else if (hasPreferredLangTrack) {
 
         response.processFile = true;
-        response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`
-        response.container = '.mkv'
-        response.handBrakeMode = false
-        response.FFmpegMode = true
+        response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`;
+        response.container = '.mkv';
+        response.handBrakeMode = false;
+        response.FFmpegMode = true;
         response.reQueueAfter = true;
-        response.infoLog += `☒File has ${preferredLangTrack} language track but not in ${requiredAudioCodecs}! \n`
-        return response
+        response.infoLog += `☒File has ${preferredLangTrack} language track but not in ${requiredAudioCodecs}! \n`;
+        return response;
 
       } else if (!hasAnyInRequiredCodecs) {
 
         if (audioIdx == -1) {
-          response.infoLog += `☒File does not have any audio streams. Can't create ${preferredCodec} track. \n`
+          response.infoLog += `☒File does not have any audio streams. Can't create ${preferredCodec} track. \n`;
 
         } else {
 
           response.processFile = true;
-          response.preset = `,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`
-          response.container = '.mkv'
-          response.handBrakeMode = false
-          response.FFmpegMode = true
+          response.preset = `,-map 0:v -map 0:a:0 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2`;
+          response.container = '.mkv';
+          response.handBrakeMode = false;
+          response.FFmpegMode = true;
           response.reQueueAfter = true;
-          response.infoLog += `☒File has no language track in ${requiredAudioCodecs}. No ${preferredLangTrack} track marked so transcoding audio track 1 into ${preferredCodec}! \n`
-          return response
+          response.infoLog += `☒File has no language track in ${requiredAudioCodecs}. No ${preferredLangTrack} track marked so transcoding audio track 1 into ${preferredCodec}! \n`;
+          return response;
 
         }
       }
@@ -151,33 +146,33 @@ function plugin(file) {
       if (file.container != 'mkv') {
 
         response.processFile = true;
-        response.preset = ',  -map 0 -c copy'
-        response.container = '.mkv'
-        response.handBrakeMode = false
-        response.FFmpegMode = true
+        response.preset = ',  -map 0 -c copy';
+        response.container = '.mkv';
+        response.handBrakeMode = false;
+        response.FFmpegMode = true;
         response.reQueueAfter = true;
-        response.infoLog += "☒File is not in mkv container! \n"
-        return response
+        response.infoLog += "☒File is not in mkv container! \n";
+        return response;
 
       } else {
 
-        response.infoLog += "☑File is in mkv container! \n"
+        response.infoLog += "☑File is in mkv container! \n";
 
       }
 
       response.processFile = false;
-      return response
+      return response;
 
     } else {
 
       response.processFile = true;
-      response.preset = '-Z "H.265 MKV 2160p60" --all-audio --all-subtitles'
-      response.container = '.mkv'
-      response.handBrakeMode = true
-      response.FFmpegMode = false
+      response.preset = '-Z "H.265 MKV 2160p60" --all-audio --all-subtitles';
+      response.container = '.mkv';
+      response.handBrakeMode = true;
+      response.FFmpegMode = false;
       response.reQueueAfter = true;
-      response.infoLog += "☒ 4K file isn't in hevc! \n"
-      return response
+      response.infoLog += "☒ 4K file isn't in hevc! \n";
+      return response;
 
     }
   }

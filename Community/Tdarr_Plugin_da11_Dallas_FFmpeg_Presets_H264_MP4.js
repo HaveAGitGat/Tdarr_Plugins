@@ -64,7 +64,7 @@ function plugin(file, librarySettings, inputs) {
     addInfo(status, info) {
       this.infoLog += (status ? "☑" : "☒") + " " + info + "\n";
     }
-  }
+  };
 
   // Check the file is a video
   if (file.fileMedium !== "video") {
@@ -80,10 +80,10 @@ function plugin(file, librarySettings, inputs) {
   if (preset === null) {
     response.addInfo(BAD, `Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast)`);
 
-    throw `Error: Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast) \n`
+    throw `Error: Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast) \n`;
   }
 
-  var jsonString = JSON.stringify(file)
+  var jsonString = JSON.stringify(file);
 
   var hasSubs = false;
   var hasBadSubs = false;
@@ -99,7 +99,7 @@ function plugin(file, librarySettings, inputs) {
           // Drop incompatible subs
           subMap += " -map -0:" + streamData.index + " ";
         } else if (streamData.codec_name != "mov_text") {
-          hasSubs = true
+          hasSubs = true;
           // Keep compatible subs
           subMap += " -map 0:" + streamData.index + " ";
         }
@@ -129,7 +129,7 @@ function plugin(file, librarySettings, inputs) {
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
-    return response
+    return response;
   }
 
   if (!jsonString.includes("aac") && hasSubs) {
@@ -180,14 +180,14 @@ function plugin(file, librarySettings, inputs) {
     }
     response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a copy ' + subType;
     response.processFile = true;
-    response.FFmpegMode = true
-    return response
+    response.FFmpegMode = true;
+    return response;
   } else {
     response.addInfo(GOOD, "File has no/compatible subs");
   }
 
   response.addInfo(GOOD, "File meets conditions!");
-  return response
+  return response;
 }
 
 module.exports.details = details;

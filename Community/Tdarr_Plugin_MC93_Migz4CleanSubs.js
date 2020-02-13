@@ -36,9 +36,9 @@ function details() {
 	   
 	   \\nExample:\\n
 	   por`
-     },
+     }
     ]
-  }
+  };
 }
 
 function plugin(file, librarySettings, inputs) {
@@ -49,88 +49,88 @@ function plugin(file, librarySettings, inputs) {
     handBrakeMode: false,
     FFmpegMode: true,
     reQueueAfter: false,
-    infoLog: '',
-  }
+    infoLog: ''
+  };
 
   if (file.fileMedium !== "video") {
-      console.log("File is not video")
-      response.infoLog += "☒File is not video \n"
+      console.log("File is not video");
+      response.infoLog += "☒File is not video \n";
       response.processFile = false;
-      return response
+      return response;
     }
-  
+
   if (inputs.language == "") {
-      response.infoLog += "☒Language/s keep have not been configured within plugin settings, please configure required options. Skipping this plugin.  \n"
+      response.infoLog += "☒Language/s keep have not been configured within plugin settings, please configure required options. Skipping this plugin.  \n";
       response.processFile = false;
-      return response
-    } 
-  
-  var language = inputs.language.split(",")
-  var ffmpegCommandInsert = ''
-  var subtitleIdx = -1
-  var convert = false
+      return response;
+    }
+
+  var language = inputs.language.split(",");
+  var ffmpegCommandInsert = '';
+  var subtitleIdx = -1;
+  var convert = false;
 
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 	   try {
             if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
-                subtitleIdx++
+                subtitleIdx++;
             }
-	    } catch (err) { 
+	    } catch (err) {
          console.error(JSON.stringify(err));
 }
 
        try {
 		    if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && language.indexOf(file.ffProbeData.streams[i].tags.language.toLowerCase()) === -1) {
-                ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `
-                response.infoLog += `☒Subtitle stream detected as being an unwanted language, removing. Subtitle stream 0:s:${subtitleIdx} - ${file.ffProbeData.streams[i].tags.language.toLowerCase()} \n`
-                convert = true
+                ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
+                response.infoLog += `☒Subtitle stream detected as being an unwanted language, removing. Subtitle stream 0:s:${subtitleIdx} - ${file.ffProbeData.streams[i].tags.language.toLowerCase()} \n`;
+                convert = true;
 		    }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
-	
+
        try {
             if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description'))) {
-                ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `
-                response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${SubtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`
-                convert = true
+                ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
+                response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${SubtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`;
+                convert = true;
         }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
 
        try {
             if (inputs.tag_title != "") {
                 if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && file.ffProbeData.streams[i].tags.language.toLowerCase().includes('und')) {
-                    ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_title} `
-                    response.infoLog += `☒Subtitle stream detected as having unknown language tagged, tagging as ${inputs.tag_title}. \n`
-                    convert = true
+                    ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_title} `;
+                    response.infoLog += `☒Subtitle stream detected as having unknown language tagged, tagging as ${inputs.tag_title}. \n`;
+                    convert = true;
 	            }
 			}
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
-	  
+
         try {
              if (typeof file.ffProbeData.streams[i].tags.language == 'undefined' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
-                 ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_title} `
-                 response.infoLog += `☒Subtitle stream detected as having no language tagged, tagging as ${inputs.tag_title}. \n`
-                 convert = true
+                 ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_title} `;
+                 response.infoLog += `☒Subtitle stream detected as having no language tagged, tagging as ${inputs.tag_title}. \n`;
+                 convert = true;
                 }
-        } catch (err) { 
+        } catch (err) {
          console.error(JSON.stringify(err));
        }
     }
-  if (convert === true ) {
+  if (convert === true) {
       response.processFile = true;
-      response.preset = `, -map 0 ${ffmpegCommandInsert} -c copy`
-      response.container = '.' + file.container
+      response.preset = `, -map 0 ${ffmpegCommandInsert} -c copy`;
+      response.container = '.' + file.container;
       response.reQueueAfter = true;
     } else {
       response.processFile = false;
-      response.infoLog += "☑File doesn't contain subtitle tracks which are unwanted or that require tagging.\n"
+      response.infoLog += "☑File doesn't contain subtitle tracks which are unwanted or that require tagging.\n";
     }
-      return response
+      return response;
 }
 module.exports.details = details;
 module.exports.plugin = plugin;

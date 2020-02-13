@@ -1,6 +1,5 @@
 
 
-
 function details() {
 
   return {
@@ -12,15 +11,15 @@ function details() {
 `,
     Version: "1.07",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle.js",
-    Tags:'pre-processing,ffmpeg',
-  }
+    Tags:'pre-processing,ffmpeg'
+  };
 
 }
 
 function plugin(file) {
 
 
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -30,95 +29,91 @@ function plugin(file) {
      handBrakeMode : false,
      FFmpegMode : false,
      reQueueAfter : false,
-     infoLog : '',
+     infoLog : ''
 
-  }
-
-
-  response.FFmpegMode = true
+  };
 
 
+  response.FFmpegMode = true;
 
 
   if (file.fileMedium !== "video") {
 
 
-    console.log("File is not video")
+    console.log("File is not video");
 
-    response.infoLog += "☒File is not video \n"
+    response.infoLog += "☒File is not video \n";
     response.processFile = false;
 
-    return response
+    return response;
 
-  } else { 
-
-
-     var hasPreferredLangTrack = false
-     var hasPreferredLangInRequiredCodecs = false
-     var hasAnyInRequiredCodecs = false
-
-     var audioIdx = -1
-     var engTrackIdx = -1
-
-     var requiredAudioCodecs = "aac"
-     var preferredLangTrack = "eng"
-     var preferredCodec = "aac"
+  } else {
 
 
+     var hasPreferredLangTrack = false;
+     var hasPreferredLangInRequiredCodecs = false;
+     var hasAnyInRequiredCodecs = false;
+
+     var audioIdx = -1;
+     var engTrackIdx = -1;
+
+     var requiredAudioCodecs = "aac";
+     var preferredLangTrack = "eng";
+     var preferredCodec = "aac";
 
 
-     var hasSubs = false
+     var hasSubs = false;
 
 
      for (var i = 0; i < file.ffProbeData.streams.length; i++) {
- 
+
        try {
 
-         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
- 
-           hasSubs = true
- 
+         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
+
+           hasSubs = true;
+
          }
-       } catch (err) { 
+       } catch (err) {
          console.error(JSON.stringify(err));
        }
 
 
        try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-          audioIdx++
+          audioIdx++;
         }
-      } catch (err) { 
+      } catch (err) {
          console.error(JSON.stringify(err));
 }
 
 
       try {
         if (requiredAudioCodecs.includes(file.ffProbeData.streams[i].codec_name)) {
-          hasAnyInRequiredCodecs = true
+          hasAnyInRequiredCodecs = true;
 
         }
-      } catch (err) { 
+      } catch (err) {
          console.error(JSON.stringify(err));
 }
 
 
       try {
         if ((requiredAudioCodecs.includes(file.ffProbeData.streams[i].codec_name)) && file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack)) {
-          hasPreferredLangInRequiredCodecs = true
+          hasPreferredLangInRequiredCodecs = true;
 
         }
-      } catch (err) { 
+      } catch (err) {
          console.error(JSON.stringify(err));
 }
 
       try {
         if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes(preferredLangTrack) && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-          hasPreferredLangTrack = true
-          engTrackIdx = audioIdx
+          hasPreferredLangTrack = true;
+          engTrackIdx = audioIdx;
 
         }
-      } catch (err) { 
+      } catch (err) {
          console.error(JSON.stringify(err));
 }
 
@@ -126,105 +121,90 @@ function plugin(file) {
      }
 
 
-
-
-
-
-
-
      if (hasPreferredLangInRequiredCodecs) {
 
-      response.infoLog += `☑File already has ${preferredLangTrack} language track in ${requiredAudioCodecs}! \n`
+      response.infoLog += `☑File already has ${preferredLangTrack} language track in ${requiredAudioCodecs}! \n`;
 
     } else if (hasPreferredLangTrack) {
 
       response.processFile = true;
-      response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2 -strict -2`
-      response.container = '.mp4'
-      response.handBrakeMode = false
-      response.FFmpegMode = true
+      response.preset = `,-map 0:v -map 0:a:${engTrackIdx} -map 0:a -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2 -strict -2`;
+      response.container = '.mp4';
+      response.handBrakeMode = false;
+      response.FFmpegMode = true;
       response.reQueueAfter = true;
-      response.infoLog += `☒File has ${preferredLangTrack} language track but not in ${requiredAudioCodecs}! \n`
-      return response
+      response.infoLog += `☒File has ${preferredLangTrack} language track but not in ${requiredAudioCodecs}! \n`;
+      return response;
 
     } else if (!hasAnyInRequiredCodecs) {
 
       if (audioIdx == -1) {
-        response.infoLog += `☒File does not have any audio streams. Can't create ${preferredCodec} track. \n`
+        response.infoLog += `☒File does not have any audio streams. Can't create ${preferredCodec} track. \n`;
 
       } else {
 
         response.processFile = true;
-        response.preset = `,-map 0:v -map 0:a:0 -map 0:a -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2 -strict -2`
-        response.container = '.mp4'
-        response.handBrakeMode = false
-        response.FFmpegMode = true
+        response.preset = `,-map 0:v -map 0:a:0 -map 0:a -c copy -c:a:0 ${preferredCodec} -b:a:0 192k -ac 2 -strict -2`;
+        response.container = '.mp4';
+        response.handBrakeMode = false;
+        response.FFmpegMode = true;
         response.reQueueAfter = true;
-        response.infoLog += `☒File has no language track in ${requiredAudioCodecs}. No ${preferredLangTrack} track marked so transcoding audio track 1 into ${preferredCodec}! \n`
-        return response
+        response.infoLog += `☒File has no language track in ${requiredAudioCodecs}. No ${preferredLangTrack} track marked so transcoding audio track 1 into ${preferredCodec}! \n`;
+        return response;
 
       }
     }
 
 
+     if (file.meta.Title != "undefined" && hasSubs) {
 
-     
-
-     if(file.meta.Title != "undefined" && hasSubs){
-
-      response.infoLog += "☒File has title and has subs \n"
-      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy'
+      response.infoLog += "☒File has title and has subs \n";
+      response.preset = ',-sn -map_metadata -1 -c:v copy -c:a copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      return response
+      return response;
      }
 
 
+ // /
+     if (file.meta.Title != undefined) {
 
- ///
-     if(file.meta.Title != undefined ){
-
-      response.infoLog += "☒File has title metadata \n"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
+      response.infoLog += "☒File has title metadata \n";
+      response.preset = ',-map_metadata -1 -c:v copy -c:a copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      return response
-     }else{
-      response.infoLog += "☑File has no title metadata \n"
+      return response;
+     } else {
+      response.infoLog += "☑File has no title metadata \n";
      }
 
 
+     if (hasSubs) {
 
-     if(hasSubs){
-
-      response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn -c:v copy -c:a copy'
+      response.infoLog += "☒File has subs \n";
+      response.preset = ',-sn -c:v copy -c:a copy';
       response.reQueueAfter = true;
       response.processFile = true;
-      return response
+      return response;
 
-     }else{
-      response.infoLog += "☑File has no subs \n"
-     }
-
-     
-
-     if( file.container != 'mp4'){
-      response.infoLog += "☒File is not in mp4 container! \n"
-      response.preset = ', -c:v copy -c:a copy'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      return response
-     }else{
-      response.infoLog += "☑File is in mp4 container! \n"
+     } else {
+      response.infoLog += "☑File has no subs \n";
      }
 
 
+     if (file.container != 'mp4') {
+      response.infoLog += "☒File is not in mp4 container! \n";
+      response.preset = ', -c:v copy -c:a copy';
+      response.reQueueAfter = true;
+      response.processFile = true;
+      return response;
+     } else {
+      response.infoLog += "☑File is in mp4 container! \n";
+     }
 
 
-
-     response.infoLog += "☑File meets conditions! \n"
-     return response
+     response.infoLog += "☑File meets conditions! \n";
+     return response;
 
   }
 }

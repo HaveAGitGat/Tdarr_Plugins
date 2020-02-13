@@ -1,6 +1,5 @@
 
 
-
 module.exports.details = function details() {
 
   return {
@@ -37,15 +36,14 @@ module.exports.details = function details() {
         `
       }
     ]
-  }
+  };
 
-}
+};
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
 
-
-  //Must return this object
+  // Must return this object
 
   var response = {
 
@@ -55,101 +53,99 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
-    infoLog: '',
+    infoLog: ''
 
-  }
+  };
 
 
-  console.log(inputs.preferred_language)
+  console.log(inputs.preferred_language);
 
   if (inputs.preferred_language === undefined) {
 
-    response.processFile = false
-    response.infoLog += "☒ Inputs not entered! \n"
-    return response
+    response.processFile = false;
+    response.infoLog += "☒ Inputs not entered! \n";
+    return response;
 
 
   }
 
 
-  var desiredTrackPosition = file.ffProbeData.streams.filter(stream => stream.codec_type.toLowerCase() == "video").length
+  var desiredTrackPosition = file.ffProbeData.streams.filter((stream) => stream.codec_type.toLowerCase() == "video").length;
 
-  var audioInLang = file.ffProbeData.streams.filter(stream => {
+  var audioInLang = file.ffProbeData.streams.filter((stream) => {
 
 
-    if (stream.codec_type.toLowerCase() == "audio"
-      && stream.tags && stream.tags.language && inputs.preferred_language.includes(stream.tags.language.toLowerCase())) {
-      return true
+    if (stream.codec_type.toLowerCase() == "audio" &&
+      stream.tags && stream.tags.language && inputs.preferred_language.includes(stream.tags.language.toLowerCase())) {
+      return true;
     }
 
-    return false
+    return false;
 
-  })
+  });
 
 
   if (audioInLang.length == 0) {
 
-    response.processFile = false
-    response.infoLog += "☒ No audio tracks in desired language! \n"
-    return response
+    response.processFile = false;
+    response.infoLog += "☒ No audio tracks in desired language! \n";
+    return response;
 
   }
 
 
-  var streamToMove = audioInLang[0]
+  var streamToMove = audioInLang[0];
 
   if (streamToMove.index == desiredTrackPosition) {
 
-    response.processFile = false
-    response.infoLog += "☑ Preferred language is already first audio track! \n"
-    return response
+    response.processFile = false;
+    response.infoLog += "☑ Preferred language is already first audio track! \n";
+    return response;
 
   }
 
 
-  var ffmpegCommand = ', -c copy'
+  var ffmpegCommand = ', -c copy';
 
   if (file.ffProbeData.streams[0].codec_type.toLowerCase() == "video") {
-    ffmpegCommand += ` -map 0:v `
+    ffmpegCommand += ` -map 0:v `;
   }
 
-  var allAudioTracks = file.ffProbeData.streams.filter(stream => stream.codec_type.toLowerCase() == "audio")
+  var allAudioTracks = file.ffProbeData.streams.filter((stream) => stream.codec_type.toLowerCase() == "audio");
 
 
-  var streamIdx
+  var streamIdx;
 
   for (var i = 0; i < allAudioTracks.length; i++) {
 
     if (allAudioTracks[i].index == streamToMove.index) {
-      streamIdx = i
-      break
+      streamIdx = i;
+      break;
 
     }
   }
 
-  ffmpegCommand += ` -map 0:a:${streamIdx} -disposition:a:${streamIdx} default`
+  ffmpegCommand += ` -map 0:a:${streamIdx} -disposition:a:${streamIdx} default`;
 
   for (var i = 0; i < allAudioTracks.length; i++) {
 
     if (i !== streamIdx) {
-      ffmpegCommand += ` -map 0:a:${i} -disposition:a:${i} none `
+      ffmpegCommand += ` -map 0:a:${i} -disposition:a:${i} none `;
     }
   }
 
-  ffmpegCommand += ` -map 0:s? -map 0:d? `
+  ffmpegCommand += ` -map 0:s? -map 0:d? `;
 
 
-
-  response.processFile = true
-  response.preset = ffmpegCommand
-  response.container = `.` + file.container
-  response.handBrakeMode = false
-  response.FFmpegMode = true
+  response.processFile = true;
+  response.preset = ffmpegCommand;
+  response.container = `.` + file.container;
+  response.handBrakeMode = false;
+  response.FFmpegMode = true;
   response.reQueueAfter = true;
-  response.infoLog += `☒ Desired audio lang is not first audio stream, moving! \n`
-  return response
+  response.infoLog += `☒ Desired audio lang is not first audio stream, moving! \n`;
+  return response;
 
 
-
-}
+};
 
