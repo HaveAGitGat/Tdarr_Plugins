@@ -1,0 +1,22 @@
+{
+  "name": "tdarr_plugins",
+  "version": "1.0.0",
+  "description": "Repo containing the Tdarr community plugins",
+  "main": "n/a",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HaveAGitGat/Tdarr_Plugins.git"
+  },
+  "author": "",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/HaveAGitGat/Tdarr_Plugins/issues"
+  },
+  "homepage": "https://github.com/HaveAGitGat/Tdarr_Plugins#readme",
+  "devDependencies": {
+    "eslint": "^6.8.0"
+  }
+}

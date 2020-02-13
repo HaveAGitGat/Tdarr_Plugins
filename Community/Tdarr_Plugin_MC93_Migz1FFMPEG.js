@@ -73,7 +73,7 @@ function plugin(file, librarySettings, inputs) {
         return response;
     }
 
-    if (file.ffProbeData.streams[0].codec_name == 'hevc' && file.container != '${inputs.container}') {
+    if (file.ffProbeData.streams[0].codec_name == 'hevc' && file.container != `${inputs.container}`) {
         response.infoLog += `☒File is hevc but is not in ${inputs.container} container. Remuxing. \n`;
         response.preset = ', -map 0 -c copy';
         response.processFile = true;

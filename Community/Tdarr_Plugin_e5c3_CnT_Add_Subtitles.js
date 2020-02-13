@@ -49,20 +49,20 @@ function plugin(file, librarySettings, inputs, otherArguments) {
     }
 
     var i = 0; // Int for counting lang[position]
-    var found_subtitle_stream = 0;
+    var foundSubtitleStream = 0;
     var sub = 0; // Becomes first subtitle stream
     var lang = iso6392; // Languages to check against
     var path = file.meta.Directory; // Path of media folder
     var exist = 0; // If the language exists should be added this becomes 1
-    var new_subs = 0; // Count the new subs
-    var added_subs = 0; // Counts the amount of subs that have been mapped
-    var preset_import = '';
-    var preset_meta = '';
+    var newSubs = 0; // Count the new subs
+    var addedSubs = 0; // Counts the amount of subs that have been mapped
+    var presetImport = '';
+    var presetMeta = '';
 
     // Find first subtitle stream
-    while (found_subtitle_stream == 0 && sub < file.ffProbeData.streams.length) {
+    while (foundSubtitleStream == 0 && sub < file.ffProbeData.streams.length) {
         if (file.ffProbeData.streams[sub].codec_type.toLowerCase() == "subtitle") {
-            found_subtitle_stream = 1;
+            foundSubtitleStream = 1;
         } else {
             sub++;
         }
@@ -74,15 +74,15 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         if (fs.existsSync(`${path}/${lang[i].iso6392B}.srt`)) {
             response.infoLog += `Found subtitle ${lang[i].name}.srt\n`;
 
-            if (found_subtitle_stream == 1) {
+            if (foundSubtitleStream == 1) {
                 // Check if language already exists
-                for (sub_stream = sub; sub_stream < file.ffProbeData.streams.length; sub_stream++) {
-                    // Response.infoLog += `does ${lang[i].name} exist in stream ${sub_stream}?\n`
-                    if (file.ffProbeData.streams[sub_stream].tags.language) {
-                        if (file.ffProbeData.streams[sub_stream].tags.language.toLowerCase() == lang[i].iso6392B) {
+                for (let subStream = sub; subStream < file.ffProbeData.streams.length; subStream++) {
+                    // Response.infoLog += `does ${lang[i].name} exist in stream ${subStream}?\n`
+                    if (file.ffProbeData.streams[subStream].tags.language) {
+                        if (file.ffProbeData.streams[subStream].tags.language.toLowerCase() == lang[i].iso6392B) {
                             // Response.infoLog += `YES\n`
                             exist = 1;
-                            response.infoLog += `Language already exists in stream ${sub_stream}\n It will not be added\n`;
+                            response.infoLog += `Language already exists in stream ${subStream}\n It will not be added\n`;
                         }
                     }
                 }
@@ -92,9 +92,9 @@ function plugin(file, librarySettings, inputs, otherArguments) {
 
             // Add if it hasn't found the language
             if (exist != 1) {
-                preset_import += ` -sub_charenc "UTF-8" -f srt -i "${path}/${lang[i].iso6392B}.srt"`;
-                preset_meta += ` -metadata:s:s:${new_subs} language=${lang[i].iso6392B}`;
-                new_subs++;
+                presetImport += ` -sub_charenc "UTF-8" -f srt -i "${path}/${lang[i].iso6392B}.srt"`;
+                presetMeta += ` -metadata:s:s:${newSubs} language=${lang[i].iso6392B}`;
+                newSubs++;
             }
         }
 
@@ -106,24 +106,24 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         exist = 0;
     }
 
-    response.preset += ` ${preset_import}${preset_meta} -map 0:v -map 0:a`;
+    response.preset += ` ${presetImport}${presetMeta} -map 0:v -map 0:a`;
 
     // Map new subs
-    while (added_subs < new_subs) {
-        added_subs++;
-        response.preset += ` -map ${added_subs}:s`;
+    while (addedSubs < newSubs) {
+        addedSubs++;
+        response.preset += ` -map ${addedSubs}:s`;
     }
 
     // If new subs have been found they will be added
-    if (new_subs > 0) {
+    if (newSubs > 0) {
         response.FFmpegMode = true;
         response.processFile = true;
         response.reQueueAfter = true;
-        if (found_subtitle_stream == 1) {
+        if (foundSubtitleStream == 1) {
             response.preset += ` -map 0:s `;
         }
         response.preset += ` -c copy`;
-        response.infoLog += `${new_subs} new subs will be added\n`;
+        response.infoLog += `${newSubs} new subs will be added\n`;
     } else {
         response.infoLog += `No new subtitle languages were found\n`;
     }

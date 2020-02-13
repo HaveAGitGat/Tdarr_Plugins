@@ -50,9 +50,8 @@ function plugin(file) {
             response.reQueueAfter = true;
             return response;
         }
-    }
-    // Process mjpeg removal if video found to not be a video and have mjpeg stream
-    else if (file.fileMedium !== "video") {
+    } else if (file.fileMedium !== "video") {
+        // Process mjpeg removal if video found to not be a video and have mjpeg stream
         transcode = 1;
     } else {
         response.infoLog += "☑File is a video With Mjpeg! \n";

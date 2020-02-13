@@ -61,7 +61,7 @@ function plugin(file, librarySettings, inputs, otherArguments) {
             // Check for non-english tracks
             if (file.ffProbeData.streams[i].tags.language) {
                 if (typeof file.ffProbeData.streams[i].tags.language !== 'undefined') {
-                    for (l = 0; l < length; l++) {
+                    for (let l = 0; l < length; l++) {
                         if (file.ffProbeData.streams[i].tags.language == special[l]) {
                             if (!fs.existsSync(otherArguments.homePath + `/Tdarr/special_audio_${special[l]}.txt`)) { // Create txt file if it doesn't exist yet
                                 exec(`echo "${sourcename}" >> ${otherArguments.homePath}/Tdarr/special_audio_${special[l]}.txt`); // First file will be added and file is created

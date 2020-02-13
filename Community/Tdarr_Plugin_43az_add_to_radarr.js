@@ -91,11 +91,11 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
         request.post(`http://${IP}:${port}/api/movie?apikey=${APIKey}`, {
             json: response
-        }, (error, res, body) => {
-            if (error) {
-                console.error(error);
+        }, (error2, res2, body2) => {
+            if (error2) {
+                console.error(error2);
             }
-            console.log(`statusCode: ${res.statusCode}`);
+            console.log(`statusCode: ${res2.statusCode}`);
             // Console.log(body)
         });
 
