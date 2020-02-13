@@ -104,9 +104,7 @@ function plugin(file, librarySettings, inputs) {
         response.preset = `-c:v vp9_cuvid`;
     }
 
-    if (inputs.container == "mkv") {
-        extraArguments = "-map -0:d ";
-    }
+    let extraArguments = (inputs.container == "mkv") ? "-map -0:d " : "";
 
     response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`;
     response.processFile = true;
