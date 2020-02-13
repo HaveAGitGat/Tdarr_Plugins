@@ -7,10 +7,11 @@ There are two types of plugin:
 
 Steps for creating a community or local plugin.
 
-1.Download Tdarr_Plugin_nc7x_Example.js from the following repository:
+1. Copy the following pre and post-processing plugin examples:
 
-https://github.com/HaveAGitGat/Tdarr_Plugin_nc7x_Example
+https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_zzzz_Post_Proc_Example.js
 
+https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_zzzz_Post_Proc_Example.js
 
 2.Determine an id for your plugin. Every id must start with 'Tdarr_Plugin_xxxx' where xxxx is a random mini id containing the following:
     Numeric digits (0-9)
