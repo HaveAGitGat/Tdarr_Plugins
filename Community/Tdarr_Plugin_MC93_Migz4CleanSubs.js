@@ -8,6 +8,7 @@ function details() {
     Description: `[TESTING] This plugin keeps only specified language subtitle tracks & can tag those that have an unknown language. \n\n`,
     Version: "2.00",
     Link: "",
+    Tags:'pre-processing,ffmpeg,subtitle only,configurable',
     Inputs: [
      {
        name: 'language',

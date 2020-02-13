@@ -8,6 +8,7 @@ function details() {
     Description: `[TESTING]This plugin keeps only specified language audio tracks & can tags those that have an unknown language. \n\n`,
     Version: "2.00",
     Link: "",
+    Tags:'pre-processing,ffmpeg,audio only,configurable',
     Inputs: [
      {
        name: 'language',

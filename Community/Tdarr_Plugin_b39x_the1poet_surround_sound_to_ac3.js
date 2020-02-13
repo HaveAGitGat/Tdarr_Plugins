@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter]  If the file has surround sound tracks not in ac3, they will be converted to ac3. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_b39x_the1poet_surround_sound_to_ac3.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_b39x_the1poet_surround_sound_to_ac3.js",
+    Tags:'pre-processing,ffmpeg,audio only,',
   }
 
 }

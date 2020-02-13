@@ -7,7 +7,8 @@ function details() {
 	Operation: "Clean",
     Description: `[TESTING]This plugin removes video title metadata if it exists. \n\n`,
     Version: "1.10",
-    Link: ""
+    Link: "",
+    Tags:'pre-processing,ffmpeg,video only',
   }
 }
 

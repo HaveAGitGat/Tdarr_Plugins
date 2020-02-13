@@ -12,6 +12,7 @@ module.exports.details = function details() {
     Description: `[TESTING][Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st audio track  \n\n`,
     Version: "1.00",
     Link: "",
+    Tags:'pre-processing,audio only,ffmpeg,configurable',
     Inputs: [
       {
         name: 'preferred_language',

@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter] This plugin transcodes into H264 using FFmpeg's 'Medium' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Medium.js"
+    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Medium.js",
+    Tags:'pre-processing,ffmpeg,h264',
   }
 
 }

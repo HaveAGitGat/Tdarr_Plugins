@@ -8,6 +8,7 @@ function details() {
     Description: `[TESTING]This plugin can convert any 2.0 audio track/s to AAC and can create downmixed audio tracks. \n\n`,
     Version: "2.00",
     Link: "",
+    Tags:'pre-processing,ffmpeg,audio only,configurable',
 	Inputs: [
      {
        name: 'aac_stereo',

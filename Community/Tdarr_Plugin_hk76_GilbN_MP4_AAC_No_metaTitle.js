@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter] This plugin removes metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is mp4. \n\n
 `,
     Version: "1.01",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_hk76_GilbN_MP4_AAC_No_metaTitle.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_hk76_GilbN_MP4_AAC_No_metaTitle.js",
+    Tags:'pre-processing,ffmpeg',
   }
 
 }

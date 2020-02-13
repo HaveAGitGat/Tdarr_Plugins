@@ -12,6 +12,7 @@ module.exports.details = function details() {
     Description: `[TESTING][Contains built-in filter] Transcode audio streams with specific codecs into another codec.  \n\n`,
     Version: "1.00",
     Link: "",
+    Tags:'pre-processing,audio only,ffmpeg,configurable',
     Inputs: [
       {
         name: 'codecs_to_transcode',

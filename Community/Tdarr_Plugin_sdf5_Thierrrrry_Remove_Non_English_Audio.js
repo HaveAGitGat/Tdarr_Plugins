@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter] This plugin removes audio tracks which are not English or are not undefined. It ensures at least 1 audio track is left in any language. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_sdf5_Thierrrrry_Remove_Non_English_Audio.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_sdf5_Thierrrrry_Remove_Non_English_Audio.js",
+    Tags:'pre-processing,ffmpeg,audio only',
   }
 }
 

@@ -7,6 +7,7 @@ function details() {
     Operation:"",
     Description: `Checks if file is not a video file due to Mjpeg stream.  Removes Mjpeg Stream \n\n`,
     Version: "1.00",
+    Tags:'pre-processing,ffmpeg,'
   }
 }
    

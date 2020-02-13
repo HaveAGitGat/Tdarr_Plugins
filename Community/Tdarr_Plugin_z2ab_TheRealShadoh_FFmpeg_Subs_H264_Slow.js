@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter] This plugin transcodes into H264 using FFmpeg's 'Slow' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z2ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js"
+    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z2ab_TheRealShadoh_FFmpeg_Subs_H264_Slow.js",
+    Tags:'pre-processing,ffmpeg,h264',
   }
 
 }

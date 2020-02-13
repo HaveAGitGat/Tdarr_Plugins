@@ -7,7 +7,8 @@ function details() {
     Operation:"Transcode",
     Description: `[Contains built-in filter] This plugin uses different FFMPEG NVENC transcoding settings for 480p,576p,720p,1080p and 4KUHD. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
     Version: "1.08",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV.js",
+    Tags:'pre-processing,ffmpeg,video only,h265,nvenc h265',
   }
 }
    

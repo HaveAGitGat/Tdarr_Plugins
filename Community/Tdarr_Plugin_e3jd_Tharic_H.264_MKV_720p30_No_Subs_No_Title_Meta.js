@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter] This plugin removes subs, metadata (if a title exists) and makes sure the video is h264 720p mkv. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e3jd_Tharic_H.264_MKV_720p30_No_Subs_No_Title_Meta.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e3jd_Tharic_H.264_MKV_720p30_No_Subs_No_Title_Meta.js",
+    Tags:'pre-processing,handbrake,ffmpeg,h264'
   }
 
 }

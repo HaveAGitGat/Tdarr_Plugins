@@ -7,7 +7,8 @@ function details() {
 	Operation: "Organize",
     Description: `[TESTING]Organizes streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n`,
     Version: "1.00",
-    Link: ""
+    Link: "",
+    Tags:'pre-processing,ffmpeg,'
   }
 }
 

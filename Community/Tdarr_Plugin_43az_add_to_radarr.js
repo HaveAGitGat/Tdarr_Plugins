@@ -12,6 +12,7 @@ module.exports.details = function details() {
     Description: `[TESTING]Add movie to Radarr after processing \n\n`,
     Version: "1.00",
     Link: "",
+    Tags:"radarr,post-processing,configurable",
 
     Inputs: [
       {
