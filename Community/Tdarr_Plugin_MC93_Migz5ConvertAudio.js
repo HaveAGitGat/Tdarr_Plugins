@@ -13,20 +13,20 @@ function details() {
             {
                 name: 'aac_stereo',
                 tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
-	   \\nExample:\\n
-	   true
-	   
-	   \\nExample:\\n
-	   false`
+       \\nExample:\\n
+       true
+       
+       \\nExample:\\n
+       false`
             },
             {
                 name: 'downmix',
                 tooltip: `Specify if downmixing should be used to create extra audio tracks. I.e if you have an 8ch but no 2ch or 6ch, create the missing audio tracks from the 8 ch. Likewise if you only have 6ch, create the missing 2ch from it.
-	   \\nExample:\\n
-	   true
-	   
-	   \\nExample:\\n
-	   false`
+       \\nExample:\\n
+       true
+       
+       \\nExample:\\n
+       false`
             }
         ]
     };

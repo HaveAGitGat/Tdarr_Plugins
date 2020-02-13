@@ -13,29 +13,29 @@ function details() {
             {
                 name: 'language',
                 tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-	   \\nExample:\\n
-	   eng
-	   
-	   \\nExample:\\n
-	   eng,jap`
+       \\nExample:\\n
+       eng
+       
+       \\nExample:\\n
+       eng,jap`
             },
             {
                 name: 'commentary',
                 tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
-	   \\nExample:\\n
-	   true
-	   
-	   \\nExample:\\n
-	   false`
+       \\nExample:\\n
+       true
+       
+       \\nExample:\\n
+       false`
             },
             {
                 name: 'tag_title',
                 tooltip: `Specify a single language for subtitle tracks with no language or unknown language to be tagged with, leave empty to disable. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-	   	   \\nExample:\\n
-	   eng
-	   
-	   \\nExample:\\n
-	   por`
+              \\nExample:\\n
+       eng
+       
+       \\nExample:\\n
+       por`
             }
         ]
     };

@@ -13,11 +13,11 @@ function details() {
             {
                 name: 'container',
                 tooltip: `Specify output container of file, ensure that all stream types you may have are supported by your chosen container. mkv is recommended.
-	   \\nExample:\\n
-	   mkv
-	   
-	   \\nExample:\\n
-	   mp4`
+       \\nExample:\\n
+       mkv
+       
+       \\nExample:\\n
+       mp4`
 
 
             }

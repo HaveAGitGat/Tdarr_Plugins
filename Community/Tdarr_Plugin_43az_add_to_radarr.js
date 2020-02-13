@@ -52,7 +52,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     const request = require('request');
 
     const IP = inputs.server_ip;
-    const { port } = inputs;
+    const {port} = inputs;
     const APIKey = inputs.radarr_api_key;
 
 

@@ -133,7 +133,7 @@ function plugin(file) {
 
 
         // Max 5.1 audio in AC3 output
-        var { channels } = file.ffProbeData.streams[1];
+        var {channels} = file.ffProbeData.streams[1];
         if (channels > 6) {
             channels = 6;
         }

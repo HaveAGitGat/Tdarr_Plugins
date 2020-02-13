@@ -13,41 +13,41 @@ function details() {
             {
                 name: 'language',
                 tooltip: `Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-	   \\nExample:\\n
-	   eng
-	   
-	   \\nExample:\\n
-	   eng,und
-	   
-	   \\nExample:\\n
-	   eng,und,jap`
+       \\nExample:\\n
+       eng
+       
+       \\nExample:\\n
+       eng,und
+       
+       \\nExample:\\n
+       eng,und,jap`
             },
             {
                 name: 'commentary',
                 tooltip: `Specify if audio tracks that contain commentary/description should be removed.
-	   \\nExample:\\n
-	   true
-	   
-	   \\nExample:\\n
-	   false`
+       \\nExample:\\n
+       true
+       
+       \\nExample:\\n
+       false`
             },
             {
                 name: 'tag_language',
                 tooltip: `Specify a single language for audio tracks with no language or unknown language to be tagged with, leave empty to disable, you must have "und" in your list of languages to keep for this to function. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-	   \\nExample:\\n
-	   eng
-	   
-	   \\nExample:\\n
-	   `
+       \\nExample:\\n
+       eng
+       
+       \\nExample:\\n
+       `
             },
             {
                 name: 'tag_title',
                 tooltip: `Specify audio tracks with no title to be tagged with the number of channels they contain. Do NOT use this with mp4, as mp4 does not support title tags.
-	   \\nExample:\\n
-	   true
-	   
-	   \\nExample:\\n
-	   false`
+       \\nExample:\\n
+       true
+       
+       \\nExample:\\n
+       false`
             }
         ]
     };

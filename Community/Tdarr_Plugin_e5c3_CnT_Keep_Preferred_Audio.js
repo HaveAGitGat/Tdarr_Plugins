@@ -1,4 +1,4 @@
-const { exec } = require('child_process');
+const {exec} = require('child_process');
 const fs = require('fs');
 
 function details() {
@@ -34,9 +34,9 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         var special = inputs.special.split(',');
     }
     if (languages.length >= special.length) {
-        var { length } = languages;
+        var {length} = languages;
     } else {
-        var { length } = special;
+        var {length} = special;
     }
     console.log(languages);
     var transcode = 0; // If this becomes '1' it will be transcoded

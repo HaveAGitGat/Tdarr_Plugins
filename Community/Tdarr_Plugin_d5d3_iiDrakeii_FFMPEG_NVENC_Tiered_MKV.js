@@ -84,7 +84,7 @@ function plugin(file) {
         bitratecheck = 1000000;
         if (bitrateprobe != null && bitrateprobe < bitratecheck) {
             bitratetarget = parseInt((bitrateprobe * 0.8) / 1000); // Lower Bitrate to 60% of original and convert to KB
-            bitratemax = bitratetarget + 500;	// Set max bitrate to 6MB Higher
+            bitratemax = bitratetarget + 500; // Set max bitrate to 6MB Higher
         } else {
             bitratetarget = 1000;
             bitratemax = 1500;
@@ -111,7 +111,7 @@ function plugin(file) {
         bitratecheck = 2000000;
         if (bitrateprobe != null && bitrateprobe < bitratecheck) {
             bitratetarget = parseInt((bitrateprobe * 0.8) / 1000); // Lower Bitrate to 60% of original and convert to KB
-            bitratemax = bitratetarget + 2000;	// Set max bitrate to 6MB Higher
+            bitratemax = bitratetarget + 2000; // Set max bitrate to 6MB Higher
         } else {
             bitratetarget = 2000;
             bitratemax = 4000;
@@ -128,7 +128,7 @@ function plugin(file) {
         bitratecheck = 2500000;
         if (bitrateprobe != null && bitrateprobe < bitratecheck) {
             bitratetarget = parseInt((bitrateprobe * 0.8) / 1000); // Lower Bitrate to 60% of original and convert to KB
-            bitratemax = bitratetarget + 2500;	// Set max bitrate to 6MB Higher
+            bitratemax = bitratetarget + 2500; // Set max bitrate to 6MB Higher
         } else {
             bitratetarget = 2500;
             bitratemax = 5000;
@@ -145,7 +145,7 @@ function plugin(file) {
         bitratecheck = 14000000;
         if (bitrateprobe != null && bitrateprobe < bitratecheck) {
             bitratetarget = parseInt((bitrateprobe * 0.7) / 1000); // Lower Bitrate to 60% of original and convert to KB
-            bitratemax = bitratetarget + 6000;	// Set max bitrate to 6MB Higher
+            bitratemax = bitratetarget + 6000; // Set max bitrate to 6MB Higher
         } else {
             bitratetarget = 14000;
             bitratemax = 20000;
