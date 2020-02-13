@@ -4,6 +4,7 @@
   "description": "Repo containing the Tdarr community plugins",
   "main": "n/a",
   "scripts": {
+    "lint": "eslint Community/*.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
