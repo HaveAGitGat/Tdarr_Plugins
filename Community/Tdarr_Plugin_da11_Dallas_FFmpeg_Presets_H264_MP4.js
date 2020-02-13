@@ -78,9 +78,9 @@ function plugin(file, librarySettings, inputs) {
     let preset = getPreset(inputs.FFmpeg_preset);
 
     if (preset === null) {
-        response.addInfo(BAD, `Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast)`);
+        response.addInfo(BAD, `Invalid Preset, "${inputs.FFmpeg_preset}" please select from (slow,medium,fast,veryfast)`);
 
-        throw `Error: Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast) \n`;
+        throw `Error: Invalid Preset, "${inputs.FFmpeg_preset}" please select from (slow,medium,fast,veryfast)`;
     }
 
     var jsonString = JSON.stringify(file);
