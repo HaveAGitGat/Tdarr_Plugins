@@ -11,6 +11,7 @@ function details() {
         Description: "Plugin that checks for unwanted audio, per 1.104 beta you can change the languages yourself from within Tdarr!\nUntill you enter a value it keep english tracks by default.\nUndefined languages are kept to prevent videos without sound.\nIf you would like to keep track of the languages you have for each file you can use the 'special' option.\nCreated by @control#0405",
         Version: "1.1",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio.js",
+        Tags:'pre-processing,ffmpeg,audio only,configurable',
         Inputs: [
             {
             name: 'languages',
