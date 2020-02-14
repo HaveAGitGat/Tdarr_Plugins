@@ -11,6 +11,7 @@ function details() {
         Description: `Uses iiDrakeii's filter, and crops video files when letterboxing is detected.\nThis uses the FFMPEG NVENC transcoding(hw).\nIf a file is 4K it will be scaled down to 1080p.\nNow with user definable bitrates!(since 1.104 beta)\nCreated by @control#0405`,
         Version: "1.3",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Remove_Letterbox.js",
+        Tags: 'h265,hevc,nvenc h265,ffmpeg,pre-processing,configurable',
         Inputs: [
             {
             name: 'bitrate',
