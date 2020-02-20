@@ -12,7 +12,7 @@ function details() {
 `,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_s7x8_winsome_h265.js",
-    Tags:'pre-processing,ffmpeg,h265',
+    Tags:'pre-processing,handbrake,ffmpeg,h265',
   }
 }
 
