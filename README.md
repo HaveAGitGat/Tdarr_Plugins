@@ -9,7 +9,7 @@ Steps for creating a community or local plugin.
 
 1. Copy the following pre and post-processing plugin examples:
 
-https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_zzzz_Post_Proc_Example.js
+https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_aaaa_Pre_Proc_Example.js
 
 https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_zzzz_Post_Proc_Example.js
 
