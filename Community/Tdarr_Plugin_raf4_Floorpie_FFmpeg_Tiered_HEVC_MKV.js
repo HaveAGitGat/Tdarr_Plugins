@@ -5,7 +5,7 @@ function details() {
     Name: "FFmpeg Tiered HEVC MKV",
     Type: "Video",
     Operation:"Transcode",
-    Description: `[Contains built-in filter] This plugin uses different Handbrake transcoding settings for 480p,576p,720p and 1080p. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
+    Description: `[Contains built-in filter] This plugin uses different FFmpeg transcoding settings for 480p,576p,720p and 1080p. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
     Version: "1.01",
     Link: "",
     Tags:"pre-processing,ffmpeg,h265,video only,"
