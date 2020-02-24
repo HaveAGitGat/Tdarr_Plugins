@@ -114,7 +114,7 @@ function plugin(file, librarySettings, inputs) {
 
   if (file.ffProbeData.streams[0].codec_name != 'h264') {
     response.addInfo(BAD, "File is not in h264!");
-    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v libx264 -preset medium -c:a aac ' + subType;
+    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v libx264 -preset medium -c:a aac -strict -2 ' + subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -125,7 +125,7 @@ function plugin(file, librarySettings, inputs) {
 
   if ((file.meta.Title != undefined) && !jsonString.includes("aac") && hasSubs) {
     response.addInfo(BAD, "File has title metadata and no aac and subs");
-    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac ' + subType;
+    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac -strict -2 ' + subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -134,7 +134,7 @@ function plugin(file, librarySettings, inputs) {
 
   if (!jsonString.includes("aac") && hasSubs) {
     response.addInfo(BAD, "File has no aac track and has subs");
-    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac ' + subType;
+    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac -strict -2 ' + subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -163,7 +163,7 @@ function plugin(file, librarySettings, inputs) {
 
   if (!jsonString.includes("aac")) {
     response.addInfo(BAD, "File has no aac track");
-    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac ' + subType;
+    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac -strict -2 ' + subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
