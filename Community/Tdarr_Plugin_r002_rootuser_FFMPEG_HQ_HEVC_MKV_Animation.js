@@ -5,10 +5,10 @@ function details() {
     Name: "FFMPEG HQ 10-bit HEVC MKV for Animation",
     Type: "Video",
     Operation:"Transcode",
-    Description: `High Quality FFMPEG transcoding settings for Animation. Converts all audio to AAC 512K. Preserves track names, metadata and attachments/fonts. Proper use of x265-params. CRF 18. Preset medium. 10-Bit Video encoding. Skips h.265 encoded videos. The output container is mkv. \n\n`,
+    Description: `[Contains built-in filter] High Quality FFMPEG transcoding settings for Animation. Converts all audio to AAC 512K. Preserves track names, metadata and attachments/fonts. Proper use of x265-params. CRF 18. Preset medium. 10-Bit Video encoding. Skips h.265 encoded videos. The output container is mkv. \n\n`,
     Version: "1.1",
     Link: "",
-    Tags:"pre-processing,ffmpeg,h265,aac,10bit,"
+    Tags:"pre-processing,ffmpeg,h265,aac,10bit,anime,"
   }
 }
  
