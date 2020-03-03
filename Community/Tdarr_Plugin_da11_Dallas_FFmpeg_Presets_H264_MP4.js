@@ -4,7 +4,7 @@ function details() {
     Stage: "Pre-processing",
     Name: "Dallas FFmpeg h264 mp4. Video: h264/mp4, Subs: Convert to mov_text or drop, Audio: aac",
     Type: "Video",
-    Description: `This plugin transcodes into H264 with an MP4 container using the FFmpeg preset you select (slow,medium,fast,veryfast). It maintains all compatible subtitles and audio tracks. \n\n`,
+    Description: `This plugin transcodes into H264 with an MP4 container using the FFmpeg preset you select (slow,medium,fast,veryfast). It maintains all compatible subtitles and audio tracks. Drops picture tracks such as mjpeg\n\n`,
     Version: "1.00",
     Link: "https://github.com/JackDallas/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4.js",
     Tags:'pre-processing,ffmpeg,h264,video only,configurable',
@@ -114,7 +114,7 @@ function plugin(file, librarySettings, inputs) {
 
   if (file.ffProbeData.streams[0].codec_name != 'h264') {
     response.addInfo(BAD, "File is not in h264!");
-    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v libx264 -preset medium -c:a aac -strict -2 ' + subType;
+    response.preset = ', -map_metadata -1 -map 0:V ' + subMap + ' -map 0:a -c:v libx264 -preset medium -c:a aac -strict -2 ' + subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
