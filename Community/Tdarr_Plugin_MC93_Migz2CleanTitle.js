@@ -7,7 +7,7 @@ function details() {
 	Operation: "Clean",
     Description: `[TESTING]This plugin removes video title metadata if it exists. \n\n`,
     Version: "1.10",
-    Link: "",
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
     Tags:'pre-processing,ffmpeg,video only',
   }
 }
@@ -48,7 +48,6 @@ function plugin(file) {
 		    try {
 		         if (typeof file.ffProbeData.streams[i].tags.title != 'undefined') {
 			     ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `
-				 response.infoLog += "2"
 	  	         convert = true
                 }
 			} catch (err) { }

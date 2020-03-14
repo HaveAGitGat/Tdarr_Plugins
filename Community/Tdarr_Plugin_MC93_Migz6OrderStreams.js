@@ -7,7 +7,7 @@ function details() {
 	Operation: "Organize",
     Description: `[TESTING]Organizes streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n`,
     Version: "1.00",
-    Link: "",
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz6OrderStreams.js",
     Tags:'pre-processing,ffmpeg,'
   }
 }
@@ -44,7 +44,7 @@ function plugin(file) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
 		  if (subtitleIdx != "0") {
 		    convert = true
-			response.infoLog += "☒ Audio not first. \n"
+			response.infoLog += "☒ Audio not second. \n"
 		  }
           audioIdx++
 		if (file.ffProbeData.streams[i].channels == "2") {

@@ -1,14 +1,14 @@
 function details() {
   return {
-    id: "Tdarr_Plugin_MC93_Migz1FFMPEG",
+    id: "Tdarr_Plugin_MC93_Migz1FFMPEG_CPU",
 	Stage: "Pre-processing",
-    Name: "Migz-Transcode Using Nvidia GPU & FFMPEG",
+    Name: "Migz-Transcode Using CPU & FFMPEG",
     Type: "Video",
     Operation:"Transcode",
-    Description: `Files will be transcoded using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
-    Version: "2.10",
-  Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js",
-  Tags:'pre-processing,ffmpeg,video only,nvenc h265,configurable',
+    Description: `[TESTING]Files will be transcoded using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
+    Version: "1.0",
+  Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
+  Tags:'pre-processing,ffmpeg,video only,configurable',
 	Inputs: [
      {
        name: 'container',
@@ -112,39 +112,11 @@ function plugin(file, librarySettings, inputs) {
   bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
   response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
  
-//codec will be checked so it can be transcoded correctly
-  if (file.video_codec_name == 'h263') {
-      response.preset = `-c:v h263_cuvid`
-    }
-  else if (file.video_codec_name == 'h264') {
-    if (file.ffProbeData.streams[0].profile != 'High 10') { //if a h264 coded video is not HDR
-      response.preset = `-c:v h264_cuvid`
-    }
-  }
-  else if (file.video_codec_name == 'mjpeg') {
-    response.preset = `c:v mjpeg_cuvid`
-  }
-  else if (file.video_codec_name == 'mpeg1') {
-    response.preset = `-c:v mpeg1_cuvid`
-  }
-  else if (file.video_codec_name == 'mpeg2') {
-    response.preset = `-c:v mpeg2_cuvid`
-  }
-  else if (file.video_codec_name == 'vc1') {
-    response.preset = `-c:v vc1_cuvid`
-  }
-  else if (file.video_codec_name == 'vp8') {
-    response.preset = `-c:v vp8_cuvid`
-  }
-  else if (file.video_codec_name == 'vp9') {
-    response.preset = `-c:v vp9_cuvid`
-  }
-  
   if (inputs.container == "mkv") {
 	  extraArguments = "-map -0:d "
   }
   
-  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
+  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
   response.processFile = true
   response.infoLog += `☒File is not hevc. Transcoding. \n`
   return response
