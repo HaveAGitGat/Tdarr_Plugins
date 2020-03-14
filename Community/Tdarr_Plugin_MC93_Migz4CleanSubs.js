@@ -7,7 +7,7 @@ function details() {
 	Operation: "Clean",
     Description: `[TESTING] This plugin keeps only specified language subtitle tracks & can tag those that have an unknown language. \n\n`,
     Version: "2.00",
-    Link: "",
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz4CleanSubs.js",
     Tags:'pre-processing,ffmpeg,subtitle only,configurable',
     Inputs: [
      {
@@ -86,7 +86,7 @@ function plugin(file, librarySettings, inputs) {
         } catch (err) { }
 	
        try {
-            if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description'))) {
+            if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))) {
                 ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `
                 response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${SubtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`
                 convert = true
