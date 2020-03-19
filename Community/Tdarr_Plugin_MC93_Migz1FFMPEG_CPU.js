@@ -8,34 +8,34 @@ function details() {
     Description: `[TESTING]Files will be transcoded using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
     Version: "1.0",
   Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
-  Tags:'pre-processing,ffmpeg,video only,configurable',
+  Tags:'pre-processing,ffmpeg,video only,configurable,h265',
 	Inputs: [
      {
        name: 'container',
        tooltip: `Specify output container of file, ensure that all stream types you may have are supported by your chosen container. mkv is recommended.
 	   \\nExample:\\n
 	   mkv
-	   
+
 	   \\nExample:\\n
 	   mp4`
-	   
-	   
+
+
      },
 	 {
        name: 'bitrate_cutoff',
        tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded. Rate is in kbps. Leave empty to disable.
 	   \\nExample:\\n
 	   6000
-	   
+
 	   \\nExample:\\n
 	   4000`
-	   
-	   
+
+
      },
 	 ]
   }
 }
-   
+
 function plugin(file, librarySettings, inputs) {
    var response = {
     processFile: false,
@@ -53,7 +53,7 @@ function plugin(file, librarySettings, inputs) {
     } else {
 	  response.container = '.' + inputs.container
 	}
-   
+
   if (file.fileMedium !== "video") {
       response.processFile = false
       response.infoLog += "☒File is not a video. \n"
@@ -72,7 +72,7 @@ function plugin(file, librarySettings, inputs) {
   var targetBitrate = ~~((file.file_size / (duration * 0.0075)) / 2)
   var minimumBitrate = ~~(targetBitrate * 0.7)
   var maximumBitrate = ~~(targetBitrate * 1.3)
-  
+
   if (targetBitrate == "0") {
 	  response.processFile = false
       response.infoLog += "☒Target bitrate could not be calculated. Skipping this plugin. \n"
@@ -111,16 +111,16 @@ function plugin(file, librarySettings, inputs) {
 
   bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
   response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
- 
+
   if (inputs.container == "mkv") {
 	  extraArguments = "-map -0:d "
   }
-  
+
   response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
   response.processFile = true
   response.infoLog += `☒File is not hevc. Transcoding. \n`
   return response
 }
-   
+
 module.exports.details = details;
 module.exports.plugin = plugin;
