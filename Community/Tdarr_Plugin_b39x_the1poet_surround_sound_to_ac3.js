@@ -62,7 +62,7 @@ function plugin(file) {
 
 
       try {
-        if (  file.ffProbeData.streams[1].channels >= 6 && file.ffProbeData.streams[i].codec_name !== 'ac3' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
+        if (  file.ffProbeData.streams[i].channels >= 6 && file.ffProbeData.streams[i].codec_name !== 'ac3' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
           ffmpegCommandInsert += ` -c:a:${audioIdx} ac3 `
           hasnonAC3SurroundTrack = true
 
