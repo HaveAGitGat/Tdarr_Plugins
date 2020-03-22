@@ -5,7 +5,7 @@ function details() {
     Name: "Migz-Clean title metadata",
     Type: "Video",
 	Operation: "Clean",
-    Description: `[TESTING]This plugin removes title metadata from video/audio/subtitles, if it exists. \n\n`,
+    Description: `This plugin removes title metadata from video/audio/subtitles, if it exists. \n\n`,
     Version: "1.10",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
     Tags:'pre-processing,ffmpeg',

@@ -5,7 +5,7 @@ function details() {
     Name: "Migz-Organize Streams",
     Type: "Streams",
 	Operation: "Organize",
-    Description: `[TESTING]Organizes streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n`,
+    Description: `Organizes streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n`,
     Version: "1.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz6OrderStreams.js",
     Tags:'pre-processing,ffmpeg,'
