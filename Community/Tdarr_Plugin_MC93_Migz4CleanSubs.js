@@ -5,7 +5,7 @@ function details() {
     Name: "Migz-Clean subtitle streams",
     Type: "subtitless",
 	Operation: "Clean",
-    Description: `[TESTING] This plugin keeps only specified language subtitle tracks & can tag those that have an unknown language. \n\n`,
+    Description: `This plugin keeps only specified language subtitle tracks & can tag those that have an unknown language. \n\n`,
     Version: "2.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz4CleanSubs.js",
     Tags:'pre-processing,ffmpeg,subtitle only,configurable',

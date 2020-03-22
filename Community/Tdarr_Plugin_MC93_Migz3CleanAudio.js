@@ -5,7 +5,7 @@ function details() {
     Name: "Migz-Clean audio streams",
     Type: "Audio",
 	Operation: "Clean",
-    Description: `[TESTING]This plugin keeps only specified language audio tracks & can tags those that have an unknown language. \n\n`,
+    Description: `This plugin keeps only specified language audio tracks & can tags those that have an unknown language. \n\n`,
     Version: "2.00",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz3CleanAudio.js",
     Tags:'pre-processing,ffmpeg,audio only,configurable',

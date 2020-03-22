@@ -5,10 +5,10 @@ function details() {
     Name: "Migz-Clean title metadata",
     Type: "Video",
 	Operation: "Clean",
-    Description: `[TESTING]This plugin removes video title metadata if it exists. \n\n`,
+    Description: `This plugin removes title metadata from video/audio/subtitles, if it exists. \n\n`,
     Version: "1.10",
     Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
-    Tags:'pre-processing,ffmpeg,video only',
+    Tags:'pre-processing,ffmpeg',
   }
 }
 
@@ -26,6 +26,8 @@ function plugin(file) {
   
   var ffmpegCommandInsert = ''
   var videoIdx = 0
+  var audioIdx = 0
+  var subtitleIdx = 0
   var convert = false
 
   if (file.fileMedium !== "video") {
@@ -53,14 +55,32 @@ function plugin(file) {
 			} catch (err) { }
      		videoIdx++
 		}
+		        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
+		    try {
+		         if (typeof file.ffProbeData.streams[i].tags.title != 'undefined') {
+			     ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `
+	  	         convert = true
+                }
+			} catch (err) { }
+     		audioIdx++
+		}
+		        if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
+		    try {
+		         if (typeof file.ffProbeData.streams[i].tags.title != 'undefined') {
+			     ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `
+	  	         convert = true
+                }
+			} catch (err) { }
+     		subtitleIdx++
+		}
     }
   
-   if(convert == true){
+   if (convert == true){
     response.infoLog += "☒File has title metadata \n"
     response.preset = `,${ffmpegCommandInsert} -c copy`
     response.reQueueAfter = true;
     response.processFile = true;
-    }else{
+    } else {
     response.infoLog += "☑File has no title metadata \n"
     }
     return response
