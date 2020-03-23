@@ -53,6 +53,10 @@ function plugin(file, librarySettings, inputs) {
     } else {
 	  response.container = '.' + inputs.container
 	}
+	
+  if (inputs.container == "mkv") {
+	  extraArguments = "-map -0:d "
+  }
 
   if (file.fileMedium !== "video") {
       response.processFile = false
@@ -87,7 +91,7 @@ function plugin(file, librarySettings, inputs) {
           return response
 		} else {
 		  response.processFile = true
-		  response.preset += `, -c copy`
+		  response.preset += `, -c copy ${extraArguments}`
 		  response.infoLog += `☒Current bitrate is below configured bitrate cutoff of ${inputs.bitrate_cutoff} but is not in correct container. Remuxing to ${inputs.container} but not transcoding. \n`
 		  return response
 	    }
@@ -102,7 +106,7 @@ function plugin(file, librarySettings, inputs) {
 			  }
 		  if (file.ffProbeData.streams[i].codec_name == 'hevc' && file.container != '${inputs.container}') {
 			  response.infoLog += `☒File is hevc but is not in ${inputs.container} container. Remuxing. \n`
-			  response.preset = ', -map 0 -c copy'
+			  response.preset = `, -map 0 -c copy ${extraArguments}`
 			  response.processFile = true;
 			  return response
 			  }
@@ -112,9 +116,6 @@ function plugin(file, librarySettings, inputs) {
   bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
   response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
 
-  if (inputs.container == "mkv") {
-	  extraArguments = "-map -0:d "
-  }
 
   response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
   response.processFile = true
