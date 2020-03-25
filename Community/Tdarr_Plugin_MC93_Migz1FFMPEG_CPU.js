@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation:"Transcode",
     Description: `Files will be transcoded using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
-    Version: "1.0",
+    Version: "1.1",
   Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
   Tags:'pre-processing,ffmpeg,video only,configurable,h265',
 	Inputs: [
@@ -55,7 +55,7 @@ function plugin(file, librarySettings, inputs) {
 	}
 	
   if (inputs.container == "mkv") {
-	  extraArguments = "-map -0:d "
+	  extraArguments += "-map -0:d "
   }
 
   if (file.fileMedium !== "video") {
@@ -70,6 +70,8 @@ function plugin(file, librarySettings, inputs) {
 	  var duration = (file.ffProbeData.streams[0].duration * 0.0166667)
   }
 
+  var videoIdx = 0
+  var extraArguments = ""
   var bitrateSettings = ""
   var filesize = (file.file_size / 1000)
   var currentBitrate = ~~(file.file_size / (duration * 0.0075))
@@ -99,6 +101,9 @@ function plugin(file, librarySettings, inputs) {
   }
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 	  if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
+		  if (file.ffProbeData.streams[i].codec_name == 'mjpeg') {
+			  extraArguments += `-map -v:${videoIdx} `
+		  }
 		  if (file.ffProbeData.streams[i].codec_name == 'hevc' && file.container == inputs.container) {
 			  response.processFile = false
 			  response.infoLog += `☑File is already in ${inputs.container} & hevc. \n`
@@ -110,6 +115,7 @@ function plugin(file, librarySettings, inputs) {
 			  response.processFile = true;
 			  return response
 			  }
+		  videoIdx++
 	  }
   }
 
