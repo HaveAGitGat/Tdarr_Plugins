@@ -60,7 +60,7 @@ module.exports = function transcodeKeepOneAudioStream(file, audioEncoder, langTa
 
                 try {
                     if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && i !== audioStreamToKeep) {
-                        ffmpegCommandInsert += ` -map -0:a:${i}`
+                        ffmpegCommandInsert += ` -map -0:${i}`
 
                     }
                 } catch (err) { }
