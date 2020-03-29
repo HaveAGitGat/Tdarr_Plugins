@@ -15,10 +15,10 @@ function details() {
        tooltip: `Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 	   \\nExample:\\n
 	   eng
-	   
+
 	   \\nExample:\\n
 	   eng,und
-	   
+
 	   \\nExample:\\n
 	   eng,und,jap`
      },
@@ -27,7 +27,7 @@ function details() {
        tooltip: `Specify if audio tracks that contain commentary/description should be removed.
 	   \\nExample:\\n
 	   true
-	   
+
 	   \\nExample:\\n
 	   false`
      },
@@ -36,7 +36,7 @@ function details() {
        tooltip: `Specify a single language for audio tracks with no language or unknown language to be tagged with, leave empty to disable, you must have "und" in your list of languages to keep for this to function. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 	   \\nExample:\\n
 	   eng
-	   
+
 	   \\nExample:\\n
 	   por
 	   `
@@ -46,7 +46,7 @@ function details() {
        tooltip: `Specify audio tracks with no title to be tagged with the number of channels they contain. Do NOT use this with mp4, as mp4 does not support title tags.
 	   \\nExample:\\n
 	   true
-	   
+
 	   \\nExample:\\n
 	   false`
      },
@@ -70,14 +70,14 @@ function plugin(file, librarySettings, inputs) {
     response.infoLog += "☒File is not video \n"
     response.processFile = false;
     return response
-  } 
-  
+  }
+
   if (inputs.language == "") {
     response.infoLog += "☒Language/s keep have not been configured within plugin settings, please configure required options. Skipping this plugin.  \n"
     response.processFile = false;
     return response
-  } 
-  
+  }
+
     var language = inputs.language.split(",")
     var ffmpegCommandInsert = ''
 	var convert = false
@@ -106,7 +106,7 @@ function plugin(file, librarySettings, inputs) {
 
     try {
       if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))) {
-        audioStreamsRemoved++       
+        audioStreamsRemoved++
         ffmpegCommandInsert += `-map -0:a:${audioIdx} `
         response.infoLog += `☒Audio stream detected as being Commentary or Description, removing. Audio stream 0:a:${audioIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`
         convert = true
@@ -120,7 +120,7 @@ function plugin(file, librarySettings, inputs) {
           response.infoLog += `☒Audio stream detected as having unknown language tagged, tagging as ${inputs.tag_language}. \n`
           convert = true
 	    }
-	  
+
         if (typeof file.ffProbeData.streams[i].tags.language === 'undefined' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `
           response.infoLog += `☒Audio stream detected as having no language tagged, tagging as ${inputs.tag_language}. \n`
@@ -148,7 +148,7 @@ function plugin(file, librarySettings, inputs) {
           }
 	    }
 	} catch (err) { }
-	
+
   }
 
       if (audioStreamsRemoved == audioStreamCount) {
@@ -159,7 +159,7 @@ function plugin(file, librarySettings, inputs) {
 
       if (convert === true && (audioStreamsRemoved != audioStreamCount)) {
         response.processFile = true
-        response.preset = `, -map 0 ${ffmpegCommandInsert} -c copy`
+        response.preset = `, -map 0 ${ffmpegCommandInsert} -c copy -max_muxing_queue_size 4096`
         response.container = '.' + file.container
         response.reQueueAfter = true
       } else {

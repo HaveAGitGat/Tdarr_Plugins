@@ -40,7 +40,7 @@ function plugin(file) {
 		  }
           videoIdx++
         }
-		
+
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
 		  if (subtitleIdx != "0") {
 		    convert = true
@@ -66,13 +66,13 @@ function plugin(file) {
 			response.infoLog += "☒ Audio 8ch not last. \n"
 		}
         }
-		
+
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
           subtitleIdx++
         }
       } catch (err) { }
     }
-  
+
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" && file.ffProbeData.streams[i].codec_name.toLowerCase() != "mjpeg") {
@@ -80,7 +80,7 @@ function plugin(file) {
         }
 	 } catch (err) { }
 	}
-	
+
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels == "2") {
@@ -88,7 +88,7 @@ function plugin(file) {
         }
 	 } catch (err) { }
 	}
-	
+
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels == "6") {
@@ -96,7 +96,7 @@ function plugin(file) {
         }
 	 } catch (err) { }
 	}
-	
+
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels == "8") {
@@ -104,7 +104,7 @@ function plugin(file) {
         }
 	 } catch (err) { }
 	}
-	
+
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && file.ffProbeData.streams[i].channels != "2" && file.ffProbeData.streams[i].channels != "6" && file.ffProbeData.streams[i].channels != "8") {
@@ -112,7 +112,7 @@ function plugin(file) {
         }
 	 } catch (err) { }
 	}
-	
+
     for (var i = 0; i < file.ffProbeData.streams.length; i++) {
       try {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
@@ -123,7 +123,7 @@ function plugin(file) {
 
         if (convert == true) {
         response.processFile = true;
-        response.preset = `,${ffmpegCommandInsert} -c copy`
+        response.preset = `,${ffmpegCommandInsert} -c copy -max_muxing_queue_size 4096`
         response.reQueueAfter = true;
         response.infoLog += "☒ Streams are out of order, reorganizing streams. Video, Audio, Subtitles. \n"
 		} else {
@@ -131,7 +131,7 @@ function plugin(file) {
         response.processFile = false;
       }
       return response
-	  
+
 }
 module.exports.details = details;
 module.exports.plugin = plugin;

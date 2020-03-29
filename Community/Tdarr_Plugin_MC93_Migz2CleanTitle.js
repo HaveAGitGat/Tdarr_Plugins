@@ -71,7 +71,7 @@ function plugin(file, librarySettings, inputs) {
             }
      		videoIdx++
 		}
-		
+
 		if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" && inputs.clean_audio.toLowerCase() == "true") {
 			if (file.ffProbeData.streams[i].tags.title.split('.').length-1 > 3) {
 				response.infoLog += `☒More then 3 full stops detected in subtitle title, likely to be junk metadata. Removing title from stream ${i} \n`
@@ -80,7 +80,7 @@ function plugin(file, librarySettings, inputs) {
 			}
      		audioIdx++
 		}
-		
+
 		if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && inputs.clean_subtitles.toLowerCase() == "true") {
 			if (file.ffProbeData.streams[i].tags.title.split('.').length-1 > 3) {
 				response.infoLog += `☒More then 3 full stops detected in subtitle title, likely to be junk metadata. Removing title from stream ${i} \n`
@@ -93,7 +93,7 @@ function plugin(file, librarySettings, inputs) {
 
    if (convert == true) {
     response.infoLog += "☒File has title metadata. Removing \n"
-    response.preset = `,${ffmpegCommandInsert} -c copy`
+    response.preset = `,${ffmpegCommandInsert} -c copy -max_muxing_queue_size 4096`
     response.reQueueAfter = true;
     response.processFile = true;
     } else {

@@ -15,7 +15,7 @@ function details() {
        tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 	   \\nExample:\\n
 	   eng
-	   
+
 	   \\nExample:\\n
 	   eng,jap`
      },
@@ -24,7 +24,7 @@ function details() {
        tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
 	   \\nExample:\\n
 	   true
-	   
+
 	   \\nExample:\\n
 	   false`
      },
@@ -33,7 +33,7 @@ function details() {
        tooltip: `Specify a single language for subtitle tracks with no language or unknown language to be tagged with, leave empty to disable. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
 	   	   \\nExample:\\n
 	   eng
-	   
+
 	   \\nExample:\\n
 	   por`
      },
@@ -58,13 +58,13 @@ function plugin(file, librarySettings, inputs) {
       response.processFile = false;
       return response
     }
-  
+
   if (inputs.language == "") {
       response.infoLog += "☒Language/s keep have not been configured within plugin settings, please configure required options. Skipping this plugin.  \n"
       response.processFile = false;
       return response
-    } 
-  
+    }
+
   var language = inputs.language.split(",")
   var ffmpegCommandInsert = ''
   var subtitleIdx = -1
@@ -84,7 +84,7 @@ function plugin(file, librarySettings, inputs) {
                 convert = true
 		    }
         } catch (err) { }
-	
+
        try {
             if (inputs.commentary.toLowerCase() == "true" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" && (file.ffProbeData.streams[i].tags.title.toLowerCase().includes('commentary') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('description') || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))) {
                 ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `
@@ -102,7 +102,7 @@ function plugin(file, librarySettings, inputs) {
 	            }
 			}
         } catch (err) { }
-	  
+
         try {
              if (typeof file.ffProbeData.streams[i].tags.language == 'undefined' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
                  ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_title} `
@@ -113,7 +113,7 @@ function plugin(file, librarySettings, inputs) {
     }
   if (convert === true ) {
       response.processFile = true;
-      response.preset = `, -map 0 ${ffmpegCommandInsert} -c copy`
+      response.preset = `, -map 0 ${ffmpegCommandInsert} -c copy -max_muxing_queue_size 4096`
       response.container = '.' + file.container
       response.reQueueAfter = true;
     } else {
