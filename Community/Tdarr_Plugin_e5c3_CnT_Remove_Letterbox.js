@@ -149,8 +149,8 @@ function create_crop_values(file) {
     //create crop value
     if (!fs.existsSync(`${cropfile}`)) { 
         returns.log += `Creating crop values...\n`;
-        execSync(`ffmpeg -ss 300 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 > \"${cropfile}\"`);
-        execSync(`ffmpeg -ss 1200 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 >> \"${cropfile}\"`);
+        execSync(otherArguments.ffmpegPath + ` -ss 300 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 > \"${cropfile}\"`);
+        execSync(otherArguments.ffmpegPath + ` -ss 1200 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 >> \"${cropfile}\"`);
         //get data from copvalue.txt
         var data = fs.readFileSync(`${cropfile}`).toString().split("\n");  //full data from cropvalue.txt
         //get height of the supposed cropped video
