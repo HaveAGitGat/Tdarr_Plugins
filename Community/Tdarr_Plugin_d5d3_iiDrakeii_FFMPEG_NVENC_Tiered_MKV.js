@@ -101,7 +101,7 @@ function plugin(file) {
 //mitigate errors due to embeded pictures	  
 	  	  try {
   if ((file.ffProbeData.streams[i].codec_name.toLowerCase() == "png" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "bmp" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mjpeg") && file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" ) {
-	map = `-map 0:v:0 -map 0:a -map 0:s`
+	map = `-map 0:v:0 -map 0:a -map 0:s?`
     }
 	  }
 	  catch (err) { }
