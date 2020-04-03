@@ -6,8 +6,9 @@ function details() {
     Type: "Video",
     Operation:"Transcode",
     Description: `[Contains built-in filter] This plugin uses different FFMPEG NVENC transcoding settings for 480p,576p,720p,1080p and 4KUHD. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
-    Version: "1.08",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV.js"
+    Version: "1.09",
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV.js",
+    Tags:'pre-processing,ffmpeg,video only,nvenc h265',
   }
 }
    
@@ -17,7 +18,9 @@ function plugin(file) {
   var bitratetarget = 0;
   var bitratemax = 0;
   var bitratecheck = 0;
-  var subcli = `-c:s copy`
+  var subcli = `-c:s copy`;
+  var maxmux = '';
+  var map = '-map 0'
 //default values that will be returned
   var response = {
     processFile: false,
@@ -26,7 +29,8 @@ function plugin(file) {
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: true,
-    infoLog: ''
+    infoLog: '',
+	maxmux: false,
   }
    
 //check if the file is a video, if not the function will be stopped immediately
@@ -78,7 +82,30 @@ function plugin(file) {
   else if (file.video_codec_name == 'vp9') {
     response.preset = `-c:v vp9_cuvid`
   }
-   
+ 
+//Set Subtitle Var before adding encode cli
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  	  	  try {
+  if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "mov_text" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" ) {
+    subcli = `-c:s srt`
+    }
+	  }
+	  catch (err) { }
+	  //mitigate TrueHD audio causing Too many packets error
+		try {
+  if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "truehd" || (file.ffProbeData.streams[i].codec_name.toLowerCase() == "dts" && file.ffProbeData.streams[i].profile.toLowerCase() == "dts-hd ma") || file.ffProbeData.streams[i].codec_name.toLowerCase() == "aac" && file.ffProbeData.streams[i].sample_rate.toLowerCase() == "44100" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
+	maxmux = ` -max_muxing_queue_size 9999`
+    }
+	  }
+	  catch (err) { }
+//mitigate errors due to embeded pictures	  
+	  	  try {
+  if ((file.ffProbeData.streams[i].codec_name.toLowerCase() == "png" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "bmp" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mjpeg") && file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" ) {
+	map = `-map 0:v:0 -map 0:a -map 0:s?`
+    }
+	  }
+	  catch (err) { }
+  }  
 //file will be encoded if the resolution is 480p or 576p
 //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
@@ -91,18 +118,10 @@ function plugin(file) {
 	  bitratetarget = 1000;
 	  bitratemax = 1500;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli} -dn`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
-//Set Subtitle Var before adding encode cli
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-  	  	  try {
-  if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "mov_text" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" ) {
-    subcli = `-c:s srt`
-    }
-	  }
-	  catch (err) { }
-  } 
+
 //file will be encoded if the resolution is 720p
 //codec will be checked so it can be transcoded correctly
   if(file.video_resolution === "720p") {
@@ -115,7 +134,7 @@ function plugin(file) {
 	  bitratetarget = 2000;
 	  bitratemax = 4000;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli} -dn`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
 //file will be encoded if the resolution is 1080p
@@ -130,7 +149,7 @@ function plugin(file) {
 	  bitratetarget = 2500;
 	  bitratemax = 5000;
     }
-    response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli} -dn`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:V 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
 //file will be encoded if the resolution is 4K
@@ -145,24 +164,8 @@ function plugin(file) {
 	  bitratetarget = 14000;
 	  bitratemax = 20000;
     }
-  response.preset += `,-map 0 -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy -dn`;
+  response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
   transcode = 1;
-  }
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-	  try {
-  //mitigate TrueHD audio causing Too many packets error		  
-  if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "truehd" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
-    response.preset += ` -max_muxing_queue_size 1024`
-    }
-	  }
-	  catch (err) { }
-//mitigate errors due to embeded pictures	  
-	  	  try {
-  if ((file.ffProbeData.streams[i].codec_name.toLowerCase() == "png" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "bmp" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mjpeg") && file.ffProbeData.streams[i].codec_type.toLowerCase() == "video" ) {
-    response.preset += ` -map -0:v:1`
-    }
-	  }
-	  catch (err) { }
   }
 //check if the file is eligible for transcoding
 //if true the neccessary response values will be changed

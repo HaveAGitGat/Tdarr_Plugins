@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter] This plugin transcodes into H264 using HandBrake's 'Very Fast 1080p30' preset if the file is not in H264 already. It removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a8hc_HaveAGitGat_HandBrake_H264_VeryFast1080p30.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a8hc_HaveAGitGat_HandBrake_H264_VeryFast1080p30.js",
+    Tags:'pre-processing,handbrake,ffmpeg,h264',
   }
 
 }

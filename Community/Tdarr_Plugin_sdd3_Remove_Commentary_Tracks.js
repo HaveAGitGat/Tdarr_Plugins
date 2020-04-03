@@ -11,7 +11,8 @@ function details() {
     Operation: "Remux",
     Description: `[Contains built-in filter] If commentary tracks are detected, they will be removed. \n\n`,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_sdd3_Remove_Commentary_Tracks.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_sdd3_Remove_Commentary_Tracks.js",
+    Tags:'pre-processing,ffmpeg,audio only',
   }
 
 }

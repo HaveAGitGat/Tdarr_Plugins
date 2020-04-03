@@ -11,7 +11,8 @@ function details() {
     Description: `[Contains built-in filter]  If the file has surround sound tracks not in ac3, they will be converted to ac3. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_b39x_the1poet_surround_sound_to_ac3.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_b39x_the1poet_surround_sound_to_ac3.js",
+    Tags:'pre-processing,ffmpeg,audio only,',
   }
 
 }
@@ -61,7 +62,7 @@ function plugin(file) {
 
 
       try {
-        if (  file.ffProbeData.streams[1].channels >= 6 && file.ffProbeData.streams[i].codec_name !== 'ac3' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
+        if (  file.ffProbeData.streams[i].channels >= 6 && file.ffProbeData.streams[i].codec_name !== 'ac3' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" ) {
           ffmpegCommandInsert += ` -c:a:${audioIdx} ac3 `
           hasnonAC3SurroundTrack = true
 
