@@ -4,6 +4,7 @@ const execSync = require('child_process').execSync;
 function details() {
     return {
       id: "Tdarr_Plugin_e5c3_CnT_Add_Subtitles",
+      Stage: "Pre-processing",
       Name: "Add subtitles to MKV files",
       Type: "Video",
       Operation:"Remux",
@@ -15,6 +16,10 @@ function details() {
         {
         name: 'install_packages',
         tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`
+        },
+        {
+        name: 'container',
+        tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`
         },
     ]
     }
@@ -30,6 +35,11 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         FFmpegMode: false,
         reQueueAfter: false,
         infoLog: `Searching new subtitles...\n`,
+    }
+    
+    if (inputs.container !== undefined) {
+        response.container = inputs.container;
+        console.log(`Changed container to: ` + inputs.container);
     }
 
     if (inputs.install_packages == "yes") {
