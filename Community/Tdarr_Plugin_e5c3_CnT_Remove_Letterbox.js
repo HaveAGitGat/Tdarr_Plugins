@@ -20,7 +20,8 @@ function details() {
             name: 'container',
             tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`
             },
-        ]
+        ],
+        Tags:'pre-processing,video only,ffmpeg,configurable',
     }
 }
 
