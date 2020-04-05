@@ -5,11 +5,22 @@ function filterByCodec(file, mode, codecs) {
 
     try {
 
-       // console.log(file,mode,codecs)
+        // console.log(file,mode,codecs)
+
+        var allCodecs = file.ffProbeData.streams.map(row => row.codec_name)
+
+        var included = false
+
+        for (var i = 0; i < allCodecs.length; i++) {
+
+            if (codecs.toLowerCase().includes(allCodecs[i])) {
+                included = true
+            }
+        }
 
         if (mode === 'include') {
 
-            if (codecs.toLowerCase().includes(file.ffProbeData.streams[0].codec_name.toLowerCase())) {
+            if (included) {
 
                 var response = {
                     outcome: true,
@@ -29,7 +40,7 @@ function filterByCodec(file, mode, codecs) {
 
         } else if (mode === 'exclude') {
 
-            if (codecs.toLowerCase().includes(file.ffProbeData.streams[0].codec_name.toLowerCase())) {
+            if (included) {
 
                 var response = {
                     outcome: false,
@@ -50,10 +61,10 @@ function filterByCodec(file, mode, codecs) {
 
         var response = {
             outcome: false,
-            note:  `library.filters.filterByCodec error: ${err} \n`
+            note: `library.filters.filterByCodec error: ${err} \n`
         }
         return response
-        
+
 
     } catch (err) {
 

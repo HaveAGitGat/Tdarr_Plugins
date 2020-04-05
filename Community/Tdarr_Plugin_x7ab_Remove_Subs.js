@@ -5,11 +5,13 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_x7ab_Remove_Subs",
+    Stage: "Pre-processing",
     Name: "Remove subtitles ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin removes subtitles if detected. The output container is the same as the original. \n\n`,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ab_Remove_Subs.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ab_Remove_Subs.js",
+    Tags:'pre-processing,ffmpeg,subtitle only',
   }
 
 }

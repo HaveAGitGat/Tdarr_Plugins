@@ -5,12 +5,14 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_075a_FFMPEG_HEVC_Generic",
+    Stage: "Pre-processing",
     Name: "FFMPEG H265",
     Type: "Video",
     Operation:"Transcode",
     Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using default settings. Audio/subtitles not affected.  \n\n`,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js",
+    Tags:'pre-processing,ffmpeg,h265,video only'
   }
 
 }

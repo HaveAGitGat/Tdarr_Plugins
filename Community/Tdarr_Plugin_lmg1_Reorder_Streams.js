@@ -2,11 +2,13 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_lmg1_Reorder_Streams",
+    Stage: "Pre-processing",
     Name: "Tdarr_Plugin_lmg1_Reorder_Streams ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin will move the video stream to the front so Tdarr will recognize the codec correctly.\n\n`,
     Version: "1.00",
-    Link: "https://github.com/luigi311/Tdarr_Plugin_lmg1_Reorder_Streams"
+    Link: "https://github.com/luigi311/Tdarr_Plugin_lmg1_Reorder_Streams",
+    Tags:'pre-processing,ffmpeg',
   }
 
 }

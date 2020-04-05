@@ -1,79 +1,62 @@
 
 
 
-function details() {
+module.exports.details = function details() {
 
   return {
-    id: "Tdarr_Plugin_nc7x_Example",
-    Name: "No title meta data ",
+    id: "Tdarr_Plugin_zzzz_Post_Proc_Example",
+    Stage: "Post-processing", //Preprocessing or Post-processing. Determines when the plugin will be executed. This plugin does some stuff after all plugins have been executed
+    Name: "Post proc ",
     Type: "Video",
-    Description: `This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n`,
+    Operation: "",
+    Description: `This plugin does some stuff after all plugins have been executed. \n\n`,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_nc7x_Example"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_aaaa_Post_Proc_Example",
+    Tags:"ffmpeg,h265", //Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
+
+    Inputs: [ //(Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
+    {
+      name: 'language',
+      tooltip: `Enter one language tag here for the language of the subtitles you'd like to keep.  
+      
+      \\nExample:\\n
+       eng  
+       
+       \\nExample:\\n
+       fr  
+       
+       \\nExample:\\n
+       de` //Each line following `Example:` will be clearly formatted. \\n used for line breaks
+    },
+    {
+      name: 'channels',
+      tooltip: `Desired audio channel number.  
+      
+      \\nExample:\\n
+       2`
+    },
+  ]
+
   }
 
 }
 
-function plugin(file) {
+module.exports.plugin = function plugin(file, librarySettings, inputs) {
+
+  console.log('Transcode success! Now do some stuff with the newly scanned file.')
 
 
-  //Must return this object
-
+  //Optional response if you need to modify database
   var response = {
-
-    processFile: false, //If set to false, the file will be skipped. Set to true to have the file transcoded.
-    preset: '', //HandBrake/FFmpeg CLI arguments you'd like to use. 
-                 //For FFmpeg, the input arguments come first followed by a comma, followed by the output argument.
-                 // Examples
-                      //HandBrake
-                          // '-Z "Very Fast 1080p30"'
-                      //FFmpeg
-                          // '-sn,-map_metadata -1 -c:v copy -c:a copy'
-    container: '.mp4', // The container of the transcoded output file.
-    handBrakeMode: false, //Set whether to use HandBrake or FFmpeg for transcoding
-    FFmpegMode: false,
-    reQueueAfter: true, //Leave as true. File will be re-qeued afterwards and pass through the plugin filter again to make sure it meets conditions.
-    infoLog: '',        //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if 
-                        //it has been skipped.
-                        // Give reasons why it has been skipped ('File has no title metadata, File meets conditions!')
-
+    file,
+    removeFromDB: false,
+    updateDB: false,
   }
 
-  response.container = '.' + file.container
-  response.FFmpegMode = true
+  return response
 
-
-  if (file.fileMedium !== "video") {
-
-
-    console.log("File is not video")
-
-    response.infoLog += " File is not video"
-    response.processFile = false
-
-    return response
-
-  } else {
-
-    if (file.meta.Title != undefined) {
-
-      response.infoLog += " File has title metadata"
-      response.preset = ',-map_metadata -1 -c:v copy -c:a copy'
-      response.processFile = true
-      return response
-    } else {
-      response.infoLog += " File has no title metadata"
-    }
-
-
-    response.infoLog += " File meets conditions!"
-    return response
-
-  }
 }
 
-module.exports.details = details;
-module.exports.plugin = plugin;
 
 //Example file object:
     //     { 

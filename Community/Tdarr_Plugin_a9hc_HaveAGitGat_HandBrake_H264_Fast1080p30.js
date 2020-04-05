@@ -5,12 +5,14 @@ function details() {
 
   return {
     id: "Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30",
+    Stage: "Pre-processing",
     Name: "HaveAGitGat HandBrake Fast1080p30, No title meta, no subs, 192Kb AAC stereo,MP4 ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin transcodes into H264 using HandBrake's 'Fast 1080p30' preset if the file is not in H264 already. It removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30.js"
+    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30.js",
+    Tags:'pre-processing,handbrake,ffmpeg,h264',
   }
 
 }
@@ -85,6 +87,19 @@ function plugin(file) {
 
      ///
 
+if(hasSubs){
+
+      response.infoLog += "☒File has subs \n"
+      response.preset = ',-sn  -map 0 -c copy'
+      response.reQueueAfter = true;
+      response.processFile = true;
+      response.FFmpegMode = true
+      return response
+
+     }else{
+      response.infoLog += "☑File has no subs \n"
+     }
+
      if((file.meta.Title != "undefined") && !jsonString.includes("aac") && hasSubs){
 
       response.infoLog += "☒File has title metadata and no aac and subs \n"
@@ -144,18 +159,6 @@ function plugin(file) {
       response.infoLog += "☑File has aac track \n"
      }
 
-     if(hasSubs){
-
-      response.infoLog += "☒File has subs \n"
-      response.preset = ',-sn  -map 0 -c copy'
-      response.reQueueAfter = true;
-      response.processFile = true;
-      response.FFmpegMode = true
-      return response
-
-     }else{
-      response.infoLog += "☑File has no subs \n"
-     }
 
 
      response.infoLog += "☑File meets conditions! \n"

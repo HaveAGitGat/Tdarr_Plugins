@@ -4,14 +4,13 @@
 function details() {
 
   return {
-    id: "Tdarr_Plugin_075b_FFMPEG_HEVC_Generic_Video_Audio_Only",
-    Stage: "Pre-processing",
-    Name: "FFMPEG H265 Video + Audio Kept Only",
+    id: "Tdarr_Plugin_075d_FFMPEG_HEVC_GPU_Generic_Video_Audio_Only_CRF20",
+    Name: "FFMPEG H265 Video + Audio Kept Only With CRF 20 On The GPU",
     Type: "Video",
     Operation:"Transcode",
-    Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using default settings. Only video and audio streams are kept. Useful for if you're getting errors because of certain containers not being able to handle certain subtitle/data streams.  \n\n`,
+    Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using the graphics card and a CRF value of 20. Only video and audio streams are kept. Useful for if you're getting errors because of certain containers not being able to handle certain subtitle/data streams. A CRF value of 20 is used. The GPU (graphics card) is used. \n\n`,
     Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075b_FFMPEG_HEVC_Generic_Video_Audio_Only.js",
+    Link: "https://github.com/moodiest/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075d_FFMPEG_HEVC_GPU_Generic_Video_Audio_Only_CRF20.js",
     Tags:'pre-processing,video only,ffmpeg,h265',
   }
 
@@ -52,7 +51,7 @@ function plugin(file) {
  
 
     response.processFile = true;
-    response.preset = `,-map 0:v -map 0:a -c copy -c:v:0 libx265`
+    response.preset = `,-map 0:v -map 0:a -c copy -c:v:0 hevc_nvenc -crf 20`
     response.container = '.mkv'
     response.handBrakeMode = false
     response.FFmpegMode = true

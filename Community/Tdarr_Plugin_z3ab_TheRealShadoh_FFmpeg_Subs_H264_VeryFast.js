@@ -4,13 +4,15 @@
 function details() {
 
   return {
-    id: "Tdarr_Plugin_z3ab_TheRealShadoh_FFmpeg_Subs_H264_VeryFast.js",
+    id: "Tdarr_Plugin_z3ab_TheRealShadoh_FFmpeg_Subs_H264_VeryFast",
+    Stage: "Pre-processing",
     Name: "TheRealShadoh FFmpeg Subs VeryFast, video MP4, audio AAC, keep subs. ",
     Type: "Video",
     Description: `[Contains built-in filter] This plugin transcodes into H264 using FFmpeg's 'VeryFast' preset if the file is not in H264 already. It maintains all subtitles. It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
     Version: "1.00",
-    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z3ab_TheRealShadoh_FFmpeg_Subs_H264_Veryfast.js"
+    Link: "https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z3ab_TheRealShadoh_FFmpeg_Subs_H264_Veryfast.js",
+    Tags:'pre-processing,ffmpeg,h264',
   }
 
 }
@@ -53,12 +55,10 @@ function plugin(file) {
      for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 
        try {
-
-         if(file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle"){
-
-           hasSubs = true
-
-         }
+        let streamData = file.ffProbeData.streams[i];
+        if(streamData.codec_type.toLowerCase() == "subtitle" && streamData.codec_name != "mov_text"){
+          hasSubs = true
+        }
        } catch (err) { }
      }
 
@@ -122,7 +122,7 @@ function plugin(file) {
       response.FFmpegMode = true
       return response
      }else{
-      response.infoLog += "☑File has no title metadata"
+      response.infoLog += "☑File has no title metadata \n"
      }
 
      if(!jsonString.includes("aac")){
@@ -140,7 +140,7 @@ function plugin(file) {
 
      if(hasSubs){
 
-      response.infoLog += "☒File has subs \n"
+      response.infoLog += "☒File has incompatible subs \n"
       response.preset = ', -map 0:v -map 0:s? -map 0:a -c:v copy -c:a copy -c:s mov_text'
       response.reQueueAfter = true;
       response.processFile = true;
@@ -148,7 +148,7 @@ function plugin(file) {
       return response
 
      }else{
-      response.infoLog += "☑File has no subs \n"
+      response.infoLog += "☑File has no/compatible subs \n"
      }
 
      response.infoLog += "☑File meets conditions! \n"
