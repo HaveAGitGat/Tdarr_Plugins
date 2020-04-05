@@ -9,8 +9,9 @@ function details() {
         Type: "Video",
         Operation:"Transcode",
         Description: `Uses iiDrakeii's filter, and crops video files when letterboxing is detected.\nThis uses the FFMPEG NVENC transcoding(hw).\nIf a file is 4K it will be scaled down to 1080p.\nNow with user definable bitrates!(since 1.104 beta)\nCreated by @control#0405`,
-        Version: "1.4",
+        Version: "1.3",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Remove_Letterbox.js",
+        Tags: 'pre-processing,ffmpeg,nvenc h265,configurable,h265,video only',
         Inputs: [
             {
             name: 'bitrate',
@@ -20,13 +21,12 @@ function details() {
             name: 'container',
             tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`
             },
-        ],
-        Tags:'pre-processing,video only,ffmpeg,configurable',
+        ]
     }
 }
 
 function plugin(file, librarySettings, inputs, otherArguments) {
-    if (inputs.bitrate == "" || inputs.special == 'undefined') {
+    if (inputs.bitrate == "" || inputs.bitrate == 'undefined') {
         var min_bitrate = 6600;
         var avg_rate = 3000;
         var max_rate = 6000;
@@ -35,14 +35,6 @@ function plugin(file, librarySettings, inputs, otherArguments) {
         var avg_rate = inputs.bitrate;
         var max_rate = inputs.bitrate*2;
     }
-
-    var source = file.meta.SourceFile; //source file
-    var stats = fs.statSync(source);
-    var size = stats["size"]/1000000000;
-        size = size.toFixed(2);
-    var decoder = decoder_string(file); //decoder, before the input
-    var encoder = encoder_string_full(file, highres(file), crop_decider(file, create_crop_values(file).crop_height).crop, avg_rate, max_rate); //encoder 
-    var process = 0; //decides if it should be processed
 
     //default values that will be returned
     var response = {
@@ -57,12 +49,20 @@ function plugin(file, librarySettings, inputs, otherArguments) {
 
     if (inputs.container !== undefined) {
         response.container = inputs.container;
-        console.log(`Changed container to: ` + inputs.container);
+        console.log(`Container was set to: ` + inputs.container);
     }
+
+    var source = file.meta.SourceFile; //source file
+    var stats = fs.statSync(source);
+    var size = stats["size"]/1000000000;
+        size = size.toFixed(2);
+    var decoder = decoder_string(file); //decoder, before the input
+    var encoder = encoder_string_full(highres(file), crop_decider(file, generate_crop_values(file, otherArguments).crop_height).crop, encoder_string(file, avg_rate, max_rate, response.container)); //encoder 
+    var process = 0; //decides if it should be processed
     
     var returns = {
-        create_crop: create_crop_values(file),
-        crop: crop_decider(file, create_crop_values(file).crop_height),
+        create_crop: generate_crop_values(file, otherArguments),
+        crop: crop_decider(file, generate_crop_values(file, otherArguments).crop_height),
         size: size_check(file, min_bitrate)
     }
 
@@ -90,7 +90,7 @@ function plugin(file, librarySettings, inputs, otherArguments) {
             log.resolution += `☒ - Resolution <= 1080p \n`;
         }
 
-        if (crop_decider(file, create_crop_values(file).crop_height).crop != "0") {
+        if (crop_decider(file, generate_crop_values(file, otherArguments).crop_height).crop != "0") {
             process = 1;
         }
     }
@@ -109,10 +109,6 @@ function plugin(file, librarySettings, inputs, otherArguments) {
     } else if (file.forceProcessing === true) {
         response.processFile = true;
         response.infoLog += `Force processing!\n`;
-    } else if (response.container !== `.` + file.container) {
-        response.infoLog += `Container is not correct\nMuxing to ${response.container}!\n`;
-        response.preset = `${decoder}, -c copy`;
-        response.processFile = true;
     } else {
         response.infoLog += `Processing not necessary\n`;
     }
@@ -129,7 +125,7 @@ function highres(file) {
     }
 }
 
-function create_crop_values(file) {
+function generate_crop_values(file, otherArguments) {
     var source = file.meta.SourceFile; //source file
     var dir = file.meta.Directory; //source directory
     var sourcename = file.meta.FileName.substring(0, file.meta.FileName.lastIndexOf(".")); //filename without extension
@@ -142,11 +138,11 @@ function create_crop_values(file) {
     //create crop value
     if (!fs.existsSync(`${cropfile}`)) {
         returns.log += `Creating crop values...\n`;
-        execSync(otherArguments.ffmpegPath + ` -ss 300 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 > \"${cropfile}\"`);
-        execSync(otherArguments.ffmpegPath + ` -ss 1200 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 >> \"${cropfile}\"`);
+        execSync(`${otherArguments.ffmpegPath} -ss 300 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 > \"${cropfile}\"`);
+        execSync(`${otherArguments.ffmpegPath} -ss 1200 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 >> \"${cropfile}\"`);
     } else {
         returns.log += `Crop values already exist\n`;
-    }
+    }    
     
     //get data from copvalue.txt
     var data = fs.readFileSync(`${cropfile}`).toString().split("\n");  //full data from cropvalue.txt
@@ -154,9 +150,11 @@ function create_crop_values(file) {
     //get height of the supposed cropped video
     //var crop_height = parseInt(data[0].substring(10, 14));
     for (var c = 0; c < data.length; c++) {
-        if (parseInt(data[c].substring(10, 14)) > returns.crop_height) {
-            returns.crop_height = parseInt(data[c].substring(10, 14));
-            returns.log += `New cropheight: ${parseInt(data[c].substring(10, 14))}\n`; 
+        crop = data[c].split(":");
+        crop_height = Math.abs(parseInt(crop[1]));
+        if (crop_height > returns.crop_height) {
+            returns.crop_height = crop_height;
+            returns.log += `New cropheight: ${crop_height}\n`; 
         }
     }
     return returns;
@@ -303,7 +301,7 @@ function size_check(file, min_bitrate) {
     return returns;
 }
 
-function error_fix(file) {
+function error_fix(file, container) {
     var fix = {
         sub_codec: 0, //changes to 1 if unwanted codec is found
         muxing: 0
@@ -313,7 +311,7 @@ function error_fix(file) {
 
         //these subtitle codecs don't fit in a mkv container
         if (file.ffProbeData.streams[i].codec_name && file.ffProbeData.streams[i].codec_type) {
-            if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "eia_608" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mov_text" && file.ffProbeData.streams[i].codec_type.toLowerCase.includes("sub") && response.container == '.mkv') {
+            if (file.ffProbeData.streams[i].codec_name.toLowerCase() == "eia_608" || file.ffProbeData.streams[i].codec_name.toLowerCase() == "mov_text" && file.ffProbeData.streams[i].codec_type.toLowerCase().includes("sub") && container == '.mkv') {
                 fix.sub_codec = 1;
             }
 
@@ -327,9 +325,9 @@ function error_fix(file) {
     return fix;
 }
 
-function encoder_string(file, avg_rate, max_rate) {
+function encoder_string(file, avg_rate, max_rate, container) {
     var encoder = ``; //encoder 
-    var fix = error_fix(file);
+    var fix = error_fix(file, container);
     var sub = ``;
 
     //tree for resolution : quality
@@ -339,6 +337,8 @@ function encoder_string(file, avg_rate, max_rate) {
         encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${avg_rate/2}k -maxrate:v ${max_rate/2}k`; //-qp 28
     } else if(file.video_resolution === "480p" || file.video_resolution === "576p") { //file will be encoded if the resolution is 480p or 576p
         encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${avg_rate/4}k -maxrate:v ${max_rate/4}k`; //-qp 30
+    } else { //fallback option to 1080p quality
+        encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${avg_rate}k -maxrate:v ${max_rate}k`; //-qp 26
     }
     encoder += ` -c:v hevc_nvenc -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -dn`;
 
@@ -363,14 +363,11 @@ function encoder_string(file, avg_rate, max_rate) {
     if (fix.muxing == 1) {
         encoder += ` -max_muxing_queue_size 2048`;
     }
-
     return encoder + ` -c:a copy` + sub;
 }
 
-function encoder_string_full(file, highres, crop, avg_rate, max_rate) {
-    var encoder = encoder_string(file, avg_rate, max_rate);
-
-    console.log(`crop filter: ` +  crop)
+function encoder_string_full(highres, crop, encoder) {
+    console.log(`crop filter: ` +  crop);
 
     if (highres == 1 && crop != "0") {
         return crop + `,scale=-1:1920 ` + encoder;
@@ -381,6 +378,18 @@ function encoder_string_full(file, highres, crop, avg_rate, max_rate) {
     } else {
         return encoder;
     }
+}
+
+function execCommand(cmd) {
+    const exec = require('child_process').exec;
+    return new Promise((resolve, reject) => {
+        exec(cmd, (error, stdout, stderr) => {
+        if (error) {
+            console.warn(error);
+        }
+        resolve(stdout? stdout : stderr);
+        });
+    });
 }
 
 module.exports.details = details;
