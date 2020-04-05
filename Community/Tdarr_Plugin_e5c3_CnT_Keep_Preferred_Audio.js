@@ -11,6 +11,7 @@ function details() {
         Description: "Plugin that checks for unwanted audio, per 1.104 beta you can change the languages yourself from within Tdarr!\nUntill you enter a value it keep english tracks by default.\nUndefined languages are kept to prevent videos without sound.\nIf you would like to keep track of the languages you have for each file you can use the 'special' option.\nCreated by @control#0405",
         Version: "1.2",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio.js",
+        Tags: 'pre-processing,ffmpeg,configurable,audio only',
         Inputs: [
             {
             name: 'languages',
@@ -23,18 +24,18 @@ function details() {
             {
             name: 'container',
             tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`
-            }
+            },
         ]
     }
 }
 
 function plugin(file, librarySettings, inputs, otherArguments) {
-    if (inputs.languages == "" || inputs.special == 'undefined') {
+    if (inputs.languages == "" || typeof inputs.special == 'undefined') {
         var languages = ["eng", "en"]; //these languages should be kept, named according to ISO 639-2 language scheme
     } else {
         var languages = inputs.languages.toLowerCase().split(','); //these languages should be kept, named according to ISO 639-2 language scheme
     }
-    if (inputs.special == "" || inputs.special == 'undefined') {
+    if (inputs.special == "" || typeof inputs.special == 'undefined') {
         var special = ``;
     } else {
         var special = inputs.special.toLowerCase().split(',');
@@ -64,14 +65,17 @@ function plugin(file, librarySettings, inputs, otherArguments) {
 
     if (inputs.container !== undefined) {
         response.container = inputs.container;
-        console.log(`Changed container to: ` + inputs.container);
+        console.log(`Container was set to: ` + inputs.container);
     }
 
     for (i = 0; i < file.ffProbeData.streams.length; i++) {
         if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
             //check for non-english tracks
-            if (file.ffProbeData.streams[i].tags.language) {
-                if (typeof file.ffProbeData.streams[i].tags.language !== 'undefined') {
+            console.log(`Audio track ${i}`);
+            console.log("type: " + typeof file.ffProbeData.streams[i].tags);
+            if (typeof file.ffProbeData.streams[i].tags !== 'undefined' || file.ffProbeData.streams[i].tags) {
+                console.log("Type: " + typeof file.ffProbeData.streams[i].tags.language)
+                if (typeof file.ffProbeData.streams[i].tags.language !== 'undefined' || file.ffProbeData.streams[i].tags.language) {
                     for (l = 0; l < length; l++) {
                         if (file.ffProbeData.streams[i].tags.language == special[l]) {
                             if (!fs.existsSync(otherArguments.homePath + `/Tdarr/special_audio_${special[l]}.txt`)) { //create txt file if it doesn't exist yet
