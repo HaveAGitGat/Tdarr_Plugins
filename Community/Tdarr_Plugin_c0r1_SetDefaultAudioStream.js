@@ -9,7 +9,7 @@ module.exports.details = function details() {
         Description: `This plugin will set an audio channel (2.0, 5.1, 7.1) to default and remove default from all other audio streams \n\n`,
         Version: "0.1.0a",
         Link: "",
-        Tags:"audio only",
+        Tags:"audio only,ffmpeg,configurable",
 
         Inputs: [
             {
