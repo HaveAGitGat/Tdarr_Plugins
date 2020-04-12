@@ -8,7 +8,7 @@ module.exports.details = function details() {
         Operation: "Transcode",
         Description: `This plugin will set an audio channel (2.0, 5.1, 7.1) to default and remove default from all other audio streams \n\n`,
         Version: "0.1.0a",
-        Link: "",
+        Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_c0r1_SetDefaultAudioStream.js",
         Tags:"audio only,ffmpeg,configurable",
 
         Inputs: [
