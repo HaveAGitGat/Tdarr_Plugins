@@ -3,7 +3,7 @@ module.exports.details = function details() {
     return {
         id: "Tdarr_Plugin_c0r1_SetDefaultAudioStream",
         Stage: "Pre-processing",
-        Name: "Set Default Audio Stream",
+        Name: "Set Default Audio Stream (Based On Channel Count)",
         Type: "Audio",
         Operation: "Transcode",
         Description: `This plugin will set an audio channel (2.0, 5.1, 7.1) to default and remove default from all other audio streams \n\n`,
