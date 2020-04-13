@@ -93,7 +93,7 @@ function plugin(file, librarySettings, inputs) {
 
    if (convert == true) {
     response.infoLog += "☒File has title metadata. Removing \n"
-    response.preset = `,${ffmpegCommandInsert} -c copy -max_muxing_queue_size 4096`
+    response.preset = `,${ffmpegCommandInsert} -c copy -map 0 -max_muxing_queue_size 4096`
     response.reQueueAfter = true;
     response.processFile = true;
     } else {
