@@ -84,7 +84,7 @@ function plugin(file, librarySettings, inputs) {
 		  if (inputs.downmix.toLowerCase() == "true") {
 		    if (has8Channel == true && has6Channel == false && file.ffProbeData.streams[i].channels == "8") {
 			    ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1 " `
-                response.infoLog += "☒Audio track is 8 channel, no 6 channel exists. Creating 2 channel from 6 channel. \n"
+                response.infoLog += "☒Audio track is 8 channel, no 6 channel exists. Creating 2 channel from 8 channel. \n"
 			    convert = true
 		    }
 		    if (has6Channel == true && has2Channel == false && file.ffProbeData.streams[i].channels == "6") {
