@@ -5,7 +5,7 @@ function details() {
         Name: "Migz-Transcode Using Nvidia GPU & FFMPEG",
         Type: "Video",
         Operation: "Transcode",
-        Description: `Files will be transcoded using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
+        Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
         Version: "2.3",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js",
         Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
