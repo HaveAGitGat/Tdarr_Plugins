@@ -1,13 +1,13 @@
 function details() {
   return {
-    id: 'Tdarr_Plugin_0001_In_House_H265_based_on_bitrate',
+    id: 'Tdarr_Plugin_0001_Default_H265_based_on_bitrate',
     Stage: 'Pre-processing',
     Name: 'In House - To H265 based on bitrate',
     Type: 'Video',
     Operation: 'Transcode',
-    Description: `[Testing] In-house plugin. Transcode based on video bitrate into h265 MP4 using FFmpeg. Different bitrate targets for different resolutions. Option to ignore transcoding files already in h265. MP4 is used as FFmpeg correctly tags the video stream bitrate which this plugin depends on. \n\n`,
+    Description: `In-house plugin. Transcode based on video bitrate into h265 MP4 using FFmpeg. Different bitrate targets for different resolutions. Option to ignore transcoding files already in h265. MP4 is used as FFmpeg correctly tags the video stream bitrate which this plugin depends on. \n\n`,
     Version: '1',
-    Link: '',
+    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_0001_Default_H265_based_on_bitrate.js',
     Tags: 'pre-processing,ffmpeg,video only,configurable,h265',
     Inputs: [
     //   {
