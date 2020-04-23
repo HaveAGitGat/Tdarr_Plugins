@@ -6,7 +6,7 @@ function details() {
         Type: "Video",
         Operation: "Transcode",
         Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
-        Version: "2.3",
+        Version: "2.4",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js",
         Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
         Inputs: [{
@@ -14,7 +14,7 @@ function details() {
                 tooltip: `Specify output container of file, ensure that all stream types you may have are supported by your chosen container. mkv is recommended.
   	            \\nExample:\\n
   	            mkv
-	   
+
   	            \\nExample:\\n
   	            mp4`
 
@@ -25,9 +25,18 @@ function details() {
                 tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded. Rate is in kbps. Leave empty to disable.
   	            \\nExample:\\n
   	            6000
-	   
+
   	            \\nExample:\\n
   	            4000`
+            },
+            {
+                name: 'enable_10bit',
+                tooltip: `Specify if output file should be 10bit. Default is false.
+  	            \\nExample:\\n
+  	            true
+
+  	            \\nExample:\\n
+  	            false`
             },
         ]
     }
@@ -90,22 +99,20 @@ function plugin(file, librarySettings, inputs) {
         return response
     }
 
-    // Check if inputs.bitrate)cutoff has something entered (Entered means user actually wants something to happen, empty would disable this).
+    // Check if inputs.bitrate cutoff has something entered (Entered means user actually wants something to happen, empty would disable this).
     if (inputs.bitrate_cutoff != "") {
-        // Checks if currentBitrate is below inputs.bitrate_cutoff, if so then continue.
+        // Checks if currentBitrate is below inputs.bitrate_cutoff, if so then cancel plugin without touching original files.
         if (currentBitrate <= inputs.bitrate_cutoff) {
-            // Check if file.container matches inputs.container. If so nothing for plugin to do. Else remux container to inputs.container.
-            if (file.container == inputs.container) {
-                response.processFile = false
-                response.infoLog += `☑Current bitrate is below configured bitrate cutoff of ${inputs.bitrate_cutoff} & file container is already ${inputs.container}. Nothing to do, skipping. \n`
-                return response
-            } else {
-                response.processFile = true
-                response.preset += `, -c copy ${extraArguments}`
-                response.infoLog += `☒Current bitrate is below configured bitrate cutoff of ${inputs.bitrate_cutoff} but is not in correct container. Remuxing to ${inputs.container} but not transcoding. \n`
-                return response
-            }
+            response.processFile = false
+            response.infoLog += `☑Current bitrate is below configured bitrate cutoff of ${inputs.bitrate_cutoff}. Nothing to do, cancelling plugin. \n`
+            return response
         }
+    }
+
+    // Check if 10bit variable is true.
+    if (inputs.enable_10bit == "true") {
+        // If set to true then add 10bit argument
+        extraArguments += `-pix_fmt p010le `
     }
 
     // Go through each stream in the file.
@@ -120,10 +127,10 @@ function plugin(file, librarySettings, inputs) {
             // Check if codec of stream is hevc AND check if file.container matches inputs.container. If so nothing for plugin to do.
             if (file.ffProbeData.streams[i].codec_name == 'hevc' && file.container == inputs.container) {
                 response.processFile = false
-                response.infoLog += `☑File is already in ${inputs.container} & hevc. \n`
+                response.infoLog += `☑File is already hevc & in ${inputs.container}. \n`
                 return response
             }
-			// Check if codec of stream is hevc AND check if file.container does NOT match inputs.container. If so remux file.
+            // Check if codec of stream is hevc AND check if file.container does NOT match inputs.container. If so remux file.
             if (file.ffProbeData.streams[i].codec_name == 'hevc' && file.container != '${inputs.container}') {
                 response.infoLog += `☒File is hevc but is not in ${inputs.container} container. Remuxing. \n`
                 response.preset = `, -map 0 -c copy ${extraArguments}`
@@ -136,7 +143,7 @@ function plugin(file, librarySettings, inputs) {
     }
 
     // Set bitrateSettings variable using bitrate information calulcated earlier.
-    bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k`
+    bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`
     // Print to infoLog information around file & bitrate settings.
     response.infoLog += `Container for output selected as ${inputs.container}. \n Current bitrate = ${~~(file.file_size / (duration * 0.0075))} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`
 
@@ -162,7 +169,7 @@ function plugin(file, librarySettings, inputs) {
     }
 
 
-    response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq ${bitrateSettings} -bufsize 2M -spatial_aq:v 1 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
+    response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`
     response.processFile = true
     response.infoLog += `☒File is not hevc. Transcoding. \n`
     return response
