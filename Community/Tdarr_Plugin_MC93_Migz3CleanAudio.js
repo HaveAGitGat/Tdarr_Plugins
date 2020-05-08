@@ -116,7 +116,6 @@ function plugin(file, librarySettings, inputs) {
             try {
                 // Look for audio with "und" as metadata language.
                 if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes('und')) {
-                    response.infoLog += `first`
                     ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `
                     response.infoLog += `☒Audio stream detected as having unknown language tagged, tagging as ${inputs.tag_language}. \n`
                     convert = true
