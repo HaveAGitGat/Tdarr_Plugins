@@ -6,7 +6,7 @@ function details() {
         Type: "Audio",
         Operation: "Clean",
         Description: `This plugin keeps only specified language audio tracks & can tags those that have an unknown language. \n\n`,
-        Version: "2.1",
+        Version: "2.2",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz3CleanAudio.js",
         Tags: 'pre-processing,ffmpeg,audio only,configurable',
         Inputs: [{
@@ -116,18 +116,25 @@ function plugin(file, librarySettings, inputs) {
             try {
                 // Look for audio with "und" as metadata language.
                 if (file.ffProbeData.streams[i].tags.language.toLowerCase().includes('und')) {
-                    response.infoLog += `first`
                     ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `
                     response.infoLog += `☒Audio stream detected as having unknown language tagged, tagging as ${inputs.tag_language}. \n`
                     convert = true
                 }
             } catch (err) {}
 
-            // Checks if the tags.language metadata is completely missing, if so this would cause playback to show language as "undefined". No catch error here otherwise it would never detect the metadata as missing.
-            if (typeof file.ffProbeData.streams[i].tags.language == 'undefined') {
+            // Checks if the tags metadata is completely missing, if so this would cause playback to show language as "undefined". No catch error here otherwise it would never detect the metadata as missing.
+            if (typeof file.ffProbeData.streams[i].tags == 'undefined') {
                 ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `
                 response.infoLog += `☒Audio stream detected as having no language tagged, tagging as ${inputs.tag_language}. \n`
                 convert = true
+            }
+            // Checks if the tags.language metadata is completely missing, if so this would cause playback to show language as "undefined". No catch error here otherwise it would never detect the metadata as missing.
+            else {
+                if (typeof file.ffProbeData.streams[i].tags.language == 'undefined') {
+                    ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `
+                    response.infoLog += `☒Audio stream detected as having no language tagged, tagging as ${inputs.tag_language}. \n`
+                    convert = true
+                }
             }
         }
 

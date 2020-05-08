@@ -6,7 +6,7 @@ function details() {
         Type: "subtitles",
         Operation: "Clean",
         Description: `This plugin keeps only specified language subtitle tracks & can tag those that have an unknown language. \n\n`,
-        Version: "2.1",
+        Version: "2.2",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz4CleanSubs.js",
         Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
         Inputs: [{
@@ -95,7 +95,7 @@ function plugin(file, librarySettings, inputs) {
             }
         } catch (err) {}
 
-        // Check if inputs.tag_language has something entered (Entered means user actually wants something to happen, empty would disable this) AND checks that stream is audio.
+        // Check if inputs.tag_language has something entered (Entered means user actually wants something to happen, empty would disable this) AND checks that stream is subtitle.
         if (inputs.tag_language != "" && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
             // Catch error here incase the metadata is completely missing.
             try {
@@ -107,11 +107,19 @@ function plugin(file, librarySettings, inputs) {
                 }
             } catch (err) {}
 
-            // Checks if the tags.language metadata is completely missing, if so this would cause playback to show language as "undefined". No catch error here otherwise it would never detect the metadata as missing.
-            if (typeof file.ffProbeData.streams[i].tags.language == 'undefined' && file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle") {
+            // Checks if the tags metadata is completely missing, if so this would cause playback to show language as "undefined". No catch error here otherwise it would never detect the metadata as missing.
+            if (typeof file.ffProbeData.streams[i].tags == 'undefined') {
                 ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `
                 response.infoLog += `☒Subtitle stream detected as having no language tagged, tagging as ${inputs.tag_language}. \n`
                 convert = true
+            }
+            // Checks if the tags.language metadata is completely missing, if so this would cause playback to show language as "undefined". No catch error here otherwise it would never detect the metadata as missing.
+            else {
+                if (typeof file.ffProbeData.streams[i].tags.language == 'undefined') {
+                    ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `
+                    response.infoLog += `☒Subtitle stream detected as having no language tagged, tagging as ${inputs.tag_language}. \n`
+                    convert = true
+                }
             }
         }
 
