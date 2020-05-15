@@ -2,15 +2,17 @@ function details() {
   return {
     id: "Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4",
     Stage: "Pre-processing",
-    Name: "Dallas FFmpeg h264 mp4. Video: h264/mp4, Subs: Convert to mov_text or drop, Audio: aac",
+    Name:
+      "Dallas FFmpeg h264 mp4. Video: h264/mp4, Subs: Convert to mov_text or drop, Audio: aac",
     Type: "Video",
     Description: `This plugin transcodes into H264 with an MP4 container using the FFmpeg preset you select (slow,medium,fast,veryfast). It maintains all compatible subtitles and audio tracks. Drops picture tracks such as mjpeg\n\n`,
     Version: "1.00",
-    Link: "https://github.com/JackDallas/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4.js",
-    Tags:'pre-processing,ffmpeg,h264,video only,configurable',
+    Link:
+      "https://github.com/JackDallas/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4.js",
+    Tags: "pre-processing,ffmpeg,h264,video only,configurable",
     Inputs: [
       {
-        name: 'FFmpeg_preset',
+        name: "FFmpeg_preset",
         tooltip: `Select the FFmpeg preset you wish to use,(slow,medium,fast,veryfast). 
       
       \\nExample:\\n 
@@ -23,24 +25,21 @@ function details() {
       fast  
       
       \\nExample:\\n 
-      veryfast`
-      }
-    ]
+      veryfast`,
+      },
+    ],
   };
 }
 
-const presets = [
-  "slow", "medium", "fast", "veryfast"
-];
+const presets = ["slow", "medium", "fast", "veryfast"];
 
 // Normalizes the preset or if invalid returns null
 function getPreset(preset) {
-  if (!preset)
-    return null;
+  if (!preset) return null;
 
   preset = preset.toLowerCase();
   // Strip Spaces
-  preset = preset.replace(/\s+/g, '');
+  preset = preset.replace(/\s+/g, "");
 
   if (presets.includes(preset)) {
     return preset;
@@ -55,16 +54,16 @@ const BAD = false;
 function plugin(file, librarySettings, inputs) {
   var response = {
     processFile: false,
-    preset: '',
-    container: '.mp4',
+    preset: "",
+    container: ".mp4",
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
-    infoLog: '',
+    infoLog: "",
     addInfo(status, info) {
       this.infoLog += (status ? "☑" : "☒") + " " + info + "\n";
-    }
-  }
+    },
+  };
 
   // Check the file is a video
   if (file.fileMedium !== "video") {
@@ -78,12 +77,15 @@ function plugin(file, librarySettings, inputs) {
   let preset = getPreset(inputs.FFmpeg_preset);
 
   if (preset === null) {
-    response.addInfo(BAD, `Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast)`);
+    response.addInfo(
+      BAD,
+      `Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast)`
+    );
 
-    throw `Error: Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast) \n`
+    throw `Error: Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast) \n`;
   }
 
-  var jsonString = JSON.stringify(file)
+  var jsonString = JSON.stringify(file);
 
   var hasSubs = false;
   var hasBadSubs = false;
@@ -94,12 +96,15 @@ function plugin(file, librarySettings, inputs) {
     try {
       let streamData = file.ffProbeData.streams[i];
       if (streamData.codec_type.toLowerCase() == "subtitle") {
-        if (streamData.codec_name === "hdmv_pgs_subtitle" || streamData.codec_name === "dvd_subtitle") {
+        if (
+          streamData.codec_name === "hdmv_pgs_subtitle" ||
+          streamData.codec_name === "dvd_subtitle"
+        ) {
           hasBadSubs = true;
           // Drop incompatible subs
           subMap += " -map -0:" + streamData.index + " ";
         } else if (streamData.codec_name != "mov_text") {
-          hasSubs = true
+          hasSubs = true;
           // Keep compatible subs
           subMap += " -map 0:" + streamData.index + " ";
         }
@@ -112,9 +117,13 @@ function plugin(file, librarySettings, inputs) {
   if (hasBadSubs)
     response.addInfo(BAD, "File contains unsupported sub(s), dropping these!");
 
-  if (file.ffProbeData.streams[0].codec_name != 'h264') {
+  if (file.ffProbeData.streams[0].codec_name != "h264") {
     response.addInfo(BAD, "File is not in h264!");
-    response.preset = ', -map_metadata -1 -map 0:V ' + subMap + ' -map 0:a -c:v libx264 -preset medium -c:a aac -strict -2 ' + subType;
+    response.preset =
+      ", -map_metadata -1 -map 0:V " +
+      subMap +
+      " -map 0:a -c:v libx264 -preset medium -c:a aac -strict -2 " +
+      subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -123,18 +132,26 @@ function plugin(file, librarySettings, inputs) {
     response.addInfo(GOOD, "File is already in h264!");
   }
 
-  if ((file.meta.Title != undefined) && !jsonString.includes("aac") && hasSubs) {
+  if (file.meta.Title != undefined && !jsonString.includes("aac") && hasSubs) {
     response.addInfo(BAD, "File has title metadata and no aac and subs");
-    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac -strict -2 ' + subType;
+    response.preset =
+      ", -map_metadata -1 -map 0:v " +
+      subMap +
+      " -map 0:a -c:v copy -c:a aac -strict -2 " +
+      subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
-    return response
+    return response;
   }
 
   if (!jsonString.includes("aac") && hasSubs) {
     response.addInfo(BAD, "File has no aac track and has subs");
-    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac -strict -2 ' + subType;
+    response.preset =
+      ", -map 0:v " +
+      subMap +
+      " -map 0:a -c:v copy -c:a aac -strict -2 " +
+      subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -143,7 +160,11 @@ function plugin(file, librarySettings, inputs) {
 
   if (file.meta.Title != undefined && hasSubs) {
     response.addInfo(BAD, "File has title and has subs");
-    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a copy ' + subType;
+    response.preset =
+      ", -map_metadata -1 -map 0:v " +
+      subMap +
+      " -map 0:a -c:v copy -c:a copy " +
+      subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -152,7 +173,11 @@ function plugin(file, librarySettings, inputs) {
 
   if (file.meta.Title != undefined) {
     response.addInfo(BAD, "File has title metadata");
-    response.preset = ', -map_metadata -1 -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a copy ' + subType;
+    response.preset =
+      ", -map_metadata -1 -map 0:v " +
+      subMap +
+      " -map 0:a -c:v copy -c:a copy " +
+      subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -163,7 +188,11 @@ function plugin(file, librarySettings, inputs) {
 
   if (!jsonString.includes("aac")) {
     response.addInfo(BAD, "File has no aac track");
-    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a aac -strict -2 ' + subType;
+    response.preset =
+      ", -map 0:v " +
+      subMap +
+      " -map 0:a -c:v copy -c:a aac -strict -2 " +
+      subType;
     response.reQueueAfter = true;
     response.processFile = true;
     response.FFmpegMode = true;
@@ -178,16 +207,17 @@ function plugin(file, librarySettings, inputs) {
     } else {
       response.addInfo(BAD, "File has compatible subs, copying...");
     }
-    response.preset = ', -map 0:v ' + subMap + ' -map 0:a -c:v copy -c:a copy ' + subType;
+    response.preset =
+      ", -map 0:v " + subMap + " -map 0:a -c:v copy -c:a copy " + subType;
     response.processFile = true;
-    response.FFmpegMode = true
-    return response
+    response.FFmpegMode = true;
+    return response;
   } else {
     response.addInfo(GOOD, "File has no/compatible subs");
   }
 
   response.addInfo(GOOD, "File meets conditions!");
-  return response
+  return response;
 }
 
 module.exports.details = details;

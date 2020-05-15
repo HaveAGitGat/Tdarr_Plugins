@@ -14,11 +14,11 @@ https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_aaaa_Pre_P
 https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Tdarr_Plugin_zzzz_Post_Proc_Example.js
 
 2.Determine an id for your plugin. Every id must start with 'Tdarr_Plugin_xxxx' where xxxx is a random mini id containing the following:
-    Numeric digits (0-9)
-    Uppercase letters (A-Z)
-    Lowercase letters (a-z)
-    
-    
+Numeric digits (0-9)
+Uppercase letters (A-Z)
+Lowercase letters (a-z)
+  
+  
 The rest of the plugin id can be whatever you like. See the plugins folder for examples:
 https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/Community
 
@@ -29,7 +29,7 @@ Your plugin id inside the file must be exactly the same as the plugin filename.
 IMPORTANT: Think carefully about what you'd like your plugin to do. You cannot change the aim of a community plugin at a later date as others may be using the plugin. After the plugin has been submitted to community plugins, you can only fix bugs, clarify details and improve plugin performance.
 
 4.(If local plugin then you can skip this)
-For the plugin link, I'll add this once you create a PR to community  plugins.
+For the plugin link, I'll add this once you create a PR to community plugins.
 
 5. Configure 'function plugin(file)' with logic on whether to transcode the file or not. 'file' is an object with hundreds of file properties extracted using FFprobe and ExifTool. The following response object MUST be returned by your plugin. The values shown are the default values:
 
@@ -37,7 +37,7 @@ For the plugin link, I'll add this once you create a PR to community  plugins.
         var response = {
 
         processFile: false, //If set to false, the file will be skipped. Set to true to have the file transcoded.
-        preset: '', //HandBrake/FFmpeg CLI aguments you'd like to use. 
+        preset: '', //HandBrake/FFmpeg CLI aguments you'd like to use.
                  //For FFmpeg, the input arguments come first followed by a comma, followed by the output argument.
                  // Examples
                       //HandBrake
@@ -50,28 +50,25 @@ For the plugin link, I'll add this once you create a PR to community  plugins.
         reQueueAfter: false, //If you can't do all tasks in one pass, set this to true. The file will be re-added to the transcode queue
                         //afterwards for additional processing. See Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle
                         //In that plugin, several passes are used to remove subs, metadata and add an aac track.
-        infoLog: '',        //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if 
+        infoLog: '',        //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if
                         //it has been skipped.
                         // Give reasons why it has been skipped ('File has no title metadata, File meets conditions!')
 
        }
-  
-  
-  Please see the bottom of this README for the structure of an example file object. To see a specific file's details, search for the file in the search tab and click the 'i' info button.
-  
- 
- 6.Once you have finished configuring your plugin, 
- 
- For community plugins:
- Create a pull request to have your plugin added to:
- https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/Community
- 
- For local plugins:
+
+Please see the bottom of this README for the structure of an example file object. To see a specific file's details, search for the file in the search tab and click the 'i' info button.
+
+6.Once you have finished configuring your plugin,
+
+For community plugins:
+Create a pull request to have your plugin added to:
+https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/Community
+
+For local plugins:
 Add them to 'User\Documents\Tdarr\Plugins\Local'. In Tdarr, select 'Local' in the plugin section of the library you're in and add your local plugin id.
-  
- 
+
      Example file object:
-     var file = { 
+     var file = {
         _id: 'C:/Users/H/Desktop/Test Input1/Sample.mp4',
        DB: 'ZRPDmnmpyuAEQi7nG',
        HealthCheck: 'Not attempted',
@@ -312,6 +309,3 @@ Add them to 'User\Documents\Tdarr\Plugins\Local'. In Tdarr, select 'Local' in th
        processingStatus: false,
        video_codec_name: 'h264',
        video_resolution: '720p' }
-  
-
-
