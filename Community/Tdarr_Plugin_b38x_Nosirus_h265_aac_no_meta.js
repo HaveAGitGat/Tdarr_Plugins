@@ -103,5 +103,4 @@ function plugin(file) {
 }
 
 module.exports.details = details;
-
 module.exports.plugin = plugin;

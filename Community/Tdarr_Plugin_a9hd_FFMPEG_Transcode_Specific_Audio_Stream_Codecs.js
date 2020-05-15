@@ -101,8 +101,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
   ffmpegCommand += ` -map 0:s? -map 0:d? `;
 
-  console.log;
-
   if (hasStreamsToTranscode == false) {
     response.processFile = false;
     response.infoLog +=

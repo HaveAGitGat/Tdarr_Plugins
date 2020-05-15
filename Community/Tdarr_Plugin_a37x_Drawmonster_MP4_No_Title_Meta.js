@@ -38,9 +38,6 @@ function plugin(file) {
   } else {
     var jsonString = JSON.stringify(file);
 
-    ///
-
-    ///
     if (file.meta.Title != undefined) {
       response.infoLog += "☒File has title metadata \n";
       response.preset = ",-map_metadata -1 -map 0 -c copy";
@@ -57,5 +54,4 @@ function plugin(file) {
 }
 
 module.exports.details = details;
-
 module.exports.plugin = plugin;
