@@ -1,8 +1,4 @@
-
-
-
 module.exports.details = function details() {
-
   return {
     id: "Tdarr_Plugin_075a_Transcode_Customisable",
     Stage: "Pre-processing",
@@ -12,10 +8,10 @@ module.exports.details = function details() {
     Description: `[TESTING][Contains built-in filter] Specify codec filter and transcode arguments for HandBrake or FFmpeg  \n\n`,
     Version: "1.00",
     Link: "",
-    Tags:'pre-processing,handbrake,ffmpeg,configurable',
+    Tags: "pre-processing,handbrake,ffmpeg,configurable",
     Inputs: [
       {
-        name: 'codecs_to_exclude',
+        name: "codecs_to_exclude",
         tooltip: `Input codecs, separated by a comma, that should be excluded when processing.
 
         \\nFor example, if you're transcoding into hevc (h265), then add a filter to prevent hevc being transcoded so your newly transcoded files won't be infinitely looped/processed. \\n
@@ -46,10 +42,10 @@ module.exports.details = function details() {
 
         h264,vp9
  
-        `
+        `,
       },
       {
-        name: 'cli',
+        name: "cli",
         tooltip: `Enter the CLI to use.
         
         \\nExample:\\n
@@ -58,10 +54,10 @@ module.exports.details = function details() {
         \\nExample:\\n
         ffmpeg
         
-        `
+        `,
       },
       {
-        name: 'transcode_arguments',
+        name: "transcode_arguments",
         tooltip: `\\nEnter HandBrake or FFmpeg transcode arguments.
         
         \\nHandBrake examples:
@@ -113,10 +109,10 @@ module.exports.details = function details() {
         
         
         
-        `
+        `,
       },
       {
-        name: 'output_container',
+        name: "output_container",
         tooltip: `
         \\nEnter the output container of the new file
 
@@ -129,80 +125,63 @@ module.exports.details = function details() {
         \\nExample:\\n
         .mkv
         
-        `
+        `,
       },
-    ]
-  }
-
-}
+    ],
+  };
+};
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
-
-
-
   //Must return this object
 
   var response = {
-
     processFile: false,
-    preset: '',
-    container: '.mp4',
+    preset: "",
+    container: ".mp4",
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
-    infoLog: '',
+    infoLog: "",
+  };
 
+  if (
+    inputs.codecs_to_exclude === undefined ||
+    inputs.cli === undefined ||
+    inputs.transcode_arguments === undefined ||
+    inputs.output_container === undefined
+  ) {
+    response.processFile = false;
+    response.infoLog += "☒ Inputs not entered! \n";
+    return response;
   }
 
-  if (inputs.codecs_to_exclude === undefined
-    || inputs.cli === undefined
-    || inputs.transcode_arguments === undefined
-    || inputs.output_container === undefined) {
-
-    response.processFile = false
-    response.infoLog += "☒ Inputs not entered! \n"
-    return response
-
-
+  if (
+    inputs.codecs_to_exclude.includes(file.ffProbeData.streams[0].codec_name)
+  ) {
+    response.processFile = false;
+    response.infoLog += `☑File is already in ${file.ffProbeData.streams[0].codec_name}! \n`;
+    return response;
   }
-
-
-  if (inputs.codecs_to_exclude.includes(file.ffProbeData.streams[0].codec_name)) {
-    response.processFile = false
-    response.infoLog += `☑File is already in ${file.ffProbeData.streams[0].codec_name}! \n`
-    return response
-  }
-
-
-
 
   //transcode settings
 
   if (inputs.cli == `handbrake`) {
-    response.handBrakeMode = true
-    response.FFmpegMode = false
+    response.handBrakeMode = true;
+    response.FFmpegMode = false;
   } else if (inputs.cli == `ffmpeg`) {
-    response.handBrakeMode = false
-    response.FFmpegMode = true
-
+    response.handBrakeMode = false;
+    response.FFmpegMode = true;
   } else {
-    response.processFile = false
-    response.infoLog += "☒ CLI not input correctly! \n"
-    return response
-
+    response.processFile = false;
+    response.infoLog += "☒ CLI not input correctly! \n";
+    return response;
   }
 
-
-
   response.processFile = true;
-  response.preset = inputs.transcode_arguments
-  response.container = inputs.output_container
+  response.preset = inputs.transcode_arguments;
+  response.container = inputs.output_container;
 
   response.reQueueAfter = true;
-  response.infoLog += `☒File is not in desired codec! \n`
-  return response
-
-
-
-}
-
+  response.infoLog += `☒File is not in desired codec! \n`;
+  return response;
+};
