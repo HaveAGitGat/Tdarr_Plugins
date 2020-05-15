@@ -1,0 +1,23 @@
+{
+  "name": "tdarr_plugins",
+  "version": "1.0.0",
+  "description": "There are two types of plugin:",
+  "main": "Tdarr_Plugin_aaaa_Pre_Proc_Example.js",
+  "dependencies": {},
+  "devDependencies": {
+    "prettier": "2.0.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HaveAGitGat/Tdarr_Plugins.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HaveAGitGat/Tdarr_Plugins/issues"
+  },
+  "homepage": "https://github.com/HaveAGitGat/Tdarr_Plugins#readme"
+}
