@@ -184,7 +184,6 @@ function buildAudioConfiguration(_inputs, file, logger) {
   var configuration = new Configurator(["-c:a copy"]);
   var hasNonAc3MultiChannelAudio = false;
   var hasMultiChannelAudio = false;
-
   loopOverStreamsOfType(file, "audio", function (stream, id) {
     hasMultiChannelAudio = stream.channels >= 6;
     if (stream.codec_name !== "ac3" && stream.channels >= 6) {
@@ -192,7 +191,7 @@ function buildAudioConfiguration(_inputs, file, logger) {
       hasNonAc3MultiChannelAudio = true;
     }
 
-    if ("title" in stream.tags) {
+    if ("tags" in stream && "title" in stream.tags) {
       if (
         stream.tags.title.toLowerCase().includes("commentary") ||
         stream.tags.title.toLowerCase().includes("description") ||
@@ -241,27 +240,29 @@ function buildSubtitleConfiguration(inputs, file, logger) {
       return;
     }
 
-    // Remove unwated languages
-    if ("language" in stream.tags) {
-      if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
-        configuration.AddOutputSetting(`-map -0:s:${id}`);
-        logger.AddError(
-          `Removing subtitle in language ${stream.tags.language}`
-        );
+    if ("tags" in stream) {
+      // Remove unwated languages
+      if ("language" in stream.tags) {
+        if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
+          configuration.AddOutputSetting(`-map -0:s:${id}`);
+          logger.AddError(
+            `Removing subtitle in language ${stream.tags.language}`
+          );
+        }
       }
-    }
 
-    // Remove commentary subtitles
-    if ("title" in stream.tags) {
-      if (
-        stream.tags.title.toLowerCase().includes("commentary") ||
-        stream.tags.title.toLowerCase().includes("description") ||
-        stream.tags.title.toLowerCase().includes("sdh")
-      ) {
-        configuration.AddOutputSetting(`-map -0:s:${id}`);
-        logger.AddError(
-          `Removing Commentary or Description subtitle: ${stream.tags.title}`
-        );
+      // Remove commentary subtitles
+      if ("title" in stream.tags) {
+        if (
+          stream.tags.title.toLowerCase().includes("commentary") ||
+          stream.tags.title.toLowerCase().includes("description") ||
+          stream.tags.title.toLowerCase().includes("sdh")
+        ) {
+          configuration.AddOutputSetting(`-map -0:s:${id}`);
+          logger.AddError(
+            `Removing Commentary or Description subtitle: ${stream.tags.title}`
+          );
+        }
       }
     }
   });
@@ -286,7 +287,6 @@ function buildVideoConfiguration(inputs, file, logger) {
       return;
     }
 
-    // If MKV file with hevc codec, don't need to do anything
     if (stream.codec_name === "hevc" && file.container === "mkv") {
       logger.AddSuccess("File is in HEVC codec and in MKV");
       return;
@@ -301,15 +301,14 @@ function buildVideoConfiguration(inputs, file, logger) {
     // Check if should Transcode.
     if (stream.codec_name !== "hevc") {
       var bitrate = calculateBitrate(file);
-      if (inputs.minimum_target_bitrate !== "") {
-        if (
-          bitrate.target < inputs.minimum_target_bitrate
-        ) {
-          logger.AddError(
-            `Skipping video encoding as target bitrate (${bitrate.target}) too low`
-          );
-          return;
-        }
+      if (
+        inputs.minimum_target_bitrate !== "" &&
+        bitrate.target < inputs.minimum_target_bitrate
+      ) {
+        logger.AddError(
+          `Skipping video encoding as target bitrate (${bitrate.target}) too low`
+        );
+        return;
       }
 
       var bitrateSettings = `-b:v ${bitrate.target}k -minrate ${bitrate.min}k -maxrate ${bitrate.max}k -bufsize ${bitrate.original}k`;
@@ -317,7 +316,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       /**
        * Intel Quick Sync configuration
        */
-      if (inputs.qsv === "true") {
+      if (inputs.qsv === "true" && stream.codec_name !== "mpeg4") {
         configuration.AddInputSetting(
           "-hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi"
         );
@@ -359,10 +358,13 @@ function buildVideoConfiguration(inputs, file, logger) {
         logger.AddError("Transcoding to HEVC using NVidia NVENC");
       }
 
-      if (inputs.qsv !== "true" && inputs.nvenc !== "true") {
+      if (
+        (inputs.qsv !== "true" && inputs.nvenc !== "true") ||
+        stream.codec_name === "mpeg4"
+      ) {
         configuration.RemoveOutputSetting("-c:v copy");
         configuration.AddOutputSetting(`-c:v libx265 ${bitrateSettings}`);
-        logger.AddError("Transcoding to HEVC");
+        logger.AddError("Transcoding to HEVC (software)");
       }
 
       logger.Add(
@@ -403,7 +405,9 @@ function plugin(file, _librarySettings, inputs) {
 
   response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()} ${audioSettings.GetOutputSettings()} ${subtitleSettings.GetOutputSettings()} -max_muxing_queue_size 4096`;
   response.processFile =
-    audioSettings.shouldProcess || videoSettings.shouldProcess || subtitleSettings.shouldProcess;
+    audioSettings.shouldProcess ||
+    videoSettings.shouldProcess ||
+    subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
     logger.AddSuccess("No need to process file");
