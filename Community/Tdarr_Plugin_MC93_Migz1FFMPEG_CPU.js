@@ -48,7 +48,7 @@ function plugin(file, librarySettings, inputs) {
     preset: "",
     handBrakeMode: false,
     FFmpegMode: true,
-    reQueueAfter: true,
+    reQueueAfter: false,
     infoLog: "",
   };
 
@@ -60,11 +60,6 @@ function plugin(file, librarySettings, inputs) {
     return response;
   } else {
     response.container = "." + inputs.container;
-  }
-
-  // Check if file is MKV, if so then add extra argument to drop data. MKV does not support data streams.
-  if (inputs.container == "mkv") {
-    extraArguments += "-map -0:d ";
   }
 
   // Check if file is a video. If it isn't then exit plugin.
@@ -109,6 +104,11 @@ function plugin(file, librarySettings, inputs) {
       response.infoLog += `☑Current bitrate is below configured bitrate cutoff of ${inputs.bitrate_cutoff}. Nothing to do, cancelling plugin. \n`;
       return response;
     }
+  }
+
+  // Check if file is MKV, if so then add extra argument to drop data. MKV does not support data streams.
+  if (inputs.container == "mkv") {
+    extraArguments += "-map -0:d ";
   }
 
   // Check if 10bit variable is true.
