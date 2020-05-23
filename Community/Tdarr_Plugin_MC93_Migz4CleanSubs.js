@@ -109,7 +109,7 @@ function plugin(file, librarySettings, inputs) {
           file.ffProbeData.streams[i].tags.title.toLowerCase().includes("sdh"))
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${SubtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`;
+        response.infoLog += `☒Subtitle stream detected as being Commentary or Description, removing. Subtitle stream 0:s:${subtitleIdx} - ${file.ffProbeData.streams[i].tags.title}. \n`;
         convert = true;
       }
     } catch (err) {}
