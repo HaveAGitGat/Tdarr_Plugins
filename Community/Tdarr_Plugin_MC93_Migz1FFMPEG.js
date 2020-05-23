@@ -108,7 +108,7 @@ function plugin(file, librarySettings, inputs) {
 
   // Check if file is MKV, if so then add extra argument to drop data. MKV does not support data streams.
   if (inputs.container == "mkv") {
-    extraArguments += "-map -0:d ";
+    extraArguments += `-map -0:d `;
   }
 
   // Check if 10bit variable is true.
