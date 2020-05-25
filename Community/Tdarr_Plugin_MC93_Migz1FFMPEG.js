@@ -48,7 +48,7 @@ function plugin(file, librarySettings, inputs) {
     preset: "",
     handBrakeMode: false,
     FFmpegMode: true,
-    reQueueAfter: false,
+    reQueueAfter: true,
     infoLog: "",
   };
 
