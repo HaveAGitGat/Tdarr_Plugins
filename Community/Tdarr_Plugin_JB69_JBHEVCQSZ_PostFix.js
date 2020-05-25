@@ -111,6 +111,8 @@
 //      sudo docker exec -it tdarr /bin/bash
 //
 //  Here is the script that I run after the docker container is up and running (This requires a couple of (y)es'es to complete)
+//
+//      //It is important to get mediainfo from a custom repository because it is a newer version that includes JSON output
 //      sudo apt-get install wget
 //      sudo wget https://mediaarea.net/repo/deb/repo-mediaarea_1.0-12_all.deb && sudo dpkg -i repo-mediaarea_1.0-12_all.deb && sudo apt-get update
 //      sudo apt-get install mediainfo
@@ -131,9 +133,9 @@ function details() {
         Type: "Video",
         Operation: "Transcode",
         Description: "***You should not use this*** until you read the comments at the top of the code and understand how it works **this does alot** and is 2 of 2 routines you should to run **Part 2** \n",
-        Version: "0.5",
+        Version: "1.1",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix.js",
-        Tags: "3rd party,pre-processing,ffmpeg,video"
+        Tags: "post-processing,ffmpeg,video"
     }
 }
 
@@ -149,7 +151,7 @@ function plugin(file, librarySettings, inputs) {
         infoLog: ""
     }
 
-    var currentfilename = file._id.replace(/'/g, "'\"'\"'");
+    var currentfilename = file._id; //.replace(/'/g, "'\"'\"'");
 
     var intStatsDays = 21;
     var bolHasChapters = false;
@@ -165,7 +167,7 @@ function plugin(file, librarySettings, inputs) {
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     response.infoLog += "Getting Media Info.\n";
     var objMedInfo = "";
-    objMedInfo = JSON.parse(require('child_process').execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
+    objMedInfo = JSON.parse(require("child_process").execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     if (objMedInfo.media.track[0].extra == undefined && objMedInfo.media.track[0].extra.JBDONEVERSION == undefined && objMedInfo.media.track[0].extra.JBDONEVERSION != "1") {
         response.infoLog += "File not processed by first routine! \n";
@@ -176,7 +178,7 @@ function plugin(file, librarySettings, inputs) {
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     response.infoLog += "Getting FFProbe Info.\n";
     var objFFProbeInfo = "";
-    objFFProbeInfo = JSON.parse(require('child_process').execSync('ffprobe -v error -print_format json -show_format -show_streams -show_chapters "' + currentfilename + '"').toString());
+    objFFProbeInfo = JSON.parse(require("child_process").execSync('ffprobe -v error -print_format json -show_format -show_streams -show_chapters "' + currentfilename + '"').toString());
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     var datStats = Date.parse(new Date(70, 1).toISOString())
@@ -199,14 +201,14 @@ function plugin(file, librarySettings, inputs) {
     if (objMedInfo.media.track[0].extra.JBDONEDATE != undefined) {
         var JBDate = Date.parse(objMedInfo.media.track[0].extra.JBDONEDATE);
     
-        response.infoLog += `JBDate: ${JBDate}, StatsDate: ${datStats}\n`;
+        response.infoLog += "JBDate:" + JBDate + ", StatsDate:" + datStats + "\n";
         if (datStats >= JBDate) {
             bolStatsAreCurrent = true;
         }
     } else {
         var statsThres = Date.parse(new Date(new Date().setDate(new Date().getDate()- intStatsDays)).toISOString());
 
-        response.infoLog += `StatsThres: ${statsThres}, StatsDate: ${datStats}\n`;
+        response.infoLog += "StatsThres: " + statsThres + ", StatsDate: " + datStats + "\n";
         if (datStats >= statsThres) {
             bolStatsAreCurrent = true;
         }
@@ -220,7 +222,7 @@ function plugin(file, librarySettings, inputs) {
         return response;
     }
 
-    //response.infoLog += `FIDB: ${JSON.stringify(file)}\n`;
+    //response.infoLog += "FIDB: " + JSON.stringify(file) + "\n";
     //return response;
 
     var boldoChapters = false;
@@ -249,14 +251,14 @@ function plugin(file, librarySettings, inputs) {
 
         //We should add a chapter 1 sec before the end
         intChapNum += 1;
-        strChapNum = String(intChapNum).padStart(2, '0');
+        strChapNum = String(intChapNum).padStart(2, "0");
 
         var timeString = new Date((Math.floor(objFFProbeInfo.format.duration) - 1) * 1000).toISOString().substr(11, 12);
 
         strChapterFile += "CHAPTER" + strChapNum + "=" + timeString + "\n";
         strChapterFile += "CHAPTER" + strChapNum + "NAME=CHAPTER " + intChapNum + "\n";
 
-        strChapterFileLoc = librarySettings.cache + "/" + require('crypto').createHash('md5').update(file._id).digest("hex") + ".txt";
+        strChapterFileLoc = librarySettings.cache + "/" + require("crypto").createHash("md5").update(file._id).digest("hex") + ".txt";
 
         require('fs').writeFileSync(strChapterFileLoc, strChapterFile);
     }
@@ -272,7 +274,7 @@ function plugin(file, librarySettings, inputs) {
     response.infoLog += strmkvpropeditcommand + "\n";
     
     var output = "";
-    var proc = require('child_process');
+    var proc = require("child_process");
 
     try {
         output = proc.execSync(strmkvpropeditcommand);
@@ -283,7 +285,7 @@ function plugin(file, librarySettings, inputs) {
     //response.infoLog += "output: " + output + "\n";
     
     if (boldoChapters) {
-        require('fs').unlinkSync(strChapterFileLoc);
+        require("fs").unlinkSync(strChapterFileLoc);
     }
 
     return response;
@@ -291,3 +293,4 @@ function plugin(file, librarySettings, inputs) {
 
 module.exports.details = details;
 module.exports.plugin = plugin;
+
