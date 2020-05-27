@@ -11,7 +11,7 @@ module.exports.details = function details() {
       `Intel QuickSync-enabled CPU required, recommended 8th generation or newer.\n ` +
       `Output bitrate will be calculated based on input file size.\n\n`,
     Version: `1.0`,
-    Link: `https://github.com/Mthrboard/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Mthr_VaapiHEVCTranscode.js`,
+    Link: `https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Mthr_VaapiHEVCTranscode.js`,
     Tags: `pre-processing,ffmpeg,video only,h265,configurable`,
     Inputs: [{
       name: `remuxOnly`,
