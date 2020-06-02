@@ -122,32 +122,32 @@ function plugin(file, librarySettings, inputs) {
   // Check if force_conform option is checked. If so then check streams and add any extra parameters required to make file conform with output format.
   if (inputs.force_conform == "true") {
     if (inputs.container.toLowerCase() == "mkv") {
-      extraArguments += `-map -0:d `;
-	  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-		 if (
-		  file.ffProbeData.streams[i].codec_name
-		    .toLowerCase() == "mov_text" ||
-			file.ffProbeData.streams[i].codec_name
-			.toLowerCase() == "eia_608"
-			) {
-				extraArguments += `-map -0:${i} `;
-			}
-	}
-  }
-  if (inputs.container.toLowerCase() == "mp4") {
-	for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-		if (
-		  file.ffProbeData.streams[i].codec_name
-		    .toLowerCase() == "hdmv_pgs_subtitle" ||
-			file.ffProbeData.streams[i].codec_name
-			.toLowerCase() == "eia_608"||
-			file.ffProbeData.streams[i].codec_name
-			.toLowerCase() == "subrip"
-			) {
-				extraArguments += `-map -0:${i} `;
-			}
-	}
-  }
+        extraArguments += `-map -0:d `;
+        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+            if (
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "mov_text" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "eia_608"
+            ) {
+                extraArguments += `-map -0:${i} `;
+            }
+        }
+    }
+    if (inputs.container.toLowerCase() == "mp4") {
+        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+            if (
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "hdmv_pgs_subtitle" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "eia_608" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "subrip"
+            ) {
+                extraArguments += `-map -0:${i} `;
+            }
+        }
+    }
 }
 
   // Check if 10bit variable is true.
