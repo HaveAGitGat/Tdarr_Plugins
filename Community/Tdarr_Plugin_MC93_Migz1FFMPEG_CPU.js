@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Transcode",
     Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
-    Version: "1.3",
+    Version: "1.4",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
     Tags: "pre-processing,ffmpeg,video only,configurable,h265",
@@ -32,6 +32,18 @@ function details() {
       {
         name: "enable_10bit",
         tooltip: `Specify if output file should be 10bit. Default is false.
+  	            \\nExample:\\n
+  	            true
+
+  	            \\nExample:\\n
+  	            false`,
+      },
+      {
+        name: "force_conform",
+        tooltip: `Make the file conform to output containers requirements.
+                \\n Drop hdmv_pgs_subtitle/eia_608/subrip subtitles for MP4.
+                \\n Drop data streams and mov_text/eia_608 subtitles for MKV.
+                \\n Default is false.
   	            \\nExample:\\n
   	            true
 
@@ -106,10 +118,36 @@ function plugin(file, librarySettings, inputs) {
     }
   }
 
-  // Check if file is MKV, if so then add extra argument to drop data. MKV does not support data streams.
-  if (inputs.container == "mkv") {
-    extraArguments += `-map -0:d `;
-  }
+  // Check if force_conform option is checked. If so then check streams and add any extra parameters required to make file conform with output format.
+  if (inputs.force_conform == "true") {
+    if (inputs.container.toLowerCase() == "mkv") {
+        extraArguments += `-map -0:d `;
+        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+            if (
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "mov_text" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "eia_608"
+            ) {
+                extraArguments += `-map -0:${i} `;
+            }
+        }
+    }
+    if (inputs.container.toLowerCase() == "mp4") {
+        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+            if (
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "hdmv_pgs_subtitle" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "eia_608" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "subrip"
+            ) {
+                extraArguments += `-map -0:${i} `;
+            }
+        }
+    }
+}
 
   // Check if 10bit variable is true.
   if (inputs.enable_10bit == "true") {
@@ -121,10 +159,10 @@ function plugin(file, librarySettings, inputs) {
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
-      // Check if codec  of stream is mjpeg, if so then remove this "video" stream. mjpeg are usually imbedded pictures that can cause havoc with plugins.
-      if (file.ffProbeData.streams[i].codec_name == "mjpeg") {
-        extraArguments += `-map -v:${videoIdx} `;
-      }
+          // Check if codec  of stream is mjpeg/png, if so then remove this "video" stream. mjpeg/png are usually embedded pictures that can cause havoc with plugins.
+          if (file.ffProbeData.streams[i].codec_name == "mjpeg" || file.ffProbeData.streams[i].codec_name == "png") {
+            extraArguments += `-map -v:${videoIdx} `;
+        }
       // Check if codec of stream is hevc AND check if file.container matches inputs.container. If so nothing for plugin to do.
       if (
         file.ffProbeData.streams[i].codec_name == "hevc" &&
