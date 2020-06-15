@@ -65,7 +65,7 @@ function plugin(file, librarySettings, inputs) {
   };
 
   // Check if inputs.container has been configured. If it hasn't then exit plugin.
-  if (inputs.container == "") {
+  if (!inputs || inputs.container == "") {
     response.infoLog +=
       "☒Container has not been configured within plugin settings, please configure required options. Skipping this plugin. \n";
     response.processFile = false;
