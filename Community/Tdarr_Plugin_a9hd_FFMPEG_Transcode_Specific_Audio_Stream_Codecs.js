@@ -13,25 +13,16 @@ module.exports.details = function details() {
       {
         name: "codecs_to_transcode",
         tooltip: `Specifiy the codecs which you'd like to transcode
-
         \\nExample:\\n
-
         ac3
-
         \\nExample:\\n
-
         eac3,ac3,aac
-
-
-
-
  
         `,
       },
       {
         name: "codec",
         tooltip: `Specify the codec you'd like to transcode into:
-
         \\n aac
         \\n ac3
         \\n eac3
@@ -40,13 +31,8 @@ module.exports.details = function details() {
         \\n mp2
         \\n mp3
         \\n truehd
-
         \\nExample:\\n
         eac3
-
-
-
-
  
         `,
       },
@@ -96,6 +82,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     ) {
       ffmpegCommand += `  -map 0:${i} -c:${i} ${encoder} `;
       hasStreamsToTranscode = true;
+    } else if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
+      ffmpegCommand += `  -map 0:${i}`;
     }
   }
 
