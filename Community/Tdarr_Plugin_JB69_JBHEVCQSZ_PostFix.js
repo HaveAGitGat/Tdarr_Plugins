@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Author: JarBinks
-//  Date: 05/21/2020
+//  Author: JarBinks, Zachg99, Jeff47
+//  Date: 06/29/2020
 //
 //  This is my attempt to create an all in one routine that will maintain my library in optimal format !!!!FOR MY REQUIREMENTS!!!!
 //      Chances are very good you will need to make some changes to this routine and it's partner in order to make it work for you
@@ -153,7 +153,7 @@ function plugin(file, librarySettings, inputs) {
 
     var currentfilename = file._id; //.replace(/'/g, "'\"'\"'");
 
-    var intStatsDays = 21;
+    var intStatsDays = 45;
     var bolHasChapters = false;
     var bolAudioIsEng = false;
     var bolStatsAreCurrent = false;
@@ -169,7 +169,7 @@ function plugin(file, librarySettings, inputs) {
     var objMedInfo = "";
     objMedInfo = JSON.parse(require("child_process").execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    if (objMedInfo.media.track[0].extra == undefined && objMedInfo.media.track[0].extra.JBDONEVERSION == undefined && objMedInfo.media.track[0].extra.JBDONEVERSION != "1") {
+    if (objMedInfo.media.track[0].extra == undefined || objMedInfo.media.track[0].extra.JBDONEVERSION == undefined || objMedInfo.media.track[0].extra.JBDONEVERSION != "1") {
         response.infoLog += "File not processed by first routine! \n";
         return response;
     }
@@ -293,4 +293,3 @@ function plugin(file, librarySettings, inputs) {
 
 module.exports.details = details;
 module.exports.plugin = plugin;
-
