@@ -421,7 +421,7 @@ function plugin(file, _librarySettings, inputs) {
     infoLog: "",
     processFile: false,
     preset: "",
-    reQueueAfter: false,
+    reQueueAfter: true,
   };
 
   var logger = new Log();
