@@ -38,96 +38,100 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       _Other: 'Other'
     }
 
-    let resolution = '_' + file.video_resolution
-    let resShouldBe = resolutions[resolution]
-    let codecShouldBe = file.ffProbeData.streams[0].codec_name
+    //only process if properties available
+    if (file.ffProbeData.streams[0].codec_name && file.video_resolution) {
 
-    //Remove container from processing
-    let fileName = file._id;
-    fileName = fileName.split('.')
-    let container = fileName[fileName.length - 1]
-    fileName.splice(fileName.length - 1, 1)
-    fileName = fileName.join('.')
+      let resolution = '_' + file.video_resolution
+      let resShouldBe = resolutions[resolution]
+      let codecShouldBe = file.ffProbeData.streams[0].codec_name
 
-    //put term substrings below strings (i.e. '480' below '480p')
-    let terms = [
-      '480p',
-      '480',
-      '576p',
-      '576',
-      '720p',
-      '720',
-      '1080p',
-      '1080',
-      '2160p',
-      '2160',
-      '4k',
-      '8k',
+      //Remove container from processing
+      let fileName = file._id;
+      fileName = fileName.split('.')
+      let container = fileName[fileName.length - 1]
+      fileName.splice(fileName.length - 1, 1)
+      fileName = fileName.join('.')
 
-      'h264',
-      '264',
-      'h265',
-      '265',
-      'hevc'
-    ]
+      //put term substrings below strings (i.e. '480' below '480p')
+      let terms = [
+        '480p',
+        '480',
+        '576p',
+        '576',
+        '720p',
+        '720',
+        '1080p',
+        '1080',
+        '2160p',
+        '2160',
+        '4k',
+        '8k',
 
-    //clean up res and codec terms from name
-    for (let i = 0; i < terms.length; i++) {
-      while (true) {
-        let idx = fileName.indexOf(terms[i]);
-        if (idx === -1) {
-          break
-        } else {
-          let length = terms[i].length
-          fileName = fileName.split('')
-          fileName.splice(idx, length);
-          fileName = fileName.join('')
-        }
-      }
-    }
+        'h264',
+        '264',
+        'h265',
+        '265',
+        'hevc'
+      ]
 
-    if (resShouldBe === 'Other') {
-      fileName += '_' + codecShouldBe + '.' + container
-    } else {
-      fileName += '_' + resShouldBe + '_' + codecShouldBe + '.' + container
-    }
-
-    //clean up word breakers
-    let breakers = [
-      '.',
-      '_',
-      '-',
-    ]
-
-    fileName = fileName.split('')
-    for (let i = 0; i < fileName.length; i++) {
-      for (let j = 0; j < breakers.length; j++) {
-        for (let k = 0; k < breakers.length; k++) {
-          if (fileName[i] === breakers[j] && fileName[i + 1] === breakers[k]) {
-            fileName.splice(i, 1);
-            i--
+      //clean up res and codec terms from name
+      for (let i = 0; i < terms.length; i++) {
+        while (true) {
+          let idx = fileName.indexOf(terms[i]);
+          if (idx === -1) {
+            break
+          } else {
+            let length = terms[i].length
+            fileName = fileName.split('')
+            fileName.splice(idx, length);
+            fileName = fileName.join('')
           }
         }
       }
-    }
 
-    fileName = fileName.join('')
+      if (resShouldBe === 'Other') {
+        fileName += '_' + codecShouldBe + '.' + container
+      } else {
+        fileName += '_' + resShouldBe + '_' + codecShouldBe + '.' + container
+      }
 
-    file._id = fileName
-    file.file = fileName
+      //clean up word breakers
+      let breakers = [
+        '.',
+        '_',
+        '-',
+      ]
 
-    if (fileNameOld != file._id) {
-      fsextra.moveSync(fileNameOld, file._id, {
-        overwrite: true,
-      });
+      fileName = fileName.split('')
+      for (let i = 0; i < fileName.length; i++) {
+        for (let j = 0; j < breakers.length; j++) {
+          for (let k = 0; k < breakers.length; k++) {
+            if (fileName[i] === breakers[j] && fileName[i + 1] === breakers[k]) {
+              fileName.splice(i, 1);
+              i--
+            }
+          }
+        }
+      }
 
-      let response = {
-        file,
-        removeFromDB: false,
-        updateDB: true,
-      };
+      fileName = fileName.join('')
 
-      return response;
+      file._id = fileName
+      file.file = fileName
+
+      if (fileNameOld != file._id) {
+        fsextra.moveSync(fileNameOld, file._id, {
+          overwrite: true,
+        });
+
+        let response = {
+          file,
+          removeFromDB: false,
+          updateDB: true,
+        };
+
+        return response;
+      }
     }
   } catch (err) {
     console.log(err);
