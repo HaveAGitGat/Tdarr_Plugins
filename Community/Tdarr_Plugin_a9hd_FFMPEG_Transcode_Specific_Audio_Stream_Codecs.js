@@ -87,7 +87,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     }
   }
 
-  ffmpegCommand += ` -map 0:s? -map 0:d? `;
+  ffmpegCommand += ` -map 0:s? -map 0:d? -max_muxing_queue_size 9999`;
 
   if (hasStreamsToTranscode == false) {
     response.processFile = false;
