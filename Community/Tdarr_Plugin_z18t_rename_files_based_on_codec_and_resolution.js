@@ -71,7 +71,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       'hevc'
     ]
 
-    //clean up res and codec terms from container
+    //clean up res and codec terms from name
     for (let i = 0; i < terms.length; i++) {
       while (true) {
         let idx = fileName.indexOf(terms[i]);
