@@ -5,7 +5,7 @@ function details() {
     Type: "Video",
     Stage: "Pre-processing",
     Operation: "Transcode",
-    Description: `[Contains built-in filter] This plugin transcodes non-h265 files into h265 mkv using NVENC and 10 bit depth, 
+    Description: `[Contains built-in filter] This plugin transcodes non-h265 files into h265 mkv using NVENC, 
     reducing resolution to 1920x1080 using nvenc. Audio/subtitles not affected. Bitrate is scaled based on input file quality. 
     == This plugin depends on mediainfo and mkvpropedit, which must be installed manually! 
     Check this gist for details: https://gist.github.com/jeff47/4ec428e329a485a102bab0398e6ac4be == `,
@@ -61,6 +61,9 @@ function updateTrackStats(file) {
   response.infoLog += `☑Running mkvpropedit.\n`;
   try {
     const proc = require("child_process");
+    proc.execFile('mkvpropedit', [ '--delete-track-statistics-tags', file._id], (error,stdout,stderr) => {
+      if (error) throw `mkvpropedit failed: ${error}\n`;
+    });
     proc.execFile('mkvpropedit', [ '--add-track-statistics-tags', file._id], (error,stdout,stderr) => {
       if (error) throw `mkvpropedit failed: ${error}\n`;
     });
@@ -156,7 +159,7 @@ function plugin(file,librarySettings,inputs,otherArguments) {
     "480p":  { "dimensions":   "640x480", "pixelCount":   307200 },
     "576p":  { "dimensions":   "720x576", "pixelCount":   414720 },
     "720p":  { "dimensions":  "1280x720", "pixelCount":   921600 },
-    "1808p": { "dimensions": "1920x1080", "pixelCount":  2073600 },
+    "1080p": { "dimensions": "1920x1080", "pixelCount":  2073600 },
     "4KUHD": { "dimensions": "3840x2160", "pixelCount":  8294400 },
     "8KUHD": { "dimensions": "7680x4320", "pixelCount": 33177600 }
   };
@@ -214,11 +217,14 @@ function plugin(file,librarySettings,inputs,otherArguments) {
     }
   }
 
-  if ( (MediaInfo.JSRProcessed !== undefined && MediaInfo.JSRProcessed == true) || file.forceProcessing === true) {
+
+  if ( file.forceProcessing !== true ) {
+  if ( MediaInfo.JSRProcessed !== undefined && MediaInfo.JSRProcessed == true) {
     response.infoLog += `JSRPROCESSED metadata tag was true.  This file was already transcoded by this plugin.  Exiting...\n`;
     response.processFile = false;
     return response;
   }
+}
 
   // Set decoding options here
   switch (file.ffProbeData.streams[0].codec_name) {
@@ -242,25 +248,25 @@ function plugin(file,librarySettings,inputs,otherArguments) {
 // Resize high resolution videos to 1080p.
 if ( resolutionOrder.indexOf(file.video_resolution) > resolutionOrder.indexOf(maxResolution) ) {
   // File resolution exceeds limit, need to resize.
-  response.preset += ` -resize ${resolutions['maxResolution'].dimensions} `;
-  response.infoLog += `Resizing to ${resolutions['maxResolution'].dimensions}.\n`;
+  response.preset += ` -resize ${resolutions[maxResolution].dimensions} `;
+  response.infoLog += `Resizing to ${resolutions[maxResolution].dimensions}.\n`;
   response.processFile = true;
-  var targetBitrate = Math.round((resolutions['maxResolution'].pixelCount*MediaInfo.videoFPS*MediaInfo.videoBitDepth/8)*compressionFactor);
+  var targetBitrate = Math.round((resolutions[maxResolution].pixelCount*MediaInfo.videoFPS)*compressionFactor);
 } else {
   // No resize needed.
-  var targetBitrate = Math.round((MediaInfo.videoWidth*MediaInfo.videoHeight*MediaInfo.videoFPS*MediaInfo.videoBitDepth/8)*compressionFactor);
+  var targetBitrate = Math.round((MediaInfo.videoWidth*MediaInfo.videoHeight*MediaInfo.videoFPS)*compressionFactor);
 }
 
 // Calculate bitrates
 response.infoLog += `Video details: ${file.ffProbeData.streams[0].codec_name}-${file.video_resolution} 
-  ${MediaInfo.videoWidth}x${MediaInfo.videoHeight}x${MediaInfo.videoFPS}@${MediaInfo.videoBitDepth}.\n`;
+  ${MediaInfo.videoWidth}x${MediaInfo.videoHeight}x${MediaInfo.videoFPS}@8 bits.\n`;
 
 var maxBitrate = Math.round(targetBitrate*1.3);
 var minBitrate = Math.round(targetBitrate*0.7);
 var bufsize = Math.round(MediaInfo.videoBR);
 
 
-response.preset += `,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -rc:v vbr_hq -preset medium -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 `;
+response.preset += `,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -rc:v vbr_hq -preset medium -profile:v main -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 `;
 response.infoLog += `Video bitrate is ${Math.round(MediaInfo.videoBR/1000)}Kbps, overall is ${Math.round(MediaInfo.overallBR/1000)}Kbps. `;
 response.infoLog += `Calculated target is ${Math.round(targetBitrate/1000)}Kbps.\n`;
 
