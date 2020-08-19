@@ -140,7 +140,6 @@ function plugin(file,librarySettings,inputs,otherArguments) {
     return response;
   }
 
-
   // How much does HVEC compress the raw stream?
   var compressionFactor = 0.07;
   if ( ! isNaN(Number(inputs.compressionFactor)) ) {
@@ -200,20 +199,18 @@ function plugin(file,librarySettings,inputs,otherArguments) {
     updateTrackStats(file);
     getMediaInfo(file);
     if ( isNaN(MediaInfo.videoBR) || isNaN(MediaInfo.videoBitDepth) ) {
-      response.infoLog += "videoBR or videoBitDepth still NaN, giving up.\n";
-      throw ("MediaInfo.videoBR or videoBitDepth still NaN, giving up.");
+      response.infoLog += "videoBR or videoBitDepth still NaN, using default.\n";
     }
   }
 
   // If the overall bitrate is less than the videoBR, then something is wacky.
   if ( MediaInfo.videoBR > MediaInfo.overallBR ) {
-    response.infoLog += `videoBR (${MediaInfo.videoBR} was greater than overallBR (${MediaInfo.overallBR}), 
+    response.infoLog += `videoBR (${MediaInfo.videoBR} was greater than overallBR (${MediaInfo.overallBR}),
       which is impossible. Updating stats.\n`;
     updateTrackStats(file);
     getMediaInfo(file);
     if ( MediaInfo.videoBR > MediaInfo.overallBR ) {
-      response.infoLog += `videoBR and overallBR still inconsistent, giving up.\n`;
-      throw (`videoBR (${MediaInfo.videoBR}) and overallBR (${MediaInfo.overallBR}) still inconsistent, giving up.`);
+      response.infoLog += `videoBR and overallBR still inconsistent, using default.\n`;
     }
   }
 
@@ -263,10 +260,13 @@ response.infoLog += `Video details: ${file.ffProbeData.streams[0].codec_name}-${
 
 var maxBitrate = Math.round(targetBitrate*1.3);
 var minBitrate = Math.round(targetBitrate*0.7);
-var bufsize = Math.round(MediaInfo.videoBR);
+if ( isNaN(MediaInfo.videoBR) ) {
+  var bufsize = targetBitrate;
+} else {
+  var bufsize = Math.round(MediaInfo.videoBR);
+}
 
-
-response.preset += `,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -rc:v vbr_hq -preset medium -profile:v main -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 `;
+response.preset += `,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -rc:v vbr_hq -preset medium -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 `;
 response.infoLog += `Video bitrate is ${Math.round(MediaInfo.videoBR/1000)}Kbps, overall is ${Math.round(MediaInfo.overallBR/1000)}Kbps. `;
 response.infoLog += `Calculated target is ${Math.round(targetBitrate/1000)}Kbps.\n`;
 
@@ -274,7 +274,13 @@ response.infoLog += `Calculated target is ${Math.round(targetBitrate/1000)}Kbps.
   // Adjust target bitrates by codec and bitrate
   switch (file.ffProbeData.streams[0].codec_name) {
     case "hevc":
-      if ( (MediaInfo.videoBR > targetBitrate*1.5) || file.forceProcessing === true )  {
+      if ( isNaN(MediaInfo.videoBR) ) {
+        response.processFile = true;
+        targetBitrate = Math.min(MediaInfo.overallBR, targetBitrate);
+        response.preset +=` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate} -bufsize ${bufsize} `;
+        response.infoLog += `☒HEVC Bitrate for ${file.video_resolution} could not be determined, 
+          using sensible default of ${Math.round(targetBitrate/1000)}Kbps.\n`;
+      } else if ( (MediaInfo.videoBR > targetBitrate*1.5) || file.forceProcessing === true )  {
         response.processFile = true;
         response.preset +=` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate} -bufsize ${bufsize} `;
         response.infoLog += `☒HEVC Bitrate for ${file.video_resolution} exceeds ${Math.round(targetBitrate*1.5/1000)}Kbps, 
@@ -286,18 +292,22 @@ response.infoLog += `Calculated target is ${Math.round(targetBitrate/1000)}Kbps.
     case "h264":
       response.processFile = true;
       // We want the new bitrate to be 70% the h264 bitrate, but not higher than our target.
+      if ( isNaN(MediaInfo.videoBR) ) {
+          new_bitrate = Math.min(MediaInfo.overallBR*0.7,targetBitrate);
+      } else {
       new_bitrate = Math.min(Math.round(MediaInfo.videoBR*0.7),targetBitrate);
       // New bitrate should not be lower than our 60% of our target.
       new_bitrate = Math.max( new_bitrate, Math.min(MediaInfo.videoBR, targetBitrate*0.6) );
+      }
       response.preset +=` -b:v ${new_bitrate} -maxrate ${Math.round(new_bitrate*1.3)} -minrate ${Math.round(new_bitrate*0.7)}  -bufsize ${bufsize}`;
       response.infoLog += `☒H264 Resolution is ${file.video_resolution}, bitrate was ${Math.round(MediaInfo.videoBR/1000)}Kbps.  
         HEVC target bitrate will be ${Math.round(new_bitrate/1000)}Kbps.\n`;
     break; // case "h264"
     default:
       response.processFile = true;
-      response.preset +=` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate}K -bufsize ${bufsize} `;
+      response.preset +=` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate} -bufsize ${bufsize} `;
       response.infoLog += `☒${file.ffProbeData.streams[0].codec_name} resolution is ${file.video_resolution}, 
-        bitrate was ${Math.round(MediaInfo.videoBR/1000)}Kbps.  HEVC target bitrate will be ${Math.round(new_bitrate/1000)}Kbps.\n`;
+        bitrate was ${Math.round(MediaInfo.videoBR/1000)}Kbps.  HEVC target bitrate will be ${Math.round(targetBitrate/1000)}Kbps.\n`;
     break; // default
   } // switch (file.ffProbeData.streams[0].codec_name)
 
