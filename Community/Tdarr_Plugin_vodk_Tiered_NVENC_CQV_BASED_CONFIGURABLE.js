@@ -186,7 +186,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     response.reQueueAfter = true;
     response.infoLog += `☒File is ${file.video_resolution}!\n`;
     response.infoLog += `☒File is not hevc!\n`;
-    response.infoLog += `☒CQ:V set to ${cqvinuse}!\n`;
+    response.infoLog += `☑CQ:V set to ${cqvinuse}!\n`;
     response.infoLog += `File is being transcoded!\n`;
   }
 
