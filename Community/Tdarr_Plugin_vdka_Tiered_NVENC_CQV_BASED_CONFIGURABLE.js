@@ -1,6 +1,6 @@
 function details() {
   return {
-    id: "Tdarr_Plugin_vodk_Tiered_NVENC_CQV_BASED_CONFIGURABLE",
+    id: "Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE",
     Stage: "Pre-processing",
     Name: "Tiered FFMPEG+NVENC CQ:V BASED CONFIGURABLE",
     Type: "Video",
@@ -8,7 +8,7 @@ function details() {
     Description: `[Contains built-in filter] This plugin uses different CQ:V values (similar to crf but for nvenc) depending on resolution, the CQ:V value is configurable per resolution. ALL OPTIONS MUST BE CONFIGURED! If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
     Version: "1.00",
     Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_vodk_Tiered_NVENC_CQV_BASED_CONFIGURABLE.js",
+      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE.js",
     Tags: "pre-processing,ffmpeg,video only,nvenc h265,configurable",
 
     Inputs: [
