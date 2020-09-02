@@ -5,7 +5,13 @@ function details() {
     Name: "Tiered FFMPEG+NVENC CQ:V BASED CONFIGURABLE",
     Type: "Video",
     Operation: "Transcode",
-    Description: `[Contains built-in filter] This plugin uses different CQ:V values (similar to crf but for nvenc) depending on resolution, the CQ:V value is configurable per resolution. ALL OPTIONS MUST BE CONFIGURED! If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
+    Description:
+     `[Contains built-in filter] This plugin uses different CQ:V values (similar to crf but for nvenc) depending on resolution, 
+     the CQ:V value is configurable per resolution.
+     FFmpeg Preset can be configured, uses slow by default. 
+     ALL OPTIONS MUST BE CONFIGURED UNLESS MARKED OPTIONAL!
+     If files are not in hevc they will be transcoded. 
+     The output container is mkv. \n\n`,
     Version: "1.00",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE.js",
@@ -40,14 +46,31 @@ function details() {
       \\nExample:\\n
       22`,
       },
-            {
+      {
         name: "bframe",
         tooltip: `Specify amount of b-frames to use, 0-5. Use 0 to disable. (GPU must support this, turing and newer supports this, except for the 1650)  
       
       \\nExample:\\n
       3`,
       },
-
+      {
+        name: "ffmpeg_preset",
+        tooltip: `OPTIONAL, DEFAULTS TO SLOW IF NOT SET 
+      \\n Enter the ffmpeg preset you want, leave blank for default (slow) 
+      \\n This only applies if video is transcoded, video already in h264 will not be transcoded with this setting
+      
+      \\nExample:\\n 
+        slow  
+      
+      \\nExample:\\n 
+        medium  
+      
+      \\nExample:\\n 
+        fast  
+      
+      \\nExample:\\n 
+        veryfast`,
+      },
     ],
   };
 }
@@ -86,6 +109,16 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     response.infoLog += "☑File is already in hevc! \n";
     return response;
   }
+
+  // Check if preset is configured, default to slow if not
+  var ffmpeg_preset
+    if (inputs.ffmpeg_preset === undefined) {
+        ffmpeg_preset = `slow`;
+        response.infoLog += "☑Preset not set, defaulting to slow\n"
+    } else {
+        ffmpeg_preset = `${inputs.ffmpeg_preset}`;
+        response.infoLog += `☑Preset set as ${inputs.ffmpeg_preset}\n`
+    }
 
   //codec will be checked so it can be transcoded correctly
   if (file.video_codec_name == "h263") {
@@ -153,7 +186,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "480p" || file.video_resolution === "576p") {
     cqvinuse = `${inputs.sdCQV}`;
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.sdCQV} -preset slow -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.sdCQV} -preset ${ffmpeg_preset} -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
 
@@ -161,21 +194,21 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "720p") {
     cqvinuse = `${inputs.hdCQV}`;
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.hdCQV} -preset slow -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.hdCQV} -preset ${ffmpeg_preset} -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //file will be encoded if the resolution is 1080p
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "1080p") {
     cqvinuse = `${inputs.fullhdCQV}`;
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.fullhdCQV} -preset slow -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.fullhdCQV} -preset ${ffmpeg_preset} -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //file will be encoded if the resolution is 4K
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "4KUHD") {
     cqvinuse = `${inputs.uhdCQV}`;
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.uhdCQV} -preset slow -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v ${inputs.uhdCQV} -preset ${ffmpeg_preset} -rc-lookahead 32 -bf ${inputs.bframe} -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //check if the file is eligible for transcoding
@@ -184,9 +217,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     response.processFile = true;
     response.FFmpegMode = true;
     response.reQueueAfter = true;
-    response.infoLog += `☒File is ${file.video_resolution}!\n`;
+    response.infoLog += `☑File is ${file.video_resolution}, using CQ:V value of ${cqvinuse}!\n`;
     response.infoLog += `☒File is not hevc!\n`;
-    response.infoLog += `☑CQ:V set to ${cqvinuse}!\n`;
     response.infoLog += `File is being transcoded!\n`;
   }
 
