@@ -22,28 +22,28 @@ function details () {
         tooltip: `Enter the CQ:V value you want for 480p and 576p content. 
        \\nExample:\\n 
       
-      18`
+      21`
       },
       {
         name: 'hdCQV',
         tooltip: `Enter the CQ:V value you want for 720p content.  
       
       \\nExample:\\n
-      17`
+      23`
       },
       {
         name: 'fullhdCQV',
         tooltip: `Enter the CQ:V value you want for 1080p content.  
       
       \\nExample:\\n
-      18`
+      25`
       },
       {
         name: 'uhdCQV',
         tooltip: `Enter the CQ:V value you want for 4K/UHD/2160p content.  
       
       \\nExample:\\n
-      22`
+      28`
       },
       {
         name: 'bframe',
