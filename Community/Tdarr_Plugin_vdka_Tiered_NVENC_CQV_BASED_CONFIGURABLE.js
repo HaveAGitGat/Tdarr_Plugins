@@ -185,7 +185,7 @@ module.exports.plugin = function plugin (file, librarySettings, inputs) {
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === '480p' || file.video_resolution === '576p') {
     cqvinuse = `${inputs.sdCQV}`
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.sdCQV} -spatial_aq 1 -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.sdCQV} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
     transcode = 1
   }
 
@@ -193,21 +193,21 @@ module.exports.plugin = function plugin (file, librarySettings, inputs) {
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === '720p') {
     cqvinuse = `${inputs.hdCQV}`
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.hdCQV} -spatial_aq 1 -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.hdCQV} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
     transcode = 1
   }
   //file will be encoded if the resolution is 1080p
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === '1080p') {
     cqvinuse = `${inputs.fullhdCQV}`
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.fullhdCQV} -spatial_aq 1 -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.fullhdCQV} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
     transcode = 1
   }
   //file will be encoded if the resolution is 4K
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === '4KUHD') {
     cqvinuse = `${inputs.uhdCQV}`
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.uhdCQV} -spatial_aq 1 -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.uhdCQV} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
     transcode = 1
   }
   //check if the file is eligible for transcoding
