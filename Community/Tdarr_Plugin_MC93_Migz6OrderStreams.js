@@ -6,7 +6,7 @@ function details() {
     Type: "Streams",
     Operation: "Order",
     Description: `Orders streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n`,
-    Version: "1.1",
+    Version: "1.2",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz6OrderStreams.js",
     Tags: "pre-processing,ffmpeg,",
@@ -173,7 +173,7 @@ function plugin(file) {
   // Convert file if convert variable is set to true.
   if (convert == true) {
     response.processFile = true;
-    response.preset = `,${ffmpegCommandInsert} -c copy -max_muxing_queue_size 4096`;
+    response.preset = `,${ffmpegCommandInsert} -c copy -max_muxing_queue_size 9999`;
     response.reQueueAfter = true;
     response.infoLog +=
       "☒ Streams are out of order, reorganizing streams. Video, Audio, Subtitles. \n";

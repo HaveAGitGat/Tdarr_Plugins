@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Transcode",
     Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
-    Version: "1.4",
+    Version: "1.5",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
     Tags: "pre-processing,ffmpeg,video only,configurable,h265",
@@ -41,8 +41,8 @@ function details() {
       {
         name: "force_conform",
         tooltip: `Make the file conform to output containers requirements.
-                \\n Drop hdmv_pgs_subtitle/eia_608/subrip subtitles for MP4.
-                \\n Drop data streams and mov_text/eia_608 subtitles for MKV.
+                \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
+                \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
   	            \\nExample:\\n
   	            true
@@ -127,7 +127,9 @@ function plugin(file, librarySettings, inputs) {
                 file.ffProbeData.streams[i].codec_name
                 .toLowerCase() == "mov_text" ||
                 file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608"
+                .toLowerCase() == "eia_608" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "timed_id3"
             ) {
                 extraArguments += `-map -0:${i} `;
             }
@@ -141,7 +143,9 @@ function plugin(file, librarySettings, inputs) {
                 file.ffProbeData.streams[i].codec_name
                 .toLowerCase() == "eia_608" ||
                 file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "subrip"
+                .toLowerCase() == "subrip" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "timed_id3"
             ) {
                 extraArguments += `-map -0:${i} `;
             }
@@ -197,7 +201,7 @@ function plugin(file, librarySettings, inputs) {
     (duration * 0.0075)
   )} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`;
 
-  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`;
+  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += `☒File is not hevc. Transcoding. \n`;
   return response;
