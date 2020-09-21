@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Clean",
     Description: `This plugin removes title metadata from video/audio/subtitles, if it exists. Video checking is mandatory, audio and subtitles are optional.\n\n`,
-    Version: "1.2",
+    Version: "1.3",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
     Tags: "pre-processing,ffmpeg,configurable",
@@ -113,7 +113,7 @@ function plugin(file, librarySettings, inputs) {
   // Convert file if convert variable is set to true.
   if (convert == true) {
     response.infoLog += "☒File has title metadata. Removing \n";
-    response.preset = `,${ffmpegCommandInsert} -c copy -map 0 -max_muxing_queue_size 4096`;
+    response.preset = `,${ffmpegCommandInsert} -c copy -map 0 -max_muxing_queue_size 9999`;
     response.reQueueAfter = true;
     response.processFile = true;
   } else {

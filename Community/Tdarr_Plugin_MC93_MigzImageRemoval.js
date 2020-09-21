@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Clean",
     Description: `Identify any unwanted image formats in the file and remove those streams. MJPEG & PNG \n\n`,
-    Version: "1.1",
+    Version: "1.2",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_MigzImageRemoval.js",
     Tags: "pre-processing,ffmpeg,video only",
@@ -55,7 +55,7 @@ function plugin(file, librarySettings, inputs) {
 
   // Convert file if convert variable is set to true.
   if (convert === true) {
-    response.preset += `,-map 0 -c copy -max_muxing_queue_size 4096 ${extraArguments}`;
+    response.preset += `,-map 0 -c copy -max_muxing_queue_size 9999 ${extraArguments}`;
     response.infoLog += `☒File has image format stream, removing. \n`;
     response.processFile = true;
   } else {

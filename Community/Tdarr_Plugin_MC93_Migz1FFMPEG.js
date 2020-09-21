@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Transcode",
     Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
-    Version: "2.5",
+    Version: "2.6",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js",
     Tags: "pre-processing,ffmpeg,video only,nvenc h265,configurable",
@@ -39,10 +39,19 @@ function details() {
   	            false`,
       },
       {
+        name: "enable_bframes",
+        tooltip: `Specify if b frames should be used. Using B frames should decrease file sizes but are only supported on newer GPUs. Default is false.
+  	            \\nExample:\\n
+  	            true
+
+  	            \\nExample:\\n
+  	            false`,
+      },
+      {
         name: "force_conform",
         tooltip: `Make the file conform to output containers requirements.
-                \\n Drop hdmv_pgs_subtitle/eia_608/subrip subtitles for MP4.
-                \\n Drop data streams and mov_text/eia_608 subtitles for MKV.
+                \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
+                \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
   	            \\nExample:\\n
   	            true
@@ -128,7 +137,9 @@ function plugin(file, librarySettings, inputs) {
                 file.ffProbeData.streams[i].codec_name
                 .toLowerCase() == "mov_text" ||
                 file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608"
+                .toLowerCase() == "eia_608" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "timed_id3"
             ) {
                 extraArguments += `-map -0:${i} `;
             }
@@ -142,7 +153,9 @@ function plugin(file, librarySettings, inputs) {
                 file.ffProbeData.streams[i].codec_name
                 .toLowerCase() == "eia_608" ||
                 file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "subrip"
+                .toLowerCase() == "subrip" ||
+                file.ffProbeData.streams[i].codec_name
+                .toLowerCase() == "timed_id3"
             ) {
                 extraArguments += `-map -0:${i} `;
             }
@@ -154,6 +167,12 @@ function plugin(file, librarySettings, inputs) {
   if (inputs.enable_10bit == "true") {
     // If set to true then add 10bit argument
     extraArguments += `-pix_fmt p010le `;
+  }
+  
+  // Check if b frame variable is true.
+  if (inputs.enable_bframes == "true") {
+    // If set to true then add b frames argument
+    extraArguments += `-bf 5 `;
   }
 
   // Go through each stream in the file.
@@ -225,7 +244,7 @@ function plugin(file, librarySettings, inputs) {
     response.preset = `-c:v vp9_cuvid`;
   }
 
-  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`;
+  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += `☒File is not hevc. Transcoding. \n`;
   return response;
