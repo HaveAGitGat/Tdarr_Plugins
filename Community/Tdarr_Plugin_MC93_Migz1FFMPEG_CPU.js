@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Transcode",
     Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
-    Version: "1.5",
+    Version: "1.6",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
     Tags: "pre-processing,ffmpeg,video only,configurable,h265",
@@ -122,34 +122,36 @@ function plugin(file, librarySettings, inputs) {
   if (inputs.force_conform == "true") {
     if (inputs.container.toLowerCase() == "mkv") {
         extraArguments += `-map -0:d `;
-        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-            if (
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "mov_text" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "timed_id3"
-            ) {
-                extraArguments += `-map -0:${i} `;
-            }
-        }
+        for (var i = 0; i < file.ffProbeData.streams.length; i++)
+			try {
+				if (
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "mov_text" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "eia_608" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "timed_id3"
+				) {
+					extraArguments += `-map -0:${i} `;
+				}
+			} catch (err) {}
     }
     if (inputs.container.toLowerCase() == "mp4") {
-        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-            if (
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "hdmv_pgs_subtitle" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "subrip" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "timed_id3"
-            ) {
-                extraArguments += `-map -0:${i} `;
-            }
-        }
+        for (var i = 0; i < file.ffProbeData.streams.length; i++)
+			try {
+				if (
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "hdmv_pgs_subtitle" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "eia_608" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "subrip" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "timed_id3"
+				) {
+					extraArguments += `-map -0:${i} `;
+				}
+			} catch (err) {}
     }
 }
 

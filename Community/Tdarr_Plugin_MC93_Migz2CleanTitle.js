@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Clean",
     Description: `This plugin removes title metadata from video/audio/subtitles, if it exists. Video checking is mandatory, audio and subtitles are optional.\n\n`,
-    Version: "1.3",
+    Version: "1.4",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
     Tags: "pre-processing,ffmpeg,configurable",
@@ -29,6 +29,15 @@ function details() {
   	            \\nExample:\\n
   	            false`,
       },
+	  {
+        name: "custom_title_matching",
+        tooltip: `By default if you enable audio or subtitle cleaning the plugin only looks for titles with more then 3 full stops, this is what i think is the safest way to identify junk metadata without removing real metadata that you might want to keep. Here you can specify your own text for it to also search for to match and remove. Comma separated. Optional.
+  	            \\nExample:\\n
+  	            MiNX - Small HD episodes
+
+  	            \\nExample:\\n
+  	            MiNX - Small HD episodes,GalaxyTV - small excellence!`,
+      },
     ],
   };
 }
@@ -45,11 +54,17 @@ function plugin(file, librarySettings, inputs) {
   };
 
   // Set up required variables.
+  
   var ffmpegCommandInsert = "";
   var videoIdx = 0;
   var audioIdx = 0;
   var subtitleIdx = 0;
   var convert = false;
+  
+ // Check if inputs.custom_title_matching has been configured. If it has then set variable
+  if (inputs.custom_title_matching != "") {
+	var custom_title_matching = inputs.custom_title_matching.toLowerCase().split(",");
+  }
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== "video") {
@@ -81,7 +96,7 @@ function plugin(file, librarySettings, inputs) {
         videoIdx++;
       }
 
-      // Check if title metadata of audio stream has more then 3 full stops. If so then it's likely to be junk metadata so remove.
+      // Check if title metadata of audio stream has more then 3 full stops. If so then it's likely to be junk metadata so remove. Then check if any audio streams match with user input custom_title_matching variable, if so then remove.
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
         inputs.clean_audio.toLowerCase() == "true"
@@ -91,17 +106,27 @@ function plugin(file, librarySettings, inputs) {
           ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
           convert = true;
         }
+		if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
+          response.infoLog += `☒Audio matched custom input. Removing title from stream ${i} \n`;
+          ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
+          convert = true;
+        }
         // Increment audioIdx.
         audioIdx++;
       }
 
-      // Check if title metadata of subtitle stream has more then 3 full stops. If so then it's likely to be junk metadata so remove.
+      // Check if title metadata of subtitle stream has more then 3 full stops. If so then it's likely to be junk metadata so remove. Then check if any audio streams match with user input custom_title_matching variable, if so then remove.
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" &&
         inputs.clean_subtitles.toLowerCase() == "true"
       ) {
         if (file.ffProbeData.streams[i].tags.title.split(".").length - 1 > 3) {
           response.infoLog += `☒More then 3 full stops detected in subtitle title, likely to be junk metadata. Removing title from stream ${i} \n`;
+          ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
+          convert = true;
+        }
+		if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
+          response.infoLog += `☒Subtitle matched custom input. Removing title from stream ${i} \n`;
           ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
           convert = true;
         }
