@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Clean",
     Description: `This plugin removes title metadata from video/audio/subtitles, if it exists. Video checking is mandatory, audio and subtitles are optional.\n\n`,
-    Version: "1.4",
+    Version: "1.6",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
     Tags: "pre-processing,ffmpeg,configurable",
@@ -62,9 +62,10 @@ function plugin(file, librarySettings, inputs) {
   var convert = false;
   
  // Check if inputs.custom_title_matching has been configured. If it has then set variable
-  if (inputs.custom_title_matching != "") {
+  if (inputs.custom_title_matching != "") 
+  try {
 	var custom_title_matching = inputs.custom_title_matching.toLowerCase().split(",");
-  }
+  } catch (err) {}
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== "video") {
@@ -86,7 +87,7 @@ function plugin(file, librarySettings, inputs) {
     try {
       // Check if stream is a video.
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
-        // Check if stream title is not empty, if it's nto empty set to "".
+        // Check if stream title is not empty, if it's not empty set to "".
         if (typeof file.ffProbeData.streams[i].tags.title != "undefined") {
           response.infoLog += `☒Video stream title is not empty, most likely junk metadata. Removing title from stream ${i} \n`;
           ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `;
@@ -106,7 +107,7 @@ function plugin(file, librarySettings, inputs) {
           ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
           convert = true;
         }
-		if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
+	if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
           response.infoLog += `☒Audio matched custom input. Removing title from stream ${i} \n`;
           ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
           convert = true;
