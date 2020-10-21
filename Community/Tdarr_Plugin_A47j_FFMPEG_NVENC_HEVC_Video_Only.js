@@ -175,7 +175,7 @@ function plugin(file,librarySettings,inputs,otherArguments) {
   //     --------------------------------  METADATA UPDATES   --------------------------------
   // If there is no _STATISTICS_WRITING_DATE_UTC-eng field, then we need to run mkvpropedit and
   //  rerun mediainfo to load the stats.
-  if (file.ffProbeData.streams[0].tags["_STATISTICS_WRITING_DATE_UTC-eng"] === undefined ) {
+  if (file.ffProbeData.streams[0].tags === undefined || file.ffProbeData.streams[0].tags["_STATISTICS_WRITING_DATE_UTC-eng"] === undefined ) {
     response.infoLog += "☑Track statistics are missing.\n";
     updateTrackStats(file);
     getMediaInfo(file);
