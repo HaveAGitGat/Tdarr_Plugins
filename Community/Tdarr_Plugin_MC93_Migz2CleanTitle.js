@@ -6,7 +6,7 @@ function details() {
     Type: "Video",
     Operation: "Clean",
     Description: `This plugin removes title metadata from video/audio/subtitles, if it exists. Video checking is mandatory, audio and subtitles are optional.\n\n`,
-    Version: "1.6",
+    Version: "1.7",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js",
     Tags: "pre-processing,ffmpeg,configurable",
@@ -62,10 +62,10 @@ function plugin(file, librarySettings, inputs) {
   var convert = false;
   
  // Check if inputs.custom_title_matching has been configured. If it has then set variable
-  if (inputs.custom_title_matching != "") 
-  try {
+  if (typeof inputs.custom_title_matching != "undefined") 
+  {
 	var custom_title_matching = inputs.custom_title_matching.toLowerCase().split(",");
-  } catch (err) {}
+  }
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== "video") {
@@ -84,15 +84,16 @@ function plugin(file, librarySettings, inputs) {
 
   // Go through each stream in the file.
   for (var i = 0; i < file.ffProbeData.streams.length; i++)
-    try {
+    {
       // Check if stream is a video.
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
         // Check if stream title is not empty, if it's not empty set to "".
-        if (typeof file.ffProbeData.streams[i].tags.title != "undefined") {
+        if (typeof file.ffProbeData.streams[i].tags.title != "undefined")
+		try {
           response.infoLog += `☒Video stream title is not empty, most likely junk metadata. Removing title from stream ${i} \n`;
           ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `;
           convert = true;
-        }
+        } catch (err) {}
         // Increment videoIdx.
         videoIdx++;
       }
@@ -102,17 +103,24 @@ function plugin(file, librarySettings, inputs) {
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
         inputs.clean_audio.toLowerCase() == "true"
       ) {
-        if (file.ffProbeData.streams[i].tags.title.split(".").length - 1 > 3) {
-          response.infoLog += `☒More then 3 full stops detected in audio title, likely to be junk metadata. Removing title from stream ${i} \n`;
-          ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
-          convert = true;
-        }
-	if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
-          response.infoLog += `☒Audio matched custom input. Removing title from stream ${i} \n`;
-          ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
-          convert = true;
-        }
-        // Increment audioIdx.
+		if (typeof file.ffProbeData.streams[i].tags.title != "undefined") {
+          if (file.ffProbeData.streams[i].tags.title.split(".").length - 1 > 3) 
+	  	  try {
+            response.infoLog += `☒More then 3 full stops detected in audio title, likely to be junk metadata. Removing title from stream ${i} \n`;
+            ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
+            convert = true;
+          } catch (err) {}
+	      if (typeof inputs.custom_title_matching != "undefined") 
+		  try {
+	        if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1)
+		    {
+              response.infoLog += `☒Audio matched custom input. Removing title from stream ${i} \n`;
+              ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
+              convert = true;
+		    }
+          } catch (err) {}
+		}
+		// Increment audioIdx.
         audioIdx++;
       }
 
@@ -121,20 +129,26 @@ function plugin(file, librarySettings, inputs) {
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "subtitle" &&
         inputs.clean_subtitles.toLowerCase() == "true"
       ) {
-        if (file.ffProbeData.streams[i].tags.title.split(".").length - 1 > 3) {
-          response.infoLog += `☒More then 3 full stops detected in subtitle title, likely to be junk metadata. Removing title from stream ${i} \n`;
-          ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
-          convert = true;
-        }
-		if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
-          response.infoLog += `☒Subtitle matched custom input. Removing title from stream ${i} \n`;
-          ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
-          convert = true;
-        }
+		if (typeof file.ffProbeData.streams[i].tags.title != "undefined") {
+          if (file.ffProbeData.streams[i].tags.title.split(".").length - 1 > 3)
+		  try {
+            response.infoLog += `☒More then 3 full stops detected in subtitle title, likely to be junk metadata. Removing title from stream ${i} \n`;
+            ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
+            convert = true;
+          } catch (err) {}
+		  if (typeof inputs.custom_title_matching != "undefined")
+		  try {
+		    if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
+              response.infoLog += `☒Subtitle matched custom input. Removing title from stream ${i} \n`;
+              ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
+              convert = true;
+		    }
+          } catch (err) {}
+		}
         // Increment subtitleIdx.
         subtitleIdx++;
       }
-    } catch (err) {}
+    }
 
   // Convert file if convert variable is set to true.
   if (convert == true) {
