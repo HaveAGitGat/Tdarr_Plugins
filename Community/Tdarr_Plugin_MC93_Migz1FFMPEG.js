@@ -5,8 +5,8 @@ function details() {
     Name: "Migz-Transcode Using Nvidia GPU & FFMPEG",
     Type: "Video",
     Operation: "Transcode",
-    Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
-    Version: "2.7",
+    Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n This plugin will  skip any files that are in the VP9 codec as these are already at a comparable compression level to H265. \n\n`,
+    Version: "2.8",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js",
     Tags: "pre-processing,ffmpeg,video only,nvenc h265,configurable",
@@ -181,25 +181,25 @@ function plugin(file, librarySettings, inputs) {
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
-      // Check if codec  of stream is mjpeg/png, if so then remove this "video" stream. mjpeg/png are usually embedded pictures that can cause havoc with plugins.
+      // Check if codec of stream is mjpeg/png, if so then remove this "video" stream. mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name == "mjpeg" || file.ffProbeData.streams[i].codec_name == "png") {
         extraArguments += `-map -v:${videoIdx} `;
       }
-      // Check if codec of stream is hevc AND check if file.container matches inputs.container. If so nothing for plugin to do.
+      // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container. If so nothing for plugin to do.
       if (
-        file.ffProbeData.streams[i].codec_name == "hevc" &&
+        file.ffProbeData.streams[i].codec_name == "hevc" || file.ffProbeData.streams[i].codec_name == "vp9" &&
         file.container == inputs.container
       ) {
         response.processFile = false;
-        response.infoLog += `☑File is already hevc & in ${inputs.container}. \n`;
+        response.infoLog += `☑File is already hevc or vp9 & in ${inputs.container}. \n`;
         return response;
       }
-      // Check if codec of stream is hevc AND check if file.container does NOT match inputs.container. If so remux file.
+      // Check if codec of stream is hevc or vp9 AND check if file.container does NOT match inputs.container. If so remux file.
       if (
-        file.ffProbeData.streams[i].codec_name == "hevc" &&
+        file.ffProbeData.streams[i].codec_name == "hevc" || file.ffProbeData.streams[i].codec_name == "vp9" &&
         file.container != "${inputs.container}"
       ) {
-        response.infoLog += `☒File is hevc but is not in ${inputs.container} container. Remuxing. \n`;
+        response.infoLog += `☒File is hevc or vp9 but is not in ${inputs.container} container. Remuxing. \n`;
         response.preset = `, -map 0 -c copy ${extraArguments}`;
         response.processFile = true;
         return response;
@@ -242,13 +242,11 @@ function plugin(file, librarySettings, inputs) {
     response.preset = `-c:v vc1_cuvid`;
   } else if (file.video_codec_name == "vp8") {
     response.preset = `-c:v vp8_cuvid`;
-  } else if (file.video_codec_name == "vp9") {
-    response.preset = `-c:v vp9_cuvid`;
   }
 
   response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
-  response.infoLog += `☒File is not hevc. Transcoding. \n`;
+  response.infoLog += `☒File is not hevc or vp9. Transcoding. \n`;
   return response;
 }
 module.exports.details = details;
