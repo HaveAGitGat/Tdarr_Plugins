@@ -230,8 +230,8 @@ function buildAudioConfiguration(_inputs, file, logger) {
 function buildSubtitleConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:s copy"]);
 
+  if (!inputs.wanted_subtitle_languages) return configuration;
   var languages = inputs.wanted_subtitle_languages.split(",");
-  if (languages.length === 0) return configuration;
 
   loopOverStreamsOfType(file, "subtitle", function (stream, id) {
     if (stream.codec_name === "eia_608") {
