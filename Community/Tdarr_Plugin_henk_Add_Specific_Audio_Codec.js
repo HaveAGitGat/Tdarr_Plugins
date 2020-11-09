@@ -7,7 +7,7 @@ function details () {
     Operation: 'Transcode',
     Description: `Re-encodes all audio tracks in a given codec to another given codec.`,
     Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_henk_Add_Specific_Audio_Codec',
+    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_henk_Add_Specific_Audio_Codec.js',
     Tags: 'post-processing,configurable',
 
     Inputs: [{
@@ -87,7 +87,7 @@ function plugin (file, librarySettings, inputs) {
         if (inputs.custom_bitrate_input) {
           bitrate += inputs.custom_bitrate_input
         } else if (inputs.bitrate) {
-          bitrate += inputs.auto_adjust ? (inputs.bitrate * (currStream.channels / 2)) + 'k' : inputs.bitrate + 'k'
+          bitrate += (inputs.auto_adjust ? (inputs.bitrate * (currStream.channels / 2)) : inputs.bitrate) + 'k'
         } else {
           bitrate = '128k'
         }
