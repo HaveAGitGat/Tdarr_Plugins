@@ -194,7 +194,7 @@ function loopOverStreamsOfType(file, type, method) {
 }
 
 /**
- * Converts all multi channel audio streams to AC3.
+ * Removes audio tracks that aren't in the allowed languages or labeled as Commentary tracks.
  */
 function buildAudioConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:a copy"]);
@@ -202,7 +202,7 @@ function buildAudioConfiguration(inputs, file, logger) {
   var streams_removing = 0;
   var languages = inputs.audio_language.split(",");
   loopOverStreamsOfType(file, "audio", function (stream, id) {
-	stream_count++;
+    stream_count++;
     if ("tags" in stream && "title" in stream.tags && inputs.audio_commentary.toLowerCase() == "true") {
       if (
         stream.tags.title.toLowerCase().includes("commentary") ||
@@ -216,12 +216,12 @@ function buildAudioConfiguration(inputs, file, logger) {
         );
       }
     }
-	if ("tags" in stream) {
-      // Remove unwated languages
+    if ("tags" in stream) {
+      // Remove unwanted languages
       if ("language" in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:a:${id}`);
-		  streams_removing++;
+	  streams_removing++;
           logger.AddError(
             `Removing audio track in language ${stream.tags.language}`
           );
