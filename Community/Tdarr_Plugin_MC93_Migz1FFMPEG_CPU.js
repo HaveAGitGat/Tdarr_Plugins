@@ -5,8 +5,8 @@ function details() {
     Name: "Migz-Transcode Using CPU & FFMPEG",
     Type: "Video",
     Operation: "Transcode",
-    Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n\n`,
-    Version: "1.4",
+    Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. \n This plugin will  skip any files that are in the VP9 codec as these are already at a comparable compression level to H265.\n\n`,
+    Version: "1.7",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js",
     Tags: "pre-processing,ffmpeg,video only,configurable,h265",
@@ -41,8 +41,8 @@ function details() {
       {
         name: "force_conform",
         tooltip: `Make the file conform to output containers requirements.
-                \\n Drop hdmv_pgs_subtitle/eia_608/subrip subtitles for MP4.
-                \\n Drop data streams and mov_text/eia_608 subtitles for MKV.
+                \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
+                \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
   	            \\nExample:\\n
   	            true
@@ -65,7 +65,7 @@ function plugin(file, librarySettings, inputs) {
   };
 
   // Check if inputs.container has been configured. If it hasn't then exit plugin.
-  if (inputs.container == "") {
+  if (!inputs || inputs.container == "") {
     response.infoLog +=
       "☒Container has not been configured within plugin settings, please configure required options. Skipping this plugin. \n";
     response.processFile = false;
@@ -122,30 +122,36 @@ function plugin(file, librarySettings, inputs) {
   if (inputs.force_conform == "true") {
     if (inputs.container.toLowerCase() == "mkv") {
         extraArguments += `-map -0:d `;
-        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-            if (
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "mov_text" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608"
-            ) {
-                extraArguments += `-map -0:${i} `;
-            }
-        }
+        for (var i = 0; i < file.ffProbeData.streams.length; i++)
+			try {
+				if (
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "mov_text" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "eia_608" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "timed_id3"
+				) {
+					extraArguments += `-map -0:${i} `;
+				}
+			} catch (err) {}
     }
     if (inputs.container.toLowerCase() == "mp4") {
-        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-            if (
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "hdmv_pgs_subtitle" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "subrip"
-            ) {
-                extraArguments += `-map -0:${i} `;
-            }
-        }
+        for (var i = 0; i < file.ffProbeData.streams.length; i++)
+			try {
+				if (
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "hdmv_pgs_subtitle" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "eia_608" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "subrip" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "timed_id3"
+				) {
+					extraArguments += `-map -0:${i} `;
+				}
+			} catch (err) {}
     }
 }
 
@@ -163,21 +169,21 @@ function plugin(file, librarySettings, inputs) {
           if (file.ffProbeData.streams[i].codec_name == "mjpeg" || file.ffProbeData.streams[i].codec_name == "png") {
             extraArguments += `-map -v:${videoIdx} `;
         }
-      // Check if codec of stream is hevc AND check if file.container matches inputs.container. If so nothing for plugin to do.
+      // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container. If so nothing for plugin to do.
       if (
-        file.ffProbeData.streams[i].codec_name == "hevc" &&
+        file.ffProbeData.streams[i].codec_name == "hevc" || file.ffProbeData.streams[i].codec_name == "vp9" &&
         file.container == inputs.container
       ) {
         response.processFile = false;
-        response.infoLog += `☑File is already hevc & in ${inputs.container}. \n`;
+        response.infoLog += `☑File is already hevc or vp9 & in ${inputs.container}. \n`;
         return response;
       }
-      // Check if codec of stream is hevc AND check if file.container does NOT match inputs.container. If so remux file.
+      // Check if codec of stream is hevc or vp9 AND check if file.container does NOT match inputs.container. If so remux file.
       if (
-        file.ffProbeData.streams[i].codec_name == "hevc" &&
+        file.ffProbeData.streams[i].codec_name == "hevc" || file.ffProbeData.streams[i].codec_name == "vp9" &&
         file.container != "${inputs.container}"
       ) {
-        response.infoLog += `☒File is hevc but is not in ${inputs.container} container. Remuxing. \n`;
+        response.infoLog += `☒File is hevc or vp9 but is not in ${inputs.container} container. Remuxing. \n`;
         response.preset = `, -map 0 -c copy ${extraArguments}`;
         response.processFile = true;
         return response;
@@ -197,9 +203,9 @@ function plugin(file, librarySettings, inputs) {
     (duration * 0.0075)
   )} \n Bitrate settings: \nTarget = ${targetBitrate} \nMinimum = ${minimumBitrate} \nMaximum = ${maximumBitrate} \n`;
 
-  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`;
+  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
-  response.infoLog += `☒File is not hevc. Transcoding. \n`;
+  response.infoLog += `☒File is not hevc or vp9. Transcoding. \n`;
   return response;
 }
 module.exports.details = details;

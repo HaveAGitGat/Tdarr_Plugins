@@ -44,12 +44,12 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   var response = {
     processFile: false, //If set to false, the file will be skipped. Set to true to have the file transcoded.
     preset: "", //HandBrake/FFmpeg CLI arguments you'd like to use.
-    //For FFmpeg, the input arguments come first followed by a comma, followed by the output argument.
+    //For FFmpeg, the input arguments come first followed by <io>, followed by the output argument.
     // Examples
     //HandBrake
     // '-Z "Very Fast 1080p30"'
     //FFmpeg
-    // '-sn,-map_metadata -1 -c:v copy -c:a copy'
+    // '-sn <io> -map_metadata -1 -c:v copy -c:a copy'
     container: ".mp4", // The container of the transcoded output file.
     handBrakeMode: false, //Set whether to use HandBrake or FFmpeg for transcoding
     FFmpegMode: false,

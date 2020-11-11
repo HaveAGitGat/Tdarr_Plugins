@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="https://s7.gifyu.com/images/GifCroppedTran.gif"/>
+</p>
+
+
 # Tdarr_Plugins
 
 There are two types of plugin:
@@ -67,8 +72,23 @@ https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/Community
 For local plugins:
 Add them to 'User\Documents\Tdarr\Plugins\Local'. In Tdarr, select 'Local' in the plugin section of the library you're in and add your local plugin id.
 
-     Example file object:
-     var file = {
+Note, to access FFprobe inside a plugin, use this:
+
+    const fs = require("fs");
+    const path = require("path");
+    let rootModules;
+    if (fs.existsSync(path.join(process.cwd(), "/npm"))) {
+        rootModules = path.join(process.cwd(), "/npm/node_modules/");
+    } else {
+        rootModules = "";
+    }
+
+    const ffprobePath = require(rootModules + 'ffprobe-static').path;
+    //do something with ffprobe
+
+Example file object:
+
+     let file = {
         _id: 'C:/Users/H/Desktop/Test Input1/Sample.mp4',
        DB: 'ZRPDmnmpyuAEQi7nG',
        HealthCheck: 'Not attempted',

@@ -5,8 +5,8 @@ function details() {
     Name: "Migz-Transcode Using Nvidia GPU & FFMPEG",
     Type: "Video",
     Operation: "Transcode",
-    Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n\n`,
-    Version: "2.5",
+    Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg, settings are dependant on file bitrate, working by the logic that H265 can support the same ammount of data at half the bitrate of H264. NVDEC & NVENC compatable GPU required. \n This plugin will  skip any files that are in the VP9 codec as these are already at a comparable compression level to H265. \n\n`,
+    Version: "2.8",
     Link:
       "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js",
     Tags: "pre-processing,ffmpeg,video only,nvenc h265,configurable",
@@ -39,10 +39,19 @@ function details() {
   	            false`,
       },
       {
+        name: "enable_bframes",
+        tooltip: `Specify if b frames should be used. Using B frames should decrease file sizes but are only supported on newer GPUs. Default is false.
+  	            \\nExample:\\n
+  	            true
+
+  	            \\nExample:\\n
+  	            false`,
+      },
+      {
         name: "force_conform",
         tooltip: `Make the file conform to output containers requirements.
-                \\n Drop hdmv_pgs_subtitle/eia_608/subrip subtitles for MP4.
-                \\n Drop data streams and mov_text/eia_608 subtitles for MKV.
+                \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
+                \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
   	            \\nExample:\\n
   	            true
@@ -123,30 +132,36 @@ function plugin(file, librarySettings, inputs) {
   if (inputs.force_conform == "true") {
     if (inputs.container.toLowerCase() == "mkv") {
         extraArguments += `-map -0:d `;
-        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-            if (
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "mov_text" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608"
-            ) {
-                extraArguments += `-map -0:${i} `;
-            }
-        }
+        for (var i = 0; i < file.ffProbeData.streams.length; i++)
+            try {
+				if (
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "mov_text" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "eia_608" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "timed_id3"
+				) {
+					extraArguments += `-map -0:${i} `;
+				}
+			} catch (err) {}
     }
     if (inputs.container.toLowerCase() == "mp4") {
-        for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-            if (
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "hdmv_pgs_subtitle" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "eia_608" ||
-                file.ffProbeData.streams[i].codec_name
-                .toLowerCase() == "subrip"
-            ) {
-                extraArguments += `-map -0:${i} `;
-            }
-        }
+        for (var i = 0; i < file.ffProbeData.streams.length; i++)
+			try {
+				if (
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "hdmv_pgs_subtitle" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "eia_608" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "subrip" ||
+					file.ffProbeData.streams[i].codec_name
+					.toLowerCase() == "timed_id3"
+				) {
+					extraArguments += `-map -0:${i} `;
+				}
+			} catch (err) {}
     }
 }
 
@@ -155,30 +170,36 @@ function plugin(file, librarySettings, inputs) {
     // If set to true then add 10bit argument
     extraArguments += `-pix_fmt p010le `;
   }
+  
+  // Check if b frame variable is true.
+  if (inputs.enable_bframes == "true") {
+    // If set to true then add b frames argument
+    extraArguments += `-bf 5 `;
+  }
 
   // Go through each stream in the file.
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "video") {
-      // Check if codec  of stream is mjpeg/png, if so then remove this "video" stream. mjpeg/png are usually embedded pictures that can cause havoc with plugins.
+      // Check if codec of stream is mjpeg/png, if so then remove this "video" stream. mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name == "mjpeg" || file.ffProbeData.streams[i].codec_name == "png") {
         extraArguments += `-map -v:${videoIdx} `;
       }
-      // Check if codec of stream is hevc AND check if file.container matches inputs.container. If so nothing for plugin to do.
+      // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container. If so nothing for plugin to do.
       if (
-        file.ffProbeData.streams[i].codec_name == "hevc" &&
+        file.ffProbeData.streams[i].codec_name == "hevc" || file.ffProbeData.streams[i].codec_name == "vp9" &&
         file.container == inputs.container
       ) {
         response.processFile = false;
-        response.infoLog += `☑File is already hevc & in ${inputs.container}. \n`;
+        response.infoLog += `☑File is already hevc or vp9 & in ${inputs.container}. \n`;
         return response;
       }
-      // Check if codec of stream is hevc AND check if file.container does NOT match inputs.container. If so remux file.
+      // Check if codec of stream is hevc or vp9 AND check if file.container does NOT match inputs.container. If so remux file.
       if (
-        file.ffProbeData.streams[i].codec_name == "hevc" &&
+        file.ffProbeData.streams[i].codec_name == "hevc" || file.ffProbeData.streams[i].codec_name == "vp9" &&
         file.container != "${inputs.container}"
       ) {
-        response.infoLog += `☒File is hevc but is not in ${inputs.container} container. Remuxing. \n`;
+        response.infoLog += `☒File is hevc or vp9 but is not in ${inputs.container} container. Remuxing. \n`;
         response.preset = `, -map 0 -c copy ${extraArguments}`;
         response.processFile = true;
         return response;
@@ -221,13 +242,11 @@ function plugin(file, librarySettings, inputs) {
     response.preset = `-c:v vc1_cuvid`;
   } else if (file.video_codec_name == "vp8") {
     response.preset = `-c:v vp8_cuvid`;
-  } else if (file.video_codec_name == "vp9") {
-    response.preset = `-c:v vp9_cuvid`;
   }
 
-  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 4096 ${extraArguments}`;
+  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
-  response.infoLog += `☒File is not hevc. Transcoding. \n`;
+  response.infoLog += `☒File is not hevc or vp9. Transcoding. \n`;
   return response;
 }
 module.exports.details = details;
