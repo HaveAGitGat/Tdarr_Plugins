@@ -36,6 +36,16 @@ module.exports.details = function details() {
  
         `,
       },
+      {
+        name: "bitrate",
+        tooltip: `Specify the transcoded audio bitrate (optional):
+        \\n 384k
+        \\n 640k
+        \\nExample:\\n
+        640k
+ 
+        `,
+      },
     ],
   };
 };
@@ -53,7 +63,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     infoLog: "",
   };
 
-  if (inputs.codecs_to_transcode === undefined || inputs.codec === undefined) {
+  if (inputs.codecs_to_transcode === undefined || inputs.codec === undefined ) {
     response.processFile = false;
     response.infoLog += "☒ Inputs not entered! \n";
     return response;
@@ -81,6 +91,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       )
     ) {
       ffmpegCommand += `  -map 0:${i} -c:${i} ${encoder} `;
+      if (inputs.bitrate != undefined) {
+        ffmpegCommand += `-b:a ${inputs.bitrate} `;
+      }
       hasStreamsToTranscode = true;
     } else if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
       ffmpegCommand += `  -map 0:${i}`;
