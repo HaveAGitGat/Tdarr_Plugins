@@ -12,71 +12,101 @@ function details() {
       {
         name: "target_bitrate_480p576p",
         tooltip: `Specify the target bitrate for 480p and 576p files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 1 Mbps:\\n
-  	            1000000`,
+                \\nExample 1 Mbps:\\n
+                1000000`,
       },
       {
         name: "target_bitrate_720p",
         tooltip: `Specify the target bitrate for 720p files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 2 Mbps:\\n
-  	            2000000`,
+                \\nExample 2 Mbps:\\n
+                2000000`,
       },
       {
         name: "target_bitrate_1080p",
         tooltip: `Specify the target bitrate for 1080p files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 2.5 Mbps:\\n
-  	            2500000`,
+                \\nExample 2.5 Mbps:\\n
+                2500000`,
       },
       {
         name: "target_bitrate_4KUHD",
         tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 14 Mbps:\\n
-  	            14000000`,
+                \\nExample 14 Mbps:\\n
+                14000000`,
       },
-	  {
+    {
         name: "target_pct_reduction",
         tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.
-  	            \\nExample 60%:\\n
-  	            .60`,
+                \\nExample 60%:\\n
+                .60`,
+      },
+      {
+        name: "source_audio_codec",
+        tooltip: `Specifiy the codecs which you'd like to transcode
+        \\nExample:\\n
+        dts
+        \\nExample:\\n
+        dts,eac3,aac`,
+      },
+      {
+        name: "target_audio_codec",
+        tooltip: `Specify the audio codec you'd like to transcode into:
+        \\n aac
+        \\n ac3
+        \\n eac3
+        \\n dts
+        \\n flac
+        \\n mp2
+        \\n mp3
+        \\n truehd
+        \\nExample:\\n
+        eac3`,
+      },
+      {
+        name: "target_audio_bitrate",
+        tooltip: `Specify the transcoded audio bitrate:
+        \\n 384k
+        \\n 640k
+        \\nExample:\\n
+        640k`,
       },
       {
         name: "audio_language",
         tooltip: `Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-  	            \\nExample:\\n
-  	            eng
+                \\nExample:\\n
+                eng
 
-  	            \\nExample:\\n
-  	            eng,und
+                \\nExample:\\n
+                eng,und
 
-  	            \\nExample:\\n
-  	            eng,und,jap`,
+                \\nExample:\\n
+                eng,und,jap`,
       },
       {
         name: "audio_commentary",
         tooltip: `Specify if audio tracks that contain commentary/description should be removed.
-  	            \\nExample:\\n
-  	            true
+                \\nExample:\\n
+                true
 
-  	            \\nExample:\\n
-  	            false`,
+                \\nExample:\\n
+                false`,
       },
       {
         name: "subtitle_language",
         tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-  	            \\nExample:\\n
-  	            eng
+                \\nExample:\\n
+                eng
 
-  	            \\nExample:\\n
-  	            eng,jap`,
+                \\nExample:\\n
+                eng,jap`,
       },
       {
         name: "subtitle_commentary",
         tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
-  	            \\nExample:\\n
-  	            true
+                \\nExample:\\n
+                true
 
-  	            \\nExample:\\n
-  	            false`,
+                \\nExample:\\n
+                false`,
       },
     ],
   };
@@ -171,7 +201,7 @@ class Configurator {
 function calculateBitrate(file) {
   var bitrateprobe = file.ffProbeData.streams[0].bit_rate;
   if (isNaN(bitrateprobe)) {
-	bitrateprobe = file.bit_rate;
+  bitrateprobe = file.bit_rate;
   }
   return bitrateprobe;
 }
@@ -195,6 +225,7 @@ function loopOverStreamsOfType(file, type, method) {
 
 /**
  * Removes audio tracks that aren't in the allowed languages or labeled as Commentary tracks.
+ * Transcode audio if specified.
  */
 function buildAudioConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:a copy"]);
@@ -209,7 +240,7 @@ function buildAudioConfiguration(inputs, file, logger) {
         stream.tags.title.toLowerCase().includes("description") ||
         stream.tags.title.toLowerCase().includes("sdh")
       ) {
-		streams_removing++;
+        streams_removing++;
         configuration.AddOutputSetting(`-map -0:a:${id}`);
         logger.AddError(
           `Removing Commentary or Description audio track: ${stream.tags.title}`
@@ -221,7 +252,7 @@ function buildAudioConfiguration(inputs, file, logger) {
       if ("language" in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:a:${id}`);
-	  streams_removing++;
+          streams_removing++;
           logger.AddError(
             `Removing audio track in language ${stream.tags.language}`
           );
@@ -230,10 +261,10 @@ function buildAudioConfiguration(inputs, file, logger) {
   }});
 
   if (stream_count == streams_removing) {
-	logger.AddError(
-		`*** All audio tracks would have been removed.  Defaulting to keeping all tracks for this file.`
-	);
-	configuration.ResetOutputSetting(["-c:a copy"]);
+    logger.AddError(
+      `*** All audio tracks would have been removed.  Defaulting to keeping all tracks for this file.`
+    );
+  configuration.ResetOutputSetting(["-c:a copy"]);
   }
 
   return configuration;
@@ -267,7 +298,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
       }
 
       // Remove commentary subtitles
-	  if ("title" in stream.tags && (inputs.subtitle_commentary.toLowerCase() == "true")) {
+    if ("title" in stream.tags && (inputs.subtitle_commentary.toLowerCase() == "true")) {
         if (
           stream.tags.title.toLowerCase().includes("commentary") ||
           stream.tags.title.toLowerCase().includes("description") ||
@@ -317,63 +348,62 @@ function buildVideoConfiguration(inputs, file, logger) {
     if (stream.codec_name !== "hevc") {
       var bitrateprobe = calculateBitrate(file);
       var bitratetarget = 0;
-	  var bitratemax = 0;
-	  var cq = 0;
-	  var bitratecheck = 0;
+      var bitratemax = 0;
+      var cq = 0;
+      var bitratecheck = 0;
       /**
        * NVENC Configuration
-       */
+      */
 
-  /*  Determine tiered bitrate variables */
-	if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
-		bitratecheck = parseInt(inputs.target_bitrate_480p576p);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 500;	// Set max bitrate to 0.5MB Higher	
-			cq = 29;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_480p576p / 1000);
-			bitratemax = bitratetarget + 500;
-			cq = 29;
-		} 
-	}
-	if (file.video_resolution === "720p") {
-		bitratecheck = parseInt(inputs.target_bitrate_720p);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 2000;	// Set max bitrate to 2MB Higher	
-			cq = 30;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_720p / 1000);
-			bitratemax = bitratetarget + 2000;	
-			cq = 30;
-		}
-	}
-	if (file.video_resolution === "1080p") {
-		bitratecheck = parseInt(inputs.target_bitrate_1080p);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 2500;	// Set max bitrate to 2.5MB Higher	
-			cq = 31;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_1080p / 1000);
-			bitratemax = bitratetarget + 2500;	
-			cq = 31;
-		}
-	} 
-	if (file.video_resolution === "4KUHD") {
-		bitratecheck = parseInt(inputs.target_bitrate_4KUHD);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 6000;	// Set max bitrate to 6MB Higher	
-			cq = 31;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_4KUHD / 1000);
-			bitratemax = bitratetarget + 6000;
-			cq = 31;
-		}
-	} 
-	
+    /*  Determine tiered bitrate variables */
+    if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
+      bitratecheck = parseInt(inputs.target_bitrate_480p576p);
+      if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
+        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
+        bitratemax = bitratetarget + 500; // Set max bitrate to 0.5MB Higher  
+        cq = 29;
+      } else {
+        bitratetarget = parseInt(inputs.target_bitrate_480p576p / 1000);
+        bitratemax = bitratetarget + 500;
+        cq = 29;
+      } 
+    }
+    if (file.video_resolution === "720p") {
+      bitratecheck = parseInt(inputs.target_bitrate_720p);
+      if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
+        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
+        bitratemax = bitratetarget + 2000;  // Set max bitrate to 2MB Higher  
+        cq = 30;
+      } else {
+        bitratetarget = parseInt(inputs.target_bitrate_720p / 1000);
+        bitratemax = bitratetarget + 2000;  
+        cq = 30;
+      }
+    }
+    if (file.video_resolution === "1080p") {
+      bitratecheck = parseInt(inputs.target_bitrate_1080p);
+      if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
+        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
+        bitratemax = bitratetarget + 2500;  // Set max bitrate to 2.5MB Higher  
+        cq = 31;
+      } else {
+        bitratetarget = parseInt(inputs.target_bitrate_1080p / 1000);
+        bitratemax = bitratetarget + 2500;  
+        cq = 31;
+      }
+    } 
+    if (file.video_resolution === "4KUHD") {
+      bitratecheck = parseInt(inputs.target_bitrate_4KUHD);
+      if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
+        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
+        bitratemax = bitratetarget + 6000;  // Set max bitrate to 6MB Higher  
+        cq = 31;
+      } else {
+        bitratetarget = parseInt(inputs.target_bitrate_4KUHD / 1000);
+        bitratemax = bitratetarget + 6000;
+        cq = 31;
+      }
+    }
 
     configuration.RemoveOutputSetting("-c:v copy");
     configuration.AddOutputSetting(
