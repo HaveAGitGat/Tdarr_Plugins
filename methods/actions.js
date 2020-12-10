@@ -1,4 +1,3 @@
-/* eslint-disable */
 var fs = require("fs");
 var path = require("path");
 if (fs.existsSync(path.join(process.cwd(), "/npm"))) {
