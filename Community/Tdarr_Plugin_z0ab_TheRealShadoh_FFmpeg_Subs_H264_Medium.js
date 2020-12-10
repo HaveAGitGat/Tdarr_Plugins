@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Medium",

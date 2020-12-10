@@ -1,3 +1,4 @@
+/* eslint-disable */
 function filterByResolution(file, mode, resolution) {
   try {
     if (mode === "exclude") {

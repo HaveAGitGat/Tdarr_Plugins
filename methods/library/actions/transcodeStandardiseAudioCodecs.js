@@ -1,3 +1,4 @@
+/* eslint-disable */
 module.exports = function transcodeStandardiseAudioCodecs(file, audioEncoder) {
   //Function required responses
   // preset

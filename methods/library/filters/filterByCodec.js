@@ -1,3 +1,4 @@
+/* eslint-disable */
 function filterByCodec(file, mode, codecs) {
   try {
     // console.log(file,mode,codecs)
