@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_A47j_FFMPEG_NVENC_HEVC_Video_Only",

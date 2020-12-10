@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details () {
   return {
     id: 'Tdarr_Plugin_henk_Add_Specific_Audio_Codec',

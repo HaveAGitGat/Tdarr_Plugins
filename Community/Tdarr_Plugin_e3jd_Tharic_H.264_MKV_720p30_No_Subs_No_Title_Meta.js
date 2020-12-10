@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_e3jd_Tharic_H.264_MKV_720p30_No_Subs_No_Title_Meta",

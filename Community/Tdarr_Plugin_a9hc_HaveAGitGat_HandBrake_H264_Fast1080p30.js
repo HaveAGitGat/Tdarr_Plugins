@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30",
