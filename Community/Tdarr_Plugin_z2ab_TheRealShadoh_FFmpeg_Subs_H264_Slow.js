@@ -1,4 +1,3 @@
-/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_z2ab_TheRealShadoh_FFmpeg_Subs_H264_Slow",
