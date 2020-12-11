@@ -1,3 +1,4 @@
+/* eslint-disable */
 module.exports.details = function details() {
   return {
     id: "Tdarr_Plugin_077b_HandBrake_NVENC_264_Configurable",

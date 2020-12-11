@@ -5,10 +5,15 @@
   "main": "Tdarr_Plugin_aaaa_Pre_Proc_Example.js",
   "dependencies": {},
   "devDependencies": {
-    "prettier": "2.0.5"
+    "eslint": "^7.14.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jsx-a11y": "^6.4.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint Community methods --ext js",
+    "lint:fix": "eslint Community methods --ext js --fix"
   },
   "repository": {
     "type": "git",

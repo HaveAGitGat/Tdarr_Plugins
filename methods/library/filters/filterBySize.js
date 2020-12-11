@@ -1,3 +1,4 @@
+/* eslint-disable */
 function filterBySize(file, lowerBound, upperBound) {
   try {
     if (
