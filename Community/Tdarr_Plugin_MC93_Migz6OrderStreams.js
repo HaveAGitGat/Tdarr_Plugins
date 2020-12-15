@@ -40,7 +40,7 @@ function plugin(file) {
         // Check if audioIdx or subtitleIdx do NOT equal 0
         //  If so then it means a audio or subtitle track has already appeared before the video track
         // So file needs to be organized.
-        if (audioIdx !== '0' || subtitleIdx !== '0') {
+        if (audioIdx !== 0 || subtitleIdx !== 0) {
           convert = true;
           response.infoLog += '☒ Video not first. \n';
         }
@@ -51,7 +51,7 @@ function plugin(file) {
         // Check if subtitleIdx does NOT equal 0.
         // If so then it means a subtitle track has already appeared before an audio track
         // So file needs to be organized.
-        if (subtitleIdx !== '0') {
+        if (subtitleIdx !== 0) {
           convert = true;
           response.infoLog += '☒ Audio not second. \n';
         }
@@ -63,17 +63,17 @@ function plugin(file) {
           // Check if audio6Idx or audio8Idx do NOT equal 0.
           // If so then it means a 6 or 8 channel audio track has already appeared before the 2 channel audio track
           // So file needs to be organized.
-          if (audio6Idx !== '0' || audio8Idx !== '0') {
+          if (audio6Idx !== 0 || audio8Idx !== 0) {
             convert = true;
             response.infoLog += '☒ Audio 2ch not first. \n';
           }
         }
         // Check if audio track is 6 channel.
-        if (file.ffProbeData.streams[i].channels === '6') {
+        if (file.ffProbeData.streams[i].channels === 6) {
           // Check if audio8Idx does NOT equal 0.
           // If so then it means a 8 channel audio track has already appeared before the 6 channel audio track
           // So file needs to be organized.
-          if (audio8Idx !== '0') {
+          if (audio8Idx !== 0) {
             convert = true;
             response.infoLog += '☒ Audio 6ch not second. \n';
           }
@@ -82,7 +82,7 @@ function plugin(file) {
         }
 
         // Check if audio track is 8 channel.
-        if (file.ffProbeData.streams[i].channels === '8') {
+        if (file.ffProbeData.streams[i].channels === 8) {
           // Increment audio8Idx.
           audio8Idx += 1;
         }
@@ -119,7 +119,7 @@ function plugin(file) {
       // Check if stream is audio AND 2 channel.
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels === '2'
+        && file.ffProbeData.streams[i].channels === 2
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
@@ -134,7 +134,7 @@ function plugin(file) {
       // Check if stream is audio AND 6 channel.
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels === '6'
+        && file.ffProbeData.streams[i].channels === 6
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
@@ -149,7 +149,7 @@ function plugin(file) {
       // Check if stream is audio AND 8 channel.
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels === '8'
+        && file.ffProbeData.streams[i].channels === 8
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
@@ -164,9 +164,9 @@ function plugin(file) {
       // Check if stream is audio AND not 2, 6 or 8 channel.
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels !== '2'
-        && file.ffProbeData.streams[i].channels !== '6'
-        && file.ffProbeData.streams[i].channels !== '8'
+        && file.ffProbeData.streams[i].channels !== 2
+        && file.ffProbeData.streams[i].channels !== 6
+        && file.ffProbeData.streams[i].channels !== 8
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }

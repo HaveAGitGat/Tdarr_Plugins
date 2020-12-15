@@ -190,17 +190,17 @@ function plugin(file, librarySettings, inputs) {
         && inputs.tag_title.toLowerCase() === 'true'
         && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
       ) {
-        if (file.ffProbeData.streams[i].channels === '8') {
+        if (file.ffProbeData.streams[i].channels === 8) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} title="7.1" `;
           response.infoLog += `☒Audio stream detected as 8 channel with no title, tagging. Stream 0:a:${audioIdx} \n`;
           convert = true;
         }
-        if (file.ffProbeData.streams[i].channels === '6') {
+        if (file.ffProbeData.streams[i].channels === 6) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} title="5.1" `;
           response.infoLog += `☒Audio stream detected as 6 channel with no title, tagging. Stream 0:a:${audioIdx} \n`;
           convert = true;
         }
-        if (file.ffProbeData.streams[i].channels === '2') {
+        if (file.ffProbeData.streams[i].channels === 2) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} title="2.0" `;
           response.infoLog += `☒Audio stream detected as 2 channel with no title, tagging. Stream 0:a:${audioIdx} \n`;
           convert = true;

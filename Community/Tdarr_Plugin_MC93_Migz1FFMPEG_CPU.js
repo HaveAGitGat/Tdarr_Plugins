@@ -111,7 +111,7 @@ function plugin(file, librarySettings, inputs) {
 
   // If targetBitrate comes out as 0 then something has gone wrong and bitrates could not be calculcated.
   // Cancel plugin completely.
-  if (targetBitrate === '0') {
+  if (targetBitrate === 0) {
     response.processFile = false;
     response.infoLog += 'Target bitrate could not be calculated. Skipping this plugin. \n';
     return response;

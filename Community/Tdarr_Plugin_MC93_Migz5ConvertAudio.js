@@ -73,13 +73,13 @@ function plugin(file, librarySettings, inputs) {
     try {
       // Go through all audio streams and check if 2,6 & 8 channel tracks exist or not.
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
-        if (file.ffProbeData.streams[i].channels === '2') {
+        if (file.ffProbeData.streams[i].channels === 2) {
           has2Channel = true;
         }
-        if (file.ffProbeData.streams[i].channels === '6') {
+        if (file.ffProbeData.streams[i].channels === 6) {
           has6Channel = true;
         }
-        if (file.ffProbeData.streams[i].channels === '8') {
+        if (file.ffProbeData.streams[i].channels === 8) {
           has8Channel = true;
         }
       }
@@ -100,7 +100,7 @@ function plugin(file, librarySettings, inputs) {
           if (
             has8Channel === true
             && has6Channel === false
-            && file.ffProbeData.streams[i].channels === '8'
+            && file.ffProbeData.streams[i].channels === 8
           ) {
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1 " `;
             response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel from 8 channel. \n';
@@ -110,7 +110,7 @@ function plugin(file, librarySettings, inputs) {
           if (
             has6Channel === true
             && has2Channel === false
-            && file.ffProbeData.streams[i].channels === '6'
+            && file.ffProbeData.streams[i].channels === 6
           ) {
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0 " `;
             response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel from 6 channel. \n';
@@ -128,7 +128,7 @@ function plugin(file, librarySettings, inputs) {
           // Check if codec_name for stream is NOT aac AND check if channel ammount is 2.
           if (
             file.ffProbeData.streams[i].codec_name !== 'aac'
-            && file.ffProbeData.streams[i].channels === '2'
+            && file.ffProbeData.streams[i].channels === 2
           ) {
             ffmpegCommandInsert += `-c:a:${audioIdx} aac `;
             response.infoLog += '☒Audio track is 2 channel but is not AAC. Converting. \n';
