@@ -1,3 +1,6 @@
+// eslint-disable-next-line import/no-unresolved
+const request = require('request');
+
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 module.exports.details = function details() {
   return {
@@ -45,12 +48,11 @@ module.exports.details = function details() {
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
   // Set up required variables.
-  const request = require('request');
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
   const PASSKEY = inputs.autoscan_passkey;
   let filepath = '';
-  const response = '';
+  const response = {};
   filepath = `${file.file}`;
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
@@ -78,12 +80,19 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   },
   (error, res, body) => {
     if (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
     }
+    // eslint-disable-next-line no-console
     console.log(`statusCode: ${res.statusCode}`);
+    // eslint-disable-next-line no-console
     console.log(body);
   });
 
+  // eslint-disable-next-line no-console
   console.log('request next');
+  // eslint-disable-next-line no-console
   console.log(request.post);
+
+  return undefined;
 };

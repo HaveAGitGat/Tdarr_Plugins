@@ -57,6 +57,7 @@ function plugin(file, librarySettings, inputs) {
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
+    // eslint-disable-next-line no-console
     console.log('File is not video');
     response.infoLog += '☒File is not video \n';
     response.processFile = false;
@@ -65,7 +66,8 @@ function plugin(file, librarySettings, inputs) {
 
   // Check if inputs.language has been configured. If it hasn't then exit plugin.
   if (inputs.language === '') {
-    response.infoLog += '☒Language/s to keep have not been configured, please configure required options. Skipping this plugin.  \n';
+    response.infoLog += '☒Language/s to keep have not been configured, '
+    + 'please configure required options. Skipping this plugin.  \n';
     response.processFile = false;
     return response;
   }

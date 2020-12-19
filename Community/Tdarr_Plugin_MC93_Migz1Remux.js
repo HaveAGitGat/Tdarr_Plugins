@@ -125,6 +125,8 @@ function plugin(file, librarySettings, inputs) {
     response.processFile = true;
     return response;
   }
+
+  return response;
 }
 module.exports.details = details;
 module.exports.plugin = plugin;

@@ -101,12 +101,16 @@ function plugin(file, librarySettings, inputs) {
   let bitrateSettings = '';
   // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
+  // eslint-disable-next-line no-bitwise
   const currentBitrate = ~~(file.file_size / (duration * 0.0075));
   // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
   // Logic of h265 can be half the bitrate as h264 without losing quality.
+  // eslint-disable-next-line no-bitwise
   const targetBitrate = ~~(file.file_size / (duration * 0.0075) / 2);
   // Allow some leeway under and over the targetBitrate.
+  // eslint-disable-next-line no-bitwise
   const minimumBitrate = ~~(targetBitrate * 0.7);
+  // eslint-disable-next-line no-bitwise
   const maximumBitrate = ~~(targetBitrate * 1.3);
 
   // If targetBitrate comes out as 0 then something has gone wrong and bitrates could not be calculcated.
@@ -124,7 +128,8 @@ function plugin(file, librarySettings, inputs) {
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
       response.processFile = false;
-      response.infoLog += `Current bitrate is below set bitrate cutoff of ${inputs.bitrate_cutoff}. Nothing to do, cancelling plugin. \n`;
+      response.infoLog += 'Current bitrate is below set bitrate cutoff '
+      + `of ${inputs.bitrate_cutoff}. Nothing to do, cancelling plugin. \n`;
       return response;
     }
   }
@@ -218,7 +223,8 @@ function plugin(file, librarySettings, inputs) {
   }
 
   // Set bitrateSettings variable using bitrate information calulcated earlier.
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
+  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
+  + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `Container for output selected as ${inputs.container}. \n`;
   response.infoLog += `Current bitrate = ${currentBitrate} \n`;
@@ -227,7 +233,8 @@ function plugin(file, librarySettings, inputs) {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
-  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} `
+  + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;

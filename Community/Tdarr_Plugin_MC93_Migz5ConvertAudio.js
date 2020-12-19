@@ -54,6 +54,7 @@ function plugin(file, librarySettings, inputs) {
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
+    // eslint-disable-next-line no-console
     console.log('File is not video');
     response.infoLog += '☒File is not video. \n';
     response.processFile = false;
@@ -145,7 +146,8 @@ function plugin(file, librarySettings, inputs) {
   // Convert file if convert variable is set to true.
   if (convert === true) {
     response.processFile = true;
-    response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} -strict -2 -c:s copy -max_muxing_queue_size 9999 `;
+    response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
+    + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
   } else {
     response.infoLog += '☑File contains all required audio formats. \n';
     response.processFile = false;

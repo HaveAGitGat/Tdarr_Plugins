@@ -14,7 +14,7 @@ function details() {
   };
 }
 
-function plugin(file, librarySettings) {
+function plugin(file) {
   const response = {
     processFile: false,
     preset: '',
