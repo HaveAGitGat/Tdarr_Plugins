@@ -14,7 +14,7 @@ module.exports.details = function details() {
           + 'improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.',
     Version: '1.00',
     Link: '',
-    Tags: "pre-processing,subtitle only,ffmpeg,configurable",
+    Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
     Inputs: [
       {
         name: 'remove_subs',
