@@ -46,8 +46,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     infoLog: '',
   };
 
-  console.log(inputs.remove_subs);
-
   if (inputs.remove_subs === undefined) {
     response.processFile = false;
     response.infoLog += '☒ Inputs not entered! \n';
