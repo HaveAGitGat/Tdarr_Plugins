@@ -69,9 +69,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     let title = 'none';
 
     if (subStream.tags) {
-      lang = subStream.tags.language.toLowerCase();
+      lang = subStream.tags
     }
-
+    
     if (subStream.tags.title) {
       title = subStream.tags.title;
     }
