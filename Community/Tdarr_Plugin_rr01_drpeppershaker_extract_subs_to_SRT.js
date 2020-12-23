@@ -13,7 +13,7 @@ module.exports.details = function details() {
       + 'other options.',
     // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
     // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
-    Version: '1.00',
+    Version: '1.04',
     Link: '',
     Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
     Inputs: [
@@ -66,9 +66,14 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   for (let i = 0; i < subsArr.length; i += 1) {
     const subStream = subsArr[i];
     let lang = '';
+    let title = 'none';
 
     if (subStream.tags) {
-      lang = subStream.tags.language;
+      lang = subStream.tags.language.toLowerCase();
+    }
+
+    if (subStream.tags.title) {
+      title = subStream.tags.title;
     }
 
     let subsFile = file.file;
@@ -80,6 +85,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     const { index } = subStream;
     if (fs.existsSync(`${subsFile}`)) {
       response.infoLog += `${lang}.srt already exists. Skipping!\n`;
+    } else if (title.toLowerCase().includes('commentary') || title.toLowerCase().includes('description')) {
+      response.infoLog += `Stream ${i} ${lang}.srt is a ${title} track. Skipping!\n`;
     } else {
       response.infoLog += `Extracting ${lang}.srt\n`;
       command += ` -map 0:${index} "${subsFile}"`;
