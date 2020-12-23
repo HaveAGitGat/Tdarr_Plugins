@@ -8,10 +8,11 @@ module.exports.details = function details() {
     Type: 'Video',
     Operation: 'Transcode',
     Description: 'This plugin extracts embedded subs in one pass inside Tdarr and will optionally remove them. \n\n '
-          + 'All processes happen within Tdarr without the use of any exec() functions, which lets the progress bar '
-          + 'report the status correctly. AND all subtitles are extracted in one pass, which is much faster than '
-          + 'other options.\n\nCreated by drpeppershaker with help from reddit user /u/jakejones48, lots of '
-          + 'improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.',
+      + 'All processes happen within Tdarr without the use of any exec() functions, which lets the progress bar '
+      + 'report the status correctly. AND all subtitles are extracted in one pass, which is much faster than '
+      + 'other options.',
+    // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
+    // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
     Version: '1.00',
     Link: '',
     Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
