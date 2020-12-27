@@ -88,7 +88,7 @@ Note, to access FFprobe inside a plugin, use this:
 
 Example file object:
 
-     let file =                 {
+     let file = {
                 "meta": {
                     "SourceFile": "C:/Users/H/Desktop/Transcode/Source/SampleVideo_1280x720_30mb - Copy (5).mp4",
                     "errors": [],
