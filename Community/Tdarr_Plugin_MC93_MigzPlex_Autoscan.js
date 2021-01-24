@@ -1,5 +1,6 @@
-// eslint-disable-next-line import/no-unresolved
-const request = require('request');
+module.exports.dependencies = [
+  'request',
+];
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 module.exports.details = function details() {
@@ -47,6 +48,9 @@ module.exports.details = function details() {
 };
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
+  // eslint-disable-next-line global-require,import/no-unresolved
+  const request = require('request');
+
   // Set up required variables.
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
