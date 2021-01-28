@@ -78,7 +78,13 @@ function plugin(file, librarySettings, inputs) {
   }
 
   // Check if overall file metadata title is not empty, if it's not empty set to "".
-  if (typeof file.meta.Title !== 'undefined') {
+  if (
+    !(
+      typeof file.meta.Title === 'undefined'
+        || file.meta.Title === '""'
+        || file.meta.Title === ''
+    )
+  ) {
     try {
       ffmpegCommandInsert += ' -metadata title="" ';
       convert = true;
