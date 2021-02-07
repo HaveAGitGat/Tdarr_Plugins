@@ -42,7 +42,7 @@ function plugin(file) {
   }
 
   response.processFile = true;
-  response.preset = `,-map 0:v -map 0:a -c copy -c:v:0 libx265`;
+  response.preset = `,-map 0:v -map 0:a -c copy -c:v:0 libx265 -max_muxing_queue_size 9999`;
   response.container = ".mkv";
   response.handBrakeMode = false;
   response.FFmpegMode = true;
