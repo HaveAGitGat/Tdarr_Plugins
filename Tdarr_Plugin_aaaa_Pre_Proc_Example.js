@@ -1,19 +1,24 @@
+// List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
+module.exports.dependencies = [
+  'import-fresh',
+];
+
 module.exports.details = function details() {
   return {
-    id: "Tdarr_Plugin_aaaa_Pre_Proc_Example",
-    Stage: "Pre-processing", //Preprocessing or Post-processing. Determines when the plugin will be executed.
-    Name: "No title meta data ",
-    Type: "Video",
-    Operation: "Transcode",
-    Description: `This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n`,
-    Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugin_aaaa_Pre_Proc_Example",
-    Tags: "ffmpeg,h265", //Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
+    id: 'Tdarr_Plugin_aaaa_Pre_Proc_Example',
+    Stage: 'Pre-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed.
+    Name: 'No title meta data ',
+    Type: 'Video',
+    Operation: 'Transcode',
+    Description: 'This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n',
+    Version: '1.00',
+    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugin_aaaa_Pre_Proc_Example',
+    Tags: 'ffmpeg,h265', // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
 
     Inputs: [
-      //(Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
+      // (Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
       {
-        name: "language",
+        name: 'language',
         tooltip: `Enter one language tag here for the language of the subtitles you'd like to keep. 
       
       \\nExample:\\n 
@@ -25,10 +30,10 @@ module.exports.details = function details() {
       
       \\nExample:\\n 
       
-      de`, //Each line following `Example:` will be clearly formatted. \\n used for line breaks
+      de`, // Each line following `Example:` will be clearly formatted. \\n used for line breaks
       },
       {
-        name: "channels",
+        name: 'channels',
         tooltip: `Desired audio channel number.  
       
       \\nExample:\\n
@@ -39,67 +44,69 @@ module.exports.details = function details() {
 };
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
-  //Must return this object at some point in the function else plugin will fail.
+  // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
+  const importFresh = require('import-fresh');
 
-  var response = {
-    processFile: false, //If set to false, the file will be skipped. Set to true to have the file transcoded.
-    preset: "", //HandBrake/FFmpeg CLI arguments you'd like to use.
-    //For FFmpeg, the input arguments come first followed by <io>, followed by the output argument.
+  // Must return this object at some point in the function else plugin will fail.
+
+  const response = {
+    processFile: false, // If set to false, the file will be skipped. Set to true to have the file transcoded.
+    preset: '', // HandBrake/FFmpeg CLI arguments you'd like to use.
+    // For FFmpeg, the input arguments come first followed by <io>, followed by the output argument.
     // Examples
-    //HandBrake
+    // HandBrake
     // '-Z "Very Fast 1080p30"'
-    //FFmpeg
+    // FFmpeg
     // '-sn <io> -map_metadata -1 -c:v copy -c:a copy'
-    container: ".mp4", // The container of the transcoded output file.
-    handBrakeMode: false, //Set whether to use HandBrake or FFmpeg for transcoding
+    container: '.mp4', // The container of the transcoded output file.
+    handBrakeMode: false, // Set whether to use HandBrake or FFmpeg for transcoding
     FFmpegMode: false,
-    reQueueAfter: true, //Leave as true. File will be re-qeued afterwards and pass through the plugin filter again to make sure it meets conditions.
-    infoLog: "", //This will be shown when the user clicks the 'i' (info) button on a file in the output queue if
-    //it has been skipped.
+    reQueueAfter: true, // Leave as true. File will be re-qeued afterwards and pass through the plugin filter again to make sure it meets conditions.
+    infoLog: '', // This will be shown when the user clicks the 'i' (info) button on a file in the output queue if
+    // it has been skipped.
     // Give reasons why it has been skipped ('File has no title metadata, File meets conditions!')
 
-    //Optional (include together)
+    // Optional (include together)
     file,
-    removeFromDB: false, //Tell Tdarr to remove file from database if true
-    updateDB: false, //Change file object above and update database if true
+    removeFromDB: false, // Tell Tdarr to remove file from database if true
+    updateDB: false, // Change file object above and update database if true
   };
 
-  console.log(inputs.language); //eng if user entered 'eng' in input box in Tdarr plugin UI
-  console.log(inputs.channels); //2 if user entered '2' in input box in Tdarr plugin UI
+  console.log(inputs.language); // eng if user entered 'eng' in input box in Tdarr plugin UI
+  console.log(inputs.channels); // 2 if user entered '2' in input box in Tdarr plugin UI
 
-  //Here we specify that we want the output file container to be the same as the current container.
-  response.container = "." + file.container;
+  // Here we specify that we want the output file container to be the same as the current container.
+  response.container = `.${file.container}`;
 
-  //We will use FFmpeg for this procedure.
+  // We will use FFmpeg for this procedure.
   response.FFmpegMode = true;
 
-  //Check if file has title metadata
+  // Check if file has title metadata
   if (file.meta.Title != undefined) {
-    //if so, remove it
+    // if so, remove it
 
-    response.infoLog += " File has title metadata";
-    response.preset = ",-map_metadata -1 -c:v copy -c:a copy";
+    response.infoLog += ' File has title metadata';
+    response.preset = ',-map_metadata -1 -c:v copy -c:a copy';
     response.processFile = true;
     return response;
-  } else {
-    response.infoLog += " File has no title metadata";
   }
+  response.infoLog += ' File has no title metadata';
 
-  response.infoLog += " File meets conditions!";
+  response.infoLog += ' File meets conditions!';
   return response;
 };
 
 module.exports.onTranscodeSuccess = function onTranscodeSuccess(
   file,
   librarySettings,
-  inputs
+  inputs,
 ) {
   console.log(
-    "Transcode success! Now do some stuff with the newly scanned file."
+    'Transcode success! Now do some stuff with the newly scanned file.',
   );
 
-  //Optional response if you need to modify database
-  var response = {
+  // Optional response if you need to modify database
+  const response = {
     file,
     removeFromDB: false,
     updateDB: false,
@@ -111,12 +118,12 @@ module.exports.onTranscodeSuccess = function onTranscodeSuccess(
 module.exports.onTranscodeError = function onTranscodeError(
   file,
   librarySettings,
-  inputs
+  inputs,
 ) {
-  console.log("Transcode fail! Now do some stuff with the original file.");
+  console.log('Transcode fail! Now do some stuff with the original file.');
 
-  //Optional response if you need to modify database
-  var response = {
+  // Optional response if you need to modify database
+  const response = {
     file,
     removeFromDB: false,
     updateDB: false,
@@ -125,7 +132,7 @@ module.exports.onTranscodeError = function onTranscodeError(
   return response;
 };
 
-//Example file object:
+// Example file object:
 //     {
 //     _id: 'C:/Users/H/Desktop/Test Input1/Sample.mp4',
 //    DB: 'ZRPDmnmpyuAEQi7nG',

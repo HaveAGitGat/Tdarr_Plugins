@@ -6,10 +6,10 @@ function details() {
     Name: 'Migz-Transcode Using CPU & FFMPEG',
     Type: 'Video',
     Operation: 'Transcode',
-    Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg.
-                  \\n Settings are dependant on file bitrate
-                  \\n Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
-                  \\n This plugin will skip any files that are in the VP9 codec. \n\n`,
+    Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg.
+                Settings are dependant on file bitrate
+                Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
+                This plugin will  skip any files that are in the VP9 codec.`,
     Version: '1.9',
     Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js',
     Tags: 'pre-processing,ffmpeg,video only,configurable,h265',

@@ -1,4 +1,3 @@
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 function details() {
   return {
     id: 'Tdarr_Plugin_MC93_Migz2CleanTitle',
@@ -79,7 +78,13 @@ function plugin(file, librarySettings, inputs) {
   }
 
   // Check if overall file metadata title is not empty, if it's not empty set to "".
-  if (typeof file.meta.Title !== 'undefined') {
+  if (
+    !(
+      typeof file.meta.Title === 'undefined'
+        || file.meta.Title === '""'
+        || file.meta.Title === ''
+    )
+  ) {
     try {
       ffmpegCommandInsert += ' -metadata title="" ';
       convert = true;
@@ -89,12 +94,18 @@ function plugin(file, librarySettings, inputs) {
   }
 
   // Go through each stream in the file.
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     // Check if stream is a video.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
       try {
         // Check if stream title is not empty, if it's not empty set to "".
-        if (typeof file.ffProbeData.streams[i].tags.title !== 'undefined') {
+        if (
+          !(
+            typeof file.ffProbeData.streams[i].tags.title === 'undefined'
+            || file.ffProbeData.streams[i].tags.title === '""'
+            || file.ffProbeData.streams[i].tags.title === ''
+          )
+        ) {
           response.infoLog += `☒Video stream title is not empty. Removing title from stream ${i} \n`;
           ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `;
           convert = true;
@@ -114,7 +125,13 @@ function plugin(file, librarySettings, inputs) {
       && inputs.clean_audio.toLowerCase() === 'true'
     ) {
       try {
-        if (typeof file.ffProbeData.streams[i].tags.title !== 'undefined') {
+        if (
+          !(
+            typeof file.ffProbeData.streams[i].tags.title === 'undefined'
+            || file.ffProbeData.streams[i].tags.title === '""'
+            || file.ffProbeData.streams[i].tags.title === ''
+          )
+        ) {
           if (file.ffProbeData.streams[i].tags.title.split('.').length - 1 > 3) {
             try {
               response.infoLog += `☒More then 3 full stops in audio title. Removing title from stream ${i} \n`;
@@ -151,7 +168,13 @@ function plugin(file, librarySettings, inputs) {
       && inputs.clean_subtitles.toLowerCase() === 'true'
     ) {
       try {
-        if (typeof file.ffProbeData.streams[i].tags.title !== 'undefined') {
+        if (
+          !(
+            typeof file.ffProbeData.streams[i].tags.title === 'undefined'
+            || file.ffProbeData.streams[i].tags.title === '""'
+            || file.ffProbeData.streams[i].tags.title === ''
+          )
+        ) {
           if (file.ffProbeData.streams[i].tags.title.split('.').length - 1 > 3) {
             try {
               response.infoLog += `☒More then 3 full stops in subtitle title. Removing title from stream ${i} \n`;
