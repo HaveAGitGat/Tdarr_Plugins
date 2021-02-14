@@ -27,7 +27,7 @@ module.exports.plugin = function plugin(file) {
   for (let i = 0; i < keywords.length; i += 1) {
     if (file.file.includes(keywords[i])) {
       response.processFile = false;
-      response.infoLog += `Filter preventing processing. File title contains key word ${keywords[i]}`;
+      response.infoLog += `Filter preventing processing. File title contains keyword ${keywords[i]}`;
       break;
     }
   }
