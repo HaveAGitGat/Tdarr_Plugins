@@ -7,7 +7,7 @@ module.exports.details = function details() {
     Operation: 'Filter',
     Description: 'This plugin prevents processing files which contain keywords \n\n',
     Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugin_bbbb_Filter_Example',
+    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugin_bbbb_Filter_Example.js',
     Tags: '',
   };
 };
