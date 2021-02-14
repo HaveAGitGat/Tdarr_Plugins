@@ -28,6 +28,7 @@ module.exports.plugin = function plugin(file) {
     if (file.file.includes(keywords[i])) {
       response.processFile = false;
       response.infoLog += `Filter preventing processing. File title contains key word ${keywords[i]}`;
+      break;
     }
   }
 
