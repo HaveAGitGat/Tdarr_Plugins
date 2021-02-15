@@ -34,9 +34,8 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+module.exports.plugin = function plugin(file, librarySettings, inputs, otherArguments) {
   // Must return this object at some point in the function else plugin will fail.
-
   const response = {
     processFile: true,
     preset: '',
@@ -76,7 +75,17 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       title = subStream.tags.title;
     }
 
-    let subsFile = file.file;
+    const { originalLibraryFile } = otherArguments;
+
+    let subsFile = '';
+
+    // for Tdarr V2 (2.00.05+)
+    if (originalLibraryFile && originalLibraryFile.file) {
+      subsFile = originalLibraryFile.file;
+    } else {
+      // for Tdarr V1
+      subsFile = file.file;
+    }
     subsFile = subsFile.split('.');
     subsFile[subsFile.length - 2] += `.${lang}`;
     subsFile[subsFile.length - 1] = 'srt';
