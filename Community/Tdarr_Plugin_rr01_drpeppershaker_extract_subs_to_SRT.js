@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 module.exports.details = function details() {
   return {
@@ -90,6 +91,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
     subsFile[subsFile.length - 2] += `.${lang}`;
     subsFile[subsFile.length - 1] = 'srt';
     subsFile = subsFile.join('.');
+    subsFile = path.join(librarySettings.folder, subsFile);
 
     const { index } = subStream;
     if (fs.existsSync(`${subsFile}`)) {
