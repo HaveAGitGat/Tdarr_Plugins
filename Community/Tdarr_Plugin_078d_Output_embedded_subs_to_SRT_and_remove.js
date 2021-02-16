@@ -43,11 +43,21 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
     lang = subStream.tags.language
   }
 
-  let subsFile = file.file
-  subsFile = subsFile.split('.')
-  subsFile[subsFile.length - 2] += `.${lang}`
-  subsFile[subsFile.length - 1] = 'srt'
-  subsFile = subsFile.join('.')
+  const { originalLibraryFile } = otherArguments;
+
+  let subsFile = '';
+
+  // for Tdarr V2 (2.00.05+)
+  if (originalLibraryFile && originalLibraryFile.file) {
+    subsFile = originalLibraryFile.file;
+  } else {
+    // for Tdarr V1
+    subsFile = file.file;
+  }
+  subsFile = subsFile.split('.');
+  subsFile[subsFile.length - 2] += `.${lang}`;
+  subsFile[subsFile.length - 1] = 'srt';
+  subsFile = subsFile.join('.');
 
   let index = subStream.index
   let command = `${ffmpegPath} -i "${file.file}" -map 0:${index} "${subsFile}"`
