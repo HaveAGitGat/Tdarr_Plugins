@@ -106,7 +106,7 @@ function plugin(file, librarySettings, inputs) {
     response.processFile = true;
     response.container = `.${file.container}`;
     response.reQueueAfter = true;
-    response.preset += ' -map 0:s ';
+    response.preset += ' -map 0:s? ';
   } else {
     response.infoLog
       += '☑File doesn\'t contain audio tracks with the specified codec.\n';
