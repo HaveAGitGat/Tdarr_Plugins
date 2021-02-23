@@ -272,7 +272,7 @@ function plugin(file, librarySettings, inputs) {
       response.preset = '-c:v h264_cuvid';
     }
   } else if (file.video_codec_name === 'mjpeg') {
-    response.preset = 'c:v mjpeg_cuvid';
+    response.preset = '-c:v mjpeg_cuvid';
   } else if (file.video_codec_name === 'mpeg1') {
     response.preset = '-c:v mpeg1_cuvid';
   } else if (file.video_codec_name === 'mpeg2') {
