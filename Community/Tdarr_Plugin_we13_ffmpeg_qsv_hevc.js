@@ -32,7 +32,7 @@ module.exports.details = function details() {
 			tooltip: "Set target quality from 0-51, a lower value will result in a higher quality/size file.   Will default to 22 if no value is entered here.\\n\\nOf note: if you are using this with a NVENC plugin, and both are set to use a Quality rating then know that NVENC is much more aggresive at maintaining bitrate.  (Image quality is subjective to the viewer, I'm only speaking of bitrate)\\n\\nIn my testing it appears that there is about a 4-stop difference between the two.  A QSV Quality of '20' will have a resulting bitrate that's roughly around the result of a '24' when using NVENC.\\n\\nAgain, this is purely on resulting bitrate, not about the image quality between the two encoding systems.",
 		}, {
 			name: "set_preset",
-			tooltip: "Set Nvenc speed profile to use.   Will default to 'medium' if this is not entered. \\n\\nslow         (hq 2 passes)\\nmedium       (hq 1 pass - Default Value)\\nfast         (hp 1 pass)\\np1           (fastest (lowest quality))\\np2           (faster (lower quality))\\np3           (fast (low quality))\\np4           (medium (default))\\np5           (slow (good quality))\\np6           (slower (better quality))\\np7           (slowest (best quality))",
+			tooltip: "Set QSV speed profile to use.   Will default to 'medium' if this is not entered. You can use either the word (Ie. 'veryfast') or the level (Ie. '7').They're listed below with 'keyword'/'level' \\nveryfast/7\\nfaster/6\\nfast/5\\nmedium/4\\nslow/3\\nslower/2\\nveryslow/1",
 		},
 		],
 	};
@@ -265,7 +265,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 			// Just verify that they've entered a valid preset, and use the default if nothing entered or something invalid was put in
 			var use_preset = "medium";
 			if (inputs.set_preset){
-				var presets = ["veryfast","faster","fast","medium","slow","slower","veryslow"];
+				var presets = ["veryfast","faster","fast","medium","slow","slower","veryslow","7","6","5","4","3","2","1"];
 				var preset = inputs.set_preset.toLowerCase();
 				if (presets.indexOf(preset) !== -1){
 					var use_preset = preset;

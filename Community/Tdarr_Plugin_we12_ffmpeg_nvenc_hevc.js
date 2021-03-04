@@ -32,7 +32,7 @@ module.exports.details = function details() {
 			tooltip: "Set target quality from 0-51, a lower value will result in a higher quality/size file.   Will default to 22 if no value is entered here.\\n\\nOf note: if you are using this with a QSV plugin, and both are set to use a Quality rating then know that NVENC is much more aggresive at maintaining bitrate.  (Image quality is subjective to the viewer, I'm only speaking of bitrate)\\n\\nIn my testing it appears that there is about a 4-stop difference between the two.  A QSV Quality of '20' will have a resulting bitrate that's roughly around the result of a '24' when using NVENC.\\n\\nAgain, this is purely on resulting bitrate, not about the image quality between the two encoding systems.",
 		}, {
 			name: "set_preset",
-			tooltip: "Set Nvenc speed profile to use.   Will default to 'medium' if this is not entered. \\n\\nslow         (hq 2 passes)\\nmedium       (hq 1 pass - Default Value)\\nfast         (hp 1 pass)\\np1           (fastest (lowest quality))\\np2           (faster (lower quality))\\np3           (fast (low quality))\\np4           (medium (default))\\np5           (slow (good quality))\\np6           (slower (better quality))\\np7           (slowest (best quality))",
+			tooltip: "Set Nvenc speed profile to use.   Will default to 'medium' if this is not entered. You can use either the word (Ie. 'fast') or the level (Ie. '3').  They're listed below with 'keyword'<SPACE>'level'<SPACE>'description'\\n     slow            1            E..V....... hq 2 passes\\n     medium          2            E..V....... hq 1 pass\\n     fast            3            E..V....... hp 1 pass\\n     hp              4            E..V....... \\n     hq              5            E..V....... \\n     bd              6            E..V....... \\n     ll              7            E..V....... low latency\\n     llhq            8            E..V....... low latency hq\\n     llhp            9            E..V....... low latency hp\\n     lossless        10           E..V....... lossless\\n     losslesshp      11           E..V....... lossless hp\\n     p1              12           E..V....... fastest (lowest quality)\\n     p2              13           E..V....... faster (lower quality)\\n     p3              14           E..V....... fast (low quality)\\n     p4              15           E..V....... medium (default)\\n     p5              16           E..V....... slow (good quality)\\n     p6              17           E..V....... slower (better quality)\\n     p7              18           E..V....... slowest (best quality)",
 		},
 		],
 	};
@@ -268,7 +268,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 			// Just verify that they've entered a valid preset, and use the default if nothing entered or something invalid was put in
 			var use_preset = "medium";
 			if (inputs.set_preset){
-				var presets = ["veryfast","faster","fast","medium","slow","slower","veryslow"];
+				var presets = ["slow","medium","fast","hp","hq","bd","ll","llhq","llhp","lossless","losslesshp","p1","p2","p3","p4","p5","p6","p7","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18"];
 				var preset = inputs.set_preset.toLowerCase();
 				if (presets.indexOf(preset) !== -1){
 					var use_preset = preset;
