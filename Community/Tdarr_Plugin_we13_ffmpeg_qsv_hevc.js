@@ -1,4 +1,3 @@
-/* eslint-disable */
 module.exports.details = function details() {
 	return {
 		id: "Tdarr_Plugin_we13_ffmpeg_qsv_hevc",
@@ -280,7 +279,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 			 */
 			configuration.RemoveOutputSetting("-c:v copy");
 			configuration.AddOutputSetting(
-				`-c:v hevc_qsv -qsv_device /dev/dri/renderD128 ${bitrateSettings} -preset ${use_preset} -look_ahead 50`
+				`-c:v hevc_qsv -load_plugin hevc_hw -qsv_device /dev/dri/renderD128 ${bitrateSettings} -preset ${use_preset} -look_ahead 50`
 			);
 
 

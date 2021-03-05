@@ -1,4 +1,3 @@
-/* eslint-disable */
 module.exports.details = function details() {
 	return {
 		id: "Tdarr_Plugin_we12_ffmpeg_nvenc_hevc",
@@ -285,7 +284,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 			 */
 			configuration.RemoveOutputSetting("-c:v copy");
 			configuration.AddOutputSetting(
-				`-c:v hevc_nvenc ${bitrateSettings} -preset ${use_preset} -spatial_aq:v 1 -aq-strength 10 -rc-lookahead 50`
+				`-c:v hevc_nvenc -load_plugin hevc_hw ${bitrateSettings} -preset ${use_preset} -spatial_aq:v 1 -aq-strength 10 -rc-lookahead 50`
 			);
 
 			if (file.video_codec_name === "h263") {
