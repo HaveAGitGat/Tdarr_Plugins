@@ -10,7 +10,7 @@ module.exports.details = function details() {
 		Tags: "pre-processing,ffmpeg, nvenc h265",
 		Inputs: [{
 			name: "minimum_target_bitrate",
-			tooltip: "The minimum bitrate allowed for a file conversion. Any file with an original bitrate lower than this will cause transcoding to be skipped for that specific file.\\n\\nIf this is left blank then all files will be transcoded.  Please think carfeully about this.  Since transcoding is a 'lossy' action, if your source material is already a low bitrate then blockiness and distortion will be magnified by further encoding.  While quality is purely subjective to the person viewing the material, when you get below 1000 you will more than likely start seeing quite noticeable degradation of the video image.\\n\\nPlease just enter a bare number\\n\\nExample value: 1500",
+			tooltip: "The minimum bitrate allowed for a file conversion. Any file with an original bitrate lower than this will cause transcoding to be skipped for that specific file.\\n\\nIf this is left blank then all files will be transcoded.  Please think carfeully about this.  Since transcoding is a 'lossy' action, if your source material is already a low bitrate then blockiness and distortion will be magnified by further encoding.  While quality is purely subjective to the person viewing the material, when you get below 1000 you will more than likely start seeing quite noticeable degradation of the video image.\\n\\nPlease just enter a bare number\\n\\nExample value: 1500 ",
 		}, {
 			name: "wanted_height",
 			tooltip: "The height to scale down to, by default will not upscale to this resolution.\\n\\nIf blank then keep current resolution and perform no rescaling.",
