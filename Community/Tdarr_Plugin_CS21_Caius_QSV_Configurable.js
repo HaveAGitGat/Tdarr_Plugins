@@ -1,4 +1,4 @@
-function details () {
+function details() {
   return {
     id: 'Tdarr_Plugin_CS21_Caius_QSV_Configurable',
     Stage: 'Pre-processing',
@@ -7,11 +7,13 @@ function details () {
     Operation: 'Transcode',
     Description: `[Contains built-in filter] 
      Adapted from Vodka's tiered nvenc plugin - Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE
-     This plugin requires Intel Quicksync non-free drivers be installed - on Linux this means the iHD driver which can be obtained from the "intel-media-va-driver-non-free" package.
+     This plugin requires Intel Quicksync non-free drivers be installed.
+     On Linux this means the iHD driver which can be obtained from the "intel-media-va-driver-non-free" package.
      It is recommended to use the version from Intel's repo.
-     The driver needs to either be installed in the node container manually, or run the tdarr node natively on a machine which has the driver installed.
-     A version of ffmpeg with qsv/libmfx enabled at compile time is also required - the version from jellyfin works well.
-     This plugin uses different global quality values (similar to crf but for qsv) depending on resolution. A value or 19 or 20 works well for 1080p files. 
+     The driver needs to either be installed in the node container manually 
+     or run the tdarr node natively on a machine which has the driver installed.
+     A version of ffmpeg with qsv/libmfx enabled at compile time is also required. The version from jellyfin works well.
+     This plugin uses different global quality values depending on resolution. A value or 19 or 20 works well. 
      Files not in hevc will be transcoded. 
      The output container is mkv. \n\n`,
     Version: '1.00',
