@@ -347,6 +347,8 @@ function buildVideoConfiguration(inputs, file, logger) {
             configuration.AddInputSetting("-c:v mpeg1_cuvid");
           } else if (file.video_codec_name == "mpeg2") {
             configuration.AddInputSetting("-c:v mpeg2_cuvid");
+          } else if (file.video_codec_name == "mpeg4") {
+            configuration.AddInputSetting("-c:v mpeg4_cuvid");
           } else if (file.video_codec_name == "vc1") {
             configuration.AddInputSetting("-c:v vc1_cuvid");
           } else if (file.video_codec_name == "vp8") {
@@ -361,7 +363,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 
       if (
         (inputs.qsv !== "true" && inputs.nvenc !== "true") ||
-        stream.codec_name === "mpeg4"
+        (inputs.qsv === "true" && stream.codec_name === "mpeg4")
       ) {
         configuration.RemoveOutputSetting("-c:v copy");
         configuration.AddOutputSetting(`-c:v libx265 ${bitrateSettings}`);
