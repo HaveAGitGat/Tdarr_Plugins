@@ -8,7 +8,7 @@ function details() {
     Operation: "Transcode",
     Description:
       "In a single pass ensures all files are in MKV containers and where possible encoded in h265 (Tiered bitrate based on resolution), removes audio and subtitles that are not in the configured language or marked as commentary.",
-    Version: '2.0',
+    Version: "2.0",
 	Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
