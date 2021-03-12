@@ -354,9 +354,11 @@ function buildVideoConfiguration(inputs, file, logger) {
 		  configuration.AddOutputSetting("-c:v copy");
 		  logger.AddError("File is in HEVC codec but not MKV. Will remux");
 		}
-
-		// Check if should Transcode.
-		if (stream.codec_name !== "hevc" && stream.codec_name !== "vp9") {
+		
+		// remove png streams.
+		if (stream.codec_name === "png") {
+			configuration.AddOutputSetting("-map -0:v:${id}");
+		} else if (stream.codec_name !== "hevc" && stream.codec_name !== "vp9") {  // Check if should Transcode.
 			var bitrateprobe = calculateBitrate(file);
 			var bitratetarget = 0;
 			var bitratemax = 0;
