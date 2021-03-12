@@ -357,7 +357,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 		
 		// remove png streams.
 		if (stream.codec_name === "png") {
-			configuration.AddOutputSetting("-map -0:v:${id}");
+			configuration.AddOutputSetting(`-map -0:v:${id}`);
 		} else if (stream.codec_name !== "hevc" && stream.codec_name !== "vp9") {  // Check if should Transcode.
 			var bitrateprobe = calculateBitrate(file);
 			var bitratetarget = 0;
