@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_s710_nick_h265_nvenc_4K",

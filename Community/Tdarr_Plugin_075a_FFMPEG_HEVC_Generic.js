@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_075a_FFMPEG_HEVC_Generic",
@@ -41,7 +42,7 @@ function plugin(file) {
   }
 
   response.processFile = true;
-  response.preset = `,-map 0:v -map 0:a -map 0:s? -map 0:d? -c copy -c:v:0 libx265 `;
+  response.preset = `,-map 0:v -map 0:a -map 0:s? -map 0:d? -c copy -c:v:0 libx265 -max_muxing_queue_size 9999`;
   response.container = ".mkv";
   response.handBrakeMode = false;
   response.FFmpegMode = true;

@@ -1,3 +1,4 @@
+/* eslint-disable */
 module.exports.details = function details() {
   return {
     id: "Tdarr_Plugin_076a_re_order_audio_streams",
