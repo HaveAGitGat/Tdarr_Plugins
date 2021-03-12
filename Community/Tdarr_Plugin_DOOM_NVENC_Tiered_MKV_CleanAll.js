@@ -173,7 +173,7 @@ class Configurator {
 function calculateBitrate(file) {
   var bitrateprobe = file.ffProbeData.streams[0].bit_rate;
   if (isNaN(bitrateprobe)) {
-  bitrateprobe = file.bit_rate;
+	bitrateprobe = file.bit_rate;
   }
   return bitrateprobe;
 }
@@ -367,7 +367,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 			var tier = tiered[file.video_resolution];
 
 			bitratecheck = parseInt(tier["bitrate"]);
-			if bitrateprobe !== null && bitrateprobe < bitratecheck) {
+			if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
 				bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
 			} else {
 				bitratetarget = parseInt(tier["bitrate"] / 1000);
