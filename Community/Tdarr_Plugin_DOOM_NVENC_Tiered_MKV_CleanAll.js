@@ -440,6 +440,9 @@ function plugin(file, _librarySettings, inputs) {
   // b frames argument
   response.preset += ` -bf 5`;
   
+  // fix probe size errors
+  response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
+  
   response.processFile =
     audioSettings.shouldProcess ||
     videoSettings.shouldProcess ||
