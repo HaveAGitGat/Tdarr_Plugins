@@ -1,39 +1,39 @@
-/* eslint-disable */
-
 module.exports.dependencies = [
   'fs-extra',
 ];
 
 module.exports.details = function details() {
   return {
-    id: "Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution",
-    Stage: "Post-processing",
-    Name: "Rename based on codec and resolution",
-    Type: "Video",
-    Operation: "",
-    Description: `[TESTING][Contains built-in filter]This plugin renames files depending on codec and resolution\n\n`,
-    Version: "1.00",
-    Link: "",
-    Tags: "post-processing",
+    id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
+    Stage: 'Post-processing',
+    Name: 'Rename based on codec and resolution',
+    Type: 'Video',
+    Operation: '',
+    Description: '[Contains built-in filter]This plugin renames files depending on codec and resolution\n\n',
+    Version: '1.00',
+    Link: '',
+    Tags: 'post-processing',
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
-
+module.exports.plugin = function plugin(file) {
   try {
-    const fs = require("fs");
-    const path = require("path");
-    let rootModules
-    if (fs.existsSync(path.join(process.cwd(), "/npm"))) {
-      rootModules = path.join(process.cwd(), "/npm/node_modules/");
+    // eslint-disable-next-line global-require
+    const fs = require('fs');
+    // eslint-disable-next-line global-require
+    const path = require('path');
+    let rootModules;
+    if (fs.existsSync(path.join(process.cwd(), '/npm'))) {
+      rootModules = path.join(process.cwd(), '/npm/node_modules/');
     } else {
-      rootModules = "";
+      rootModules = '';
     }
 
-    const fsextra = require(rootModules + "fs-extra");
-    let fileNameOld = file._id;
+    // eslint-disable-next-line global-require,import/no-dynamic-require
+    const fsextra = require(`${rootModules}fs-extra`);
+    const fileNameOld = file._id;
 
-    let resolutions = {
+    const resolutions = {
       _480p: '480p',
       _576p: '576p',
       _720p: '720p',
@@ -41,30 +41,29 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       _4KUHD: '4k',
       _DCI4K: '4k',
       _8KUHD: '8k',
-      _Other: 'Other'
-    }
+      _Other: 'Other',
+    };
 
-    //only process if properties available
+    // only process if properties available
     if (file.ffProbeData.streams[0].codec_name && file.video_resolution) {
+      const resolution = `_${file.video_resolution}`;
+      const resShouldBe = resolutions[resolution];
+      const codecShouldBe = file.ffProbeData.streams[0].codec_name;
 
-      let resolution = '_' + file.video_resolution
-      let resShouldBe = resolutions[resolution]
-      let codecShouldBe = file.ffProbeData.streams[0].codec_name
-
-      //Remove container from processing
+      // Remove container from processing
       let fileName = file._id;
-      let parts = fileName.split('/')
-      fileName = parts[parts.length - 1]
-      parts.splice(parts.length - 1, 1)
-      parts = parts.join('/')
+      let parts = fileName.split('/');
+      fileName = parts[parts.length - 1];
+      parts.splice(parts.length - 1, 1);
+      parts = parts.join('/');
 
-      fileName = fileName.split('.')
-      let container = fileName[fileName.length - 1]
-      fileName.splice(fileName.length - 1, 1)
-      fileName = fileName.join('.')
+      fileName = fileName.split('.');
+      const container = fileName[fileName.length - 1];
+      fileName.splice(fileName.length - 1, 1);
+      fileName = fileName.join('.');
 
-      //put term substrings below strings (i.e. '480' below '480p')
-      let terms = [
+      // put term substrings below strings (i.e. '480' below '480p')
+      const terms = [
         '480p',
         '480',
         '576p',
@@ -82,60 +81,63 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
         '264',
         'h265',
         '265',
-        'hevc'
-      ]
+        'hevc',
+      ];
 
-      //clean up res and codec terms from name
-      for (let i = 0; i < terms.length; i++) {
+      // clean up res and codec terms from name
+      for (let i = 0; i < terms.length; i += 1) {
+        // eslint-disable-next-line no-constant-condition
         while (true) {
-          let idx = fileName.indexOf(terms[i]);
+          const idx = fileName.indexOf(terms[i]);
           if (idx === -1) {
-            break
+            break;
           } else {
-            let length = terms[i].length
-            fileName = fileName.split('')
+            const { length } = terms[i];
+            fileName = fileName.split('');
             fileName.splice(idx, length);
-            fileName = fileName.join('')
+            fileName = fileName.join('');
           }
         }
       }
 
       if (resShouldBe === 'Other') {
-        fileName = parts + '/' + fileName + '_' + codecShouldBe + '.' + container
+        fileName = `${parts}/${fileName}_${codecShouldBe}.${container}`;
       } else {
-        fileName = parts + '/' + fileName + '_' + resShouldBe + '_' + codecShouldBe + '.' + container
+        fileName = `${parts}/${fileName}_${resShouldBe}_${codecShouldBe}.${container}`;
       }
 
-      //clean up word breakers
-      let breakers = [
+      // clean up word breakers
+      const breakers = [
         '.',
         '_',
         '-',
-      ]
+      ];
 
-      fileName = fileName.split('')
-      for (let i = 0; i < fileName.length; i++) {
-        for (let j = 0; j < breakers.length; j++) {
-          for (let k = 0; k < breakers.length; k++) {
+      fileName = fileName.split('');
+      for (let i = 0; i < fileName.length; i += 1) {
+        for (let j = 0; j < breakers.length; j += 1) {
+          for (let k = 0; k < breakers.length; k += 1) {
             if (fileName[i] === breakers[j] && fileName[i + 1] === breakers[k]) {
               fileName.splice(i, 1);
-              i--
+              i -= 1;
             }
           }
         }
       }
 
-      fileName = fileName.join('')
+      fileName = fileName.join('');
 
-      file._id = fileName
-      file.file = fileName
+      // eslint-disable-next-line no-param-reassign
+      file._id = fileName;
+      // eslint-disable-next-line no-param-reassign
+      file.file = fileName;
 
-      if (fileNameOld != file._id) {
+      if (fileNameOld !== file._id) {
         fsextra.moveSync(fileNameOld, file._id, {
           overwrite: true,
         });
 
-        let response = {
+        const response = {
           file,
           removeFromDB: false,
           updateDB: true,
@@ -145,6 +147,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       }
     }
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.log(err);
   }
+
+  return undefined;
 };
