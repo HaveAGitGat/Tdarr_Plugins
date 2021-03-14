@@ -6,7 +6,7 @@ module.exports.details = function details() {
     Name: "Add movie to Radarr after processing",
     Type: "Video",
     Operation: "",
-    Description: `[TESTING]Add movie to Radarr after processing \n\n`,
+    Description: `Add movie to Radarr after processing \n\n`,
     Version: "1.00",
     Link: "",
     Tags: "3rd party,post-processing,configurable",

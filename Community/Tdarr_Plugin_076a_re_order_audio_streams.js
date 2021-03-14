@@ -6,7 +6,7 @@ module.exports.details = function details() {
     Name: "Re-order audio streams",
     Type: "",
     Operation: "Transcode",
-    Description: `[TESTING][Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st audio track  \n\n`,
+    Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st audio track  \n\n`,
     Version: "1.00",
     Link: "",
     Tags: "pre-processing,audio only,ffmpeg,configurable",

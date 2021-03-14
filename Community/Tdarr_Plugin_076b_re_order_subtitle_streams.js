@@ -6,7 +6,7 @@ module.exports.details = function details() {
     Name: "Re-order subtitle streams",
     Type: "",
     Operation: "Transcode",
-    Description: `[TESTING][Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st subtitle track  \n\n`,
+    Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st subtitle track  \n\n`,
     Version: "1.00",
     Link: "",
     Tags: "pre-processing,subtitle only,ffmpeg,configurable",

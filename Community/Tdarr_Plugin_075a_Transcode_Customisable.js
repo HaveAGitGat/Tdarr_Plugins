@@ -6,7 +6,7 @@ module.exports.details = function details() {
     Name: "Video Transcode Customisable",
     Type: "",
     Operation: "Transcode",
-    Description: `[TESTING][Contains built-in filter] Specify codec filter and transcode arguments for HandBrake or FFmpeg  \n\n`,
+    Description: `[Contains built-in filter] Specify codec filter and transcode arguments for HandBrake or FFmpeg  \n\n`,
     Version: "1.00",
     Link: "",
     Tags: "pre-processing,handbrake,ffmpeg,configurable",
