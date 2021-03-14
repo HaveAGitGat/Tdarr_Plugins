@@ -426,7 +426,7 @@ function plugin(file, _librarySettings, inputs) {
   
   // Extra parameters
   var id = 0;
-  var badTypes = ['mov_text', 'eia_608', 'timed_id3'];
+  var badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
 	  if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
 		  response.preset += ` -map -0:${i}`;
