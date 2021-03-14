@@ -324,6 +324,10 @@ function buildVideoConfiguration(inputs, file, logger) {
 		"4KUHD" : {"bitrate" : inputs.target_bitrate_4KUHD,
 				  "max_increase" : 6000,
 				  "cq" : 31
+				 },
+		"Other" : {"bitrate" : inputs.target_bitrate_1080p,
+				  "max_increase" : 2500,
+				  "cq" : 31
 				 }
 	};
 	
