@@ -154,9 +154,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
       // Check if the video stream is mjpeg/png, and removes it.
       // These are embedded image streams which ffmpeg doesn't like to work with as a video stream
-      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg' 
+      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg'
                 || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png') {
-        response.infoLog += `File Contains mjpeg / png video streams, removing.`;
+        response.infoLog += 'File Contains mjpeg / png video streams, removing.';
         extraArguments += `-map -v:${videoIdx} `;
       }
 
