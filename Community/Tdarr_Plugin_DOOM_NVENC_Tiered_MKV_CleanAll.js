@@ -268,6 +268,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 	    logger.AddError(
 		  `Removing unknown subtitle`
 	    );
+		return;
 	}
 	
     if ("tags" in stream) {
@@ -278,6 +279,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           logger.AddError(
             `Removing subtitle in language ${stream.tags.language}`
           );
+		  return;
         }
       }
 
@@ -292,6 +294,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           logger.AddError(
             `Removing Commentary or Description subtitle: ${stream.tags.title}`
           );
+		  return;
         }
       }
     }
