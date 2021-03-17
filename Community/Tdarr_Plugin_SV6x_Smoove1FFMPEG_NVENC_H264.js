@@ -1,3 +1,6 @@
+// This is almost a line for line copy of Migz1FFMPEG: https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js
+// Seriously, all I did was make it work for converting things to h264 instead of hevc
+
 module.exports.details = function details() {
   return {
     id: 'Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264',
