@@ -1,4 +1,6 @@
-// This is almost a line for line copy of Migz1FFMPEG: https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js
+/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+// This is almost a line for line copy of Migz1FFMPEG
+// https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js
 // Seriously, all I did was make it work for converting things to h264 instead of hevc
 
 module.exports.details = function details() {
@@ -12,8 +14,12 @@ module.exports.details = function details() {
                   Settings are dependant on file bitrate
                   NVDEC & NVENC compatable GPU required.`,
     Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264.js',
-    Tags: 'pre-processing,ffmpeg,video only,nvenc h264,configurable', // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
+    Link: `https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/`
+    + `Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264.js`,
+    Tags: 'pre-processing,ffmpeg,video only,nvenc h264,configurable', 
+    // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,
+    // nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg
+    // radarr,sonarr,pre-processing,post-processing,configurable
 
     Inputs: [
       {
@@ -41,7 +47,7 @@ module.exports.details = function details() {
       },
     ],
   };
-};
+}
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
   const response = {
@@ -49,15 +55,17 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     infoLog: '',
     handBrakeMode: false, // Set whether to use HandBrake or FFmpeg for transcoding
     FFmpegMode: true,
-    reQueueAfter: true, // Leave as true. File will be re-qeued afterwards and pass through the plugin filter again to make sure it meets conditions.
+    reQueueAfter: true, 
+    // Leave as true. File will be re-qeued afterwards and pass through the plugin 
+    // filter again to make sure it meets conditions.
   };
 
-  //Check that inputs.container has been configured, else dump out
+  // Check that inputs.container has been configured, else dump out
   if (inputs.container === '') {
     response.infoLog += 'Plugin has not been configured, please configure required options. Skipping this plugin. \n';
     response.processFile = false;
     return response;
-  };
+  }
   response.container = `.${inputs.container}`;
 
   // Check if file is a video. If it isn't then exit plugin.
@@ -65,11 +73,11 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     response.processFile = false;
     response.infoLog += 'File is not a video. \n';
     return response;
-  };
+  }
 
   let duration = '';
 
-  //Get duration of stream 0 and times it by 0.0166667 to get time in minutes
+  // Get duration of stream 0 and times it by 0.0166667 to get time in minutes
   duration = file.ffProbeData.streams[0].duration * 0.0166667;
 
   // Set up required variables.
@@ -78,8 +86,10 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   let bitrateSettings = '';
   // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
+  // eslint-disable-next-line no-bitwise
   const currentBitrate = ~~(file.file_size / (duration * 0.0075));
-  // For h.264, the target bitrate matches the current bitrate, since we're not looking to reduce quality, just change codec
+  // For h.264, the target bitrate matches the current bitrate, since we're not reducing quality, just changing codec
+  // eslint-disable-next-line no-bitwise
   const targetBitrate = ~~(file.file_size / (duration * 0.0075));
   // Allow some leeway under and over the targetBitrate.
   // eslint-disable-next-line no-bitwise
@@ -134,44 +144,46 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
           }
         } catch (err) {
         // Error
-        };
-      };
-    };
-  };
+        }
+      }
+    }
+  }
 
-  //Go through each stream in the file
+  // Go through each stream in the file
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     //Check if stream is video
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
-      //Check if the video stream is mjpeg/png, and removes it.
-      //These are embedded image streams which ffmpeg doesn't like to work with as a video stream and will break transcoding.
-      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg' || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png') {
-        response.infoLog += `File Contains mjpeg / png video streams, removing.`;
-        extraArguments += `-map -v:${videoIdx} `;
-      };
+      // Check if the video stream is mjpeg/png, and removes it.
+      // These are embedded image streams which ffmpeg doesn't like to work with as a video stream
+      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg' 
+                || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png') {
+                    response.infoLog += `File Contains mjpeg / png video streams, removing.`;
+                    extraArguments += `-map -v:${videoIdx} `;
+      }
 
-      //If video is h264, and container matches desired container, we don't need to do anything
+      // If video is h264, and container matches desired container, we don't need to do anything
       if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' && file.container === inputs.container) {
         response.processFile = false;
         response.infoLog += `File is already H264 and in ${inputs.container} \n`;
         return response;
       };
 
-      //if video is h264, but container does NOT match desired container, do a remux
+      // if video is h264, but container does NOT match desired container, do a remux
       if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' && file.container !== inputs.container) {
         response.processFile = true;
         response.infoLog += `File is already H264 but file is not in ${inputs.container}. Remuxing \n`;
         response.preset = `, -map 0 -c copy ${extraArguments}`;
         return response;
-      };
+      }
       
       // Increment videoIdx.
       videoIdx += 1;
-    };
-  };
+    }
+  }
 
   // Set bitrateSettings variable using bitrate information calulcated earlier.
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k -maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
+  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
+  + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `Container for output selected as ${inputs.container}. \n`;
   response.infoLog += `Current bitrate = ${currentBitrate} \n`;
@@ -201,8 +213,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film ${bitrateSettings} -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;
+  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film ${bitrateSettings} `
+  + `-c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not h264. Transcoding. \n';
   return response;
-};
+}
