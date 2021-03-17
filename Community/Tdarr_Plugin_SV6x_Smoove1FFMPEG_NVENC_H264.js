@@ -14,9 +14,9 @@ module.exports.details = function details() {
                   Settings are dependant on file bitrate
                   NVDEC & NVENC compatable GPU required.`,
     Version: '1.00',
-    Link: `https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/`
-    + `Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264.js`,
-    Tags: 'pre-processing,ffmpeg,video only,nvenc h264,configurable', 
+    Link: `https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/
+           Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264.js`,
+    Tags: 'pre-processing,ffmpeg,video only,nvenc h264,configurable',
     // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,
     // nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg
     // radarr,sonarr,pre-processing,post-processing,configurable
@@ -47,7 +47,7 @@ module.exports.details = function details() {
       },
     ],
   };
-}
+};
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
   const response = {
@@ -55,8 +55,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     infoLog: '',
     handBrakeMode: false, // Set whether to use HandBrake or FFmpeg for transcoding
     FFmpegMode: true,
-    reQueueAfter: true, 
-    // Leave as true. File will be re-qeued afterwards and pass through the plugin 
+    reQueueAfter: true,
+    // Leave as true. File will be re-qeued afterwards and pass through the plugin
     // filter again to make sure it meets conditions.
   };
 
@@ -97,7 +97,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   // eslint-disable-next-line no-bitwise
   const maximumBitrate = ~~(targetBitrate * 1.3);
 
-
   // This shouldn't be 0, for any reason, and if it is, you should get outta there.
   if (targetBitrate === 0) {
     response.processFile = false;
@@ -126,7 +125,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
         // Error
         }
       }
-    };
+    }
     if (inputs.container.toLowerCase() === 'mp4') {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
@@ -151,14 +150,14 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
   // Go through each stream in the file
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    //Check if stream is video
+    // Check if stream is video
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
       // Check if the video stream is mjpeg/png, and removes it.
       // These are embedded image streams which ffmpeg doesn't like to work with as a video stream
       if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg' 
                 || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png') {
-                    response.infoLog += `File Contains mjpeg / png video streams, removing.`;
-                    extraArguments += `-map -v:${videoIdx} `;
+        response.infoLog += `File Contains mjpeg / png video streams, removing.`;
+        extraArguments += `-map -v:${videoIdx} `;
       }
 
       // If video is h264, and container matches desired container, we don't need to do anything
@@ -166,7 +165,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
         response.processFile = false;
         response.infoLog += `File is already H264 and in ${inputs.container} \n`;
         return response;
-      };
+      }
 
       // if video is h264, but container does NOT match desired container, do a remux
       if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' && file.container !== inputs.container) {
@@ -175,7 +174,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
         response.preset = `, -map 0 -c copy ${extraArguments}`;
         return response;
       }
-      
+
       // Increment videoIdx.
       videoIdx += 1;
     }
@@ -218,4 +217,4 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   response.processFile = true;
   response.infoLog += 'File is not h264. Transcoding. \n';
   return response;
-}
+};
