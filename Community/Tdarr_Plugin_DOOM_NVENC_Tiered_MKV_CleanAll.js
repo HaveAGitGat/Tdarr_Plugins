@@ -260,11 +260,10 @@ function buildSubtitleConfiguration(inputs, file, logger) {
     if (stream.codec_name === "eia_608") {
       // unsupported subtitle codec?
       configuration.AddOutputSetting(`-map -0:s:${id}`);
-      return;
     }
 	
 	// Remove unknown sub streams
-	if !("codec_name" in stream) {
+	if (!("codec_name" in stream)) {
 		configuration.AddOutputSetting(`-map -0:s:${id}`);
 	    logger.AddError(
 		  `Removing unknown subtitle`
@@ -272,7 +271,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 	}
 	
     if ("tags" in stream) {
-      // Remove unwated languages
+      // Remove unwanted languages
       if ("language" in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:s:${id}`);
