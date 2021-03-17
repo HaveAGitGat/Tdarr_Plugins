@@ -262,7 +262,15 @@ function buildSubtitleConfiguration(inputs, file, logger) {
       configuration.AddOutputSetting(`-map -0:s:${id}`);
       return;
     }
-
+	
+	// Remove unknown sub streams
+	if !("codec_name" in stream) {
+		configuration.AddOutputSetting(`-map -0:s:${id}`);
+	    logger.AddError(
+		  `Removing unknown subtitle`
+	    );
+	}
+	
     if ("tags" in stream) {
       // Remove unwated languages
       if ("language" in stream.tags) {
