@@ -257,9 +257,13 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   if (languages.length === 0) return configuration;
 
   loopOverStreamsOfType(file, "subtitle", function (stream, id) {
-    if (stream.codec_name === "eia_608") {
+    if (stream.codec_name === "eia_608") ||
+	   (stream.codec_tag_string === "mp4s") {
       // unsupported subtitle codec?
       configuration.AddOutputSetting(`-map -0:s:${id}`);
+	    logger.AddError(
+		  `Removing unsupported subtitle`
+	    );
     }
 	
 	// Remove unknown sub streams
