@@ -264,6 +264,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 	    logger.AddError(
 		  `Removing unsupported subtitle`
 	    );
+	  return;
     }
 	
 	// Remove unknown sub streams
