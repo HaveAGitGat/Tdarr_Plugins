@@ -64,7 +64,7 @@ function plugin(file, librarySettings, inputs) {
 
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const currStream = file.ffProbeData.streams[i];
-    if (currStream.tags.COPYRIGHT) {
+  if (currStream.codec_type.toLowerCase() === 'audio'  && currStream.codec_name === inputs.output_codec  ) {
       if (currStream.tags.COPYRIGHT === 'henk_asac') {
         killPlugin = true;
       }
