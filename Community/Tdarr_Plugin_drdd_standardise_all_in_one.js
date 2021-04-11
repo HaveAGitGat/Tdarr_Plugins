@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_drdd_standardise_all_in_one",
@@ -230,8 +231,8 @@ function buildAudioConfiguration(_inputs, file, logger) {
 function buildSubtitleConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:s copy"]);
 
+  if (!inputs.wanted_subtitle_languages) return configuration;
   var languages = inputs.wanted_subtitle_languages.split(",");
-  if (languages.length === 0) return configuration;
 
   loopOverStreamsOfType(file, "subtitle", function (stream, id) {
     if (stream.codec_name === "eia_608") {
@@ -346,6 +347,8 @@ function buildVideoConfiguration(inputs, file, logger) {
             configuration.AddInputSetting("-c:v mpeg1_cuvid");
           } else if (file.video_codec_name == "mpeg2") {
             configuration.AddInputSetting("-c:v mpeg2_cuvid");
+          } else if (file.video_codec_name == "mpeg4") {
+            configuration.AddInputSetting("-c:v mpeg4_cuvid");
           } else if (file.video_codec_name == "vc1") {
             configuration.AddInputSetting("-c:v vc1_cuvid");
           } else if (file.video_codec_name == "vp8") {
@@ -360,7 +363,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 
       if (
         (inputs.qsv !== "true" && inputs.nvenc !== "true") ||
-        stream.codec_name === "mpeg4"
+        (inputs.qsv === "true" && stream.codec_name === "mpeg4")
       ) {
         configuration.RemoveOutputSetting("-c:v copy");
         configuration.AddOutputSetting(`-c:v libx265 ${bitrateSettings}`);

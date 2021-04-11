@@ -1,3 +1,4 @@
+/* eslint-disable */
 function remuxContainer(file, container) {
   try {
     if (file.container != container) {

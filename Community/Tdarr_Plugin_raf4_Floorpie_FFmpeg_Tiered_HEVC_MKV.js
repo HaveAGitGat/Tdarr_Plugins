@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_raf4_Floorpie_FFmpeg_Tiered_HEVC_MKV",
