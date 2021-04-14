@@ -1,3 +1,4 @@
+/* eslint-disable */
 module.exports.details = function details() {
   return {
     id: "Tdarr_Plugin_076a_re_order_audio_streams",
@@ -5,7 +6,7 @@ module.exports.details = function details() {
     Name: "Re-order audio streams",
     Type: "",
     Operation: "Transcode",
-    Description: `[TESTING][Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st audio track  \n\n`,
+    Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st audio track  \n\n`,
     Version: "1.00",
     Link: "",
     Tags: "pre-processing,audio only,ffmpeg,configurable",

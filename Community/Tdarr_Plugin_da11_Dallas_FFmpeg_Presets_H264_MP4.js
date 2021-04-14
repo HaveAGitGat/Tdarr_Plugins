@@ -1,3 +1,4 @@
+/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4",

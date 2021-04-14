@@ -33,7 +33,7 @@
 //      If the source video is less than this rate the script will either:
 //          Copy the existing stream, if the codec is hevc
 //          Transcode the stream to hevc using 80% of the original streams bitrate
-//              It could probably be less but if the source is of low bitrate we don’t want to compromise too much on the transcode
+//              It could probably be less but if the source is of low bitrate we donï¿½t want to compromise too much on the transcode
 //
 //      If the source media bitrate is close, within 10%, of the target bitrate and the codec is hevc, it will copy instead of transcode to preserve quality
 //
@@ -52,7 +52,7 @@
 //      If the source audio is less than this rate the script will either:
 //          Copy the existing stream, if the codec is aac
 //          Transcode the stream to aac using 100% of the original streams bitrate
-//              It could probably be less but if the source is of low bitrate but, we don’t want to compromise too much on the transcode
+//              It could probably be less but if the source is of low bitrate but, we donï¿½t want to compromise too much on the transcode
 //
 //  Subtitles:
 //      All are removed?? (TODO: ensure this is correct and mention the flag to keep them if desired)

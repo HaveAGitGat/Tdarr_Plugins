@@ -1,3 +1,9 @@
+/* eslint-disable */
+
+module.exports.dependencies = [
+  'fs-extra',
+];
+
 module.exports.details = function details() {
   return {
     id: "Tdarr_Plugin_z18s_rename_files_based_on_codec",
@@ -5,7 +11,7 @@ module.exports.details = function details() {
     Name: "Rename based on codec",
     Type: "Video",
     Operation: "",
-    Description: `[TESTING][Contains built-in filter]This plugin renames 264 files to 265 or vice versa depending on codec. \n\n`,
+    Description: `[Contains built-in filter]This plugin renames 264 files to 265 or vice versa depending on codec. \n\n`,
     Version: "1.00",
     Link: "",
     Tags: "post-processing",
