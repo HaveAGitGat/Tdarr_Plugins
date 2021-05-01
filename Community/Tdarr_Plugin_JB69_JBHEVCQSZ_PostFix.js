@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Author: JarBinks, Zachg99, Jeff47
-//  Date: 06/29/2020
+//  Date: 04/11/2021
 //
 //  This is my attempt to create an all in one routine that will maintain my library in optimal format !!!!FOR MY REQUIREMENTS!!!!
 //      Chances are very good you will need to make some changes to this routine and it's partner in order to make it work for you
@@ -85,44 +85,66 @@
 //      Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile (JB - H265, AAC, MKV, bitrate optimized)
 //      Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix (JB - MKV Stats, Chapters, Audio Language)
 //
-//  I am running the docker image provided for Tdarr, however there are some additions that must be added in order for the script to run
-//      This is to add mediainfo and mkvtoolnix because these are used to get more media info and update the file without running a transcode
+//  I am running the docker image provided for Tdarr
 //
 //  Here is my docker config (I am running compose so yours might be a little different)
-//    Tdarr:
-//      image: haveagitgat/tdarr_aio:qsv
-//      container_name: tdarr
+//    tdarr_server:
+//      container_name: tdarr_server
+//      image: haveagitgat/tdarr:latest
+//      privileged: true
 //      restart: unless-stopped
-//      network_mode: host
-//    ports:
-//      - "8265:8265"
-//    environment:
-//      - PUID=${PUID} # default user id, defined in .env
-//      - PGID=${PGID} # default group id, defined in .env
-//      - TZ=${TZ} # timezone, defined in .env
-//    devices:
-//      - /dev/dri:/dev/dri
-//    volumes:
-//      - "${ROOT}/complete:/home/Tdarr/Media:rw"
-//      - /transtemp:/transtemp
-//      - "${ROOT}/config/Tdarr:/home/Tdarr/Documents/Tdarr:rw"
-//      - "/etc/localtime:/etc/localtime:ro"
+//      environment:
+//        - PUID=${PUID} # default user id, defined in .env
+//        - PGID=${PGID} # default group id, defined in .env
+//        - TZ=${TZ} # timezone, defined in .env
+//        - serverIP=tdarr_server #using internal docker networking. This should at least work when the nodes are on the same docker compose as the server
+//        - serverPort=8266
+//        - webUIPort=8265
+//      volumes:
+//        - ${ROOT}/tdarr/server:/app/server/Tdarr # Tdarr server files
+//        - ${ROOT}/tdarr/configs:/app/configs # config files - can be same as NODE (unless separate server)
+//        - ${ROOT}/tdarr/logs:/app/logs # Tdarr log files
+//        - ${ROOT}/tdarr/cache:/temp # Cache folder, Should be same path mapped on NODE
+//        - ${ROOT}/tdarr/testmedia:/home/Tdarr/testmedia # Should be same path mapped on NODE if using a test folder
+//        - ${ROOT}/tdarr/scripts:/home/Tdarr/scripts # my random way of saving script files
+//        - /volume1/video:/media # video library Should be same path mapped on NODE
+//      ports:
+//        - 8265:8265 #Exposed to access webui externally
+//        - 8266:8266 #Exposed to allow external nodes to reach the server
+//      logging:
+//        options:
+//          max-size: "2m"
+//          max-file: "3"
 //
-//  I then connect to the docker container by using the following command
-//      sudo docker exec -it tdarr /bin/bash
-//
-//  Here is the script that I run after the docker container is up and running (This requires a couple of (y)es'es to complete)
-//
-//      //It is important to get mediainfo from a custom repository because it is a newer version that includes JSON output
-//      sudo apt-get install wget
-//      sudo wget https://mediaarea.net/repo/deb/repo-mediaarea_1.0-12_all.deb && sudo dpkg -i repo-mediaarea_1.0-12_all.deb && sudo apt-get update
-//      sudo apt-get install mediainfo
-//
-//      sudo wget -q -O - https://mkvtoolnix.download/gpg-pub-moritzbunkus.txt | sudo apt-key add -
-//      sudo sh -c 'echo "deb https://mkvtoolnix.download/ubuntu/ bionic main" >> /etc/apt/sources.list.d/bunkus.org.list'
-//      sudo sh -c 'echo "deb-src https://mkvtoolnix.download/ubuntu/ bionic main" >> /etc/apt/sources.list.d/bunkus.org.list'
-//      sudo apt update
-//      sudo apt install mkvtoolnix
+//    tdarr_node:
+//      container_name: tdarr_node
+//      image: haveagitgat/tdarr_node:latest
+//      privileged: true
+//      restart: unless-stopped
+//      devices:
+//        - /dev/dri:/dev/dri
+//      environment:
+//        - PUID=${PUID} # default user id, defined in .env
+//        - PGID=${PGID} # default group id, defined in .env
+//        - TZ=${TZ} # timezone, defined in .env
+//        - serverIP=192.168.x.x #container name of the server, should be modified if server is on another machine
+//        - serverPort=8266
+//        - nodeID=TDARRNODE_2
+//        - nodeIP=192.168.x.x #container name of the node
+//        - nodePort=9267 #not exposed via a "ports: " setting as the server/node communication is done on the internal docker network and can communicate on all ports
+//      volumes:
+//        - ${ROOT}/tdarr/configs:/app/configs # config files - can be same as server (unless separate server)
+//        - ${ROOT}/tdarr/logs:/app/logs # config files - can be same as server (unless separate server)
+//        - ${ROOT}/tdarr/testmedia:/home/Tdarr/testmedia # Should be same path mapped on server if using a test folder
+//        - ${ROOT}/tdarr/scripts:/home/Tdarr/scripts # my random way of saving script files
+//        - ${ROOT}/tdarr/cache:/temp # Cache folder, Should be same path mapped on server
+//        - /mnt/video:/media # video library Should be same path mapped on server
+//      ports:
+//        - 9267:9267
+//      logging:
+//        options:
+//          max-size: "2m"
+//          max-file: "3"
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -134,7 +156,7 @@ function details() {
         Type: "Video",
         Operation: "Transcode",
         Description: "***You should not use this*** until you read the comments at the top of the code and understand how it works **this does alot** and is 2 of 2 routines you should to run **Part 2** \n",
-        Version: "1.1",
+        Version: "2.0",
         Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix.js",
         Tags: "post-processing,ffmpeg,video"
     }
@@ -166,20 +188,20 @@ function plugin(file, librarySettings, inputs) {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    response.infoLog += "Getting Media Info.\n";
-    var objMedInfo = "";
-    objMedInfo = JSON.parse(require("child_process").execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
+    //response.infoLog += "Getting Media Info.\n";
+    //var objMedInfo = "";
+    //objMedInfo = JSON.parse(require("child_process").execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    if (objMedInfo.media.track[0].extra == undefined || objMedInfo.media.track[0].extra.JBDONEVERSION == undefined || objMedInfo.media.track[0].extra.JBDONEVERSION != "1") {
+    if (file.mediaInfo.track[0].extra == undefined || file.mediaInfo.track[0].extra.JBDONEVERSION == undefined || file.mediaInfo.track[0].extra.JBDONEVERSION != "1") {
         response.infoLog += "File not processed by first routine! \n";
         return response;
     }
 
     //Run ffprobe with full info and load the results it into an object
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-    response.infoLog += "Getting FFProbe Info.\n";
-    var objFFProbeInfo = "";
-    objFFProbeInfo = JSON.parse(require("child_process").execSync('ffprobe -v error -print_format json -show_format -show_streams -show_chapters "' + currentfilename + '"').toString());
+    //response.infoLog += "Getting FFProbe Info.\n";
+    //var objFFProbeInfo = "";
+    //objFFProbeInfo = JSON.parse(require("child_process").execSync('ffprobe -v error -print_format json -show_format -show_streams -show_chapters "' + currentfilename + '"').toString());
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     var datStats = Date.parse(new Date(70, 1).toISOString())
@@ -187,11 +209,12 @@ function plugin(file, librarySettings, inputs) {
         datStats =  Date.parse(file.ffProbeData.streams[0].tags["_STATISTICS_WRITING_DATE_UTC-eng"] + " GMT")
     }
 
-    if (objFFProbeInfo.chapters.length != 0) {
-        bolHasChapters = true
-    } else {
-        response.infoLog += "No Chapters! \n"
-    }
+	//Not processing chapters for now
+    //if (objFFProbeInfo.chapters.length != 0) {
+    //    bolHasChapters = true
+    //} else {
+    //    response.infoLog += "No Chapters! \n"
+    //}
 
     if (file.ffProbeData.streams[1].tags != undefined && file.ffProbeData.streams[1].tags.language != undefined && file.ffProbeData.streams[1].tags.language == "eng") {
         bolAudioIsEng = true;
@@ -199,8 +222,8 @@ function plugin(file, librarySettings, inputs) {
         response.infoLog += "Audio not marked as English! \n";
     }
 
-    if (objMedInfo.media.track[0].extra.JBDONEDATE != undefined) {
-        var JBDate = Date.parse(objMedInfo.media.track[0].extra.JBDONEDATE);
+    if (file.mediaInfo.track[0].extra.JBDONEDATE != undefined) {
+        var JBDate = Date.parse(file.mediaInfo.track[0].extra.JBDONEDATE);
     
         response.infoLog += "JBDate:" + JBDate + ", StatsDate:" + datStats + "\n";
         if (datStats >= JBDate) {
@@ -240,7 +263,7 @@ function plugin(file, librarySettings, inputs) {
         var intChapNum = 0;
         var strChapNum = "";
 
-        for (var i = 0; i < objFFProbeInfo.format.duration; i += chapterlengthlong) {
+        for (var i = 0; i < file.meta.Duration; i += chapterlengthlong) {
             intChapNum += 1;
             strChapNum = String(intChapNum).padStart(2, '0');
 
@@ -254,7 +277,7 @@ function plugin(file, librarySettings, inputs) {
         intChapNum += 1;
         strChapNum = String(intChapNum).padStart(2, "0");
 
-        var timeString = new Date((Math.floor(objFFProbeInfo.format.duration) - 1) * 1000).toISOString().substr(11, 12);
+        var timeString = new Date((Math.floor(file.meta.Duration) - 1) * 1000).toISOString().substr(11, 12);
 
         strChapterFile += "CHAPTER" + strChapNum + "=" + timeString + "\n";
         strChapterFile += "CHAPTER" + strChapNum + "NAME=CHAPTER " + intChapNum + "\n";
