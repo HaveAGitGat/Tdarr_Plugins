@@ -13,22 +13,22 @@ const details = () => ({
     falls back to '[imdb-ttDIGITS] in the filename.`,
   Version: '1.00',
   Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
-      + 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng.js',
+    + 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng.js',
   Tags: 'pre-processing,configurable',
 
   Inputs: [
     {
       name: 'user_langs',
       tooltip: 'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
-          + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
-          + '\\nExample:\\n'
-          + 'nld,nor',
+        + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
+        + '\\nExample:\\n'
+        + 'nld,nor',
     },
     {
       name: 'priority',
       tooltip: 'Priority for either Radarr or Sonarr. Leaving it empty defaults to Radarr first.'
-          + '\\nExample:\\n'
-          + 'sonarr',
+        + '\\nExample:\\n'
+        + 'sonarr',
     },
     {
       name: 'api_key',
@@ -41,8 +41,8 @@ const details = () => ({
     {
       name: 'radarr_url',
       tooltip: 'Input your Radarr url here. (Without http://). Do include the port.'
-          + '\\nExample:\\n'
-          + '192.168.1.2:7878',
+        + '\\nExample:\\n'
+        + '192.168.1.2:7878',
     },
     {
       name: 'sonarr_api_key',
@@ -51,8 +51,8 @@ const details = () => ({
     {
       name: 'sonarr_url',
       tooltip: 'Input your Sonarr url here. (Without http://). Do include the port.'
-          + '\\nExample:\\n'
-          + '192.168.1.2:8989',
+        + '\\nExample:\\n'
+        + '192.168.1.2:8989',
     },
   ],
 });
@@ -114,14 +114,18 @@ const processStreams = (result, file, user_langs) => {
         // eslint-disable-next-line no-continue
         continue;
       }
-      if (langs.includes(stream.tags.language)) {
-        tracks.keep.push(streamIndex);
+      if (stream.tags.language) {
+        if (langs.includes(stream.tags.language)) {
+          tracks.keep.push(streamIndex);
+        } else {
+          tracks.remove.push(streamIndex);
+          response.preset += `-map -0:a:${streamIndex} `;
+          tracks.remLangs += `${languages.getName(stream.tags.language, 'en')}, `;
+        }
+        streamIndex += 1;
       } else {
-        tracks.remove.push(streamIndex);
-        response.preset += `-map -0:a:${streamIndex} `;
-        tracks.remLangs += `${languages.getName(stream.tags.language, 'en')}, `;
+        response.infoLog += `☒No language tag found on audio track ${streamIndex}. Keeping it. \n`;
       }
-      streamIndex += 1;
     }
   }
   response.preset += ' -c copy -max_muxing_queue_size 9999';
