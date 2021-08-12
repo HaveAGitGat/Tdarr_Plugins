@@ -761,7 +761,7 @@ function findMediaInfoItem(file, index) {
 			currMIOrder = file.mediaInfo.track[i].ID - 1;
 		}
 
-		if (currMIOrder == index|| currMIOrder == "0-" + index) {
+		if (currMIOrder == index || currMIOrder == "0-" + index) {
 			return i;
 		}
 	}
