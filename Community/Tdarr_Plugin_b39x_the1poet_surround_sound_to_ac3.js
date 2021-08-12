@@ -48,7 +48,7 @@ function plugin(file) {
 
       try {
         if (
-          file.ffProbeData.streams[i].channels >= 6 &&
+          file.ffProbeData.streams[i].channels == 6 &&
           file.ffProbeData.streams[i].codec_name !== "ac3" &&
           file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio"
         ) {
