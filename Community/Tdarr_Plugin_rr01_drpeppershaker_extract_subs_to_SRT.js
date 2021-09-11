@@ -61,7 +61,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
   }
   response.infoLog += 'Found subs to extract!\n';
 
-  let command = '-y,';
+  let command = '-y <io>';
   for (let i = 0; i < subsArr.length; i += 1) {
     const subStream = subsArr[i];
     let lang = '';
@@ -102,7 +102,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
     }
   }
 
-  if (command === '-y,') {
+  if (command === '-y <io>') {
     response.infoLog += 'All subs already extracted!\n';
     if (inputs.remove_subs === 'no') {
       response.processFile = false;
