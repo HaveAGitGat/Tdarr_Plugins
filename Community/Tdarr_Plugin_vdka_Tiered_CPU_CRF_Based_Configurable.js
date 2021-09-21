@@ -48,7 +48,7 @@ function details () {
         },
         {
           name: 'bframe',
-          tooltip: `Specify amount of b-frames to use, 0-8. 
+          tooltip: `Specify amount of b-frames to use, 0-16. 
         
         \\nExample:\\n
         8`
