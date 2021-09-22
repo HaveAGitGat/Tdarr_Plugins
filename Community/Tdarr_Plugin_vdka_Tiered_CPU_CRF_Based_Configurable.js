@@ -1,4 +1,3 @@
-/* eslint-disable */
 function details () {
     return {
       id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
