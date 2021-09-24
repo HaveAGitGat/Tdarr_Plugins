@@ -1,4 +1,3 @@
-/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass",
@@ -81,6 +80,14 @@ function details() {
                 \\nExample:\\n
                 false`,
       },
+      {
+        name: "remove_mjpeg",
+        tooltip: `Specify if mjpeg codecs should be removed.
+                \\nExample:\\n
+                true
+                \\nExample:\\n
+                false`,
+      },
     ],
   };
 }
@@ -158,6 +165,15 @@ class Configurator {
     this.outputSettings.splice(index, 1);
   }
 
+  RemoveAllConfigurationsBySearchString(search_string) {
+    var i = this.outputSettings.length;
+    for (var i = this.outputSettings.length - 1; i >= 0; i--) {
+      if (this.outputSettings[i].includes(search_string)) {
+        this.outputSettings.splice(i, 1);
+      }
+    }
+  }
+
   GetOutputSettings() {
     return this.outputSettings.join(" ");
   }
@@ -196,6 +212,43 @@ function buildAudioConfiguration(inputs, file, logger) {
   loopOverStreamsOfType(file, "audio", function (stream, id) {
     stream_count++;
 
+    if (stream.codec_name != "opus" && !opusFormat) {
+      logger.AddError("Audio is not in proper codec, will format");
+      configuration.RemoveOutputSetting("-c:a copy");
+      configuration.AddOutputSetting("-c:a libopus");
+      opusFormat = true;
+    }
+
+    if (
+      (stream.channel_layout == "5.1(side)" ||
+        (stream.codec_name == "eac3" && stream.channels == 6)) &&
+      opusFormat
+    ) {
+      logger.AddSuccess(
+        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
+      );
+      configuration.AddOutputSetting(
+        `-filter_complex "[0:a:${id}]channelmap=channel_layout=5.1"`
+      );
+      if (!mappingFamily) {
+        configuration.AddOutputSetting(`-mapping_family 1`);
+        mappingFamily = true;
+      }
+    }
+
+    if (stream.channel_layout == "6.1(back)" && opusFormat) {
+      logger.AddSuccess(
+        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
+      );
+      configuration.AddOutputSetting(
+        `-filter_complex "[0:a:${id}]channelmap=channel_layout=6.1"`
+      );
+      if (!mappingFamily) {
+        configuration.AddOutputSetting(`-mapping_family 1`);
+        mappingFamily = true;
+      }
+    }
+
     if (
       "tags" in stream &&
       "title" in stream.tags &&
@@ -211,6 +264,7 @@ function buildAudioConfiguration(inputs, file, logger) {
         logger.AddError(
           `Removing Commentary or Description audio track: ${stream.tags.title}`
         );
+        return;
       }
     }
 
@@ -223,66 +277,17 @@ function buildAudioConfiguration(inputs, file, logger) {
           logger.AddError(
             `Removing audio track in language ${stream.tags.language}`
           );
+          return;
         }
       }
-    }
-
-    if (stream.codec_name != "opus" && !opusFormat) {
-      logger.AddError("Audio is not in proper codec, will format");
-      configuration.RemoveOutputSetting("-c:a copy");
-      configuration.AddOutputSetting("-c:a libopus");
-      opusFormat = true;
-    }
-
-    // only add audio mappings if we've determined we need to transcode into opus
-    if (!opusFormat) {
-      return;
-    }
-
-    if (stream.channel_layout == "5.1(side)") {
-      logger.AddSuccess(
-        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
-      );
-      configuration.AddOutputSetting(
-        `-af:${id} "channelmap=channel_layout=5.1"`
-      );
-    }
-    if (stream.channel_layout == "7.1") {
-      logger.AddSuccess(
-        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
-      );
-      configuration.AddOutputSetting(
-        `-af:${id} "channelmap=channel_layout=7.1"`
-      );
-    }
-    if (stream.channel_layout == "stereo") {
-      logger.AddSuccess(
-        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
-      );
-      configuration.AddOutputSetting(
-        `-af:${id} "channelmap=channel_layout=stereo"`
-      );
-    }
-    if (stream.channel_layout == "mono") {
-      logger.AddSuccess(
-        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
-      );
-      configuration.AddOutputSetting(
-        `-af:${id} "channelmap=channel_layout=mono"`
-      );
-    }
-
-    if (!mappingFamily) {
-      configuration.AddOutputSetting(`-mapping_family 1`);
-      mappingFamily = true;
     }
   });
 
   if (stream_count == streams_removing) {
     logger.AddError(
-      `*** All audio tracks would have been removed.  Defaulting to keeping all tracks for this file.`
+      `*** All audio tracks would have been removed, removing all delete entries`
     );
-    configuration.ResetOutputSetting(["-c:a copy"]);
+    configuration.RemoveAllConfigurationsBySearchString("-map -0");
   }
 
   if (!configuration.shouldProcess) {
@@ -297,7 +302,12 @@ function buildVideoConfiguration(inputs, file, logger) {
 
   loopOverStreamsOfType(file, "video", function (stream, id) {
     if (stream.codec_name === "mjpeg") {
-      configuration.AddOutputSetting(`-map -v:${id}`);
+      if (inputs.remove_mjpeg.toLowerCase() == "true") {
+        logger.AddError(`Removing mjpeg`);
+        configuration.AddOutputSetting(`-map -0:v:${id}`);
+      } else {
+        configuration.AddOutputSetting(`-map -v:${id}`);
+      }
       return;
     }
 
@@ -379,13 +389,15 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
   loopOverStreamsOfType(file, "subtitle", function (stream, id) {
     if (
-      stream.codec_name == "hdmv_pgs_subtitle" ||
-      stream.codec_name === "eia_608"
+      stream.codec_name === "hdmv_pgs_subtitle" ||
+      stream.codec_name === "eia_608" ||
+      stream.codec_name === "dvd_subtitle"
     ) {
       logger.AddError(
         `Removing subtitle in invalid codec ${stream.codec_name}`
       );
       configuration.AddOutputSetting(`-map -0:s:${id}`);
+      return;
     }
 
     if ("tags" in stream) {
@@ -396,6 +408,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           logger.AddError(
             `Removing subtitle in language ${stream.tags.language}`
           );
+          return;
         }
       }
 
@@ -413,6 +426,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           logger.AddError(
             `Removing Commentary or Description subtitle: ${stream.tags.title}`
           );
+          return;
         }
       }
     }
