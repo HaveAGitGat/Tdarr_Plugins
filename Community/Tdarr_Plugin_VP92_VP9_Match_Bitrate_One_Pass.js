@@ -1,54 +1,59 @@
+/* eslint max-classes-per-file: ["error", 2] */
 function details() {
   return {
-    id: "Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass",
-    Stage: "Pre-processing",
-    Name: "VP9 Encoding Match Bitrate 1 Pass System",
-    Type: "Video",
-    Operation: "Transcode",
-    Description: `Will run through linvpx-vp9 and follow the contrained quality contraints. Will also encode audio to opus using libopus
-        Allows user-input on the desired constrained quality amount for each video resolution with defaults if none are given.`,
-    Version: "1.00",
-    Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js",
-    Tags: "pre-processing,ffmpeg,vp9",
+    id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
+    Stage: 'Pre-processing',
+    Name: 'VP9 Encoding Match Bitrate 1 Pass System',
+    Type: 'Video',
+    Operation: 'Transcode',
+    Description: `Will run through linvpx-vp9 and follow the contrained quality contraints. Will also encode audio to
+      opus using libopus. Allows user-input on the desired constrained quality amount for each video resolution with
+      defaults if none are given.`,
+    Version: '1.00',
+    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js',
+    Tags: 'pre-processing,ffmpeg,vp9',
     Inputs: [
       {
-        name: "_240p_CQ",
+        name: 'CQ_240p',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 32",
+          'The CQ number (recommended 15-35) for this resolution, default 32',
       },
       {
-        name: "_360p_CQ",
+        name: 'CG_360p',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 31",
+          'The CQ number (recommended 15-35) for this resolution, default 31',
       },
       {
-        name: "_480p_CQ",
+        name: 'CQ_480p',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 28",
+          'The CQ number (recommended 15-35) for this resolution, default 28',
       },
       {
-        name: "_720p_CQ",
+        name: 'CQ_720p',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 27",
+          'The CQ number (recommended 15-35) for this resolution, default 27',
       },
       {
-        name: "_1080p_CQ",
+        name: 'CQ_1080p',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 26",
+          'The CQ number (recommended 15-35) for this resolution, default 26',
       },
       {
-        name: "_4KUHD_CQ",
+        name: 'CQ_4KUHD',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 15",
+          'The CQ number (recommended 15-35) for this resolution, default 15',
       },
       {
-        name: "_8KUHD_CQ",
+        name: 'CQ_8KUHD',
         tooltip:
-          "The CQ number (recommended 15-35) for this resolution, default 15",
+          'The CQ number (recommended 15-35) for this resolution, default 15',
       },
       {
-        name: "audio_language",
-        tooltip: `Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
+        name: 'audio_language',
+        tooltip: `
+            Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this\\n
+           stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter\\n
+            format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                 \\nExample:\\n
                 eng
                 \\nExample:\\n
@@ -57,7 +62,7 @@ function details() {
                 eng,und,jap`,
       },
       {
-        name: "audio_commentary",
+        name: 'audio_commentary',
         tooltip: `Specify if audio tracks that contain commentary/description should be removed.
                 \\nExample:\\n
                 true
@@ -65,15 +70,16 @@ function details() {
                 false`,
       },
       {
-        name: "subtitle_language",
-        tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
+        name: 'subtitle_language',
+        tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 \\n
+        letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                 \\nExample:\\n
                 eng
                 \\nExample:\\n
                 eng,jap`,
       },
       {
-        name: "subtitle_commentary",
+        name: 'subtitle_commentary',
         tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
                 \\nExample:\\n
                 true
@@ -81,7 +87,7 @@ function details() {
                 false`,
       },
       {
-        name: "remove_mjpeg",
+        name: 'remove_mjpeg',
         tooltip: `Specify if mjpeg codecs should be removed.
                 \\nExample:\\n
                 true
@@ -130,7 +136,7 @@ class Log {
    * Returns the log lines separated by new line delimiter.
    */
   GetLogData() {
-    return this.entries.join("\n");
+    return this.entries.join('\n');
   }
 }
 
@@ -159,15 +165,14 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    var index = this.outputSettings.indexOf(configuration);
+    const index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
   }
 
   RemoveAllConfigurationsBySearchString(search_string) {
-    var i = this.outputSettings.length;
-    for (var i = this.outputSettings.length - 1; i >= 0; i--) {
+    for (let i = this.outputSettings.length - 1; i >= 0; i -= 1) {
       if (this.outputSettings[i].includes(search_string)) {
         this.outputSettings.splice(i, 1);
       }
@@ -175,11 +180,11 @@ class Configurator {
   }
 
   GetOutputSettings() {
-    return this.outputSettings.join(" ");
+    return this.outputSettings.join(' ');
   }
 
   GetInputSettings() {
-    return this.inputSettings.join(" ");
+    return this.inputSettings.join(' ');
   }
 }
 
@@ -191,119 +196,113 @@ class Configurator {
  * @param {function} method the method to call.
  */
 function loopOverStreamsOfType(file, type, method) {
-  var id = 0;
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
       method(file.ffProbeData.streams[i], id);
-      id++;
+      id += 1;
     }
   }
 }
 
 function buildAudioConfiguration(inputs, file, logger) {
-  // var configuration = new Configurator(["-c:a libopus"]);
-  var configuration = new Configurator(["-c:a copy"]);
-  var stream_count = 0;
-  var streams_removing = 0;
-  var languages = inputs.audio_language.split(",");
-  var opusFormat = false;
-  var mappingFamily = false;
+  const configuration = new Configurator(['-c:a copy']);
+  let stream_count = 0;
+  let streams_removing = 0;
+  const languages = inputs.audio_language.split(',');
+  let opusFormat = false;
+  let mappingFamily = false;
 
-  loopOverStreamsOfType(file, "audio", function (stream, id) {
-    stream_count++;
+  loopOverStreamsOfType(file, 'audio', (stream, id) => {
+    stream_count += 1;
 
-    if (stream.codec_name != "opus" && !opusFormat) {
-      logger.AddError("Audio is not in proper codec, will format");
-      configuration.RemoveOutputSetting("-c:a copy");
-      configuration.AddOutputSetting("-c:a libopus");
+    if (stream.codec_name !== 'opus' && !opusFormat) {
+      logger.AddError('Audio is not in proper codec, will format');
+      configuration.RemoveOutputSetting('-c:a copy');
+      configuration.AddOutputSetting('-c:a libopus');
       opusFormat = true;
     }
 
     if (
-      (stream.channel_layout == "5.1(side)" ||
-        (stream.codec_name == "eac3" && stream.channels == 6)) &&
-      opusFormat
+      (stream.channel_layout === '5.1(side)' || (stream.codec_name === 'eac3' && stream.channels === 6)) && opusFormat
     ) {
       logger.AddSuccess(
-        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
+        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`,
       );
       configuration.AddOutputSetting(
-        `-filter_complex "[0:a:${id}]channelmap=channel_layout=5.1"`
+        `-filter_complex "[0:a:${id}]channelmap=channel_layout=5.1"`,
       );
       if (!mappingFamily) {
-        configuration.AddOutputSetting(`-mapping_family 1`);
+        configuration.AddOutputSetting('-mapping_family 1');
         mappingFamily = true;
       }
     }
 
-    if (stream.channel_layout == "6.1(back)" && opusFormat) {
+    if (stream.channel_layout === '6.1(back)' && opusFormat) {
       logger.AddSuccess(
-        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`
+        `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`,
       );
       configuration.AddOutputSetting(
-        `-filter_complex "[0:a:${id}]channelmap=channel_layout=6.1"`
+        `-filter_complex "[0:a:${id}]channelmap=channel_layout=6.1"`,
       );
       if (!mappingFamily) {
-        configuration.AddOutputSetting(`-mapping_family 1`);
+        configuration.AddOutputSetting('-mapping_family 1');
         mappingFamily = true;
       }
     }
 
     if (
-      "tags" in stream &&
-      "title" in stream.tags &&
-      inputs.audio_commentary.toLowerCase() == "true"
+      'tags' in stream && 'title' in stream.tags && inputs.audio_commentary.toLowerCase() === 'true'
     ) {
       if (
-        stream.tags.title.toLowerCase().includes("commentary") ||
-        stream.tags.title.toLowerCase().includes("description") ||
-        stream.tags.title.toLowerCase().includes("sdh")
+        stream.tags.title.toLowerCase().includes('commentary')
+        || stream.tags.title.toLowerCase().includes('description')
+        || stream.tags.title.toLowerCase().includes('sdh')
       ) {
-        streams_removing++;
+        streams_removing += 1;
         configuration.AddOutputSetting(`-map -0:a:${id}`);
         logger.AddError(
-          `Removing Commentary or Description audio track: ${stream.tags.title}`
+          `Removing Commentary or Description audio track: ${stream.tags.title}`,
         );
         return;
       }
     }
 
-    if ("tags" in stream) {
+    if ('tags' in stream) {
       // Remove unwanted languages
-      if ("language" in stream.tags) {
+      if ('language' in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:a:${id}`);
-          streams_removing++;
+          streams_removing += 1;
           logger.AddError(
-            `Removing audio track in language ${stream.tags.language}`
+            `Removing audio track in language ${stream.tags.language}`,
           );
-          return;
         }
       }
     }
   });
 
-  if (stream_count == streams_removing) {
+  if (stream_count === streams_removing) {
     logger.AddError(
-      `*** All audio tracks would have been removed, removing all delete entries`
+      '*** All audio tracks would have been removed, removing all delete entries',
     );
-    configuration.RemoveAllConfigurationsBySearchString("-map -0");
+    configuration.RemoveAllConfigurationsBySearchString('-map -0');
   }
 
   if (!configuration.shouldProcess) {
-    logger.AddSuccess("No audio processing necessary");
+    logger.AddSuccess('No audio processing necessary');
   }
 
   return configuration;
 }
 
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
+  const configuration = new Configurator(['-map 0', '-map -0:d', '-c:v copy']);
 
-  loopOverStreamsOfType(file, "video", function (stream, id) {
-    if (stream.codec_name === "mjpeg") {
-      if (inputs.remove_mjpeg.toLowerCase() == "true") {
-        logger.AddError(`Removing mjpeg`);
+  loopOverStreamsOfType(file, 'video', (stream, id) => {
+    if (stream.codec_name === 'mjpeg') {
+      if (inputs.remove_mjpeg.toLowerCase() === 'true') {
+        logger.AddError('Removing mjpeg');
         configuration.AddOutputSetting(`-map -0:v:${id}`);
       } else {
         configuration.AddOutputSetting(`-map -v:${id}`);
@@ -311,102 +310,99 @@ function buildVideoConfiguration(inputs, file, logger) {
       return;
     }
 
-    if (stream.codec_name === "vp9" && file.container === "webm") {
-      logger.AddSuccess("File is in proper video format");
+    if (stream.codec_name === 'vp9' && file.container === 'webm') {
+      logger.AddSuccess('File is in proper video format');
       return;
     }
 
-    if (stream.codec_name === "vp9" && file.container !== "webm") {
-      configuration.AddOutputSetting("-c:v copy");
+    if (stream.codec_name === 'vp9' && file.container !== 'webm') {
+      configuration.AddOutputSetting('-c:v copy');
       logger.AddError(
-        "File is in proper codec but not write container. Will remux"
+        'File is in proper codec but not write container. Will remux',
       );
     }
 
-    var speed = 1;
-    var targetQuality = 32;
-    var tileColumns = 0;
-    var threadCount = 64;
-    if (file.video_resolution == "240p") {
-      targetQuality = inputs._240p_CQ | 32;
+    let speed = 1;
+    let targetQuality = 32;
+    let tileColumns = 0;
+    const threadCount = 64;
+    if (file.video_resolution === '240p') {
+      targetQuality = inputs.CQ_240p || 32;
       tileColumns = 0;
       speed = 1;
-    } else if (
-      file.video_resolution == "360p" ||
-      file.video_resolution === "576p"
-    ) {
-      targetQuality = inputs._360p_CQ | 31;
+    } else if (file.video_resolution === '360p' || file.video_resolution === '576p') {
+      targetQuality = inputs.CQ_360p || 31;
       tileColumns = 1;
       speed = 1;
-    } else if (file.video_resolution == "480p") {
-      targetQuality = inputs._480p_CQ | 28;
+    } else if (file.video_resolution === '480p') {
+      targetQuality = inputs.CQ_480p || 28;
       tileColumns = 1;
       speed = 1;
-    } else if (file.video_resolution == "720p") {
-      targetQuality = inputs._720p_CQ | 27;
+    } else if (file.video_resolution === '720p') {
+      targetQuality = inputs.CQ_720p || 27;
       tileColumns = 2;
       speed = 2;
-    } else if (file.video_resolution == "1080p") {
-      targetQuality = inputs._1080p_CQ | 26;
+    } else if (file.video_resolution === '1080p') {
+      targetQuality = inputs.CQ_1080p || 26;
       tileColumns = 2;
       speed = 2;
     } else if (
-      file.video_resolution == "1440p" ||
-      file.video_resolution == "2560p" ||
-      file.video_resolution == "4KUHD"
+      file.video_resolution === '1440p' || file.video_resolution === '2560p' || file.video_resolution === '4KUHD'
     ) {
-      targetQuality = inputs._4KUHD_CQ | 15;
+      targetQuality = inputs.CQ_4KUHD || 15;
       tileColumns = 3;
       speed = 2;
-    } else if (file.video_resolution == "8KUHD") {
-      targetQuality = inputs._8KUHD_CQ | 15;
+    } else if (file.video_resolution === '8KUHD') {
+      targetQuality = inputs.CQ_8KUHD || 15;
       tileColumns = 3;
       speed = 2;
     }
 
-    configuration.RemoveOutputSetting("-c:v copy");
+    configuration.RemoveOutputSetting('-c:v copy');
     configuration.AddOutputSetting(
-      `-pix_fmt yuv420p10le -c:v libvpx-vp9 -b:v 0 -crf ${targetQuality} -threads ${threadCount} -speed ${speed} -quality good -static-thresh 0 -tile-columns ${tileColumns} -tile-rows 0 -frame-parallel 0 -row-mt 1 -aq-mode 0 -g 240`
+      `-pix_fmt yuv420p10le -c:v libvpx-vp9 -b:v 0 -crf ${targetQuality} -threads ${threadCount} -speed ${speed} 
+      -quality good -static-thresh 0 -tile-columns ${tileColumns} -tile-rows 0 -frame-parallel 0 -row-mt 1 
+      -aq-mode 0 -g 240`,
     );
 
-    logger.AddError("Transcoding file to VP9");
+    logger.AddError('Transcoding file to VP9');
   });
 
   if (!configuration.shouldProcess) {
-    logger.AddSuccess("No video processing necessary");
+    logger.AddSuccess('No video processing necessary');
   }
 
   return configuration;
 }
 
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-c:s copy"]);
-  //webvtt
+  const configuration = new Configurator(['-c:s copy']);
+  // webvtt
 
-  var languages = inputs.subtitle_language.split(",");
-  var webvttFormat = false;
+  const languages = inputs.subtitle_language.split(',');
+  let webvttFormat = false;
   // if (languages.length === 0) return configuration;
 
-  loopOverStreamsOfType(file, "subtitle", function (stream, id) {
+  loopOverStreamsOfType(file, 'subtitle', (stream, id) => {
     if (
-      stream.codec_name === "hdmv_pgs_subtitle" ||
-      stream.codec_name === "eia_608" ||
-      stream.codec_name === "dvd_subtitle"
+      stream.codec_name === 'hdmv_pgs_subtitle'
+      || stream.codec_name === 'eia_608'
+      || stream.codec_name === 'dvd_subtitle'
     ) {
       logger.AddError(
-        `Removing subtitle in invalid codec ${stream.codec_name}`
+        `Removing subtitle in invalid codec ${stream.codec_name}`,
       );
       configuration.AddOutputSetting(`-map -0:s:${id}`);
       return;
     }
 
-    if ("tags" in stream) {
+    if ('tags' in stream) {
       // Remove unwated languages
-      if ("language" in stream.tags) {
+      if ('language' in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:s:${id}`);
           logger.AddError(
-            `Removing subtitle in language ${stream.tags.language}`
+            `Removing subtitle in language ${stream.tags.language}`,
           );
           return;
         }
@@ -414,66 +410,66 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
       // Remove commentary subtitles
       if (
-        "title" in stream.tags &&
-        inputs.subtitle_commentary.toLowerCase() == "true"
+        'title' in stream.tags
+        && inputs.subtitle_commentary.toLowerCase() === 'true'
       ) {
         if (
-          stream.tags.title.toLowerCase().includes("commentary") ||
-          stream.tags.title.toLowerCase().includes("description") ||
-          stream.tags.title.toLowerCase().includes("sdh")
+          stream.tags.title.toLowerCase().includes('commentary')
+          || stream.tags.title.toLowerCase().includes('description')
+          || stream.tags.title.toLowerCase().includes('sdh')
         ) {
           configuration.AddOutputSetting(`-map -0:s:${id}`);
           logger.AddError(
-            `Removing Commentary or Description subtitle: ${stream.tags.title}`
+            `Removing Commentary or Description subtitle: ${stream.tags.title}`,
           );
           return;
         }
       }
     }
 
-    if (stream.codec_name != "webvtt" && !webvttFormat) {
-      logger.AddError(`Formatting subtitles to webvtt format`);
-      configuration.RemoveOutputSetting("-c:s copy");
-      configuration.AddOutputSetting("-c:s webvtt");
+    if (stream.codec_name !== 'webvtt' && !webvttFormat) {
+      logger.AddError('Formatting subtitles to webvtt format');
+      configuration.RemoveOutputSetting('-c:s copy');
+      configuration.AddOutputSetting('-c:s webvtt');
       webvttFormat = true;
     }
   });
 
   if (!configuration.shouldProcess) {
-    logger.AddSuccess("No subtitle processing necessary");
+    logger.AddSuccess('No subtitle processing necessary');
   }
 
   return configuration;
 }
 
 function plugin(file, librarySettings, inputs) {
-  //Must return this object
-  var response = {
-    container: ".webm",
+  // Must return this object
+  const response = {
+    container: '.webm',
     FFmpegMode: true,
     handBrakeMode: false,
-    infoLog: "",
+    infoLog: '',
     processFile: false,
-    preset: "",
+    preset: '',
     reQueueAfter: true,
   };
 
-  var logger = new Log();
+  const logger = new Log();
 
-  var audioSettings = buildAudioConfiguration(inputs, file, logger);
-  var videoSettings = buildVideoConfiguration(inputs, file, logger);
-  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger);
+  const videoSettings = buildVideoConfiguration(inputs, file, logger);
+  const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
-  response.processFile =
-    audioSettings.shouldProcess ||
-    videoSettings.shouldProcess ||
-    subtitleSettings.shouldProcess;
+  response.processFile = audioSettings.shouldProcess
+    || videoSettings.shouldProcess
+    || subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
-    logger.AddSuccess("No need to process file");
+    logger.AddSuccess('No need to process file');
   }
 
-  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()} ${audioSettings.GetOutputSettings()} ${subtitleSettings.GetOutputSettings()}`;
+  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()} 
+  ${audioSettings.GetOutputSettings()} ${subtitleSettings.GetOutputSettings()}`;
   response.infoLog += logger.GetLogData();
   return response;
 }
