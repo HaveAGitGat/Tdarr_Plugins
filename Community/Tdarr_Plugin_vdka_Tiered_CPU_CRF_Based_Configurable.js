@@ -77,8 +77,7 @@ function details() {
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
   let crf = '';
   // default values that will be returned
-  // eslint-disable-next-line prefer-const
-  let response = {
+  const response = {
     processFile: true,
     preset: '',
     container: '.mkv',
@@ -97,17 +96,21 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   response.infoLog += '☑File is a video! \n';
 
   // check if the file is already hevc
-  // it will not be transcoded if true and the function will be stopped immediately
-  if (file.ffProbeData.streams[0].codec_name === 'hevc') {
-    response.processFile = false;
-    response.infoLog += '☑File is already in hevc! \n';
-    return response;
+  // it will not be transcoded if true and the plugin will be stopped immediately
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
+      response.processFile = false;
+      response.infoLog += '☑File is already in hevc! \n';
+      break;
+    }
   }
 
+  // if we made it to this point it is safe to assume there is no hevc stream
+  response.infoLog += '☒File is not hevc!\n';
+
   // Check if preset is configured, default to slow if not
-  let ffmpegPreset;
+  let ffmpegPreset = 'slow';
   if (inputs.ffmpegPreset === undefined) {
-    ffmpegPreset = 'slow';
     response.infoLog += '☑Preset not set, defaulting to slow\n';
   } else {
     ffmpegPreset = `${inputs.ffmpegPreset}`;
@@ -137,9 +140,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
   // encoding settings
   response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset}`
-  + ` -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3 -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
+  + ` -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
+  + ' -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999';
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
-  response.infoLog += '☒File is not hevc!\n';
   response.infoLog += 'File is being transcoded!\n';
 
   return response;
