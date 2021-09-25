@@ -19,28 +19,32 @@ function details() {
     Inputs: [
       {
         name: 'sdCRF',
-        tooltip: `Enter the CRF value you want for 480p and 576p content. Defaults to 20 (0-51, lower = higher quality, bigger file)
+        tooltip: `Enter the CRF value you want for 480p and 576p content. 
+        \n Defaults to 20 (0-51, lower = higher quality, bigger file)
          \\nExample:\\n 
         
         19`,
       },
       {
         name: 'hdCRF',
-        tooltip: `Enter the CRF value you want for 720p content. Defaults to 22 (0-51, lower = higher quality, bigger file)
+        tooltip: `Enter the CRF value you want for 720p content. 
+        \n Defaults to 22 (0-51, lower = higher quality, bigger file)
         
         \\nExample:\\n
         21`,
       },
       {
         name: 'fullhdCRF',
-        tooltip: `Enter the CRF value you want for 1080p content. Defaults to 24 (0-51, lower = higher quality, bigger file)
+        tooltip: `Enter the CRF value you want for 1080p content. 
+        \n Defaults to 24 (0-51, lower = higher quality, bigger file)
         
         \\nExample:\\n
         23`,
       },
       {
         name: 'uhdCRF',
-        tooltip: `Enter the CRF value you want for 4K/UHD/2160p content. Defaults to 28 (0-51, lower = higher quality, bigger file)
+        tooltip: `Enter the CRF value you want for 4K/UHD/2160p content. 
+        \n Defaults to 28 (0-51, lower = higher quality, bigger file)
         
         \\nExample:\\n
         26`,
