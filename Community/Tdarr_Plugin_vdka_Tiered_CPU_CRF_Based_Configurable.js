@@ -74,8 +74,8 @@ function details() {
   };
 }
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
-  let crf = '';
+function plugin(file, librarySettings, inputs) {
+  let crf;
   // default values that will be returned
   const response = {
     processFile: true,
@@ -110,7 +110,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
   // Check if preset is configured, default to slow if not
   let ffmpegPreset = 'slow';
-  if (inputs.ffmpegPreset === undefined) {
+  if (!inputs.ffmpegPreset) {
     response.infoLog += '☑Preset not set, defaulting to slow\n';
   } else {
     ffmpegPreset = `${inputs.ffmpegPreset}`;
@@ -146,5 +146,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   response.infoLog += 'File is being transcoded!\n';
 
   return response;
-};
+}
 module.exports.details = details;
+module.exports.plugin = plugin;
