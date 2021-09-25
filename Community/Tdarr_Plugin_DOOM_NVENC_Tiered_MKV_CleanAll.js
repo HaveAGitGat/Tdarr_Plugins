@@ -8,76 +8,77 @@ function details() {
     Operation: "Transcode",
     Description:
       "In a single pass ensures all files are in MKV containers and where possible encoded in h265 (Tiered bitrate based on resolution), removes audio and subtitles that are not in the configured language or marked as commentary.",
-    Tags: "pre-processing,ffmpeg,nvenc h265",
+    Version: "2.0",
+	Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
         name: "target_bitrate_480p576p",
         tooltip: `Specify the target bitrate for 480p and 576p files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 1 Mbps:\\n
-  	            1000000`,
+                \\nExample 1 Mbps:\\n
+                1000000`,
       },
       {
         name: "target_bitrate_720p",
         tooltip: `Specify the target bitrate for 720p files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 2 Mbps:\\n
-  	            2000000`,
+                \\nExample 2 Mbps:\\n
+                2000000`,
       },
       {
         name: "target_bitrate_1080p",
         tooltip: `Specify the target bitrate for 1080p files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 2.5 Mbps:\\n
-  	            2500000`,
+                \\nExample 2.5 Mbps:\\n
+                2500000`,
       },
       {
         name: "target_bitrate_4KUHD",
         tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
-  	            \\nExample 14 Mbps:\\n
-  	            14000000`,
+                \\nExample 14 Mbps:\\n
+                14000000`,
       },
-	  {
+    {
         name: "target_pct_reduction",
         tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.
-  	            \\nExample 60%:\\n
-  	            .60`,
+                \\nExample 50%:\\n
+                .50`,
       },
       {
         name: "audio_language",
         tooltip: `Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-  	            \\nExample:\\n
-  	            eng
+                \\nExample:\\n
+                eng
 
-  	            \\nExample:\\n
-  	            eng,und
+                \\nExample:\\n
+                eng,und
 
-  	            \\nExample:\\n
-  	            eng,und,jap`,
+                \\nExample:\\n
+                eng,und,jap`,
       },
       {
         name: "audio_commentary",
         tooltip: `Specify if audio tracks that contain commentary/description should be removed.
-  	            \\nExample:\\n
-  	            true
+                \\nExample:\\n
+                true
 
-  	            \\nExample:\\n
-  	            false`,
+                \\nExample:\\n
+                false`,
       },
       {
         name: "subtitle_language",
         tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
-  	            \\nExample:\\n
-  	            eng
+                \\nExample:\\n
+                eng
 
-  	            \\nExample:\\n
-  	            eng,jap`,
+                \\nExample:\\n
+                eng,jap`,
       },
       {
         name: "subtitle_commentary",
         tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
-  	            \\nExample:\\n
-  	            true
+                \\nExample:\\n
+                true
 
-  	            \\nExample:\\n
-  	            false`,
+                \\nExample:\\n
+                false`,
       },
     ],
   };
@@ -196,21 +197,23 @@ function loopOverStreamsOfType(file, type, method) {
 
 /**
  * Removes audio tracks that aren't in the allowed languages or labeled as Commentary tracks.
+ * Transcode audio if specified.
  */
 function buildAudioConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:a copy"]);
   var stream_count = 0;
   var streams_removing = 0;
   var languages = inputs.audio_language.split(",");
-  loopOverStreamsOfType(file, "audio", function (stream, id) {
-    stream_count++;
+  
+  function audioProcess(stream, id) {
+	stream_count++;
     if ("tags" in stream && "title" in stream.tags && inputs.audio_commentary.toLowerCase() == "true") {
       if (
         stream.tags.title.toLowerCase().includes("commentary") ||
         stream.tags.title.toLowerCase().includes("description") ||
         stream.tags.title.toLowerCase().includes("sdh")
       ) {
-		streams_removing++;
+        streams_removing++;
         configuration.AddOutputSetting(`-map -0:a:${id}`);
         logger.AddError(
           `Removing Commentary or Description audio track: ${stream.tags.title}`
@@ -222,23 +225,27 @@ function buildAudioConfiguration(inputs, file, logger) {
       if ("language" in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:a:${id}`);
-	  streams_removing++;
+          streams_removing++;
           logger.AddError(
             `Removing audio track in language ${stream.tags.language}`
           );
         }
       }
-  }});
+	}
+  }
+  
+  loopOverStreamsOfType(file, "audio", audioProcess);  
 
   if (stream_count == streams_removing) {
-	logger.AddError(
-		`*** All audio tracks would have been removed.  Defaulting to keeping all tracks for this file.`
-	);
-	configuration.ResetOutputSetting(["-c:a copy"]);
+    logger.AddError(
+      `*** All audio tracks would have been removed.  Defaulting to keeping all tracks for this file.`
+    );
+  configuration.ResetOutputSetting(["-c:a copy"]);
   }
 
   return configuration;
 }
+
 
 /**
  * Removes subtitles that aren't in the allowed languages or labeled as Commentary tracks.
@@ -250,25 +257,39 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   if (languages.length === 0) return configuration;
 
   loopOverStreamsOfType(file, "subtitle", function (stream, id) {
-    if (stream.codec_name === "eia_608") {
+    if ((stream.codec_name === "eia_608") ||
+	    (stream.codec_tag_string === "mp4s")) {
       // unsupported subtitle codec?
       configuration.AddOutputSetting(`-map -0:s:${id}`);
-      return;
+	    logger.AddError(
+		  `Removing unsupported subtitle`
+	    );
+	  return;
     }
-
+	
+	// Remove unknown sub streams
+	if (!("codec_name" in stream)) {
+		configuration.AddOutputSetting(`-map -0:s:${id}`);
+	    logger.AddError(
+		  `Removing unknown subtitle`
+	    );
+		return;
+	}
+	
     if ("tags" in stream) {
-      // Remove unwated languages
+      // Remove unwanted languages
       if ("language" in stream.tags) {
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:s:${id}`);
           logger.AddError(
             `Removing subtitle in language ${stream.tags.language}`
           );
+		  return;
         }
       }
 
       // Remove commentary subtitles
-	  if ("title" in stream.tags && (inputs.subtitle_commentary.toLowerCase() == "true")) {
+    if ("title" in stream.tags && (inputs.subtitle_commentary.toLowerCase() == "true")) {
         if (
           stream.tags.title.toLowerCase().includes("commentary") ||
           stream.tags.title.toLowerCase().includes("description") ||
@@ -278,6 +299,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           logger.AddError(
             `Removing Commentary or Description subtitle: ${stream.tags.title}`
           );
+		  return;
         }
       }
     }
@@ -292,118 +314,104 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
 /**
  * Attempts to ensure that video streams are h265 encoded and inside an
- * MKV container. Will use CPU, Intel Quick Sync or NVidia NVENC encoding
- * as configured in the plugin inputs.
+ * MKV container.
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
-  loopOverStreamsOfType(file, "video", function (stream, id) {
-    if (stream.codec_name === "mjpeg") {
-      configuration.AddOutputSetting(`-map -v:${id}`);
-      return;
-    }
-
-    if (stream.codec_name === "hevc" && file.container === "mkv") {
-      logger.AddSuccess("File is in HEVC codec and in MKV");
-      return;
-    }
-
-    // Check if should Remux.
-    if (stream.codec_name === "hevc" && file.container !== "mkv") {
-      configuration.AddOutputSetting("-c:v copy");
-      logger.AddError("File is in HEVC codec but not MKV. Will remux");
-    }
-
-    // Check if should Transcode.
-    if (stream.codec_name !== "hevc") {
-      var bitrateprobe = calculateBitrate(file);
-      var bitratetarget = 0;
-	  var bitratemax = 0;
-	  var cq = 0;
-	  var bitratecheck = 0;
-      /**
-       * NVENC Configuration
-       */
-
-  /*  Determine tiered bitrate variables */
-	if (file.video_resolution === "480p" || file.video_resolution === "576p" ) {
-		bitratecheck = parseInt(inputs.target_bitrate_480p576p);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 500;	// Set max bitrate to 0.5MB Higher	
-			cq = 29;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_480p576p / 1000);
-			bitratemax = bitratetarget + 500;
-			cq = 29;
-		} 
-	}
-	if (file.video_resolution === "720p") {
-		bitratecheck = parseInt(inputs.target_bitrate_720p);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 2000;	// Set max bitrate to 2MB Higher	
-			cq = 30;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_720p / 1000);
-			bitratemax = bitratetarget + 2000;	
-			cq = 30;
-		}
-	}
-	if (file.video_resolution === "1080p") {
-		bitratecheck = parseInt(inputs.target_bitrate_1080p);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 2500;	// Set max bitrate to 2.5MB Higher	
-			cq = 31;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_1080p / 1000);
-			bitratemax = bitratetarget + 2500;	
-			cq = 31;
-		}
-	} 
-	if (file.video_resolution === "4KUHD") {
-		bitratecheck = parseInt(inputs.target_bitrate_4KUHD);
-		if(bitrateprobe !== null && bitrateprobe < bitratecheck) {
-			bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000); // Lower Bitrate to 60% of original and convert to KB
-			bitratemax = bitratetarget + 6000;	// Set max bitrate to 6MB Higher	
-			cq = 31;
-		} else {
-			bitratetarget = parseInt(inputs.target_bitrate_4KUHD / 1000);
-			bitratemax = bitratetarget + 6000;
-			cq = 31;
-		}
-	} 
+	var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
+  
+	var tiered = {
+		"480p" : {"bitrate" : inputs.target_bitrate_480p576p,
+				  "max_increase" : 500,
+				  "cq" : 29
+				 },
+		"576p" : {"bitrate" : inputs.target_bitrate_480p576p,
+				  "max_increase" : 500,
+				  "cq" : 29
+				 },
+		"720p" : {"bitrate" : inputs.target_bitrate_720p,
+				  "max_increase" : 2000,
+				  "cq" : 30
+				 },
+		"1080p" : {"bitrate" : inputs.target_bitrate_1080p,
+				  "max_increase" : 2500,
+				  "cq" : 31
+				 },
+		"4KUHD" : {"bitrate" : inputs.target_bitrate_4KUHD,
+				  "max_increase" : 6000,
+				  "cq" : 31
+				 },
+		"Other" : {"bitrate" : inputs.target_bitrate_1080p,
+				  "max_increase" : 2500,
+				  "cq" : 31
+				 }
+	};
 	
+	var inputSettings = {
+		"h263"	:	"-c:v h263_cuvid",
+		"h264"	:	"",
+		"mjpeg"	:	"c:v mjpeg_cuvid",
+		"mpeg1"	:	"-c:v mpeg1_cuvid",
+		"mpeg2"	:	"-c:v mpeg2_cuvid",
+		"vc1"	:	"-c:v vc1_cuvid",
+		"vp8"	:	"-c:v vp8_cuvid",
+		"vp9"	:	"-c:v vp9_cuvid"
+	}
+	
+	function videoProcess(stream, id) {
+		if (stream.codec_name === "mjpeg") {
+		  configuration.AddOutputSetting(`-map -v:${id}`);
+		  return;
+		}
 
-    configuration.RemoveOutputSetting("-c:v copy");
-    configuration.AddOutputSetting(
-      `-c:v hevc_nvenc -rc:v vbr_hq -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
-    );
+		if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && file.container === "mkv") {
+		  logger.AddSuccess("File is in HEVC codec and in MKV");
+		  return;
+		}
 
-    if (file.video_codec_name === "h263") {
-      configuration.AddInputSetting("-c:v h263_cuvid");
-    } else if (file.video_codec_name === "h264") {
-      if (file.ffProbeData.streams[0].profile !== "High 10") {
-        configuration.AddInputSetting("-c:v h264_cuvid");
-      } else if (file.video_codec_name === "mjpeg") {
-        configuration.AddInputSetting("c:v mjpeg_cuvid");
-      } else if (file.video_codec_name == "mpeg1") {
-        configuration.AddInputSetting("-c:v mpeg1_cuvid");
-      } else if (file.video_codec_name == "mpeg2") {
-        configuration.AddInputSetting("-c:v mpeg2_cuvid");
-      } else if (file.video_codec_name == "vc1") {
-        configuration.AddInputSetting("-c:v vc1_cuvid");
-      } else if (file.video_codec_name == "vp8") {
-        configuration.AddInputSetting("-c:v vp8_cuvid");
-      } else if (file.video_codec_name == "vp9") {
-        configuration.AddInputSetting("-c:v vp9_cuvid");
-      }
-    }
+		// Check if should Remux.
+		if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && file.container !== "mkv") {
+		  configuration.AddOutputSetting("-c:v copy");
+		  logger.AddError("File is in HEVC codec but not MKV. Will remux");
+		}
+		
+		// remove png streams.
+		if (stream.codec_name === "png") {
+			configuration.AddOutputSetting(`-map -0:v:${id}`);
+		} else if (stream.codec_name !== "hevc" && stream.codec_name !== "vp9") {  // Check if should Transcode.
+			var bitrateprobe = calculateBitrate(file);
+			var bitratetarget = 0;
+			var bitratemax = 0;
+			var cq = 0;
+			var bitratecheck = 0;
 
-    logger.AddError("Transcoding to HEVC using NVidia NVENC");
-  }
-  });
+			/*  Determine tiered bitrate variables */
+			var tier = tiered[file.video_resolution];
+
+			bitratecheck = parseInt(tier["bitrate"]);
+			if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
+				bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
+			} else {
+				bitratetarget = parseInt(tier["bitrate"] / 1000);
+			} 
+			bitratemax = bitratetarget + tier["max_increase"];  
+			cq = tier["cq"];
+			
+			configuration.RemoveOutputSetting("-c:v copy");
+			configuration.AddOutputSetting(
+			  `-c:v hevc_nvenc -rc:v vbr_hq -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
+			);
+			
+			configuration.AddInputSetting(inputSettings[file.video_codec_name]);
+			
+			if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10") {
+				configuration.AddInputSetting("-c:v h264_cuvid");
+			}
+
+			logger.AddError("Transcoding to HEVC using NVidia NVENC");
+		}
+	}
+	
+	loopOverStreamsOfType(file, "video", videoProcess);
 
   if (!configuration.shouldProcess) {
     logger.AddSuccess("No video processing necessary");
@@ -430,7 +438,26 @@ function plugin(file, _librarySettings, inputs) {
   var videoSettings = buildVideoConfiguration(inputs, file, logger);
   var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
-  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()} ${audioSettings.GetOutputSettings()} ${subtitleSettings.GetOutputSettings()} -max_muxing_queue_size 4096`;
+  response.preset  = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
+  response.preset += ` ${audioSettings.GetOutputSettings()}`
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
+  response.preset += ` -max_muxing_queue_size 9999`;
+  
+  // Extra parameters
+  var id = 0;
+  var badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+	  if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
+		  response.preset += ` -map -0:${i}`;
+	  };
+      id++;
+  }
+  // b frames argument
+  response.preset += ` -bf 5`;
+  
+  // fix probe size errors
+  response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
+  
   response.processFile =
     audioSettings.shouldProcess ||
     videoSettings.shouldProcess ||
