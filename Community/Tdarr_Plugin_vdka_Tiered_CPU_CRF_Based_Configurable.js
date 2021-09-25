@@ -13,7 +13,8 @@ function details() {
        The output container is mkv. \n\n`,
     Version: '1.00',
     Link:
-        'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_vdka_Tiered_NVENC_CRF_BASED_CONFIGURABLE.js',
+        'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
+      + ' Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable.js',
     Tags: 'pre-processing,ffmpeg,video only,h265,configurable',
 
     Inputs: [
@@ -56,7 +57,6 @@ function details() {
         name: 'ffmpegPreset',
         tooltip: `OPTIONAL, DEFAULTS TO SLOW IF NOT SET 
         \\n Enter the ffmpeg preset you want, leave blank for default (slow) 
-        \\n This only applies if video is transcoded, video already in h264 will not be transcoded with this setting
         
         \\nExample:\\n 
           slow  
@@ -79,14 +79,13 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   // default values that will be returned
   // eslint-disable-next-line prefer-const
   let response = {
-    processFile: false,
+    processFile: true,
     preset: '',
     container: '.mkv',
     handBrakeMode: false,
-    FFmpegMode: false,
+    FFmpegMode: true,
     reQueueAfter: true,
     infoLog: '',
-    maxmux: false,
   };
 
   // check if the file is a video, if not the function will be stopped immediately
@@ -137,10 +136,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   }
 
   // encoding settings
-  response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset} -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3 -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
-  response.processFile = true;
-  response.FFmpegMode = true;
-  response.reQueueAfter = true;
+  response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset}`
+  + ` -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3 -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
   response.infoLog += '☒File is not hevc!\n';
   response.infoLog += 'File is being transcoded!\n';
