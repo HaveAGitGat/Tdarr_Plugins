@@ -101,7 +101,7 @@ function plugin(file, librarySettings, inputs) {
     if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
       response.processFile = false;
       response.infoLog += '☑File is already in hevc! \n';
-      break;
+      return response;
     }
   }
 
