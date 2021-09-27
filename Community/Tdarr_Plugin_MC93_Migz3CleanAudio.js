@@ -23,7 +23,7 @@ function details() {
                eng,und
 
                \\nExample:\\n
-               eng,und,jap`,
+               eng,und,jpn`,
     },
     {
       name: 'commentary',
