@@ -72,6 +72,20 @@ function details() {
         \\nExample:\\n 
           veryfast`,
       },
+      {
+        name: 'sdDisabled',
+        tooltip: `Input "true" if you want to skip SD (480p and 576p) files
+        
+        \\nExample:\\n
+        true`,
+      },
+      {
+        name: 'uhdDisabled',
+        tooltip: `Input "true" if you want to skip 4k (UHD) files
+        
+        \\nExample:\\n
+        true`,
+      },
     ],
   };
 }
@@ -96,6 +110,22 @@ function plugin(file, librarySettings, inputs) {
     return response;
   }
   response.infoLog += '☑File is a video! \n';
+
+  // check if the file is SD and sdDisable is enabled
+  // skip this plugin if so
+  if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled) {
+    response.processFile = false;
+    response.infoLog += '☒File is SD, not processing\n';
+    return response;
+  }
+
+  // check if the file is 4k and 4kDisable is enabled
+  // skip this plugin if so
+  if (file.video_resolution === '4KUHD' && inputs.uhdDisabled) {
+    response.processFile = false;
+    response.infoLog += '☒File is SD, not processing\n';
+    return response;
+  }
 
   // check if the file is already hevc
   // it will not be transcoded if true and the plugin will be stopped immediately
