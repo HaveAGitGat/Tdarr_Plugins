@@ -123,7 +123,7 @@ function plugin(file, librarySettings, inputs) {
   // skip this plugin if so
   if (file.video_resolution === '4KUHD' && inputs.uhdDisabled) {
     response.processFile = false;
-    response.infoLog += '☒File is SD, not processing\n';
+    response.infoLog += '☒File is 4k/UHD, not processing\n';
     return response;
   }
 
