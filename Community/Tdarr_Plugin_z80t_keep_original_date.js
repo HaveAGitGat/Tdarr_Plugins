@@ -14,7 +14,7 @@ module.exports.details = function details() {
 		Operation: "",
 		Description: `This plugin copies the original file dates and times to the transcoded file \n\n`,
 		Version: "1.10",
-		Link: "",
+		Link: "https://github.com/WizADSL/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_z80t_keep_original_date.js",
 		Tags: "post-processing,dates,date",
 		Inputs: [{
 				name: 'server',
