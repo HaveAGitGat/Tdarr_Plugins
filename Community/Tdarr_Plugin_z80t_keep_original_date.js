@@ -81,13 +81,8 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
 		await new Promise(resolve => setTimeout(resolve, 5000));
 		var response = await getFileData(file._id, extensions, inputs.server);
 
-		//log('Got response for ' + file._id);
-		//log(response.config.data);
-		//log(response.data);
 		if (response.data.length > 0) {
-			//log(response.data[0]);
 			log("Changing date...");
-			//fs.utimesSync(file._id, new Date(Date.parse(response.data[0].statSync.atime)), new Date(Date.parse(response.data[0].statSync.mtime)));
 			await utimes.utimes(file._id, {
 				btime: Date.parse(response.data[0].statSync.ctime),
 				atime: Date.parse(response.data[0].statSync.atime),
@@ -123,12 +118,9 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
 				}
 			});
 
-			//log(httpResponse.config.data);
-			//log(httpResponse.data);
 			if (httpResponse.status == 200) {
 				if (httpResponse.data.length > 0) {
 					log('Got response for ' + filename);
-					//httpResponse._id = filename;
 					return httpResponse;
 				} else {
 					log('Response for ' + filename + ' is empty');
