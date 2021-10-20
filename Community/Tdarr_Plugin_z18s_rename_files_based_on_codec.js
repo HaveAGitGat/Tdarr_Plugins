@@ -44,7 +44,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     }
 
     if (fileNameOld != file._id) {
-      fs.rename(fileNameOld, file._id, {
+      fs.renameSync(fileNameOld, file._id, {
         overwrite: true,
       });
 
