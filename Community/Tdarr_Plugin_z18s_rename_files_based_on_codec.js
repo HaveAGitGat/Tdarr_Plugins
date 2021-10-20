@@ -1,9 +1,5 @@
 /* eslint-disable */
 
-module.exports.dependencies = [
-  'fs-extra',
-];
-
 module.exports.details = function details() {
   return {
     id: "Tdarr_Plugin_z18s_rename_files_based_on_codec",
@@ -21,15 +17,6 @@ module.exports.details = function details() {
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
   try {
     var fs = require("fs");
-    var path = require("path");
-    if (fs.existsSync(path.join(process.cwd(), "/npm"))) {
-      var rootModules = path.join(process.cwd(), "/npm/node_modules/");
-    } else {
-      var rootModules = "";
-    }
-
-    var fsextra = require(rootModules + "fs-extra");
-
     var fileNameOld = file._id;
 
     if (
@@ -57,7 +44,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     }
 
     if (fileNameOld != file._id) {
-      fsextra.moveSync(fileNameOld, file._id, {
+      fs.renameSync(fileNameOld, file._id, {
         overwrite: true,
       });
 
