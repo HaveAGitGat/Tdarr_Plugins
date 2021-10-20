@@ -1,7 +1,3 @@
-module.exports.dependencies = [
-  'fs-extra',
-];
-
 module.exports.details = function details() {
   return {
     id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
@@ -20,17 +16,6 @@ module.exports.plugin = function plugin(file) {
   try {
     // eslint-disable-next-line global-require
     const fs = require('fs');
-    // eslint-disable-next-line global-require
-    const path = require('path');
-    let rootModules;
-    if (fs.existsSync(path.join(process.cwd(), '/npm'))) {
-      rootModules = path.join(process.cwd(), '/npm/node_modules/');
-    } else {
-      rootModules = '';
-    }
-
-    // eslint-disable-next-line global-require,import/no-dynamic-require
-    const fsextra = require(`${rootModules}fs-extra`);
     const fileNameOld = file._id;
 
     const resolutions = {
@@ -133,7 +118,7 @@ module.exports.plugin = function plugin(file) {
       file.file = fileName;
 
       if (fileNameOld !== file._id) {
-        fsextra.moveSync(fileNameOld, file._id, {
+        fs.rename(fileNameOld, file._id, {
           overwrite: true,
         });
 
