@@ -19,8 +19,8 @@ module.exports.plugin = function plugin(file) {
   };
 
   const resolutionsToSkip = [
-    "1080p",
-    '4KUHD'
+    '1080p',
+    '4KUHD',
   ];
 
   for (let i = 0; i < resolutionsToSkip.length; i += 1) {
