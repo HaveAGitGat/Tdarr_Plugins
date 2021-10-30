@@ -41,15 +41,15 @@ module.exports.details = function details() {
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
   // eslint-disable-next-line global-require,import/no-unresolved
   const request = require('request');
-
   // Set up required variables.
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
-  
+  let file2 = '';
+
   let filepath = '';
   const response = {};
   filepath = `${file.file}`;
-  var file2 = filepath.split("/").slice(0, -1).join("/")+"/";
+  file2 = `${filepath.split('/').slice(0, -1).join('/')}/`;
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
   if (
