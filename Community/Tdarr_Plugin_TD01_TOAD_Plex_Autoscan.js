@@ -14,7 +14,7 @@ module.exports.details = function details() {
     Works with the hotio autoscan docker that can be found here https://hotio.dev/containers/autoscan/ which \n\n
     is based on https://github.com/cloudbox/autoscan`,
     Version: '1.0',
-    Link: '',
+    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_TD01_TOAD_Plex_Autoscan.js',
     Tags: '3rd party,post-processing,configurable',
 
     Inputs: [{
@@ -46,18 +46,15 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   // Set up required variables.
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
-  let file2 = '';
 
   let filepath = '';
   const response = {};
   filepath = `${file.file}`;
-  file2 = `${filepath.split('/').slice(0, -1).join('/')}/`;
+  filepath = `${filepath.split('/').slice(0, -1).join('/')}/`;
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
   if (
-    inputs
-    && inputs.autoscan_address === ''
-    && inputs.autoscan_port === ''
+    !inputs.autoscan_address || !inputs.autoscan_port
   ) {
     response.infoLog += '☒Plugin options have not been configured, please configure options. Skipping this plugin.  \n';
     response.processFile = false;
@@ -69,7 +66,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     headers: {
       'content-type': 'application/json',
     },
-    url: `${ADDRESS}:${PORT}/triggers/manual?dir=${file2}`,
+    url: `${ADDRESS}:${PORT}/triggers/manual?dir=${filepath}`,
   },
   (error, res, body) => {
     if (error) {
