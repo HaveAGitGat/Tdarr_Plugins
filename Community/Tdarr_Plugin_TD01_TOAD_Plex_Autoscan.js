@@ -10,7 +10,9 @@ module.exports.details = function details() {
     Name: 'Trigger Plex_Autoscan.',
     Type: 'Video',
     Operation: '',
-    Description: 'Connects to plex_autoscan and triggers a manual search within the files directory.',
+    Description: `Connects to plex_autoscan and triggers a manual search within the files directory.\n\n
+    Works with the hotio autoscan docker that can be found here https://hotio.dev/containers/autoscan/ which \n\n
+    is based on https://github.com/cloudbox/autoscan`,
     Version: '1.0',
     Link: '',
     Tags: '3rd party,post-processing,configurable',
