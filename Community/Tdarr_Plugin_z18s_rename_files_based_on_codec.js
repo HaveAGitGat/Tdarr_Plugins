@@ -26,6 +26,15 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       file._id = file._id.replace("264", "265");
       file.file = file.file.replace("264", "265");
     }
+    
+    //added handling for files with AVC in the name instead of h264/x264
+    if (
+      file.ffProbeData.streams[0].codec_name == "hevc" &&
+      file._id.includes("AVC")
+    ) {
+      file._id = file._id.replace("AVC", "HEVC");
+      file.file = file.file.replace("AVC", "HEVC");
+    }
 
     if (
       file.ffProbeData.streams[0].codec_name == "h264" &&
