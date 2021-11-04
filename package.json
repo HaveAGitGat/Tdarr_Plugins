@@ -12,8 +12,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint Community methods --ext js",
-    "lint:fix": "eslint Community methods --ext js --fix"
+    "lint": "eslint Community methods examples --ext js",
+    "lint:fix": "eslint Community methods examples --ext js --fix"
   },
   "repository": {
     "type": "git",

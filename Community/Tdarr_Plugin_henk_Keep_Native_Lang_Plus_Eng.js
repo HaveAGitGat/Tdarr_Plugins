@@ -32,7 +32,7 @@ const details = () => ({
     },
     {
       name: 'api_key',
-      tooltip: 'Input your TMDB api key here. (https://www.themoviedb.org/)',
+      tooltip: 'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
     },
     {
       name: 'radarr_api_key',
