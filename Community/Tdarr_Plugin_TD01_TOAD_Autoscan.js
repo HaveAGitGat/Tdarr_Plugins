@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 module.exports.dependencies = [
   'request',
 ];
@@ -57,15 +58,15 @@ module.exports.details = function details() {
 };
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line global-require,import/no-unresolved,import/no-extraneous-dependencies
   const request = require('request');
   // Set up required variables.
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
-  let file2 = '';
 
-  if(inputs.autoscan_username) {
-    auth = 'Basic ' + Buffer.from(inputs.autoscan_username + ':' + inputs.autoscan_password).toString('base64');
+  if (inputs.autoscan_username) {
+    // eslint-disable-next-line no-unused-vars
+    const auth = `Basic ${Buffer.from(`${inputs.autoscan_username}:${inputs.autoscan_password}`).toString('base64')}`;
   }
 
   let filepath = '';
@@ -88,10 +89,12 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   request.post({
     headers: {
       'content-type': 'application/json',
-      'Authorization' : auth
+      // eslint-disable-next-line no-undef
+      Authorization: auth,
     },
     url: `${ADDRESS}:${PORT}/triggers/manual?dir=${filepath}`,
   },
+  // eslint-disable-next-line no-unused-vars
   (error, res, body) => {
     if (error) {
       // eslint-disable-next-line no-console
