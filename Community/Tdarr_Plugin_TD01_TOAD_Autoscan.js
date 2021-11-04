@@ -5,7 +5,7 @@ module.exports.dependencies = [
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 module.exports.details = function details() {
   return {
-    id: 'Tdarr_Plugin_TD01_TOAD_Plex_Autoscan',
+    id: 'Tdarr_Plugin_TD01_TOAD_Autoscan',
     Stage: 'Post-processing',
     Name: 'Trigger Plex_Autoscan.',
     Type: 'Video',
@@ -65,7 +65,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   let file2 = '';
 
   if(inputs.autoscan_username) {
-    auth = "Basic " + Buffer.from(inputs.autoscan_username + ":" + inputs.autoscan_password).toString('base64');
+    auth = 'Basic ' + Buffer.from(inputs.autoscan_username + ':' + inputs.autoscan_password).toString('base64');
   }
 
   let filepath = '';
