@@ -1,14 +1,14 @@
 module.exports.details = function details() {
     return {
-        id: 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DNC',
-        Stage: 'Pre-processing', 
+        id: 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC',
+        Stage: 'Pre-processing',
         Name: 'Downmix & Dynamic range compression',
         Type: 'Audio',
         Operation: 'Transcode',
         Description: 'Downmixes surround to stereo AND applies dynamic range compression. Files already in stereo will be skipped \n\n',
         Version: '1.00',
-        Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DNC.js',
-        Tags: 'ffmpeg', 
+        Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC.js',
+        Tags: 'ffmpeg',
 
         Inputs: [],
     };
@@ -16,15 +16,15 @@ module.exports.details = function details() {
 
 module.exports.plugin = function plugin(file, librarySettings, inputs) {
     const response = {
-        processFile: false, 
-        preset: '', 
-        handBrakeMode: false, 
+        processFile: false,
+        preset: '',
+        handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
-        infoLog: '', 
+        infoLog: '',
         file,
-        removeFromDB: false, 
-        updateDB: false, 
+        removeFromDB: false,
+        updateDB: false,
         container: `.${file.container}`
     };
 
