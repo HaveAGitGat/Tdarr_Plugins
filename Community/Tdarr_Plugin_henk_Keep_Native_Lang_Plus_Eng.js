@@ -139,7 +139,7 @@ const tmdbApi = async (filename, api_key, axios) => {
     if (filename.substr(0, 2) === 'tt') {
       fileName = filename;
     } else {
-      const idRegex = /tt\d*/;
+      const idRegex = /(tt\d{7,8})/;
       const fileMatch = filename.match(idRegex);
       // eslint-disable-next-line prefer-destructuring
       if (fileMatch) fileName = fileMatch[1];
