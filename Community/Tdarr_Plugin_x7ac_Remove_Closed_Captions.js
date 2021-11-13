@@ -1,4 +1,3 @@
-/* eslint-disable */
 function details() {
   return {
     id: "Tdarr_Plugin_x7ac_Remove_Closed_Captions",
@@ -16,46 +15,39 @@ function details() {
 }
 
 function plugin(file) {
-  //Must return this object
-
-  var response = {
+  const response = {
     processFile: false,
-    preset: "",
-    container: ".mp4",
+    preset: ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
+    container: "." + file.container,
     handBrakeMode: false,
-    FFmpegMode: false,
+    FFmpegMode: true,
     reQueueAfter: true,
     infoLog: "",
   };
 
   if (file.fileMedium !== "video") {
-    console.log("File is not video");
-
     response.infoLog += "☒File is not video \n";
-    response.processFile = false;
-
     return response;
-  } else {
-    if (file.hasClosedCaptions === true) {
-      response = {
-        processFile: true,
-        preset: ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
-        container: "." + file.container,
-        handBrakeMode: false,
-        FFmpegMode: true,
-        reQueueAfter: true,
-        infoLog: "☒This file has closed captions \n",
-      };
+  }
 
-      return response;
-    } else {
-      response.infoLog +=
-        "☑Closed captions have not been detected on this file \n";
-      response.processFile = false;
-
-      return response;
+  //Check if Closed Captions are set at file level
+  if (file.hasClosedCaptions) {
+    response.processFile = true;
+    response.infoLog += '☒This file has closed captions \n';
+    return response;
+  }
+  //If not, check for Closed Captions in the streams
+  for (const stream in file.ffProbeData.streams) {
+    if (stream.closed_captions) {
+      response.processFile = true;
     }
   }
+
+  response.infoLog +=
+  response.processFile ? '☒This file has burnt closed captions \n'
+  : '☑Closed captions have not been detected on this file \n';
+  
+  return response;
 }
 
 module.exports.details = details;
