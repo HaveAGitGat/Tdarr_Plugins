@@ -1,16 +1,16 @@
 function details() {
   return {
-    id: "Tdarr_Plugin_x7ac_Remove_Closed_Captions",
-    Stage: "Pre-processing",
-    Name: "Remove closed captions",
-    Type: "Video",
-    Operation: "Remux",
+    id: 'Tdarr_Plugin_WS_Remove_Closed_Captions',
+    Stage: 'Pre-processing',
+    Name: 'Remove burned closed captions',
+    Type: 'Video',
+    Operation: 'Remux',
     Description:
-      "[Contains built-in filter] If detected, closed captions (XDS,608,708) will be removed.",
+      '[Contains built-in filter] If detected, closed captions (XDS,608,708) will be removed. Derived from x7ac Closed Captions plugin.',
     Version: "1.00",
     Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ac_Remove_Closed_Captions.js",
-    Tags: "pre-processing,ffmpeg,subtitle only",
+      'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/',
+    Tags: 'pre-processing,ffmpeg,subtitle only',
   };
 }
 
@@ -18,25 +18,25 @@ function plugin(file) {
   const response = {
     processFile: false,
     preset: ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
-    container: "." + file.container,
+    container: '.' + file.container,
     handBrakeMode: false,
     FFmpegMode: true,
     reQueueAfter: true,
-    infoLog: "",
+    infoLog: '',
   };
 
-  if (file.fileMedium !== "video") {
-    response.infoLog += "☒File is not video \n";
+  if (file.fileMedium !== 'video') {
+    response.infoLog += '☒File is not video \n';
     return response;
   }
 
-  //Check if Closed Captions are set at file level
+  // Check if Closed Captions are set at file level
   if (file.hasClosedCaptions) {
     response.processFile = true;
     response.infoLog += '☒This file has closed captions \n';
     return response;
   }
-  //If not, check for Closed Captions in the streams
+  // If not, check for Closed Captions in the streams
   for (const stream in file.ffProbeData.streams) {
     if (stream.closed_captions) {
       response.processFile = true;
