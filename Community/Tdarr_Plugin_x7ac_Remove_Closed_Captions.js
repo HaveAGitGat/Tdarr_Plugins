@@ -1,15 +1,15 @@
 function details() {
   return {
-    id: 'Tdarr_Plugin_WS_Remove_Closed_Captions',
+    id: 'Tdarr_Plugin_x7ac_Remove_Closed_Captions',
     Stage: 'Pre-processing',
     Name: 'Remove burned closed captions',
     Type: 'Video',
     Operation: 'Remux',
     Description:
-      '[Contains built-in filter] If detected, closed captions (XDS,608,708) will be removed. Derived from x7ac Closed Captions plugin.',
-    Version: "1.00",
+      '[Contains built-in filter] If detected, closed captions (XDS,608,708) will be removed from streams.',
+    Version: '1.01',
     Link:
-      'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/',
+      'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ac_Remove_Closed_Captions.js',
     Tags: 'pre-processing,ffmpeg,subtitle only',
   };
 }
