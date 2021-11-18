@@ -4,14 +4,14 @@ module.exports.dependencies = [
 
   module.exports.details = function details() {
         return {
-          id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU",
+          id: "Tdarr_Plugin_Greg_MP3_FFMPEG_CPU",
           Name: "Audio Transcode to MP3 using CPU and FFMPEG",
           Type: "Audio",
           Operation: "Transcode",
           Description: "Convert an audio file to mp3, retaining ID3 tags, and at original bitrate up to 384K - from type of: \"flac,wav,ape,ogg,m4a,wma,opus\"",
           Version: "0.0.1",
-          Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Greg_MP3_FFMPEG_CPU.js"
-					Tags: 'pre-processing,ffmpeg,audio only,mp3',
+          Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Greg_MP3_FFMPEG_CPU.js",
+					Tags: 'pre-processing,ffmpeg,audio only,mp3'
         }
       }
 
