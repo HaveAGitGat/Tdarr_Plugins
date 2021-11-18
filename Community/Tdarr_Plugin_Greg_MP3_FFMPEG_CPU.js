@@ -11,7 +11,7 @@ module.exports.dependencies = [
           Description: "Convert an audio file to mp3, retaining ID3 tags, and at original bitrate up to 384K - from type of: \"flac,wav,ape,ogg,m4a,wma,opus\"",
           Version: "0.0.1",
           Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Greg_MP3_FFMPEG_CPU.js",
-					Tags: 'pre-processing,ffmpeg,audio only,mp3'
+	  Tags: "pre-processing,ffmpeg,audio only,mp3"
         }
       }
 
