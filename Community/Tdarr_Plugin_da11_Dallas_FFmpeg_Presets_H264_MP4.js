@@ -123,7 +123,7 @@ function plugin(file, librarySettings, inputs) {
     response.preset =
       ", -map_metadata -1 -map 0:V " +
       subMap +
-      " -map 0:a -c:v libx264 -preset medium -c:a aac -strict -2 " +
+      " -map 0:a -c:v libx264 -preset " + preset + " -c:a aac -strict -2 " +
       subType;
     response.reQueueAfter = true;
     response.processFile = true;
