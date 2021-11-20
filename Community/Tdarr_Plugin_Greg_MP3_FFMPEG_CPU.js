@@ -8,7 +8,7 @@ module.exports.details = function details() {
     Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Greg_MP3_FFMPEG_CPU.js',
     Name: 'Audio Transcode to MP3 using CPU and FFMPEG',
     Operation: 'Transcode',
-    Tags: 'pre-processing,ffmpeg,audio only,mp3',
+    Tags: 'pre-processing,ffmpeg,audio only',
     Type: 'Audio',
     Stage: 'Pre-processing',
     Version: '0.0.1',
