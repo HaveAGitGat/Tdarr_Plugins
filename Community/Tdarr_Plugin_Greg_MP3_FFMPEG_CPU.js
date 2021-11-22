@@ -1,3 +1,7 @@
+module.exports.dependencies = [
+  'import-fresh',
+];
+
 const importFresh = require('import-fresh');
 
 module.exports.details = function details() {
