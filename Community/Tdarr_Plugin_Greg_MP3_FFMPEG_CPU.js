@@ -1,7 +1,6 @@
-module.exports.dependencies = [
-  'import-fresh',
-];
+module.exports.dependencies = ['import-fresh'];
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 const importFresh = require('import-fresh');
 
 module.exports.details = function details() {
