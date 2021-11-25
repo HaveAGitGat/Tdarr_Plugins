@@ -18,18 +18,16 @@ function plugin(file) {
   const response = {
     processFile: false,
     preset: ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
-    container: '.' + file.container,
+    container: '.${file.container}',
     handBrakeMode: false,
     FFmpegMode: true,
     reQueueAfter: true,
     infoLog: '',
   };
-
   if (file.fileMedium !== 'video') {
     response.infoLog += '☒File is not video \n';
     return response;
   }
-
   // Check if Closed Captions are set at file level
   if (file.hasClosedCaptions) {
     response.processFile = true;
@@ -37,14 +35,15 @@ function plugin(file) {
     return response;
   }
   // If not, check for Closed Captions in the streams
-  for (const stream in file.ffProbeData.streams) {
+  var streams = file.ffProbeData.streams;
+  for (const stream in streams) {
     if (stream.closed_captions) {
       response.processFile = true;
+      break;
     }
   }
-
-  response.infoLog += response.processFile?'☒This file has burnt closed captions \n':'☑Closed captions have not been detected on this file \n';
-  
+  response.infoLog += response.processFile ? '☒This file has burnt closed captions \n' :
+  '☑Closed captions have not been detected on this file \n';
   return response;
 }
 module.exports.details = details;
