@@ -1,7 +1,7 @@
 module.exports.dependencies = [
     "axios",
     "path-extra",
-    "utimes,"
+    "touch",
 ];
 
 module.exports.details = function details() {
@@ -57,17 +57,10 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
             responseData.infoLog += "Tdarr server name/IP not configured in library transcode options\n";
             return responseData;
         }
-
         var fs = require("fs");
         var path = require("path");
-        if (fs.existsSync(path.join(process.cwd(), "/npm"))) {
-            var rootModules = path.join(process.cwd(), "/npm/node_modules/");
-        } else {
-            var rootModules = "";
-        }
-
-        var axios = require(rootModules + "axios");
-        var utimes = require(rootModules + "utimes");
+        var axios = require("axios");
+        var touch = require("touch");
 
         log("Waiting 5 seconds...");
 
@@ -82,12 +75,8 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
 
         if (response.data.length > 0) {
             log("Changing date...");
-            await utimes.utimes(file._id, {
-                btime: Date.parse(response.data[0].statSync.ctime),
-                atime: Date.parse(response.data[0].statSync.atime),
-                mtime: Date.parse(response.data[0].statSync.mtime),
-            });
-            log("Done.");
+            touch.sync(file._id, {time: Date.parse(response.data[0].statSync.mtime), force: true})
+			log("Done.");
             responseData.infoLog += "File timestamps updated or match original file\n";
             return responseData;
         }
@@ -99,7 +88,7 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
     }
 
     async function getFileData(file, extensions, server) {
-        var path = require(rootModules + "path-extra");
+        var path = require("path-extra");
         var originalExtension = path.extname(file).split(".")[1];
         if (extensions.indexOf(originalExtension) > -1) {
             extensions.splice(extensions.indexOf(originalExtension), 1);
