@@ -17,7 +17,7 @@ function details() {
 function plugin(file) {
   const response = {
     processFile: false,
-    preset: ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
+    preset: `,-map 0 -codec copy -bsf:v "filter_units=remove_types=6"`,
     container: '.${file.container}',
     handBrakeMode: false,
     FFmpegMode: true,
