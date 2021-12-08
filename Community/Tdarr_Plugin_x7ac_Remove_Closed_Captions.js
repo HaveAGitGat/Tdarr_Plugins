@@ -43,7 +43,7 @@ function plugin(file) {
     }
   }
   response.infoLog += response.processFile ? '☒This file has burnt closed captions \n' :
-  '☑Closed captions have not been detected on this file \n';
+    '☑Closed captions have not been detected on this file \n';
   return response;
 }
 module.exports.details = details;
