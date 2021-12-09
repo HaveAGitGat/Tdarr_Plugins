@@ -48,7 +48,7 @@ function plugin(file) {
 
       try {
         if (
-          file.ffProbeData.streams[i].channels >= 6 &&
+          file.ffProbeData.streams[i].channels == 6 &&
           file.ffProbeData.streams[i].codec_name !== "ac3" &&
           file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio"
         ) {
@@ -67,10 +67,10 @@ function plugin(file) {
       response.handBrakeMode = false;
       response.FFmpegMode = true;
       response.reQueueAfter = true;
-      response.infoLog += "☒ File has surround audio which is not in ac3! \n";
+      response.infoLog += "☒ File has surround audio which is NOT in ac3! \n";
       return response;
     } else {
-      response.infoLog += "☑ All surround audio streams are in aac! \n";
+      response.infoLog += "☑ All surround audio streams are in ac3! \n";
     }
 
     response.infoLog += "☑File meets conditions! \n";

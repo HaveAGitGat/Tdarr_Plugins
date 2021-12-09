@@ -6,7 +6,7 @@ module.exports.dependencies = [
 module.exports.details = function details() {
   return {
     id: 'Tdarr_Plugin_aaaa_Pre_Proc_Example',
-    Stage: 'Pre-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed.
+    Stage: 'Pre-processing', // Pre-processing or Post-processing. Determines when the plugin will be executed.
     Name: 'No title meta data ',
     Type: 'Video',
     Operation: 'Transcode',
