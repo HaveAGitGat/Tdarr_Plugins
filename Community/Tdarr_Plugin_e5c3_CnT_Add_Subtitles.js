@@ -48,7 +48,7 @@ function plugin(file, librarySettings, inputs, otherArguments) {
     if (
       !fs.existsSync(`${otherArguments.homePath}/Tdarr/node_modules/iso-639-2`)
     ) {
-      execSync(`cd ${otherArguments.homePath}/Tdarr \n npm install iso-639-2`);
+      execSync(`cd ${otherArguments.homePath}/Tdarr \n npm install iso-639-2@2.0.0`);
     }
   } else {
     response.infoLog = `Please take a look at the input options\n A extra nodemodule is required.`;
