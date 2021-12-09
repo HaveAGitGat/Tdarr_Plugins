@@ -17,6 +17,7 @@ function details() {
 function plugin(file) {
   const response = {
     processFile: false,
+    // eslint-disable-next-line no-useless-escape
     preset: ',-map 0 -codec copy -bsf:v \"filter_units=remove_types=6\"',
     container: `.${file.container}`,
     handBrakeMode: false,
@@ -35,14 +36,14 @@ function plugin(file) {
     return response;
   }
   // If not, check for Closed Captions in the streams
-  const {streams} = file.ffProbeData;
-  for (const stream in streams) {
+  const { streams } = file.ffProbeData;
+  streams.forEach((stream) => {
     if (stream.closed_captions) {
       response.processFile = true;
-      break;
     }
-  }
-  response.infoLog += response.processFile ? '☒This file has burnt closed captions \n' 
+  });
+
+  response.infoLog += response.processFile ? '☒This file has burnt closed captions \n'
     : '☑Closed captions have not been detected on this file \n';
   return response;
 }
