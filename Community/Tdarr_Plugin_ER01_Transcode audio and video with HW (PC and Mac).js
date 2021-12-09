@@ -1,4 +1,5 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+/* eslint-disable */
 function details() {
   return {
     id: 'Tdarr_Plugin_ER01_Transcode audio and video with HW (PC and Mac)',
