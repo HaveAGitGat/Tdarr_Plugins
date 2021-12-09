@@ -10,7 +10,7 @@ const details = () => ({
      (requires TMDB api key) and English.
     'Native' languages are the ones that are listed on imdb. It does an API call to 
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
-    falls back to '[imdb-ttDIGITS] in the filename.`,
+    falls back to the IMDB id in the filename.`,
   Version: '1.00',
   Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
     + 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng.js',
@@ -32,7 +32,7 @@ const details = () => ({
     },
     {
       name: 'api_key',
-      tooltip: 'Input your TMDB api key here. (https://www.themoviedb.org/)',
+      tooltip: 'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
     },
     {
       name: 'radarr_api_key',
@@ -139,7 +139,7 @@ const tmdbApi = async (filename, api_key, axios) => {
     if (filename.substr(0, 2) === 'tt') {
       fileName = filename;
     } else {
-      const idRegex = /\[imdb-(tt\d*)]/;
+      const idRegex = /(tt\d{7,8})/;
       const fileMatch = filename.match(idRegex);
       // eslint-disable-next-line prefer-destructuring
       if (fileMatch) fileName = fileMatch[1];
