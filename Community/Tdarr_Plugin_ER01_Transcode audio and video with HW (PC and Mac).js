@@ -1,10 +1,10 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+/* eslint-disable */
 /* eslint max-len: 0 */
 /* eslint no-bitwise: 0 */
 /* eslint no-mixed-operators: 0 */
 
 const os = require('os');
-
 function details() {
   return {
     id: 'Tdarr_Plugin_ER01_Transcode audio and video with HW (PC and Mac)',
