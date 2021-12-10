@@ -20,6 +20,7 @@ module.exports.details = function details() {
 
     Inputs: [{
       name: 'autoscan_address',
+      defaultValue: 'http://192.168.0.10',
       tooltip: `
                Enter the IP address/URL for autoscan. Must include http(s)://
 
@@ -31,6 +32,7 @@ module.exports.details = function details() {
     },
     {
       name: 'autoscan_port',
+      defaultValue: '3486',
       tooltip: `
                Enter the port Autoscan is using, default is 3468
 
@@ -39,6 +41,7 @@ module.exports.details = function details() {
     },
     {
       name: 'autoscan_username',
+      defaultValue: 'Batman',
       tooltip: `
                If authentication is configured, specify the username
 
@@ -47,6 +50,7 @@ module.exports.details = function details() {
     },
     {
       name: 'autoscan_password',
+      defaultValue: 'SecretPassword',
       tooltip: `
               If authentication is configured, specify the password
 
