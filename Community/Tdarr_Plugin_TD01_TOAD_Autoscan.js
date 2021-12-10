@@ -64,9 +64,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
 
+  let auth;
   if (inputs.autoscan_username) {
-    // eslint-disable-next-line no-unused-vars
-    const auth = `Basic ${Buffer.from(`${inputs.autoscan_username}:${inputs.autoscan_password}`).toString('base64')}`;
+    auth = `Basic ${Buffer.from(`${inputs.autoscan_username}:${inputs.autoscan_password}`).toString('base64')}`;
   }
 
   let filepath = '';
@@ -89,7 +89,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   request.post({
     headers: {
       'content-type': 'application/json',
-      // eslint-disable-next-line no-undef
       Authorization: auth,
     },
     url: `${ADDRESS}:${PORT}/triggers/manual?dir=${filepath}`,
@@ -100,16 +99,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       // eslint-disable-next-line no-console
       console.error(error);
     }
-    // eslint-disable-next-line no-console
-    // console.log(`statusCode: ${res.statusCode}`);
-    // eslint-disable-next-line no-console
-    // console.log(body);
   });
-
-  // eslint-disable-next-line no-console
-  // console.log('request next');
-  // eslint-disable-next-line no-console
-  // console.log(request.post);
-
   return undefined;
 };
