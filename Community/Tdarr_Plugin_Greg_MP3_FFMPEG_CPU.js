@@ -3,11 +3,11 @@ module.exports.dependencies = ['import-fresh'];
 // eslint-disable-next-line import/no-extraneous-dependencies
 const importFresh = require('import-fresh');
 
-module.exports.details = function details() {
+function details() {
   return {
     id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
     Description: '[Contains built-in filter] Convert an audio file to mp3, retaining ID3 tags, '
-    + 'and at original bitrate up to 320k - from type of: "flac,wav,ape,ogg,m4a,wma,opus" ',
+      + 'and at original bitrate up to 320k - from type of: "flac,wav,ape,ogg,m4a,wma,opus" ',
     Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Greg_MP3_FFMPEG_CPU.js',
     Name: 'Audio Transcode to MP3 using CPU and FFMPEG',
     Operation: 'Transcode',
@@ -15,12 +15,22 @@ module.exports.details = function details() {
     Type: 'Audio',
     Stage: 'Pre-processing',
     Version: '0.0.1',
+    Inputs: [
+      {
+        name: 'codecsToInclude',
+        defaultValue: 'flac,wav,ape,ogg,m4a,wma,opus',
+        tooltip: `Codecs to exclude
+               \\nExample:\\n
+               flac,wav,ape,ogg,m4a,wma,opus`,
+      },
+    ],
   };
-};
+}
 
-module.exports.plugin = function plugin(file) {
+module.exports.details = details;
+
+module.exports.plugin = function plugin(file, librarySettings, inputs) {
   const library = importFresh('../methods/library.js');
-
   const response = {
     // 320K selected over 384k intentionally
     // https://en.m.wikipedia.org/wiki/MPEG-1#Part_3:_Audio
@@ -32,16 +42,21 @@ module.exports.plugin = function plugin(file) {
     reQueueAfter: true,
   };
 
-  response.infoLog += `${library.filters.filterByCodec(file, 'include', 'flac,wav,ape,ogg,m4a,wma,opus').note}
-  ${library.filters.filterByCodec(file, 'exclude', 'mp3').note}`;
+  const codecsToInclude = inputs.codecsToInclude || details().Inputs[0].defaultValue;
 
-  if ((library.filters.filterByCodec(file, 'include', 'flac,wav,ape,ogg,m4a,wma,opus').outcome
-    && library.filters.filterByCodec(file, 'exclude', 'mp3').outcome)
+  const filterByCodecInclude = library.filters.filterByCodec(file, 'include', codecsToInclude);
+  const filterByCodecExclude = library.filters.filterByCodec(file, 'exclude', 'mp3');
+  const remuxContainer = library.actions.remuxContainer(file, 'mp3');
+
+  response.infoLog += `${filterByCodecInclude.note} ${filterByCodecExclude.note}`;
+
+  if ((filterByCodecInclude.outcome
+    && filterByCodecExclude.outcome)
     || file.forceProcessing) {
-    response.infoLog += library.actions.remuxContainer(file, 'mp3').note;
-    response.processFile = library.actions.remuxContainer(file, 'mp3').processFile;
+    response.infoLog += remuxContainer.note;
+    response.processFile = remuxContainer.processFile;
     return response;
   }
-  response.infoLog += library.actions.remuxContainer(file, 'mp3').note;
+  response.infoLog += remuxContainer.note;
   return response;
 };
