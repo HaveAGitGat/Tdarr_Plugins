@@ -3,7 +3,7 @@ module.exports.dependencies = [
   'import-fresh',
 ];
 
-module.exports.details = function details() {
+const details = () => {
   return {
     id: 'Tdarr_Plugin_aaaa_Pre_Proc_Example',
     Stage: 'Pre-processing', // Pre-processing or Post-processing. Determines when the plugin will be executed.
@@ -43,7 +43,7 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');
 

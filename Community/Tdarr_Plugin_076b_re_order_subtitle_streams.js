@@ -1,18 +1,23 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_076b_re_order_subtitle_streams",
     Stage: "Pre-processing",
     Name: "Re-order subtitle streams",
-    Type: "",
+    Type: "Subtitle",
     Operation: "Transcode",
     Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st subtitle track  \n\n`,
     Version: "1.00",
-    Link: "",
     Tags: "pre-processing,subtitle only,ffmpeg,configurable",
     Inputs: [
       {
         name: "preferred_language",
+        type:'string',
+        defaultValue:'eng',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Specify one language tag for Tdarr to try and put as 1st subtitle track
 
         \\nExample:\\n
@@ -37,7 +42,10 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {
@@ -130,3 +138,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   response.infoLog += `☒ Desired subtitle lang is not first subtitle stream, moving! \n`;
   return response;
 };
+
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

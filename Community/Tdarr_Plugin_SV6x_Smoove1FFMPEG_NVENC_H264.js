@@ -1,30 +1,33 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 // This is almost a line for line copy of Migz1FFMPEG
 // https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js
 // Seriously, all I did was make it work for converting things to h264 instead of hevc
 
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264',
-    Stage: 'Pre-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed.
-    Name: 'Smoove-Transcode to H264 using FFMPEG and NVENC ',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: `Files not in H264 will be transcoded into H264 using Nvidia GPU with ffmpeg.
+const details = () => ({
+  id: 'Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264',
+  Stage: 'Pre-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed.
+  Name: 'Smoove-Transcode to H264 using FFMPEG and NVENC ',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: `Files not in H264 will be transcoded into H264 using Nvidia GPU with ffmpeg.
                   Settings are dependant on file bitrate
                   NVDEC & NVENC compatable GPU required.`,
-    Version: '1.00',
-    Link: `https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/
-           Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264.js`,
-    Tags: 'pre-processing,ffmpeg,video only,nvenc h264,configurable',
-    // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,
-    // nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg
-    // radarr,sonarr,pre-processing,post-processing,configurable
+  Version: '1.00',
+  Tags: 'pre-processing,ffmpeg,video only,nvenc h264,configurable',
+  // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,
+  // nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg
+  // radarr,sonarr,pre-processing,post-processing,configurable
 
-    Inputs: [
-      {
-        name: 'container',
-        tooltip: `Specify output container of file 
+  Inputs: [
+    {
+      name: 'container',
+      type: 'string',
+      defaultValue: 'mkv',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify output container of file 
                   \\n Ensure that all stream types you may have are supported by your chosen container.
                   \\n mkv is recommended.
                       \\nExample:\\n
@@ -32,10 +35,15 @@ module.exports.details = function details() {
 
                       \\nExample:\\n
                       mp4`,
+    },
+    {
+      name: 'force_conform',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'force_conform',
-        tooltip: `Make the file conform to output containers requirements.
+      tooltip: `Make the file conform to output containers requirements.
                   \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
                   \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                   \\n Default is false.
@@ -44,12 +52,14 @@ module.exports.details = function details() {
   
                       \\nExample:\\n
                       false`,
-      },
-    ],
-  };
-};
+    },
+  ],
+});
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     infoLog: '',
@@ -218,3 +228,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   response.infoLog += 'File is not h264. Transcoding. \n';
   return response;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;

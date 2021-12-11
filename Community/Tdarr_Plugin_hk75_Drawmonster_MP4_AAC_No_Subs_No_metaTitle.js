@@ -1,20 +1,24 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle",
     Stage: "Pre-processing",
     Name: "Drawmonster MP4 Stereo AAC, No Subs, No title meta data ",
     Type: "Video",
+    Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (English or any) doesn't exist. The output container is mp4. \n\n
 `,
     Version: "1.07",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle.js",
     Tags: "pre-processing,ffmpeg",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {

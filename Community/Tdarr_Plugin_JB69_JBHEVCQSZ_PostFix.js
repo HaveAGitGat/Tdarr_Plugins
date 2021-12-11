@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -148,7 +149,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function details() {
+const details = () => {
     return {
         id: "Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix",
         Stage: "Pre-processing",
@@ -157,12 +158,15 @@ function details() {
         Operation: "Transcode",
         Description: "***You should not use this*** until you read the comments at the top of the code and understand how it works **this does alot** and is 2 of 2 routines you should to run **Part 2** \n",
         Version: "2.0",
-        Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix.js",
-        Tags: "post-processing,ffmpeg,video"
+        Tags: "post-processing,ffmpeg,video",
+        Inputs:[]
     }
 }
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
 
     var response = {
         processFile: false,

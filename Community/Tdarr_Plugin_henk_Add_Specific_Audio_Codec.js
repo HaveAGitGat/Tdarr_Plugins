@@ -1,39 +1,65 @@
-function details() {
-  return {
-    id: 'Tdarr_Plugin_henk_Add_Specific_Audio_Codec',
-    Stage: 'Pre-processing',
-    Name: '[MKV ONLY] Transcode given codec to other given codec and keep original',
-    Type: 'Audio',
-    Operation: 'Transcode',
-    Description: 'Re-encodes all audio tracks in a given codec to another given codec and keeps original.',
-    Version: '1.01',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
-      + 'Tdarr_Plugin_henk_Add_Specific_Audio_Codec.js',
-    Tags: 'post-processing,configurable',
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-    Inputs: [{
-      name: 'input_codecs',
-      tooltip: 'Comma separated list of input codecs to be processed. Defaults to dts.'
+const details = () => ({
+  id: 'Tdarr_Plugin_henk_Add_Specific_Audio_Codec',
+  Stage: 'Pre-processing',
+  Name: '[MKV ONLY] Transcode given codec to other given codec and keep original',
+  Type: 'Audio',
+  Operation: 'Transcode',
+  Description: 'Re-encodes all audio tracks in a given codec to another given codec and keeps original.',
+  Version: '1.01',
+  Tags: 'post-processing,configurable',
+
+  Inputs: [{
+    name: 'input_codecs',
+    type: 'string',
+    defaultValue: 'dts',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'Comma separated list of input codecs to be processed. Defaults to dts.'
         + '\\nExample:\\n'
         + 'dts,aac,ac3',
-    }, {
-      name: 'output_codec',
-      tooltip: 'FFMPEG encoder used for the output of the new tracks. Defaults to ac3.',
-    }, {
-      name: 'bitrate',
-      tooltip: 'Specifies the (stereo) bitrate for the new audio codec. Defaults to 128k. Only numbers.',
-    }, {
-      name: 'auto_adjust',
-      tooltip: '[true/false] Multi-channel audio requires a higher bitrate for the same quality, '
+  }, {
+    name: 'output_codec',
+    type: 'string',
+    defaultValue: 'ac3',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'FFMPEG encoder used for the output of the new tracks. Defaults to ac3.',
+  }, {
+    name: 'bitrate',
+    type: 'string',
+    defaultValue: '128',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'Specifies the (stereo) bitrate for the new audio codec in kb. Defaults to 128. Only numbers.',
+  }, {
+    name: 'auto_adjust',
+    type: 'string',
+    defaultValue: 'true',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: '[true/false] Multi-channel audio requires a higher bitrate for the same quality, '
         + 'do you want the plugin to calculate this? (bitrate * (channels / 2))',
-    }, {
-      name: 'custom_bitrate_input',
-      tooltip: 'DIRECT ACCESS TO FFMPEG, USE WITH CAUTION. If filled, can be used for custom bitrate arguments.',
-    }],
-  };
-}
+  }, {
+    name: 'custom_bitrate_input',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'DIRECT ACCESS TO FFMPEG, USE WITH CAUTION. If filled, can be used for custom bitrate arguments.',
+  }],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: ', -c copy -map 0:v ',
@@ -112,7 +138,7 @@ function plugin(file, librarySettings, inputs) {
       += '☑File doesn\'t contain audio tracks with the specified codec.\n';
   }
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;

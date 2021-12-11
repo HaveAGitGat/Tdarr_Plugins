@@ -1,18 +1,22 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz1Remux',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Remux container',
-    Type: 'Video',
-    Operation: 'Remux',
-    Description: 'Files will be remuxed into either mkv or mp4. \n\n',
-    Version: '1.1',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1Remux.js',
-    Tags: 'pre-processing,ffmpeg,video only,configurable',
-    Inputs: [{
-      name: 'container',
-      tooltip: `Specify output container of file
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz1Remux',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Remux container',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'Files will be remuxed into either mkv or mp4. \n\n',
+  Version: '1.1',
+  Tags: 'pre-processing,ffmpeg,video only,configurable',
+  Inputs: [{
+    name: 'container',
+    type: 'string',
+    defaultValue: 'mkv',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Specify output container of file
                \\nEnsure that all stream types you may have are supported by your chosen container.
                \\nmkv is recommended.
                \\nExample:\\n
@@ -20,10 +24,15 @@ function details() {
 
                \\nExample:\\n
                mp4`,
+  },
+  {
+    name: 'force_conform',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'force_conform',
-      tooltip: `Make the file conform to output containers requirements.
+    tooltip: `Make the file conform to output containers requirements.
                 \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
                 \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
@@ -32,12 +41,14 @@ function details() {
 
                \\nExample:\\n
                false`,
-    },
-    ],
-  };
-}
+  },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -69,7 +80,7 @@ function plugin(file, librarySettings, inputs) {
 
   // Check if force_conform option is checked.
   // If so then check streams and add any extra parameters required to make file conform with output format.
-  if (inputs.force_conform === 'true') {
+  if (inputs.force_conform === true) {
     if (inputs.container.toLowerCase() === 'mkv') {
       extraArguments += '-map -0:d ';
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -127,6 +138,6 @@ function plugin(file, librarySettings, inputs) {
   }
 
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

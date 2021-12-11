@@ -1,22 +1,25 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_MP01_MichPasCleanSubsAndAudioCodecs",
     Stage: "Pre-processing",
     Name: "MichPass-Remove subtitle and audio streams with certain codecs",
-    Type: "subtitles and audio",
-    Operation: "Clean",
+    Type: "Any",
+    Operation: 'Transcode',
     Description: `This plugin removed specified codecs from subtitle and audio tracks. Helpful to remove bitmap subtitles (pgs,vobsub) or audio codec (truehd), which can cause Plex to start transcoding. Based on Migz4 Plugin. Thanks \n\n`,
     Version: "1.0",
-    Link:
-
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MP01_MichPasCleanSubsAndAudioCodecs.js",
     Tags: "pre-processing,ffmpeg,subtitle, audio,configurable",
 
     Inputs: [
       {
         name: "tag_subtitle_codecs",
-        tooltip: `Specify key words here for subtitle tracks you'd like to have removed. Do not leave empty, enter a dummy value is not used yyy,zzz
+        type: 'string',
+        defaultValue: '',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify key words here for subtitle tracks you'd like to have removed.
                             \\nExample:\\n
                              hdmv_pgs_subtitle
                              \\nExample:\\n
@@ -25,8 +28,12 @@ function details() {
       {
 
         name: "tag_audio_codecs",
-
-        tooltip: `Specify all audio codecs you'd like to have removed. Do not leave empty, enter a dummy value is not used yyy,zzz
+        type: 'string',
+        defaultValue: '',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify all audio codecs you'd like to have removed.
                             \\nExample:\\n
                             truehd
                             \\nExample:\\n
@@ -36,8 +43,10 @@ function details() {
   };
 }
 
-
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var response = {
     processFile: false,
     preset: "",
@@ -130,6 +139,7 @@ function plugin(file, librarySettings, inputs) {
   }
   return response;
 }
+
 
 module.exports.details = details;
 module.exports.plugin = plugin;

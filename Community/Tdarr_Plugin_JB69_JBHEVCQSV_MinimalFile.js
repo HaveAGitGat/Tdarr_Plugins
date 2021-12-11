@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -149,7 +150,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function details() {
+const details = () => {
     return {
         id: "Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile",
         Stage: "Pre-processing",
@@ -158,12 +159,15 @@ function details() {
         Operation: "Transcode",
         Description: "***You should not use this*** until you read the comments at the top of the code and understand how it works **this does alot** and is 1 of 2 routines you should to run **Part 1** \n",
         Version: "2.0",
-        Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile.js",
-        Tags: "pre-processing,ffmpeg,video,audio,qsv h265,aac"
+        Tags: "pre-processing,ffmpeg,video,audio,qsv h265,aac",
+        Inputs:[],
     }
 }
 
-function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
 
     var response = {
         processFile: false,

@@ -1,18 +1,22 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
-  return {
+const details = () => ({
     id: "Tdarr_Plugin_075a_Transcode_Customisable",
     Stage: "Pre-processing",
     Name: "Video Transcode Customisable",
-    Type: "",
+    Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] Specify codec filter and transcode arguments for HandBrake or FFmpeg  \n\n`,
     Version: "1.00",
-    Link: "",
     Tags: "pre-processing,handbrake,ffmpeg,configurable",
     Inputs: [
       {
         name: "codecs_to_exclude",
+        type: 'string',
+        defaultValue: 'hevc',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Input codecs, separated by a comma, that should be excluded when processing.
 
         \\nFor example, if you're transcoding into hevc (h265), then add a filter to prevent hevc being transcoded so your newly transcoded files won't be infinitely looped/processed. \\n
@@ -47,6 +51,11 @@ module.exports.details = function details() {
       },
       {
         name: "cli",
+        type: 'string',
+        defaultValue: 'handbrake',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the CLI to use.
         
         \\nExample:\\n
@@ -59,6 +68,11 @@ module.exports.details = function details() {
       },
       {
         name: "transcode_arguments",
+        type: 'string',
+        defaultValue: '-Z "Very Fast 1080p30" --all-subtitles --all-audio',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `\\nEnter HandBrake or FFmpeg transcode arguments.
         
         \\nHandBrake examples:
@@ -114,6 +128,11 @@ module.exports.details = function details() {
       },
       {
         name: "output_container",
+        type: 'string',
+        defaultValue: '.mkv',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `
         \\nEnter the output container of the new file
 
@@ -129,10 +148,13 @@ module.exports.details = function details() {
         `,
       },
     ],
-  };
-};
+  }
+);
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {
@@ -186,3 +208,9 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   response.infoLog += `☒File is not in desired codec! \n`;
   return response;
 };
+
+
+
+ 
+module.exports.details = details;
+module.exports.plugin = plugin;

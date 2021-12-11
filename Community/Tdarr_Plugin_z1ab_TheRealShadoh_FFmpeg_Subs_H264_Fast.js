@@ -1,22 +1,24 @@
-function details() {
-  return {
-    id: 'Tdarr_Plugin_z1ab_TheRealShadoh_FFmpeg_Subs_H264_Fast',
-    Stage: 'Pre-processing',
-    Name: 'TheRealShadoh FFmpeg Subs Fast, video MP4, audio AAC, keep subs. ',
-    Type: 'Video',
-    Description: '[Contains built-in filter] This plugin transcodes into H264 using '
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
+const details = () => ({
+  id: 'Tdarr_Plugin_z1ab_TheRealShadoh_FFmpeg_Subs_H264_Fast',
+  Stage: 'Pre-processing',
+  Name: 'TheRealShadoh FFmpeg Subs Fast, video MP4, audio AAC, keep subs. ',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: '[Contains built-in filter] This plugin transcodes into H264 using '
     + 'FFmpeg\'s \'Fast\' preset if the file is not in H264 already. It maintains all subtitles. '
     + `It removes metadata (if a title exists), and maintains all audio tracks. The output container is MP4. \n\n
 `,
-    Version: '1.00',
-    Link:
-      'https://github.com/TheRealShadoh/Tdarr_Plugins/blob/master/Community/'
-      + 'Tdarr_Plugin_z1ab_TheRealShadoh_FFmpeg_Subs_H264_Fast.js',
-    Tags: 'pre-processing,ffmpeg,h264',
-  };
-}
+  Version: '1.00',
+  Tags: 'pre-processing,ffmpeg,h264',
+  Inputs: [],
+});
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object
 
   const response = {
@@ -132,7 +134,7 @@ function plugin(file) {
 
   response.infoLog += '☑File meets conditions! \n';
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;

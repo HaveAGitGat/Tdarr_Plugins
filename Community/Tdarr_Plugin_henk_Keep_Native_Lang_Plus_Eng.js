@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable no-await-in-loop */
 module.exports.dependencies = ['axios', '@cospired/i18n-iso-languages', 'path'];
 const details = () => ({
@@ -12,13 +13,15 @@ const details = () => ({
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
     falls back to the IMDB id in the filename.`,
   Version: '1.00',
-  Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
-    + 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng.js',
   Tags: 'pre-processing,configurable',
-
   Inputs: [
     {
       name: 'user_langs',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
         + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
         + '\\nExample:\\n'
@@ -26,30 +29,60 @@ const details = () => ({
     },
     {
       name: 'priority',
+      type: 'string',
+      defaultValue: 'Radarr',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Priority for either Radarr or Sonarr. Leaving it empty defaults to Radarr first.'
         + '\\nExample:\\n'
         + 'sonarr',
     },
     {
       name: 'api_key',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
     },
     {
       name: 'radarr_api_key',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Input your Radarr api key here.',
     },
     {
       name: 'radarr_url',
+      type: 'string',
+      defaultValue: '192.168.1.2:7878',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Input your Radarr url here. (Without http://). Do include the port.'
         + '\\nExample:\\n'
         + '192.168.1.2:7878',
     },
     {
       name: 'sonarr_api_key',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Input your Sonarr api key here.',
     },
     {
       name: 'sonarr_url',
+      type: 'string',
+      defaultValue: '192.168.1.2:8989',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: 'Input your Sonarr url here. (Without http://). Do include the port.'
         + '\\nExample:\\n'
         + '192.168.1.2:8989',
@@ -189,7 +222,10 @@ const parseArrResponse = async (body, filePath, arr) => {
   }
 };
 
-const plugin = async (file, librarySettings, inputs) => {
+// eslint-disable-next-line no-unused-vars
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // eslint-disable-next-line global-require,import/no-unresolved
   const axios = require('axios').default;
   response.container = `.${file.container}`;

@@ -1,23 +1,28 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
 module.exports.dependencies = [
   'request',
 ];
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_MigzPlex_Autoscan',
-    Stage: 'Post-processing',
-    Name: 'Send request for file to be scanned by plex_autoscan.',
-    Type: 'Video',
-    Operation: '',
-    Description: 'Send request for file to be scanned by plex_autoscan. https://github.com/l3uddz/plex_autoscan \n\n',
-    Version: '1.2',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_MigzPlex_Autoscan.js',
-    Tags: '3rd party,post-processing,configurable',
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_MigzPlex_Autoscan',
+  Stage: 'Post-processing',
+  Name: 'Send request for file to be scanned by plex_autoscan.',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'Send request for file to be scanned by plex_autoscan. https://github.com/l3uddz/plex_autoscan \n\n',
+  Version: '1.2',
+  Tags: '3rd party,post-processing,configurable',
 
-    Inputs: [{
-      name: 'autoscan_address',
-      tooltip: `
+  Inputs: [{
+    name: 'autoscan_address',
+    type: 'string',
+    defaultValue: 'http://192.168.0.10',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `
                Enter the IP address/URL for autoscan. Must include http(s)://
 
                \\nExample:\\n
@@ -25,29 +30,41 @@ module.exports.details = function details() {
 
                \\nExample:\\n
                https://subdomain.domain.tld`,
+  },
+  {
+    name: 'autoscan_port',
+    type: 'string',
+    defaultValue: '3468',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'autoscan_port',
-      tooltip: `
+    tooltip: `
                Enter the port Autoscan is using, default is 3468
 
                \\nExample:\\n
                3468`,
+  },
+  {
+    name: 'autoscan_passkey',
+    type: 'string',
+    defaultValue: '9c4b81fe234e4d6eb9011cefe514d915',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'autoscan_passkey',
-      tooltip: `
+    tooltip: `
 
                Enter the autoscan passkey.
 
                \\nExample:\\n
                9c4b81fe234e4d6eb9011cefe514d915`,
-    },
-    ],
-  };
-};
+  },
+  ],
+});
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // eslint-disable-next-line global-require,import/no-unresolved
   const request = require('request');
 
@@ -100,3 +117,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
 
   return undefined;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;

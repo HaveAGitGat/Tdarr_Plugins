@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_075b_FFMPEG_HEVC_Generic_Video_Audio_Only",
     Stage: "Pre-processing",
@@ -8,13 +9,15 @@ function details() {
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin transcodes non h265 files into h265 mkv using default settings. Only video and audio streams are kept. Useful for if you're getting errors because of certain containers not being able to handle certain subtitle/data streams.  \n\n`,
     Version: "1.00",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075b_FFMPEG_HEVC_Generic_Video_Audio_Only.js",
     Tags: "pre-processing,video only,ffmpeg,h265",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {
