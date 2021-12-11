@@ -22,15 +22,17 @@ for (let i = 0; i < files.length; i += 1) {
 
   let read = fs.readFileSync(`./Community/${files[i]}`).toString();
 
-  if (!read.includes('const loadDefaultValues = require(\'../methods/loadDefaultValues\');')) {
-    console.log(`Plugin does not import loadDefaultValues './Community/${files[i]}'`);
-    read = `const loadDefaultValues = require('../methods/loadDefaultValues');\n${read}`;
+  const importDefaultValues = 'const loadDefaultValues = require(\'../methods/loadDefaultValues\');';
+  if (!read.includes(importDefaultValues)) {
+    console.log(`Plugin error: './Community/${files[i]}' does not contain ${importDefaultValues}`);
+    read = `${importDefaultValues}\n${read}`;
     // fs.writeFileSync(`./Community/${files[i]}`, read)
     process.exit(1);
   }
 
-  if (!read.includes('const details = () =>')) {
-    console.log(`Plugin details syntax is wrong './Community/${files[i]}'`);
+  const detailsText = 'const details = () =>';
+  if (!read.includes(detailsText)) {
+    console.log(`Plugin error: './Community/${files[i]}' does not contain ${detailsText}`);
     process.exit(1);
   }
 
@@ -40,13 +42,15 @@ for (let i = 0; i < files.length; i += 1) {
   if (!read.includes(syncText)
     && !read.includes(asyncText)
   ) {
+    console.log(`Plugin error: './Community/${files[i]}' does not contain ${syncText} or ${asyncText}`);
     console.log(`Plugin 'plugin' syntax is wrong './Community/${files[i]}'`);
     process.exit(1);
   }
 
-  if (!read.includes('inputs = loadDefaultValues(inputs, details);')
+  const inputsText = 'inputs = loadDefaultValues(inputs, details);';
+  if (!read.includes(inputsText)
   ) {
-    console.log(`Plugin does not load default inputs './Community/${files[i]}'`);
+    console.log(`Plugin error: './Community/${files[i]}' does not contain ${inputsText}`);
     process.exit(1);
   }
 
@@ -54,7 +58,7 @@ for (let i = 0; i < files.length; i += 1) {
 module.exports.plugin = plugin;`;
 
   if (!read.includes(exportText)) {
-    console.log(`Plugin export syntax is wrong './Community/${files[i]}'`);
+    console.log(`Plugin error: './Community/${files[i]}' does not contain ${exportText}`);
     read = read.replace('module.exports.details = details;', '');
     read = read.replace('module.exports.plugin = plugin;', '');
     read += `\n${exportText}`;
