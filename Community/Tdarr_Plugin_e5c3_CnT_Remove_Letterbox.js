@@ -37,7 +37,7 @@ const details = () => {
 }
 
 // eslint-disable-next-line no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments)a => {
+const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = loadDefaultValues(inputs, details);
   if (inputs.bitrate == "" || inputs.bitrate == "undefined") {

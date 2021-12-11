@@ -43,7 +43,6 @@ for (let i = 0; i < files.length; i += 1) {
     && !read.includes(asyncText)
   ) {
     console.log(`Plugin error: './Community/${files[i]}' does not contain ${syncText} or ${asyncText}`);
-    console.log(`Plugin 'plugin' syntax is wrong './Community/${files[i]}'`);
     process.exit(1);
   }
 
