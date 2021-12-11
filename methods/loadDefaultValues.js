@@ -1,33 +1,31 @@
+/* eslint no-param-reassign: 0 */ // --> OFF
+
 const loadDefaultValues = (inputs, details) => {
   if (!inputs) {
-    // eslint-disable-next-line no-param-reassign
     inputs = {};
   }
   const defaultInputs = details().Inputs;
   for (let i = 0; i < defaultInputs.length; i += 1) {
     if (typeof inputs[defaultInputs[i].name] === 'string') {
-      // eslint-disable-next-line no-param-reassign
       inputs[defaultInputs[i].name] = typeof inputs[defaultInputs[i].name].trim();
     }
 
     if (inputs[defaultInputs[i].name] === undefined
       || inputs[defaultInputs[i].name] === ''
     ) {
-      // eslint-disable-next-line no-param-reassign
       inputs[defaultInputs[i].name] = defaultInputs[i].defaultValue;
     }
 
+    // convert string to bollean esle false
     if (defaultInputs[i].type === 'boolean') {
-      // eslint-disable-next-line no-param-reassign
       inputs[defaultInputs[i].name] = inputs[defaultInputs[i].name] === 'true';
     }
 
+    // convert string to number else 0
     if (defaultInputs[i].type === 'number') {
-      // eslint-disable-next-line no-param-reassign
       inputs[defaultInputs[i].name] = Number(inputs[defaultInputs[i].name]);
       // eslint-disable-next-line no-restricted-globals
       if (!isNaN(inputs[defaultInputs[i].name])) {
-        // eslint-disable-next-line no-param-reassign
         inputs[defaultInputs[i].name] = 0;
       }
     }
