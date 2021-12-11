@@ -41,7 +41,7 @@ const details = () => {
   };
 };
 
-const plugin = (file, librarySettings, inputs, otherArguments) => {
+const plugin = (file, librarySettings, inputs, otherArguments)a => {
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');
 
