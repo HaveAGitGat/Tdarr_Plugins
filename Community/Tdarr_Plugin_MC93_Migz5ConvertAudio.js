@@ -11,8 +11,8 @@ const details = () => ({
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [{
     name: 'aac_stereo',
-    type: 'boolean',
-    defaultValue: false,
+    type: 'string',
+    defaultValue: '',
     inputUI: {
       type: 'text',
     },
@@ -136,7 +136,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Catch error here incase user left inputs.downmix empty.
       try {
         // Check if inputs.aac_stereo is set to true.
-        if (inputs.aac_stereo === true) {
+        if (inputs.aac_stereo === 'true') {
           // Check if codec_name for stream is NOT aac AND check if channel ammount is 2.
           if (
             file.ffProbeData.streams[i].codec_name !== 'aac'
