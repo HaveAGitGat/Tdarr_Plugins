@@ -26,8 +26,8 @@ const details = () => ({
   },
   {
     name: 'downmix',
-    type: 'boolean',
-    defaultValue: false,
+    type: 'string',
+    defaultValue: '',
     inputUI: {
       type: 'text',
     },
