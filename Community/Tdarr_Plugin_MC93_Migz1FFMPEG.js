@@ -47,10 +47,14 @@ const details = () => ({
   },
   {
     name: 'enable_10bit',
-    type: 'string',
-    defaultValue: 'false',
+    type: 'boolean',
+    defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Specify if output file should be 10bit. Default is false.
                     \\nExample:\\n
@@ -61,10 +65,14 @@ const details = () => ({
   },
   {
     name: 'enable_bframes',
-    type: 'string',
-    defaultValue: 'false',
+    type: 'boolean',
+    defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Specify if b frames should be used.
                  \\n Using B frames should decrease file sizes but are only supported on newer GPUs.
@@ -77,10 +85,14 @@ const details = () => ({
   },
   {
     name: 'force_conform',
-    type: 'string',
-    defaultValue: 'false',
+    type: 'boolean',
+    defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Make the file conform to output containers requirements.
                 \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
@@ -174,7 +186,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if force_conform option is checked.
   // If so then check streams and add any extra parameters required to make file conform with output format.
-  if (inputs.force_conform === 'true') {
+  if (inputs.force_conform === true) {
     if (inputs.container.toLowerCase() === 'mkv') {
       extraArguments += '-map -0:d ';
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -217,13 +229,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Check if 10bit variable is true.
-  if (inputs.enable_10bit === 'true') {
+  if (inputs.enable_10bit === true) {
     // If set to true then add 10bit argument
     extraArguments += '-pix_fmt p010le ';
   }
 
   // Check if b frame variable is true.
-  if (inputs.enable_bframes === 'true') {
+  if (inputs.enable_bframes === true) {
     // If set to true then add b frames argument
     extraArguments += '-bf 5 ';
   }
