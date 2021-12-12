@@ -33,7 +33,7 @@ const details = () => ({
       options: [
         'false',
         'true',
-      ]
+      ],
     },
     tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
                \\nExample:\\n

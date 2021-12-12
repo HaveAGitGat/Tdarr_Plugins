@@ -34,7 +34,7 @@ const details = () => ({
       options: [
         'false',
         'true',
-      ]
+      ],
     },
     tooltip: `Make the file conform to output containers requirements.
                 \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.

@@ -38,7 +38,7 @@ const details = () => ({
       options: [
         'false',
         'true',
-      ]
+      ],
     },
     tooltip: `Specify if audio tracks that contain commentary/description should be removed.
                \\nExample:\\n
@@ -73,7 +73,7 @@ const details = () => ({
       options: [
         'false',
         'true',
-      ]
+      ],
     },
     tooltip: `Specify audio tracks with no title to be tagged with the number of channels they contain.
            \\nDo NOT use this with mp4, as mp4 does not support title tags.
