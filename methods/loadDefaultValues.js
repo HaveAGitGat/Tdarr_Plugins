@@ -7,7 +7,7 @@ const loadDefaultValues = (inputs, details) => {
   const defaultInputs = details().Inputs;
   for (let i = 0; i < defaultInputs.length; i += 1) {
     if (typeof inputs[defaultInputs[i].name] === 'string') {
-      inputs[defaultInputs[i].name] = typeof inputs[defaultInputs[i].name].trim();
+      inputs[defaultInputs[i].name] = inputs[defaultInputs[i].name].trim();
     }
 
     if (inputs[defaultInputs[i].name] === undefined
@@ -16,7 +16,7 @@ const loadDefaultValues = (inputs, details) => {
       inputs[defaultInputs[i].name] = defaultInputs[i].defaultValue;
     }
 
-    // convert string to bolean esle false
+    // convert string to boolean esle false
     if (defaultInputs[i].type === 'boolean') {
       inputs[defaultInputs[i].name] = inputs[defaultInputs[i].name] === 'true';
     }
