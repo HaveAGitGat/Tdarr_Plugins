@@ -1,4 +1,4 @@
-module.exports.details = function details() {
+const details = () => {
   return {
     id: 'Tdarr_Plugin_bbbb_Filter_Example',
     Stage: 'Pre-processing',
@@ -12,7 +12,7 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file) {
+const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Must return this object at some point in the function else plugin will fail.
 
   const response = {

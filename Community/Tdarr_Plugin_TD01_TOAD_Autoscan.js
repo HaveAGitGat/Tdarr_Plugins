@@ -1,27 +1,30 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable linebreak-style */
 module.exports.dependencies = [
   'request',
 ];
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_TD01_TOAD_Autoscan',
-    Stage: 'Post-processing',
-    Name: 'Trigger Plex_Autoscan.',
-    Type: 'Video',
-    Operation: '',
-    Description: `Connects to plex_autoscan and triggers a manual search within the files directory.\n\n
+const details = () => ({
+  id: 'Tdarr_Plugin_TD01_TOAD_Autoscan',
+  Stage: 'Post-processing',
+  Name: 'Trigger Plex_Autoscan.',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: `Connects to plex_autoscan and triggers a manual search within the files directory.\n\n
     Works with the hotio autoscan docker that can be found here https://hotio.dev/containers/autoscan/ which \n\n
     is based on https://github.com/cloudbox/autoscan`,
-    Version: '1.0',
-    Link: '',
-    Tags: '3rd party,post-processing,configurable',
+  Version: '1.0',
+  Tags: '3rd party,post-processing,configurable',
 
-    Inputs: [{
-      name: 'autoscan_address',
-      defaultValue: 'http://192.168.0.10',
-      tooltip: `
+  Inputs: [{
+    name: 'autoscan_address',
+    type: 'string',
+    defaultValue: 'http://192.168.0.10',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `
                Enter the IP address/URL for autoscan. Must include http(s)://
 
                \\nExample:\\n
@@ -29,39 +32,53 @@ module.exports.details = function details() {
 
                \\nExample:\\n
                https://subdomain.domain.tld`,
+  },
+  {
+    name: 'autoscan_port',
+    type: 'string',
+    defaultValue: '3486',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'autoscan_port',
-      defaultValue: '3486',
-      tooltip: `
+    tooltip: `
                Enter the port Autoscan is using, default is 3468
 
                \\nExample:\\n
                3468`,
+  },
+  {
+    name: 'autoscan_username',
+    type: 'string',
+    defaultValue: 'Batman',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'autoscan_username',
-      defaultValue: 'Batman',
-      tooltip: `
+    tooltip: `
                If authentication is configured, specify the username
 
                \\nExample:\\n
                Batman`,
+  },
+  {
+    name: 'autoscan_password',
+    type: 'string',
+    defaultValue: 'SecretPassword',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'autoscan_password',
-      defaultValue: 'SecretPassword',
-      tooltip: `
+    tooltip: `
               If authentication is configured, specify the password
 
                \\nExample:\\n
                SecretPassword`,
-    },
-    ],
-  };
-};
+  },
+  ],
+});
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // eslint-disable-next-line global-require,import/no-unresolved,import/no-extraneous-dependencies
   const request = require('request');
   // Set up required variables.
@@ -106,3 +123,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   });
   return undefined;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;

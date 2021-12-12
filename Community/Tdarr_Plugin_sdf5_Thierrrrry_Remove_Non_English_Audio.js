@@ -1,20 +1,24 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_sdf5_Thierrrrry_Remove_Non_English_Audio",
     Stage: "Pre-processing",
     Name: "Remove Non English Audio ",
     Type: "Video",
+    Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes audio tracks which are not English or are not undefined. It ensures at least 1 audio track is left in any language. \n\n
 `,
     Version: "1.00",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_sdf5_Thierrrrry_Remove_Non_English_Audio.js",
     Tags: "pre-processing,ffmpeg,audio only",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {

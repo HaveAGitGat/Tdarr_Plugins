@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 //PLugin runs multipass loudnorm filter
 //first run gets the required details and stores for the next pass
@@ -15,48 +16,57 @@ var secondPass = false;
 var logOutFile = '';
 
 var fs = require('fs');
-var path = require('path');
-if (fs.existsSync(path.join(process.cwd(), '/npm'))) {
-    var rootModules = path.join(process.cwd(), '/npm/node_modules/')
-} else {
-    var rootModules = ''
-}
 
-const importFresh = require(rootModules + 'import-fresh');
-const library = importFresh('../methods/library.js')
-
-const ffprobePath = require(rootModules + 'ffprobe-static').path;
-
-module.exports.details = function details() {
+const details = () => {
     return {
         id: "Tdarr_Plugin_NIfPZuCLU_2_Pass_Loudnorm_Audio_Normalisation",
+        Stage: 'Pre-processing',
         Name: "2 Pass Loudnorm Volume Normalisation",
         Type: "Video",
         Operation: "Transcode",
         Description: "PLEASE READ FULL DESCRIPTION BEFORE USE \n Uses multiple passes to normalise audio streams of videos using loudnorm.\n\n The first pass will create an log file in the same directory as the video.\nSecond pass will apply the values determined in the first pass to the file.\nOutput will be MKV to allow metadata to be added for tracking normalisation stage.",
         Version: "0.1",
-        Link: "",
         Tags: "pre-processing,ffmpeg,configurable",
 
         Inputs: [
             //(Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
             {
                 name: "i",
+                type: 'string',
+                defaultValue:'-23.0',
+                inputUI: {
+                    type: 'text',
+                  },
                 tooltip: `\"I\" value used in loudnorm pass \n
               defaults to -23.0`, //Each line following `Example:` will be clearly formatted. \\n used for line breaks
             },
             {
                 name: "lra",
+                type: 'string',
+                defaultValue:'7.0',
+                inputUI: {
+                    type: 'text',
+                  },
                 tooltip: `Desired lra value. \n Defaults to 7.0  
             `,
             },
             {
                 name: "tp",
+                type: 'string',
+                defaultValue:'-2.0',
+                inputUI: {
+                    type: 'text',
+                  },
                 tooltip: `Desired \"tp\" value. \n Defaults to -2.0 
               `,
             },
             {
                 name: "offset",
+                type: 'string',
+                defaultValue:'0.0',
+                inputUI: {
+                    type: 'text',
+                  },
                 tooltip: `Desired "offset" value. \n Defaults to 0.0  
               `,
             },
@@ -64,7 +74,10 @@ module.exports.details = function details() {
     }
 }
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
 
     //Must return this object at some point
     var response = {
@@ -211,3 +224,9 @@ module.exports.onTranscodeError = function onTranscodeError(
     return response;
 };
 
+
+
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

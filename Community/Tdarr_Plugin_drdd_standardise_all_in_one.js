@@ -1,7 +1,9 @@
 /* eslint-disable */
-function details() {
+const loadDefaultValues = require('../methods/loadDefaultValues');
+const details = () => {
   return {
     id: "Tdarr_Plugin_drdd_standardise_all_in_one",
+    Stage: "Pre-processing",
     Name: "DrDD H265 MKV AC3 audio subtitles [QSV & NVENC]",
     Stage: "Pre-processing",
     Type: "Video",
@@ -13,21 +15,41 @@ function details() {
     Inputs: [
       {
         name: "nvenc",
+        type: 'string',
+        defaultValue: 'false',
+        inputUI: {
+          type: 'text',
+        },
         tooltip:
           "If the NVidia NVENC encoder should be used. Requires an NVidia GPU with NVENC capabilties.\\nValid values: true / false\\nDefault: false",
       },
       {
         name: "qsv",
+        type: 'string',
+        defaultValue: 'false',
+        inputUI: {
+          type: 'text',
+        },
         tooltip:
           "If Intel Quick Sync should be used. Requires an Intel CPU with Quick Sync capabilties.\\nValid values: true / false\\nDefault: false",
       },
       {
         name: "minimum_target_bitrate",
+        type: 'string',
+        defaultValue: '',
+        inputUI: {
+          type: 'text',
+        },
         tooltip:
           "The minimum RESULTING bitrate allowed for a file. Any target bitrate lower than this will cause transcoding to be skipped.\\nExample value: 3000",
       },
       {
         name: "wanted_subtitle_languages",
+        type: 'string',
+        defaultValue: 'eng,fre',
+        inputUI: {
+          type: 'text',
+        },
         tooltip:
           "The comma separated subtitle languages (in 3 letter format) you'd like to keep. If left blank, all subtitles will be kept.\\nExample value: eng,fre",
       },
@@ -385,7 +407,10 @@ function buildVideoConfiguration(inputs, file, logger) {
 
 //#endregion
 
-function plugin(file, _librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var response = {
     container: ".mkv",
     FFmpegMode: true,

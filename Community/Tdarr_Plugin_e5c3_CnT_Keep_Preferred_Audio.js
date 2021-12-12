@@ -1,38 +1,55 @@
 /* eslint-disable */
 const exec = require("child_process").exec;
 const fs = require("fs");
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio",
     Stage: "Pre-processing",
     Name: "Keep Preffered Audio",
     Type: "Audio",
-    Operation: "Remove Audio",
+    Operation: 'Transcode',
     Description:
       "Plugin that checks for unwanted audio, per 1.104 beta you can change the languages yourself from within Tdarr!\nUntill you enter a value it keep english tracks by default.\nUndefined languages are kept to prevent videos without sound.\nIf you would like to keep track of the languages you have for each file you can use the 'special' option.\nCreated by @control#0405",
     Version: "1.2",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio.js",
     Tags: "pre-processing,ffmpeg,configurable,audio only",
     Inputs: [
       {
         name: "languages",
+        type: 'string',
+        defaultValue:'eng,en',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Desired Languages you would like to keep, language format has to be according to the iso-639-2 standard: https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\\nExample:\\eng,dut`,
       },
       {
         name: "special",
+        type: 'string',
+        defaultValue:'',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `This is if you want a specific language to be logged to a file in your Tdarr documents folder.\\nIt will add the name of the file that is being processed if this language(s) has been found.\\nThe file is created the first time it finds a file with the language.\\nThe languages don't have to be in "languages".\\nExample:\\eng,dut`,
       },
       {
         name: "container",
+        type: 'string',
+        defaultValue:'.mkv',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`,
       },
     ],
   };
 }
 
-function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   if (inputs.languages == "" || typeof inputs.special == "undefined") {
     var languages = ["eng", "en"]; //these languages should be kept, named according to ISO 639-2 language scheme
   } else {

@@ -1,18 +1,23 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_d5d4_iiDrakeii_Not_A_Video_Mjpeg_Fix",
     Stage: "Pre-processing",
     Name: "Mjpeg Stream False Not A Video Fixer",
     Type: "Video",
-    Operation: "",
+    Operation: 'Transcode',
     Description: `Checks if file is not a video file due to Mjpeg stream.  Removes Mjpeg Stream \n\n`,
     Version: "1.00",
     Tags: "pre-processing,ffmpeg,",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var transcode = 0; //if this var changes to 1 the file will be transcoded
   //default values that will be returned
   var response = {

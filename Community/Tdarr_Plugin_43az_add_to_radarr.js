@@ -1,19 +1,23 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
+const details = () => {
   return {
-    id: "Tdarr_Plugin_43az_add_to_radarr",
-    Stage: "Post-processing",
-    Name: "Add movie to Radarr after processing",
-    Type: "Video",
-    Operation: "",
-    Description: `Add movie to Radarr after processing \n\n`,
-    Version: "1.00",
-    Link: "",
-    Tags: "3rd party,post-processing,configurable",
-
+    id: 'Tdarr_Plugin_43az_add_to_radarr',
+    Stage: 'Post-processing',
+    Name: 'Add movie to Radarr after processing',
+    Type: 'Video',
+    Operation: 'Transcode',
+    Description: 'Add movie to Radarr after processing \n\n',
+    Version: '1.00',
+    Tags: '3rd party,post-processing,configurable',
     Inputs: [
       {
-        name: "server_ip",
+        name: 'server_ip',
+        type:'string',
+        defaultValue: '192.168.0.10',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `
       Enter the server IP address
       
@@ -22,7 +26,12 @@ module.exports.details = function details() {
       `,
       },
       {
-        name: "port",
+        name: 'port',
+        type: 'string',
+        defaultValue: '7878',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `
       Enter the port Radarr is using
 
@@ -31,7 +40,12 @@ module.exports.details = function details() {
       `,
       },
       {
-        name: "radarr_api_key",
+        name: 'radarr_api_key',
+        type: 'string',
+        defaultValue: '3ff1ae1c39a2a2a397315e15266dea48',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `
       
       Enter the Radarr API key. You can find it on Radarr at /settings/general
@@ -42,17 +56,20 @@ module.exports.details = function details() {
       },
     ],
   };
-};
+}
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
-  const request = require("request");
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
+  const request = require('request');
   const IP = inputs.server_ip;
-  const port = inputs.port;
+  const { port } = inputs;
   const APIKey = inputs.radarr_api_key;
 
-  var term = file.file.split("/");
+  let term = file.file.split('/');
   term = term[term.length - 1];
-  term = term.split(".");
+  term = term.split('.');
   term = term[term.length - 2];
   term = encodeURI(term);
 
@@ -69,10 +86,10 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
         console.error(error);
       }
       //  console.log(`statusCode: ${res.statusCode}`)
-      //console.log(body)
+      // console.log(body)
 
-      var response = body[0];
-      console.log(response.title); //e.g. Shrek
+      const response = body[0];
+      console.log(response.title); // e.g. Shrek
       response.profileId = 6;
       response.path = file.file;
       response.qualityProfile = 6;
@@ -88,17 +105,22 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
           }
           console.log(`statusCode: ${res.statusCode}`);
           // console.log(body)
-        }
+        },
       );
-    }
+    },
   );
 
-  //Optional response if you need to modify database
-  var response = {
+  // Optional response if you need to modify database
+  const response = {
     file,
     removeFromDB: false,
     updateDB: false,
   };
 
-  //return response
+  // return response
 };
+
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

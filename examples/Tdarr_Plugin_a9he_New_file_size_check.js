@@ -1,18 +1,21 @@
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_a9he_New_file_size_check',
-    Stage: 'Pre-processing',
-    Name: 'New file size check',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: 'Give an error if new file is larger than the original \n\n',
-    Version: '1.00',
-    Link: '',
-    Tags: '',
-  };
-};
+// eslint-disable-next-line import/no-unresolved
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-module.exports.plugin = function plugin(file, librarySettings, inputs, otherArguments) {
+const details = () => ({
+  id: 'Tdarr_Plugin_a9he_New_file_size_check',
+  Stage: 'Pre-processing',
+  Name: 'New file size check',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'Give an error if new file is larger than the original \n\n',
+  Version: '1.00',
+  Link: '',
+  Tags: '',
+});
+
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
   const response = {
     processFile: false,
@@ -35,3 +38,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
 
   return response;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;

@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_raf4_Floorpie_FFmpeg_Tiered_HEVC_MKV",
     Stage: "Pre-processing",
@@ -8,12 +9,15 @@ function details() {
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin uses different FFmpeg transcoding settings for 480p,576p,720p and 1080p. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,
     Version: "1.01",
-    Link: "",
     Tags: "pre-processing,ffmpeg,h265,video only,",
+    Inputs:[]
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var transcode = 0; //if this var changes to 1 the file will be transcoded
 
   //default values that will be returned

@@ -1,28 +1,37 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_a9hd_FFMPEG_Transcode_Specific_Audio_Stream_Codecs",
     Stage: "Pre-processing",
     Name: "Transcode Specific Audio Stream Codecs",
-    Type: "",
+    Type: "Audio",
     Operation: "Transcode",
     Description: `[Contains built-in filter] Transcode audio streams with specific codecs into another codec.  \n\n`,
     Version: "1.00",
-    Link: "",
     Tags: "pre-processing,audio only,ffmpeg,configurable",
     Inputs: [
       {
         name: "codecs_to_transcode",
+        type: 'string',
+        defaultValue: 'ac3',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Specifiy the codecs which you'd like to transcode
         \\nExample:\\n
         ac3
         \\nExample:\\n
         eac3,ac3,aac
- 
         `,
       },
       {
         name: "codec",
+        type: 'string',
+        defaultValue: 'aac',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Specify the codec you'd like to transcode into:
         \\n aac
         \\n ac3
@@ -39,6 +48,11 @@ module.exports.details = function details() {
       },
       {
         name: "bitrate",
+        type: 'string',
+        defaultValue: '',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Specify the transcoded audio bitrate (optional):
         \\n 384k
         \\n 640k
@@ -51,7 +65,10 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {
@@ -92,7 +109,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
       )
     ) {
       ffmpegCommand += `  -map 0:${i} -c:${i} ${encoder} `;
-      if (inputs.bitrate != undefined) {
+      if (inputs.bitrate !== '') {
         ffmpegCommand += `-b:a ${inputs.bitrate} `;
       }
       hasStreamsToTranscode = true;
@@ -119,3 +136,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     return response;
   }
 };
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

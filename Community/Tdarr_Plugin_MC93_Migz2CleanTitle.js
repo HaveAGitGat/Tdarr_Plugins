@@ -1,35 +1,58 @@
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz2CleanTitle',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Clean title metadata',
-    Type: 'Video',
-    Operation: 'Clean',
-    Description: 'This plugin removes title metadata from video/audio/subtitles.\n\n',
-    Version: '1.9',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz2CleanTitle.js',
-    Tags: 'pre-processing,ffmpeg,configurable',
-    Inputs: [{
-      name: 'clean_audio',
-      tooltip: `Specify if audio titles should be checked & cleaned. Optional.
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz2CleanTitle',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Clean title metadata',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'This plugin removes title metadata from video/audio/subtitles.\n\n',
+  Version: '1.9',
+  Tags: 'pre-processing,ffmpeg,configurable',
+  Inputs: [{
+    name: 'clean_audio',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `Specify if audio titles should be checked & cleaned. Optional.
                \\nExample:\\n
                true
 
                \\nExample:\\n
                false`,
+  },
+  {
+    name: 'clean_subtitles',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'clean_subtitles',
-      tooltip: `Specify if subtitle titles should be checked & cleaned. Optional.
+    tooltip: `Specify if subtitle titles should be checked & cleaned. Optional.
                \\nExample:\\n
                true
 
                \\nExample:\\n
                false`,
+  },
+  {
+    name: 'custom_title_matching',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'custom_title_matching',
-      tooltip: `If you enable audio or subtitle cleaning the plugin only looks for titles with more then 3 full stops.
+    tooltip: `If you enable audio or subtitle cleaning the plugin only looks for titles with more then 3 full stops.
                   //nThis is one way to identify junk metadata without removing real metadata that you might want.
                   //nHere you can specify your own text for it to also search for to match and remove.
                   //nComma separated. Optional.
@@ -38,12 +61,14 @@ function details() {
 
                \\nExample:\\n
                MiNX - Small HD episodes,GalaxyTV - small excellence!`,
-    },
-    ],
-  };
-}
+  },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -64,7 +89,7 @@ function plugin(file, librarySettings, inputs) {
   let custom_title_matching = '';
 
   // Check if inputs.custom_title_matching has been configured. If it has then set variable
-  if (typeof inputs.custom_title_matching !== 'undefined') {
+  if (inputs.custom_title_matching !== '') {
     custom_title_matching = inputs.custom_title_matching.toLowerCase().split(',');
   }
 
@@ -122,7 +147,7 @@ function plugin(file, librarySettings, inputs) {
     // Then check if any audio streams match with user input custom_title_matching variable, if so then remove.
     if (
       file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-      && inputs.clean_audio.toLowerCase() === 'true'
+      && inputs.clean_audio === true
     ) {
       try {
         if (
@@ -165,7 +190,7 @@ function plugin(file, librarySettings, inputs) {
     // Then check if any streams match with user input custom_title_matching variable, if so then remove.
     if (
       file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-      && inputs.clean_subtitles.toLowerCase() === 'true'
+      && inputs.clean_subtitles === true
     ) {
       try {
         if (
@@ -214,6 +239,6 @@ function plugin(file, librarySettings, inputs) {
     response.infoLog += '☑File has no title metadata \n';
   }
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

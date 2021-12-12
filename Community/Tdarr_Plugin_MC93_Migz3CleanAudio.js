@@ -1,18 +1,22 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz3CleanAudio',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Clean audio streams',
-    Type: 'Audio',
-    Operation: 'Clean',
-    Description: 'This plugin keeps only specified language tracks & can tags tracks with  an unknown language. \n\n',
-    Version: '2.4',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz3CleanAudio.js',
-    Tags: 'pre-processing,ffmpeg,audio only,configurable',
-    Inputs: [{
-      name: 'language',
-      tooltip: `Specify language tag/s here for the audio tracks you'd like to keep
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz3CleanAudio',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Clean audio streams',
+  Type: 'Audio',
+  Operation: 'Transcode',
+  Description: 'This plugin keeps only specified language tracks & can tags tracks with  an unknown language. \n\n',
+  Version: '2.4',
+  Tags: 'pre-processing,ffmpeg,audio only,configurable',
+  Inputs: [{
+    name: 'language',
+    type: 'string',
+    defaultValue: 'eng,und',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Specify language tag/s here for the audio tracks you'd like to keep
                \\nRecommended to keep "und" as this stands for undertermined
                \\nSome files may not have the language specified.
                \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
@@ -24,19 +28,33 @@ function details() {
 
                \\nExample:\\n
                eng,und,jpn`,
+  },
+  {
+    name: 'commentary',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'commentary',
-      tooltip: `Specify if audio tracks that contain commentary/description should be removed.
+    tooltip: `Specify if audio tracks that contain commentary/description should be removed.
                \\nExample:\\n
                true
 
                \\nExample:\\n
                false`,
+  },
+  {
+    name: 'tag_language',
+    type: 'string',
+    defaultValue: 'eng',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'tag_language',
-      tooltip: `Specify a single language for audio tracks with no language or unknown language to be tagged with.
+    tooltip: `Specify a single language for audio tracks with no language or unknown language to be tagged with.
                     \\nYou must have "und" in your list of languages to keep for this to function.
                     \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                     \\nLeave empty to disable.
@@ -45,22 +63,33 @@ function details() {
 
                \\nExample:\\n
                por`,
+  },
+  {
+    name: 'tag_title',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'tag_title',
-      tooltip: `Specify audio tracks with no title to be tagged with the number of channels they contain.
+    tooltip: `Specify audio tracks with no title to be tagged with the number of channels they contain.
            \\nDo NOT use this with mp4, as mp4 does not support title tags.
     \\nExample:\\n
     true
 
     \\nExample:\\n
     false`,
-    },
-    ],
-  };
-}
+  },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -124,7 +153,7 @@ function plugin(file, librarySettings, inputs) {
       // AND then checks for stream titles with the following "commentary, description, sdh".
       // Removing any streams that are applicable.
       if (
-        inputs.commentary.toLowerCase() === 'true'
+        inputs.commentary === true
         && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
         && (file.ffProbeData.streams[i].tags.title
           .toLowerCase()
@@ -188,7 +217,7 @@ function plugin(file, librarySettings, inputs) {
       // AND inputs.tag_title set to true AND if stream type is audio. Add title to any applicable streams.
       if (
         typeof file.ffProbeData.streams[i].tags.title === 'undefined'
-        && inputs.tag_title.toLowerCase() === 'true'
+        && inputs.tag_title === true
         && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
       ) {
         if (file.ffProbeData.streams[i].channels === 8) {
@@ -234,6 +263,6 @@ function plugin(file, librarySettings, inputs) {
     response.infoLog += "☑File doesn't contain audio tracks which are unwanted or that require tagging.\n";
   }
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

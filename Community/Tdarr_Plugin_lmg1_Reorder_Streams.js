@@ -1,18 +1,23 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_lmg1_Reorder_Streams",
     Stage: "Pre-processing",
     Name: "Tdarr_Plugin_lmg1_Reorder_Streams ",
     Type: "Video",
+    Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin will move the video stream to the front so Tdarr will recognize the codec correctly.\n\n`,
     Version: "1.00",
-    Link: "https://github.com/luigi311/Tdarr_Plugin_lmg1_Reorder_Streams",
     Tags: "pre-processing,ffmpeg",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {

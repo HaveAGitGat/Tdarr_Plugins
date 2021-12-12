@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_078d_Output_embedded_subs_to_SRT_and_remove",
     Stage: "Pre-processing",
@@ -8,12 +9,15 @@ module.exports.details = function details() {
     Operation: "Transcode",
     Description: `This plugin outputs embedded subs to SRT and then removes them \n\n`,
     Version: "1.00",
-    Link: "",
     Tags: "ffmpeg",
+    Inputs:[],
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object at some point in the function else plugin will fail.
 
   let response = {
@@ -76,3 +80,7 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
 
   return response;
 };
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;
