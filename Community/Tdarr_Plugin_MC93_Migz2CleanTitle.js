@@ -14,7 +14,11 @@ const details = () => ({
     type: 'boolean',
     defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ]
     },
     tooltip: `Specify if audio titles should be checked & cleaned. Optional.
                \\nExample:\\n
@@ -28,7 +32,11 @@ const details = () => ({
     type: 'boolean',
     defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ]
     },
     tooltip: `Specify if subtitle titles should be checked & cleaned. Optional.
                \\nExample:\\n

@@ -29,7 +29,11 @@ const details = () => ({
     type: 'boolean',
     defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ]
     },
     tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
                \\nExample:\\n
