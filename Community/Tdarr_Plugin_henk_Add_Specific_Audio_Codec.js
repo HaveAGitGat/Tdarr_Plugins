@@ -28,6 +28,14 @@ const details = () => ({
       type: 'text',
     },
     tooltip: 'FFMPEG encoder used for the output of the new tracks. Defaults to ac3.',
+  },  {
+    name: 'position_new_audio',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'postion new audiostream. empty equals post. enter word before to add the new track prior.',
   }, {
     name: 'bitrate',
     type: 'string',
@@ -110,8 +118,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const currStream = file.ffProbeData.streams[i];
     if (currStream.codec_type.toLowerCase() === 'audio') {
-      response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
-      streamCount += 1;
+      
+      if (inputs.position_new_audio === '') {
+        response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
+        streamCount += 1;    }
 
       if (inputCodecs.includes(currStream.codec_name.toLowerCase())) {
         convertCount += 1;
@@ -128,6 +138,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           + `-disposition:a:${streamCount} 0`;
         streamCount += 1;
       }
+      
+      if (inputs.position_new_audio === 'before') {
+         response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
+         streamCount += 1; }
+      
       indexCount += 1;
     }
   }
