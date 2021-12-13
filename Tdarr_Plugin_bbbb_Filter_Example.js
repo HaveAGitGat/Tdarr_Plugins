@@ -7,12 +7,14 @@ const details = () => {
     Operation: 'Filter',
     Description: 'This plugin prevents processing files which contain keywords \n\n',
     Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugin_bbbb_Filter_Example.js',
     Tags: '',
   };
 };
 
+// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
 
   const response = {
@@ -34,3 +36,5 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   return response;
 };
+module.exports.details = details;
+module.exports.plugin = plugin;

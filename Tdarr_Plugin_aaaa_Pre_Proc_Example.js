@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
   'import-fresh',
@@ -12,13 +13,28 @@ const details = () => {
     Operation: 'Transcode',
     Description: 'This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n',
     Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugin_aaaa_Pre_Proc_Example',
     Tags: 'ffmpeg,h265', // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
 
     Inputs: [
       // (Optional) Inputs you'd like the user to enter to allow your plugin to be easily configurable from the UI
       {
         name: 'language',
+        type: 'string',          // set the data type of the input ('string', 'number', 'boolean')
+        defaultValue: 'eng',     // set the default value of the input incase the user enters no input
+        inputUI: {
+          type: 'text',          // specify how the input UI will appear to the user ('text' or 'dropdown')
+        },
+        // inputUI: {            // dropdown inputUI example         
+        //   type: 'dropdown',
+        //   options: [
+        //     'false',
+        //     'true',
+        //   ],
+        // },
+
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter one language tag here for the language of the subtitles you'd like to keep. 
       
       \\nExample:\\n 
@@ -34,8 +50,17 @@ const details = () => {
       },
       {
         name: 'channels',
-        tooltip: `Desired audio channel number.  
-      
+        type: 'number',
+        defaultValue: 2,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            '1',
+            '2',
+            '6',
+          ],
+        },
+        tooltip: `Desired audio channel number.
       \\nExample:\\n
       2`,
       },
@@ -43,7 +68,10 @@ const details = () => {
   };
 };
 
+// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');
 
@@ -61,7 +89,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: '.mp4', // The container of the transcoded output file.
     handBrakeMode: false, // Set whether to use HandBrake or FFmpeg for transcoding
     FFmpegMode: false,
-    reQueueAfter: true, // Leave as true. File will be re-qeued afterwards and pass through the plugin filter again to make sure it meets conditions.
     infoLog: '', // This will be shown when the user clicks the 'i' (info) button on a file in the output queue if
     // it has been skipped.
     // Give reasons why it has been skipped ('File has no title metadata, File meets conditions!')
@@ -131,6 +158,8 @@ module.exports.onTranscodeError = function onTranscodeError(
 
   return response;
 };
+module.exports.details = details;
+module.exports.plugin = plugin;
 
 // Example file object:
 //     {
