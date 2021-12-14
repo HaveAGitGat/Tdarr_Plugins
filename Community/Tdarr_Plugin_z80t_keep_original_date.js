@@ -1,22 +1,28 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
 module.exports.dependencies = [
   'axios',
   'path-extra',
   'touch',
 ];
 
-module.exports.details = function details() {
+const details = () => {
   return {
     id: 'Tdarr_Plugin_z80t_keep_original_date',
     Stage: 'Post-processing',
     Name: 'Keep original file dates and times after transcoding',
     Type: 'Video',
-    Operation: '',
+    Operation: 'Transcode',
     Description: 'This plugin copies the original file dates and times to the transcoded file \n\n',
     Version: '1.10',
-    Link: '',
     Tags: 'post-processing,dates,date',
     Inputs: [{
       name: 'server',
+      type: 'string',
+      defaultValue: '192.168.1.100',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `IP address or hostname of the server assigned to this node, will be used for API requests.
       If you are running nodes within Docker you should use the server IP address rather than the name.
 
@@ -27,6 +33,11 @@ module.exports.details = function details() {
        192.168.1.100`,
     }, {
       name: 'extensions',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `When files are trans-coded the file extension may change,
       enter a list of extensions to try and match the original file with in the database after trans-coding.
       Default is the list of container types from library settings. The list will be searched in order and
@@ -37,6 +48,15 @@ module.exports.details = function details() {
     },
     {
       name: 'log',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
       tooltip: `Write log entries to console.log. Default is false.
 
       \\nExample:\\n
@@ -46,7 +66,10 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = async function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // eslint-disable-next-line global-require,import/no-unresolved
   const axios = require('axios');
   // eslint-disable-next-line global-require,import/no-unresolved
@@ -55,7 +78,7 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
   const path = require('path-extra');
 
   function log(msg) {
-    if (inputs.log === 'true') {
+    if (inputs.log === true) {
       // eslint-disable-next-line no-console
       console.log(msg);
     }
@@ -134,3 +157,6 @@ module.exports.plugin = async function plugin(file, librarySettings, inputs) {
 
   return responseData;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;
