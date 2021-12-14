@@ -60,7 +60,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         audioIdx += 1;
 
         // Check if audio track is 2 channel.
-        if (file.ffProbeData.streams[i].channels === '2') {
+        if (file.ffProbeData.streams[i].channels === 2) {
           // Check if audio6Idx or audio8Idx do NOT equal 0.
           // If so then it means a 6 or 8 channel audio track has already appeared before the 2 channel audio track
           // So file needs to be organized.
