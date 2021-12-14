@@ -122,8 +122,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const currStream = file.ffProbeData.streams[i];
     if (currStream.codec_type.toLowerCase() === 'audio') {
-      
-      if (inputs.position_new_audio === '') {
+      if (inputs.position_new_audio === 'after') {
         response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
         streamCount += 1;    }
 
