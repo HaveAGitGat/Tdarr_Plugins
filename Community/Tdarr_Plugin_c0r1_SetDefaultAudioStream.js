@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_c0r1_SetDefaultAudioStream",
     Stage: "Pre-processing",
@@ -8,13 +9,16 @@ module.exports.details = function details() {
     Operation: "Transcode",
     Description: `This plugin will set an audio channel (2.0, 5.1, 7.1) to default and remove default from all other audio streams \n\n`,
     Version: "0.1.0a",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_c0r1_SetDefaultAudioStream.js",
     Tags: "audio only,ffmpeg,configurable",
 
     Inputs: [
       {
         name: "channels",
+        type: 'string',
+        defaultValue:'2',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Desired audio channel number.
 
       \\nExample:\\n
@@ -33,7 +37,10 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var response = {
     processFile: false,
     preset: "",
@@ -110,3 +117,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   }
   return response;
 };
+
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

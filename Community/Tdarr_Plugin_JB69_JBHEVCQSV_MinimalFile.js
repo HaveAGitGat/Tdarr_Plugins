@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -34,7 +35,7 @@
 //      If the source video is less than this rate the script will either:
 //          Copy the existing stream, if the codec is hevc
 //          Transcode the stream to hevc using 80% of the original streams bitrate
-//              It could probably be less but if the source is of low bitrate we don’t want to compromise too much on the transcode
+//              It could probably be less but if the source is of low bitrate we donï¿½t want to compromise too much on the transcode
 //
 //      If the source media bitrate is close, within 10%, of the target bitrate and the codec is hevc, it will copy instead of transcode to preserve quality
 //
@@ -53,7 +54,7 @@
 //      If the source audio is less than this rate the script will either:
 //          Copy the existing stream, if the codec is aac
 //          Transcode the stream to aac using 100% of the original streams bitrate
-//              It could probably be less but if the source is of low bitrate but, we don’t want to compromise too much on the transcode
+//              It could probably be less but if the source is of low bitrate but, we donï¿½t want to compromise too much on the transcode
 //
 //  Subtitles:
 //      All are removed?? (TODO: ensure this is correct and mention the flag to keep them if desired)
@@ -149,7 +150,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function details() {
+const details = () => {
     return {
         id: "Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile",
         Stage: "Pre-processing",
@@ -158,12 +159,15 @@ function details() {
         Operation: "Transcode",
         Description: "***You should not use this*** until you read the comments at the top of the code and understand how it works **this does alot** and is 1 of 2 routines you should to run **Part 1** \n",
         Version: "2.0",
-        Link: "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile.js",
-        Tags: "pre-processing,ffmpeg,video,audio,qsv h265,aac"
+        Tags: "pre-processing,ffmpeg,video,audio,qsv h265,aac",
+        Inputs:[],
     }
 }
 
-function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
 
     var response = {
         processFile: false,
@@ -761,7 +765,7 @@ function findMediaInfoItem(file, index) {
 			currMIOrder = file.mediaInfo.track[i].ID - 1;
 		}
 
-		if (currMIOrder == index || currMIOrder == "0-" + index) {
+		if (currMIOrder == index|| currMIOrder == "0-" + index) {
 			return i;
 		}
 	}

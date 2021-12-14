@@ -1,25 +1,29 @@
 const fs = require('fs');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT',
-    Stage: 'Pre-processing',
-    Name: 'drpeppershaker Extract embedded subtitles and optionally remove them',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: 'This plugin extracts embedded subs in one pass inside Tdarr and will optionally remove them. \n\n '
+const details = () => ({
+  id: 'Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT',
+  Stage: 'Pre-processing',
+  Name: 'drpeppershaker Extract embedded subtitles and optionally remove them',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'This plugin extracts embedded subs in one pass inside Tdarr and will optionally remove them. \n\n '
       + 'All processes happen within Tdarr without the use of any exec() functions, which lets the progress bar '
       + 'report the status correctly. AND all subtitles are extracted in one pass, which is much faster than '
       + 'other options.',
-    // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
-    // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
-    Version: '1.04',
-    Link: '',
-    Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
-    Inputs: [
-      {
-        name: 'remove_subs',
-        tooltip: `Do you want to remove subtitles after they are  extracted?
+  // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
+  // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
+  Version: '1.04',
+  Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
+  Inputs: [
+    {
+      name: 'remove_subs',
+      type: 'string',
+      defaultValue: 'no',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Do you want to remove subtitles after they are  extracted?
         
         \\nExample:\\n
         
@@ -29,12 +33,14 @@ module.exports.details = function details() {
         
         no
         `,
-      },
-    ],
-  };
-};
+    },
+  ],
+});
 
-module.exports.plugin = function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
   const response = {
     processFile: true,
@@ -122,3 +128,6 @@ module.exports.plugin = function plugin(file, librarySettings, inputs, otherArgu
 
   return response;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;

@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-module.exports.details = function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_077b_HandBrake_NVENC_264_Configurable",
     Stage: "Pre-processing",
@@ -8,11 +9,15 @@ module.exports.details = function details() {
     Operation: "Transcode",
     Description: `[Contains built-in filter] If files are not in H264, they will be transcoded into H264 using HandBrake NVENC H264. All audio and subtitles are kept.  \n\n`,
     Version: "1.00",
-    Link: "",
     Tags: "pre-processing,handbrake,nvenc h264,configurable",
     Inputs: [
       {
         name: "handbrake_preset",
+        type:'string',
+        defaultValue:'Fast 1080p30',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `\\nEnter the name of a HandBrake preset.
 
                 
@@ -31,6 +36,11 @@ module.exports.details = function details() {
       },
       {
         name: "output_container",
+        type:'string',
+        defaultValue:'.mkv',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `
         \\nEnter the output container of the new file
 
@@ -46,7 +56,10 @@ module.exports.details = function details() {
   };
 };
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {
@@ -92,3 +105,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     return response;
   }
 };
+
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

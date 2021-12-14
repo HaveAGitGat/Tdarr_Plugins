@@ -1,33 +1,45 @@
 /* eslint-disable */
 const fs = require("fs");
 const execSync = require("child_process").execSync;
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Add_Subtitles",
     Stage: "Pre-processing",
     Name: "Add subtitles to MKV files",
     Type: "Video",
-    Operation: "Remux",
+    Operation: 'Transcode',
     Description: `This plugin will check for subtitles, they should be named according to the ISO 639-2 language code.\nA subtitle could look like this: eng.srt\n If there are subtitles found they will be added with FFMPEG, if there are no subs of that language found.\n On first run node module iso-639-2 will be installed in the documents folder.\n Created by @control#0405`,
     Version: "1.3",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Add_Subtitles.js",
     Tags: "pre-processing,ffmpeg,subtitle only,configurable",
     Inputs: [
       {
         name: "install_packages",
+        type: 'string',
+        defaultValue:'no',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`,
       },
       {
         name: "container",
+        type: 'string',
+        defaultValue:'.mkv',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`,
       },
     ],
   };
 }
 
-function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //default response
   var response = {
     processFile: false,
@@ -48,7 +60,7 @@ function plugin(file, librarySettings, inputs, otherArguments) {
     if (
       !fs.existsSync(`${otherArguments.homePath}/Tdarr/node_modules/iso-639-2`)
     ) {
-      execSync(`cd ${otherArguments.homePath}/Tdarr \n npm install iso-639-2`);
+      execSync(`cd ${otherArguments.homePath}/Tdarr \n npm install iso-639-2@2.0.0`);
     }
   } else {
     response.infoLog = `Please take a look at the input options\n A extra nodemodule is required.`;

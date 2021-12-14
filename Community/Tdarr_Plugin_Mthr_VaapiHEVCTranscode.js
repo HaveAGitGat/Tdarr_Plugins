@@ -1,10 +1,11 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 const vaapiPrefix = ` -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi `;
 
-module.exports.details = function details() {
+const details = () => {
   return {
     id: `Tdarr_Plugin_Mthr_VaapiHEVCTranscode`,
-    Stage: `Pre-processing`,
+    Stage: 'Pre-processing',
     Name: `FFMPEG VAAPI HEVC Transcode`,
     Type: `Video`,
     Operation: `Transcode`,
@@ -12,18 +13,27 @@ module.exports.details = function details() {
       `Intel QuickSync-enabled CPU required, recommended 8th generation or newer.\n ` +
       `Output bitrate will be calculated based on input file size.\n\n`,
     Version: `1.0`,
-    Link: `https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Mthr_VaapiHEVCTranscode.js`,
     Tags: `pre-processing,ffmpeg,video only,h265,configurable`,
     Inputs: [{
       name: `remuxOnly`,
+      type: 'string',
+      defaultValue:'false',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify whether this plugin should only run on files with Remux in their names. ` +
-        `Valid options are true or false. Defaults to false. ` +
+        `Valid options are true or false.` +
         `\\nExample: ` +
         `\\ntrue ` +
         `\\nExample: ` +
         `\\nfalse`
     },{
       name: `minBitrate`,
+      type: 'string',
+      defaultValue:'',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify the minimum bitrate at which this plugin will run. Files with a current bitrate ` +
         `lower than this cutoff will not be transcoded. Leave blank to disable. ` +
         `\\nExample: ` +
@@ -32,7 +42,10 @@ module.exports.details = function details() {
   }
 }
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var response = {
     processFile: false,
     preset: ``,
@@ -105,3 +118,8 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
   }
   return response;
 }
+
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

@@ -1,7 +1,9 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_A47j_FFMPEG_NVENC_HEVC_Video_Only",
+    Stage: 'Pre-processing',
     Name: "FFMPEG nvenc_H265 Video Only",
     Type: "Video",
     Stage: "Pre-processing",
@@ -16,6 +18,11 @@ function details() {
 Inputs: [
       {
         name: "compressionFactor",
+        type: 'string',
+        defaultValue:'0.07',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `== Compression Factor == \\n\\n
         How much does HEVC compress raw video?  I suggest something between 0.04-0.08.  Remember that GPU encoding is not as 
         efficient as CPU encoding, so resulting file sizes will be larger.\\n\\n
@@ -23,9 +30,14 @@ Inputs: [
       },
       {
         name: "maxResolution",
+        type: 'string',
+        defaultValue:'false',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `== Maximum Resolution ==\\n\\n
         Videos that exceed this resolution will be resized down to this resolution.\\n
-        Accepted options: 480p, 576p, 720p, 1080p, 4KUHD, 8KUHD.  If left blank, no resizing will occur.\\n`
+        Accepted options: 480p, 576p, 720p, 1080p, 4KUHD, 8KUHD.  If false, no resizing will occur.\\n`
       },
     ],
 
@@ -133,7 +145,10 @@ function getMediaInfo(file) {
   return;
 } // end  getMediaInfo()
 
-function plugin(file,librarySettings,inputs,otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
 
   if (file.fileMedium !== "video") {
     response.processFile = false;

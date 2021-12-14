@@ -1,21 +1,25 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz1FFMPEG_CPU',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Transcode Using CPU & FFMPEG',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg.
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz1FFMPEG_CPU',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Transcode Using CPU & FFMPEG',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg.
                 Settings are dependant on file bitrate
                 Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
                 This plugin will  skip any files that are in the VP9 codec.`,
-    Version: '1.9',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG_CPU.js',
-    Tags: 'pre-processing,ffmpeg,video only,configurable,h265',
-    Inputs: [{
-      name: 'container',
-      tooltip: `Specify output container of file.
+  Version: '1.9',
+  Tags: 'pre-processing,ffmpeg,video only,configurable,h265',
+  Inputs: [{
+    name: 'container',
+    type: 'string',
+    defaultValue: 'mkv',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Specify output container of file.
                   \\n Ensure that all stream types you may have are supported by your chosen container.
                   \\n mkv is recommended.
                     \\nExample:\\n
@@ -23,10 +27,15 @@ function details() {
 
                     \\nExample:\\n
                     mp4`,
+  },
+  {
+    name: 'bitrate_cutoff',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'bitrate_cutoff',
-      tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.
+    tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.
                   \\n Rate is in kbps.
                   \\n Leave empty to disable.
                     \\nExample:\\n
@@ -34,19 +43,37 @@ function details() {
 
                     \\nExample:\\n
                     4000`,
+  },
+  {
+    name: 'enable_10bit',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'enable_10bit',
-      tooltip: `Specify if output file should be 10bit. Default is false.
+    tooltip: `Specify if output file should be 10bit. Default is false.
                     \\nExample:\\n
                     true
 
                     \\nExample:\\n
                     false`,
+  },
+  {
+    name: 'force_conform',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'force_conform',
-      tooltip: `Make the file conform to output containers requirements.
+    tooltip: `Make the file conform to output containers requirements.
                 \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
                 \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
@@ -55,12 +82,14 @@ function details() {
 
                     \\nExample:\\n
                     false`,
-    },
-    ],
-  };
-}
+  },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -136,7 +165,7 @@ function plugin(file, librarySettings, inputs) {
 
   // Check if force_conform option is checked.
   // If so then check streams and add any extra parameters required to make file conform with output format.
-  if (inputs.force_conform === 'true') {
+  if (inputs.force_conform === true) {
     if (inputs.container.toLowerCase() === 'mkv') {
       extraArguments += '-map -0:d ';
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -179,7 +208,7 @@ function plugin(file, librarySettings, inputs) {
   }
 
   // Check if 10bit variable is true.
-  if (inputs.enable_10bit === 'true') {
+  if (inputs.enable_10bit === true) {
     // If set to true then add 10bit argument
     extraArguments += '-pix_fmt p010le ';
   }
@@ -238,6 +267,6 @@ function plugin(file, librarySettings, inputs) {
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

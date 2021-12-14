@@ -1,64 +1,92 @@
-function details() {
-  return {
-    id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
-    Stage: 'Pre-processing',
-    Name: 'Tiered FFMPEG CPU CRF Based Configurable',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: `[Contains built-in filter] This plugin uses different CRF values depending on resolution, 
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
+const details = () => ({
+  id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
+  Stage: 'Pre-processing',
+  Name: 'Tiered FFMPEG CPU CRF Based Configurable',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: `[Contains built-in filter] This plugin uses different CRF values depending on resolution, 
        the CRF value is configurable per resolution.
        FFmpeg Preset can be configured, uses slow by default. 
        If files are not in hevc they will be transcoded. 
        The output container is mkv. \n\n`,
-    Version: '1.00',
-    Link:
-        'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
-      + ' Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable.js',
-    Tags: 'pre-processing,ffmpeg,video only,h265,configurable',
+  Version: '1.00',
+  Tags: 'pre-processing,ffmpeg,video only,h265,configurable',
 
-    Inputs: [
-      {
-        name: 'sdCRF',
-        tooltip: `Enter the CRF value you want for 480p and 576p content. 
+  Inputs: [
+    {
+      name: 'sdCRF',
+      type: 'string',
+      defaultValue: '19',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Enter the CRF value you want for 480p and 576p content. 
         \n Defaults to 20 (0-51, lower = higher quality, bigger file)
          \\nExample:\\n 
         
         19`,
+    },
+    {
+      name: 'hdCRF',
+      type: 'string',
+      defaultValue: '21',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'hdCRF',
-        tooltip: `Enter the CRF value you want for 720p content. 
+      tooltip: `Enter the CRF value you want for 720p content. 
         \n Defaults to 22 (0-51, lower = higher quality, bigger file)
         
         \\nExample:\\n
         21`,
+    },
+    {
+      name: 'fullhdCRF',
+      type: 'string',
+      defaultValue: '23',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'fullhdCRF',
-        tooltip: `Enter the CRF value you want for 1080p content. 
+      tooltip: `Enter the CRF value you want for 1080p content. 
         \n Defaults to 24 (0-51, lower = higher quality, bigger file)
         
         \\nExample:\\n
         23`,
+    },
+    {
+      name: 'uhdCRF',
+      type: 'string',
+      defaultValue: '26',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'uhdCRF',
-        tooltip: `Enter the CRF value you want for 4K/UHD/2160p content. 
+      tooltip: `Enter the CRF value you want for 4K/UHD/2160p content. 
         \n Defaults to 28 (0-51, lower = higher quality, bigger file)
         
         \\nExample:\\n
         26`,
+    },
+    {
+      name: 'bframe',
+      type: 'string',
+      defaultValue: '8',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'bframe',
-        tooltip: `Specify amount of b-frames to use, 0-16, defaults to 8.
+      tooltip: `Specify amount of b-frames to use, 0-16, defaults to 8.
         
         \\nExample:\\n
         8`,
+    },
+    {
+      name: 'ffmpegPreset',
+      type: 'string',
+      defaultValue: 'slow',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'ffmpegPreset',
-        tooltip: `Enter the ffmpeg preset you want, leave blank for default (slow) 
+      tooltip: `Enter the ffmpeg preset you want.
         
         \\nExample:\\n 
           slow  
@@ -71,26 +99,38 @@ function details() {
         
         \\nExample:\\n 
           veryfast`,
+    },
+    {
+      name: 'sdDisabled',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'sdDisabled',
-        tooltip: `Input "true" if you want to skip SD (480p and 576p) files
+      tooltip: `Input "true" if you want to skip SD (480p and 576p) files
         
         \\nExample:\\n
         true`,
+    },
+    {
+      name: 'uhdDisabled',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'uhdDisabled',
-        tooltip: `Input "true" if you want to skip 4k (UHD) files
+      tooltip: `Input "true" if you want to skip 4k (UHD) files
         
         \\nExample:\\n
         true`,
-      },
-    ],
-  };
-}
+    },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   let crf;
   // default values that will be returned
   const response = {
@@ -185,6 +225,6 @@ function plugin(file, librarySettings, inputs) {
   response.infoLog += 'File is being transcoded!\n';
 
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

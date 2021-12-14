@@ -1,28 +1,37 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Convert audio streams',
-    Type: 'Audio',
-    Operation: 'Transcode',
-    Description: 'This plugin can convert any 2.0 audio track/s to AAC and can create downmixed audio tracks. \n\n',
-    Version: '2.3',
-    Link: '',
-    Tags: 'pre-processing,ffmpeg,audio only,configurable',
-    Inputs: [{
-      name: 'aac_stereo',
-      tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Convert audio streams',
+  Type: 'Audio',
+  Operation: 'Transcode',
+  Description: 'This plugin can convert any 2.0 audio track/s to AAC and can create downmixed audio tracks. \n\n',
+  Version: '2.3',
+  Tags: 'pre-processing,ffmpeg,audio only,configurable',
+  Inputs: [{
+    name: 'aac_stereo',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
                     \\nOptional.
              \\nExample:\\n
              true
 
              \\nExample:\\n
              false`,
+  },
+  {
+    name: 'downmix',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'downmix',
-      tooltip: `Specify if downmixing should be used to create extra audio tracks.
+    tooltip: `Specify if downmixing should be used to create extra audio tracks.
                     \\nI.e if you have an 8ch but no 2ch or 6ch, create the missing audio tracks from the 8 ch.
                     \\nLikewise if you only have 6ch, create the missing 2ch from it. Optional.
              \\nExample:\\n
@@ -30,12 +39,14 @@ function details() {
 
              \\nExample:\\n
              false`,
-    },
-    ],
-  };
-}
+  },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     container: `.${file.container}`,
@@ -125,7 +136,7 @@ function plugin(file, librarySettings, inputs) {
       // Catch error here incase user left inputs.downmix empty.
       try {
         // Check if inputs.aac_stereo is set to true.
-        if (inputs.aac_stereo.toLowerCase() === 'true') {
+        if (inputs.aac_stereo === 'true') {
           // Check if codec_name for stream is NOT aac AND check if channel ammount is 2.
           if (
             file.ffProbeData.streams[i].codec_name !== 'aac'
@@ -153,6 +164,6 @@ function plugin(file, librarySettings, inputs) {
     response.processFile = false;
   }
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;
