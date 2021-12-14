@@ -86,6 +86,8 @@ const loadDefaultValues = require('../methods/loadDefaultValues');
 //      Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile (JB - H265, AAC, MKV, bitrate optimized)
 //      Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix (JB - MKV Stats, Chapters, Audio Language)
 //
+//  Here is an example docker file: https://github.com/HaveAGitGat/Tdarr_Plugins/issues/86#issue-646683562
+//
 //  I am running the docker image provided for Tdarr
 //
 //  Here is my docker config (I am running compose so yours might be a little different)
