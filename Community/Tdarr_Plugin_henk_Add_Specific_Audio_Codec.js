@@ -33,7 +33,11 @@ const details = () => ({
     type: 'string',
     defaultValue: '',
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'before',
+        'after',
+      ],
     },
     tooltip: 'postion new audiostream. empty equals post. enter word before to add the new track prior.',
   }, {
