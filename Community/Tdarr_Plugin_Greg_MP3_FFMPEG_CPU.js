@@ -1,35 +1,39 @@
-module.exports.dependencies = ['import-fresh'];
-
 // eslint-disable-next-line import/no-extraneous-dependencies
 const importFresh = require('import-fresh');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-function details() {
-  return {
-    id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
-    Description: '[Contains built-in filter] Convert an audio file to mp3, retaining ID3 tags, '
+module.exports.dependencies = ['import-fresh'];
+const details = () => ({
+  id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
+  Stage: 'Pre-processing',
+  Name: 'Audio Transcode to MP3 using CPU and FFMPEG',
+  Type: 'Audio',
+  Operation: 'Transcode',
+  Description: '[Contains built-in filter] Convert an audio file to mp3, retaining ID3 tags, '
       + 'and at original bitrate up to 320k - from type of: "flac,wav,ape,ogg,m4a,wma,opus" ',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_Greg_MP3_FFMPEG_CPU.js',
-    Name: 'Audio Transcode to MP3 using CPU and FFMPEG',
-    Operation: 'Transcode',
-    Tags: 'pre-processing,ffmpeg,audio only',
-    Type: 'Audio',
-    Stage: 'Pre-processing',
-    Version: '0.0.1',
-    Inputs: [
-      {
-        name: 'codecsToInclude',
-        defaultValue: 'flac,wav,ape,ogg,m4a,wma,opus',
-        tooltip: `Codecs to exclude
+  Version: '0.0.1',
+  Tags: 'pre-processing,ffmpeg,audio only',
+  Inputs: [
+    {
+      name: 'codecsToInclude',
+      type: 'string',
+      defaultValue: 'flac,wav,ape,ogg,m4a,wma,opus',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Codecs to exclude
                \\nExample:\\n
                flac,wav,ape,ogg,m4a,wma,opus`,
-      },
-    ],
-  };
-}
+    },
+  ],
+});
 
 module.exports.details = details;
 
-module.exports.plugin = function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const library = importFresh('../methods/library.js');
   const response = {
     // 320K selected over 384k intentionally
@@ -42,21 +46,21 @@ module.exports.plugin = function plugin(file, librarySettings, inputs) {
     reQueueAfter: true,
   };
 
-  const codecsToInclude = inputs.codecsToInclude || details().Inputs[0].defaultValue;
+  const { codecsToInclude } = inputs;
 
   const filterByCodecInclude = library.filters.filterByCodec(file, 'include', codecsToInclude);
   const filterByCodecExclude = library.filters.filterByCodec(file, 'exclude', 'mp3');
-  const remuxContainer = library.actions.remuxContainer(file, 'mp3');
 
   response.infoLog += `${filterByCodecInclude.note} ${filterByCodecExclude.note}`;
 
   if ((filterByCodecInclude.outcome
     && filterByCodecExclude.outcome)
     || file.forceProcessing) {
-    response.infoLog += remuxContainer.note;
-    response.processFile = remuxContainer.processFile;
+    response.processFile = true;
     return response;
   }
-  response.infoLog += remuxContainer.note;
   return response;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;
