@@ -1,22 +1,22 @@
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC',
-    Stage: 'Pre-processing',
-    Name: 'Downmix & Dynamic range compression',
-    Type: 'Audio',
-    Operation: 'Transcode',
-    Description: 'Downmixes surround to AAC stereo AND applies dynamic range compression.'
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
+const details = () => ({
+  id: 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC',
+  Stage: 'Pre-processing',
+  Name: 'Downmix & Dynamic range compression',
+  Type: 'Audio',
+  Operation: 'Transcode',
+  Description: 'Downmixes surround to AAC stereo AND applies dynamic range compression.'
     + 'Files already in stereo or with multiple audio tracks will be skipped \n\n',
-    Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/'
-    + 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC.js',
-    Tags: 'ffmpeg',
+  Version: '1.00',
+  Tags: 'ffmpeg',
+  Inputs: [],
+});
 
-    Inputs: [],
-  };
-};
-
-module.exports.plugin = function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -64,3 +64,6 @@ module.exports.plugin = function plugin(file) {
 
   return response;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;
