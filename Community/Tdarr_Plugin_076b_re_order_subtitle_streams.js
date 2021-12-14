@@ -119,11 +119,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  ffmpegCommand += ` -map 0:s:${streamIdx} -disposition:s:${streamIdx} default`;
+  ffmpegCommand += ` -map 0:s:${streamIdx} -disposition:s:0 default`;
 
   for (var i = 0; i < allSubtitleTracks.length; i++) {
     if (i !== streamIdx) {
-      ffmpegCommand += ` -map 0:s:${i} -disposition:a:${i} none `;
+      ffmpegCommand += ` -map 0:s:${i} `;
+    }
+    if (i !== 0) {
+      ffmpegCommand += ` -disposition:a:${i} 0 `;
     }
   }
 
