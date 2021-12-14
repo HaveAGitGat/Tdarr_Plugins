@@ -1,20 +1,21 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz6OrderStreams',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Order Streams',
-    Type: 'Streams',
-    Operation: 'Order',
-    Description: 'Orders streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n',
-    Version: '1.3',
-    Link:
-      'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz6OrderStreams.js',
-    Tags: 'pre-processing,ffmpeg,',
-  };
-}
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz6OrderStreams',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Order Streams',
+  Type: 'Any',
+  Operation: 'Transcode',
+  Description: 'Orders streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n',
+  Version: '1.3',
+  Tags: 'pre-processing,ffmpeg,',
+  Inputs: [],
+});
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -199,6 +200,6 @@ function plugin(file) {
     response.processFile = false;
   }
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

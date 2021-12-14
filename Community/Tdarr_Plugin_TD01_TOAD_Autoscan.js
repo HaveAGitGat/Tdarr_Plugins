@@ -1,18 +1,20 @@
 const loadDefaultValues = require('../methods/loadDefaultValues');
-
+/* eslint-disable linebreak-style */
 module.exports.dependencies = [
   'request',
 ];
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () => ({
-  id: 'Tdarr_Plugin_MC93_MigzPlex_Autoscan',
+  id: 'Tdarr_Plugin_TD01_TOAD_Autoscan',
   Stage: 'Post-processing',
-  Name: 'Send request for file to be scanned by plex_autoscan.',
+  Name: 'Trigger Plex_Autoscan.',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'Send request for file to be scanned by plex_autoscan. https://github.com/l3uddz/plex_autoscan \n\n',
-  Version: '1.2',
+  Description: `Connects to plex_autoscan and triggers a manual search within the files directory.\n\n
+    Works with the hotio autoscan docker that can be found here https://hotio.dev/containers/autoscan/ which \n\n
+    is based on https://github.com/cloudbox/autoscan`,
+  Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
   Inputs: [{
@@ -34,7 +36,7 @@ const details = () => ({
   {
     name: 'autoscan_port',
     type: 'string',
-    defaultValue: '3468',
+    defaultValue: '3486',
     inputUI: {
       type: 'text',
     },
@@ -45,18 +47,30 @@ const details = () => ({
                3468`,
   },
   {
-    name: 'autoscan_passkey',
+    name: 'autoscan_username',
     type: 'string',
-    defaultValue: '9c4b81fe234e4d6eb9011cefe514d915',
+    defaultValue: 'Batman',
     inputUI: {
       type: 'text',
     },
     tooltip: `
-
-               Enter the autoscan passkey.
+               If authentication is configured, specify the username
 
                \\nExample:\\n
-               9c4b81fe234e4d6eb9011cefe514d915`,
+               Batman`,
+  },
+  {
+    name: 'autoscan_password',
+    type: 'string',
+    defaultValue: 'SecretPassword',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `
+              If authentication is configured, specify the password
+
+               \\nExample:\\n
+               SecretPassword`,
   },
   ],
 });
@@ -65,23 +79,27 @@ const details = () => ({
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = loadDefaultValues(inputs, details);
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line global-require,import/no-unresolved,import/no-extraneous-dependencies
   const request = require('request');
-
   // Set up required variables.
   const ADDRESS = inputs.autoscan_address;
   const PORT = inputs.autoscan_port;
-  const PASSKEY = inputs.autoscan_passkey;
+
+  let auth;
+  if (inputs.autoscan_username) {
+    auth = `Basic ${Buffer.from(`${inputs.autoscan_username}:${inputs.autoscan_password}`).toString('base64')}`;
+  }
+
   let filepath = '';
   const response = {};
-  filepath = `${file.file}`;
+  filepath = `${file.file.split('/').slice(0, -1).join('/')}/`;
+  filepath = encodeURI(filepath);
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
   if (
     inputs
     && inputs.autoscan_address === ''
     && inputs.autoscan_port === ''
-    && inputs.autoscan_passkey === ''
   ) {
     response.infoLog += '☒Plugin options have not been configured, please configure options. Skipping this plugin.  \n';
     response.processFile = false;
@@ -92,29 +110,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   request.post({
     headers: {
       'content-type': 'application/json',
+      Authorization: auth,
     },
-    url: `${ADDRESS}:${PORT}/${PASSKEY}`,
-    form: {
-      eventType: 'Manual',
-      filepath: `${filepath}`,
-    },
+    url: `${ADDRESS}:${PORT}/triggers/manual?dir=${filepath}`,
   },
+  // eslint-disable-next-line no-unused-vars
   (error, res, body) => {
     if (error) {
       // eslint-disable-next-line no-console
       console.error(error);
     }
-    // eslint-disable-next-line no-console
-    console.log(`statusCode: ${res.statusCode}`);
-    // eslint-disable-next-line no-console
-    console.log(body);
   });
-
-  // eslint-disable-next-line no-console
-  console.log('request next');
-  // eslint-disable-next-line no-console
-  console.log(request.post);
-
   return undefined;
 };
 

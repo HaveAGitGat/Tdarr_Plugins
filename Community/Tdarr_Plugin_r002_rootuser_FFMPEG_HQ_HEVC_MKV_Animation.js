@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_r002_rootuser_FFMPEG_HQ_HEVC_MKV_Animation",
     Stage: "Pre-processing",
@@ -8,12 +9,15 @@ function details() {
     Operation: "Transcode",
     Description: `[Contains built-in filter] High Quality FFMPEG transcoding settings for Animation. Converts all audio to AAC 512K. Preserves track names, metadata and attachments/fonts. Proper use of x265-params. CRF 18. Preset medium. 10-Bit Video encoding. Skips h.265 encoded videos. The output container is mkv. \n\n`,
     Version: "1.1",
-    Link: "",
     Tags: "pre-processing,ffmpeg,h265,aac,10bit,anime,",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var transcode = 0; //if this var changes to 1 the file will be transcoded
 
   //default values that will be returned

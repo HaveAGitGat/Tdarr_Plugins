@@ -1,8 +1,9 @@
 /* eslint-disable */
 const fs = require("fs");
 const execSync = require("child_process").execSync;
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Remove_Letterbox",
     Stage: "Pre-processing",
@@ -11,23 +12,34 @@ function details() {
     Operation: "Transcode",
     Description: `Uses iiDrakeii's filter, and crops video files when letterboxing is detected.\nThis uses the FFMPEG NVENC transcoding(hw).\nIf a file is 4K it will be scaled down to 1080p.\nNow with user definable bitrates!(since 1.104 beta)\nCreated by @control#0405`,
     Version: "1.3",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e5c3_CnT_Remove_Letterbox.js",
     Tags: "pre-processing,ffmpeg,nvenc h265,configurable,h265,video only",
     Inputs: [
       {
         name: "bitrate",
+        type: 'string',
+        defaultValue:'3000',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Desired bitrate for a 1080p video, minimum transcode size is based of this too!\\n 720p will be half of 1080p, 480p will be half of 720p.\\nThe default is '3000', this value is based of movies.\\nI would suggest 1500-2000 for series.\\nExample:\\n3000`,
       },
       {
         name: "container",
+        type: 'string',
+        defaultValue:'.mkv',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the output container of the new file.\\n Default: .mkv\\nExample:\\n.mkv`,
       },
     ],
   };
 }
 
-function plugin(file, librarySettings, inputs, otherArguments) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   if (inputs.bitrate == "" || inputs.bitrate == "undefined") {
     var min_bitrate = 6600;
     var avg_rate = 3000;

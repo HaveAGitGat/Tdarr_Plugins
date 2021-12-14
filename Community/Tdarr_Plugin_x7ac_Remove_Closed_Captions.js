@@ -1,62 +1,53 @@
-/* eslint-disable */
-function details() {
-  return {
-    id: "Tdarr_Plugin_x7ac_Remove_Closed_Captions",
-    Stage: "Pre-processing",
-    Name: "Remove closed captions",
-    Type: "Video",
-    Operation: "Remux",
-    Description:
-      "[Contains built-in filter] If detected, closed captions (XDS,608,708) will be removed.",
-    Version: "1.00",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_x7ac_Remove_Closed_Captions.js",
-    Tags: "pre-processing,ffmpeg,subtitle only",
-  };
-}
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-function plugin(file) {
-  //Must return this object
+const details = () => ({
+  id: 'Tdarr_Plugin_x7ac_Remove_Closed_Captions',
+  Stage: 'Pre-processing',
+  Name: 'Remove burned closed captions',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description:
+      '[Contains built-in filter] If detected, closed captions (XDS,608,708) will be removed from streams.',
+  Version: '1.01',
+  Tags: 'pre-processing,ffmpeg,subtitle only',
+  Inputs: [],
+});
 
-  var response = {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
+  const response = {
     processFile: false,
-    preset: "",
-    container: ".mp4",
+    // eslint-disable-next-line no-useless-escape
+    preset: ',-map 0 -codec copy -bsf:v \"filter_units=remove_types=6\"',
+    container: `.${file.container}`,
     handBrakeMode: false,
-    FFmpegMode: false,
+    FFmpegMode: true,
     reQueueAfter: true,
-    infoLog: "",
+    infoLog: '',
   };
-
-  if (file.fileMedium !== "video") {
-    console.log("File is not video");
-
-    response.infoLog += "☒File is not video \n";
-    response.processFile = false;
-
+  if (file.fileMedium !== 'video') {
+    response.infoLog += '☒File is not video \n';
     return response;
-  } else {
-    if (file.hasClosedCaptions === true) {
-      response = {
-        processFile: true,
-        preset: ',-map 0 -codec copy -bsf:v "filter_units=remove_types=6"',
-        container: "." + file.container,
-        handBrakeMode: false,
-        FFmpegMode: true,
-        reQueueAfter: true,
-        infoLog: "☒This file has closed captions \n",
-      };
-
-      return response;
-    } else {
-      response.infoLog +=
-        "☑Closed captions have not been detected on this file \n";
-      response.processFile = false;
-
-      return response;
-    }
   }
-}
+  // Check if Closed Captions are set at file level
+  if (file.hasClosedCaptions) {
+    response.processFile = true;
+    response.infoLog += '☒This file has closed captions \n';
+    return response;
+  }
+  // If not, check for Closed Captions in the streams
+  const { streams } = file.ffProbeData;
+  streams.forEach((stream) => {
+    if (stream.closed_captions) {
+      response.processFile = true;
+    }
+  });
 
+  response.infoLog += response.processFile ? '☒This file has burnt closed captions \n'
+    : '☑Closed captions have not been detected on this file \n';
+  return response;
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

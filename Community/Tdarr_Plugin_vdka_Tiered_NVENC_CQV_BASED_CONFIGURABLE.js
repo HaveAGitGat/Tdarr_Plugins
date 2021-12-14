@@ -1,5 +1,6 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details () {
+const details = () => {
   return {
     id: 'Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE',
     Stage: 'Pre-processing',
@@ -13,13 +14,16 @@ function details () {
      If files are not in hevc they will be transcoded. 
      The output container is mkv. \n\n`,
     Version: '1.00',
-    Link:
-      'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE.js',
     Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
 
     Inputs: [
       {
         name: 'sdCQV',
+        type: 'string',
+        defaultValue: '21',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the CQ:V value you want for 480p and 576p content. 
        \\nExample:\\n 
       
@@ -27,6 +31,11 @@ function details () {
       },
       {
         name: 'hdCQV',
+        type: 'string',
+        defaultValue: '23',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the CQ:V value you want for 720p content.  
       
       \\nExample:\\n
@@ -34,6 +43,11 @@ function details () {
       },
       {
         name: 'fullhdCQV',
+        type: 'string',
+        defaultValue: '25',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the CQ:V value you want for 1080p content.  
       
       \\nExample:\\n
@@ -41,6 +55,11 @@ function details () {
       },
       {
         name: 'uhdCQV',
+        type: 'string',
+        defaultValue: '28',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Enter the CQ:V value you want for 4K/UHD/2160p content.  
       
       \\nExample:\\n
@@ -48,6 +67,11 @@ function details () {
       },
       {
         name: 'bframe',
+        type: 'string',
+        defaultValue: '0',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `Specify amount of b-frames to use, 0-5. Use 0 to disable. (GPU must support this, turing and newer supports this, except for the 1650)  
       
       \\nExample:\\n
@@ -55,6 +79,11 @@ function details () {
       },
       {
         name: 'ffmpeg_preset',
+        type: 'string',
+        defaultValue: 'slow',
+        inputUI: {
+          type: 'text',
+        },
         tooltip: `OPTIONAL, DEFAULTS TO SLOW IF NOT SET 
       \\n Enter the ffmpeg preset you want, leave blank for default (slow) 
       \\n This only applies if video is transcoded, video already in h264 will not be transcoded with this setting
@@ -75,7 +104,10 @@ function details () {
   }
 }
 
-module.exports.plugin = function plugin (file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   var transcode = 0 //if this var changes to 1 the file will be transcoded
   var subcli = `-c:s copy`
   var maxmux = ''
@@ -224,4 +256,7 @@ module.exports.plugin = function plugin (file, librarySettings, inputs) {
 
   return response
 }
-module.exports.details = details
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

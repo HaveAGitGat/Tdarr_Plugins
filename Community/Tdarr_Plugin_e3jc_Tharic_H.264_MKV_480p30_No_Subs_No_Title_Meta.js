@@ -1,20 +1,24 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
-function details() {
+const details = () => {
   return {
     id: "Tdarr_Plugin_e3jc_Tharic_H.264_MKV_480p30_No_Subs_No_Title_Meta",
     Stage: "Pre-processing",
     Name: "H.264 MKV 480p30, No Subs No, Title Meta",
     Type: "Video",
+    Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes subs, metadata (if a title exists) and makes sure the video is h264 480p mkv. \n\n
 `,
     Version: "1.00",
-    Link:
-      "https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_e3jc_Tharic_H.264_MKV_480p30_No_Subs_No_Title_Meta.js",
     Tags: "pre-processing,handbrake,ffmpeg,h264",
+    Inputs:[],
   };
 }
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {

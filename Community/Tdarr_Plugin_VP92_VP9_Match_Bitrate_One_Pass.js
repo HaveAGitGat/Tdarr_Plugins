@@ -1,56 +1,95 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint max-classes-per-file: ["error", 2] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
-    Stage: 'Pre-processing',
-    Name: 'VP9 Encoding Match Bitrate 1 Pass System',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: `Will run through linvpx-vp9 and follow the contrained quality contraints. Will also encode audio to
+const details = () => ({
+  id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
+  Stage: 'Pre-processing',
+  Name: 'VP9 Encoding Match Bitrate 1 Pass System',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: `Will run through linvpx-vp9 and follow the contrained quality contraints. Will also encode audio to
       opus using libopus. Allows user-input on the desired constrained quality amount for each video resolution with
       defaults if none are given.`,
-    Version: '1.00',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_075a_FFMPEG_HEVC_Generic.js',
-    Tags: 'pre-processing,ffmpeg,vp9',
-    Inputs: [
-      {
-        name: 'CQ_240p',
-        tooltip:
+  Version: '1.00',
+  Tags: 'pre-processing,ffmpeg,vp9',
+  Inputs: [
+    {
+      name: 'CQ_240p',
+      type: 'string',
+      defaultValue: '32',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 32',
+    },
+    {
+      name: 'CG_360p',
+      type: 'string',
+      defaultValue: '31',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'CG_360p',
-        tooltip:
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 31',
+    },
+    {
+      name: 'CQ_480p',
+      type: 'string',
+      defaultValue: '28',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'CQ_480p',
-        tooltip:
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 28',
+    },
+    {
+      name: 'CQ_720p',
+      type: 'string',
+      defaultValue: '27',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'CQ_720p',
-        tooltip:
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 27',
+    },
+    {
+      name: 'CQ_1080p',
+      type: 'string',
+      defaultValue: '26',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'CQ_1080p',
-        tooltip:
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 26',
+    },
+    {
+      name: 'CQ_4KUHD',
+      type: 'string',
+      defaultValue: '15',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'CQ_4KUHD',
-        tooltip:
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 15',
+    },
+    {
+      name: 'CQ_8KUHD',
+      type: 'string',
+      defaultValue: '15',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'CQ_8KUHD',
-        tooltip:
+      tooltip:
           'The CQ number (recommended 15-35) for this resolution, default 15',
+    },
+    {
+      name: 'audio_language',
+      type: 'string',
+      defaultValue: 'eng,und',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'audio_language',
-        tooltip: `
+      tooltip: `
             Specify language tag/s here for the audio tracks you'd like to keep, recommended to keep "und" as this\\n
            stands for undertermined, some files may not have the language specified. Must follow ISO-639-2 3 letter\\n
             format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
@@ -60,43 +99,62 @@ function details() {
                 eng,und
                 \\nExample:\\n
                 eng,und,jap`,
+    },
+    {
+      name: 'audio_commentary',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'audio_commentary',
-        tooltip: `Specify if audio tracks that contain commentary/description should be removed.
+      tooltip: `Specify if audio tracks that contain commentary/description should be removed.
                 \\nExample:\\n
                 true
                 \\nExample:\\n
                 false`,
+    },
+    {
+      name: 'subtitle_language',
+      type: 'string',
+      defaultValue: 'eng',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'subtitle_language',
-        tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 \\n
+      tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep. Must follow ISO-639-2 3 \\n
         letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                 \\nExample:\\n
                 eng
                 \\nExample:\\n
                 eng,jap`,
+    },
+    {
+      name: 'subtitle_commentary',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'subtitle_commentary',
-        tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
+      tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
                 \\nExample:\\n
                 true
                 \\nExample:\\n
                 false`,
+    },
+    {
+      name: 'remove_mjpeg',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'remove_mjpeg',
-        tooltip: `Specify if mjpeg codecs should be removed.
+      tooltip: `Specify if mjpeg codecs should be removed.
                 \\nExample:\\n
                 true
                 \\nExample:\\n
                 false`,
-      },
-    ],
-  };
-}
+    },
+  ],
+});
 
 // #region Helper Classes/Modules
 
@@ -442,7 +500,10 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   return configuration;
 }
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object
   const response = {
     container: '.webm',
@@ -472,7 +533,7 @@ function plugin(file, librarySettings, inputs) {
   ${audioSettings.GetOutputSettings()} ${subtitleSettings.GetOutputSettings()}`;
   response.infoLog += logger.GetLogData();
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;

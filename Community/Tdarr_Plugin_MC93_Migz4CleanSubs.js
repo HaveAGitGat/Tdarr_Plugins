@@ -1,37 +1,55 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_Migz4CleanSubs',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Clean subtitle streams',
-    Type: 'subtitles',
-    Operation: 'Clean',
-    Description: 'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',
-    Version: '2.4',
-    Link: 'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz4CleanSubs.js',
-    Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
-    Inputs: [{
-      name: 'language',
-      tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep.
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_Migz4CleanSubs',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Clean subtitle streams',
+  Type: 'Subtitle',
+  Operation: 'Transcode',
+  Description: 'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',
+  Version: '2.4',
+  Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
+  Inputs: [{
+    name: 'language',
+    type: 'string',
+    defaultValue: 'eng',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep.
                     \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                \\nExample:\\n
                eng
 
                \\nExample:\\n
                eng,jpn`,
+  },
+  {
+    name: 'commentary',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'commentary',
-      tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
+    tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
                \\nExample:\\n
                true
 
                \\nExample:\\n
                false`,
+  },
+  {
+    name: 'tag_language',
+    type: 'string',
+    defaultValue: 'eng',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'tag_language',
-      tooltip: `Specify a single language for subtitle tracks with no language or unknown language to be tagged with.
+    tooltip: `Specify a single language for subtitle tracks with no language or unknown language to be tagged with.
                     \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                     \\nLeave empty to disable.
                \\nExample:\\n
@@ -39,12 +57,14 @@ function details() {
 
                \\nExample:\\n
                por`,
-    },
-    ],
-  };
-}
+  },
+  ],
+});
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -105,7 +125,7 @@ function plugin(file, librarySettings, inputs) {
       // AND then checks for stream titles with the following "commentary or description".
       // Removing any streams that are applicable.
       if (
-        inputs.commentary.toLowerCase() === 'true'
+        inputs.commentary === true
         && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
         && (file.ffProbeData.streams[i].tags.title
           .toLowerCase()
@@ -179,6 +199,6 @@ function plugin(file, librarySettings, inputs) {
     response.infoLog += "☑File doesn't contain subtitle tracks which are unwanted or that require tagging.\n";
   }
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;
