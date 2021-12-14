@@ -18,8 +18,8 @@ const details = () => ({
       type: 'text',
     },
     tooltip: 'Comma separated list of input codecs to be processed. Defaults to dts.'
-        + '\\nExample:\\n'
-        + 'dts,aac,ac3',
+      + '\\nExample:\\n'
+      + 'dts,aac,ac3',
   }, {
     name: 'output_codec',
     type: 'string',
@@ -28,6 +28,26 @@ const details = () => ({
       type: 'text',
     },
     tooltip: 'FFMPEG encoder used for the output of the new tracks. Defaults to ac3.',
+  }, {
+    name: 'position_new_audio',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'postion new audiostream. empty equals post. enter word before to add the new track prior.',
+  }, {
+    name: 'position_new_audio',
+    type: 'string',
+    defaultValue: 'after',
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'before',
+        'after',
+      ],
+    },
+    tooltip: 'Set the position of the new audio stream befor or after original',
   }, {
     name: 'bitrate',
     type: 'string',
@@ -44,7 +64,7 @@ const details = () => ({
       type: 'text',
     },
     tooltip: '[true/false] Multi-channel audio requires a higher bitrate for the same quality, '
-        + 'do you want the plugin to calculate this? (bitrate * (channels / 2))',
+      + 'do you want the plugin to calculate this? (bitrate * (channels / 2))',
   }, {
     name: 'custom_bitrate_input',
     type: 'string',
@@ -95,7 +115,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       && currStream.codec_name === inputs.output_codec
       && currStream.tags
     ) {
-      if (currStream.tags.COPYRIGHT === 'henk_asac') {
+      if (currStream.tags.COPYRIGHT === 'henk_asac' || currStream.tags.COPYRIGHT === '"henk_asac"') {
         killPlugin = true;
       }
     }
@@ -110,8 +130,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const currStream = file.ffProbeData.streams[i];
     if (currStream.codec_type.toLowerCase() === 'audio') {
-      response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
-      streamCount += 1;
+      if (inputs.position_new_audio === 'after') {
+        response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
+        streamCount += 1;
+      }
 
       if (inputCodecs.includes(currStream.codec_name.toLowerCase())) {
         convertCount += 1;
@@ -126,6 +148,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} ${inputs.output_codec || 'ac3'} ${bitrate} `
           + `-metadata:s:a:${streamCount} title="" -metadata:s:a:${streamCount} copyright="henk_asac" `
           + `-disposition:a:${streamCount} 0`;
+        streamCount += 1;
+      }
+      if (inputs.position_new_audio === 'before') {
+        response.preset += ` -map 0:a:${indexCount}? -c:a:${streamCount} copy `;
         streamCount += 1;
       }
       indexCount += 1;
