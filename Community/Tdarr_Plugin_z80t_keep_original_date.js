@@ -6,24 +6,23 @@ module.exports.dependencies = [
   'touch',
 ];
 
-const details = () => {
-  return {
-    id: 'Tdarr_Plugin_z80t_keep_original_date',
-    Stage: 'Post-processing',
-    Name: 'Keep original file dates and times after transcoding',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: 'This plugin copies the original file dates and times to the transcoded file \n\n',
-    Version: '1.10',
-    Tags: 'post-processing,dates,date',
-    Inputs: [{
-      name: 'server',
-      type: 'string',
-      defaultValue: '192.168.1.100',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `IP address or hostname of the server assigned to this node, will be used for API requests.
+const details = () => ({
+  id: 'Tdarr_Plugin_z80t_keep_original_date',
+  Stage: 'Post-processing',
+  Name: 'Keep original file dates and times after transcoding',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'This plugin copies the original file dates and times to the transcoded file \n\n',
+  Version: '1.10',
+  Tags: 'post-processing,dates,date',
+  Inputs: [{
+    name: 'server',
+    type: 'string',
+    defaultValue: '192.168.1.100',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `IP address or hostname of the server assigned to this node, will be used for API requests.
       If you are running nodes within Docker you should use the server IP address rather than the name.
 
       \\nExample:\\n
@@ -31,40 +30,39 @@ const details = () => {
 
       \\nExample:\\n
        192.168.1.100`,
-    }, {
-      name: 'extensions',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `When files are trans-coded the file extension may change,
+  }, {
+    name: 'extensions',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `When files are trans-coded the file extension may change,
       enter a list of extensions to try and match the original file with in the database after trans-coding.
       Default is the list of container types from library settings. The list will be searched in order and
       the extension of the original file will always be checked first before the list is used.
 
       \\nExample:\\n
        mkv,mp4,avi`,
+  },
+  {
+    name: 'log',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
-    {
-      name: 'log',
-      type: 'boolean',
-      defaultValue: false,
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
-      },
-      tooltip: `Write log entries to console.log. Default is false.
+    tooltip: `Write log entries to console.log. Default is false.
 
       \\nExample:\\n
        true`,
-    },
-    ],
-  };
-};
+  },
+  ],
+});
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
