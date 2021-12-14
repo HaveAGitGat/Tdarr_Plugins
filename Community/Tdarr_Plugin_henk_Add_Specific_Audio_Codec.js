@@ -103,7 +103,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       && currStream.codec_name === inputs.output_codec
       && currStream.tags
     ) {
-      if (currStream.tags.COPYRIGHT === 'henk_asac') {
+      if (currStream.tags.COPYRIGHT === 'henk_asac' || currStream.tags.COPYRIGHT === '"henk_asac"') {
         killPlugin = true;
       }
     }
