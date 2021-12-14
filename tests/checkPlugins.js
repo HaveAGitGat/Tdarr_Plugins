@@ -117,7 +117,16 @@ module.exports.plugin = plugin;`;
     process.exit(1);
   } else if (pluginDetails.Inputs && Array.isArray(pluginDetails.Inputs)) {
     const inputs = pluginDetails.Inputs;
+    const savedInputs = {};
     for (let j = 0; j < inputs.length; j += 1) {
+      // Prevent duplicate plugin inputs
+      if (savedInputs[inputs[j].name] === true) {
+        console.log(`Plugin Input already exists: './Community/${files[i]}' : ${inputs[j].name}`);
+        process.exit(1);
+      } else {
+        savedInputs[inputs[j].name] = true;
+      }
+
       const inputKeys = Object.keys(inputs[j]);
       if (
         inputKeys[0] !== 'name'
