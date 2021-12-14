@@ -28,6 +28,14 @@ const details = () => ({
       type: 'text',
     },
     tooltip: 'FFMPEG encoder used for the output of the new tracks. Defaults to ac3.',
+  },  {
+    name: 'position_new_audio',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'postion new audiostream. empty equals post. enter word before to add the new track prior.',
   }, {
     name: 'position_new_audio',
     type: 'string',
