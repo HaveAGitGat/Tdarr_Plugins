@@ -1,20 +1,21 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-function details() {
-  return {
-    id: 'Tdarr_Plugin_MC93_MigzImageRemoval',
-    Stage: 'Pre-processing',
-    Name: 'Migz-Remove image formats from file',
-    Type: 'Video',
-    Operation: 'Clean',
-    Description: 'Identify any unwanted image formats in the file and remove those streams. MJPEG & PNG \n\n',
-    Version: '1.3',
-    Link:
-      'https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_MigzImageRemoval.js',
-    Tags: 'pre-processing,ffmpeg,video only',
-  };
-}
+const details = () => ({
+  id: 'Tdarr_Plugin_MC93_MigzImageRemoval',
+  Stage: 'Pre-processing',
+  Name: 'Migz-Remove image formats from file',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'Identify any unwanted image formats in the file and remove those streams. MJPEG & PNG \n\n',
+  Version: '1.3',
+  Tags: 'pre-processing,ffmpeg,video only',
+  Inputs: [],
+});
 
-function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -65,6 +66,6 @@ function plugin(file) {
       += "☑File doesn't contain any unwanted image format streams.\n";
   }
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;

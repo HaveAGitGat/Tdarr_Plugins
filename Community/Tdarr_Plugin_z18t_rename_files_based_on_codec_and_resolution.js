@@ -1,18 +1,21 @@
-module.exports.details = function details() {
-  return {
-    id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
-    Stage: 'Post-processing',
-    Name: 'Rename based on codec and resolution',
-    Type: 'Video',
-    Operation: '',
-    Description: '[Contains built-in filter]This plugin renames files depending on codec and resolution\n\n',
-    Version: '1.00',
-    Link: '',
-    Tags: 'post-processing',
-  };
-};
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
-module.exports.plugin = function plugin(file) {
+const details = () => ({
+  id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
+  Stage: 'Post-processing',
+  Name: 'Rename based on codec and resolution',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: '[Contains built-in filter]This plugin renames files depending on codec and resolution\n\n',
+  Version: '1.00',
+  Tags: 'post-processing',
+  Inputs: [],
+});
+
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   try {
     // eslint-disable-next-line global-require
     const fs = require('fs');
@@ -138,3 +141,6 @@ module.exports.plugin = function plugin(file) {
 
   return undefined;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;

@@ -1,6 +1,7 @@
 /* eslint-disable */
 var fs = require('fs');
 var path = require('path');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 if (fs.existsSync(path.join(process.cwd(), '/npm'))) {
     var rootModules = path.join(process.cwd(), '/npm/node_modules/')
 } else {
@@ -10,20 +11,24 @@ if (fs.existsSync(path.join(process.cwd(), '/npm'))) {
 const importFresh = require(rootModules + 'import-fresh');
 const library = importFresh('../methods/library.js')
 
-module.exports.details = function details() {
+const details = () => {
     return {
         id: "Tdarr_Plugin_O8O0dCTlb_Set_File_Permissions_For_UnRaid",
+        Stage: 'Pre-processing',
         Name: "Set file permissions for UnRaid",
         Type: "Video",
         Operation: "Transcode",
         Description: "Sets file permissions using chown nobody:users to prevent lock from root. Use at end of stack. ",
         Version: "",
-        Link: "",
-        Tags: "post-processing"
+        Tags: "post-processing",
+        Inputs:[],
     }
 }
 
-module.exports.plugin = function plugin(file) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
 
     //Must return this object at some point
     var response = {
@@ -52,3 +57,7 @@ module.exports.plugin = function plugin(file) {
         return response
     }
 }
+
+
+module.exports.details = details;
+module.exports.plugin = plugin;

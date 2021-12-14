@@ -1,3 +1,4 @@
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 /* eslint-disable */
 /* eslint max-len: 0 */
@@ -5,7 +6,7 @@
 /* eslint no-mixed-operators: 0 */
 
 const os = require('os');
-function details() {
+const details = () => {
   return {
     id: 'Tdarr_Plugin_ER01_Transcode audio and video with HW (PC and Mac)',
     Stage: 'Pre-processing',
@@ -18,9 +19,15 @@ function details() {
                 Audio conversion is either 2 channel ac3 or 6 channel ac3, for maximal compatibility and small file size.  All subtitles removed.
         The idea is to homogenize your collection to 1080p or higher movies with 5.1 audio, or 720p TV shows with 2.0 audio.`,
 
+    Version:'1.0',
     Tags: 'pre-processing,ffmpeg,video only,configurable,h265',
     Inputs: [{
       name: 'audio_channels',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify whether to modify audio channels.
                   \\n Leave empty to disable.
                     \\nExample:\\n
@@ -31,6 +38,11 @@ function details() {
     },
     {
       name: 'resize',
+      type: 'string',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify if output file should be reduced to 720p from 1080p. Default is false.
                     \\nExample:\\n
                     yes
@@ -40,6 +52,11 @@ function details() {
     },
     {
       name: 'bitrate_cutoff',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.
                   \\n Rate is in kbps.
                   \\n Leave empty to disable.
@@ -54,7 +71,10 @@ function details() {
   };
 }
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const response = {
     container: '.mkv',
     processFile: false,
