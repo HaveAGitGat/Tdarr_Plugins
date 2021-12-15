@@ -16,9 +16,10 @@ const loadDefaultValues = (inputs, details) => {
       inputs[defaultInputs[i].name] = defaultInputs[i].defaultValue;
     }
 
-    // convert string to boolean esle false
+    // convert string to boolean else false
     if (defaultInputs[i].type === 'boolean') {
-      inputs[defaultInputs[i].name] = inputs[defaultInputs[i].name] === 'true';
+      inputs[defaultInputs[i].name] = !!(inputs[defaultInputs[i].name] === 'true'
+      || inputs[defaultInputs[i].name] === true);
     }
 
     // convert string to number else 0
