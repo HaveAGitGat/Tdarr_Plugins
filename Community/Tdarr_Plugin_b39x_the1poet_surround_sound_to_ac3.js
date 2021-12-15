@@ -13,7 +13,7 @@ const details = () => ({
   Tags: 'pre-processing,ffmpeg,audio only,',
   Inputs: [
     {
-      name: 'overwriteTrack',
+      name: 'overwriteTracks',
       type: 'boolean',
       defaultValue: true,
       inputUI: {
@@ -59,7 +59,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let hasnonAC3SurroundTrack = false;
 
   let shouldTranscode = true;
-  if (inputs.overwriteTrack === false) {
+  if (inputs.overwriteTracks === false) {
     const hasAc3_6Stream = file.ffProbeData.streams.filter((row) => row.channels === 6
       && row.codec_name === 'ac3');
     if (hasAc3_6Stream.length > 0) {
@@ -84,7 +84,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         && currStream.codec_name !== 'ac3'
         && currStream.codec_type.toLowerCase() === 'audio'
       ) {
-        if (inputs.overwriteTrack === true) {
+        if (inputs.overwriteTracks === true) {
           ffmpegCommandInsert += ` -c:a:${audioIdx} ac3 `;
         } else {
           ffmpegCommandInsert += `-map 0:a:${audioIdx} -c:a:${audioIdx} ac3 `;
