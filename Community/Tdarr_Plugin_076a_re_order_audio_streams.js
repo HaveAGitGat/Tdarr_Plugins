@@ -116,11 +116,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  ffmpegCommand += ` -map 0:a:${streamIdx} -disposition:a:${streamIdx} default`;
+  ffmpegCommand += ` -map 0:a:${streamIdx} -disposition:a:0 default`;
 
   for (var i = 0; i < allAudioTracks.length; i++) {
     if (i !== streamIdx) {
-      ffmpegCommand += ` -map 0:a:${i} -disposition:a:${i} none `;
+      ffmpegCommand += ` -map 0:a:${i} `;
+    }
+    if (i !== 0) {
+      ffmpegCommand += ` -disposition:a:${i} 0 `;
     }
   }
 
