@@ -126,7 +126,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       ffmpegCommand += ` -map 0:s:${i} `;
     }
     if (i !== 0) {
-      ffmpegCommand += ` -disposition:a:${i} 0 `;
+      ffmpegCommand += ` -disposition:s:${i} 0 `;
     }
   }
 
