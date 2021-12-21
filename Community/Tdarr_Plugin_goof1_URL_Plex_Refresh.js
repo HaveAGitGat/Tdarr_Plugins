@@ -1,3 +1,5 @@
+const http = require('http');
+const https = require('https');
 const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => ({
@@ -6,7 +8,8 @@ const details = () => ({
   Name: 'Refresh Plex via URL',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Refreshes folder containing the current file in Plex so changes are picked up properly.`,
+  Description: `Refreshes folder containing the current file in Plex so changes are picked up properly 
+                without the use of external applications or other dockers`,
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -16,7 +19,11 @@ const details = () => ({
       type: 'string',
       defaultValue: 'http',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'http',
+          'https',
+        ],
       },
       tooltip: `
                Specified the type of request to make, http:// or https://
@@ -46,12 +53,12 @@ const details = () => ({
     {
       name: 'Plex_Port',
       type: 'number',
-      defaultValue: '',
+      defaultValue: 32400,
       inputUI: {
         type: 'number',
       },
       tooltip: `
-               The port required to access Plex on the network (may not be required if used with reverse proxy)
+               The port required to access Plex on the network (may not be required if used with reverse proxy, use 0 if not required)
 
                \\nExample:\\n
                32400`,
@@ -59,7 +66,7 @@ const details = () => ({
     {
       name: 'Plex_Token',
       type: 'string',
-      defaultValue: 'ssQ_eXYYH3hxq3dviDdR',
+      defaultValue: '',
       inputUI: {
         type: 'text',
       },
@@ -118,7 +125,7 @@ const details = () => ({
                /data/`,
     },
     {
-      name: 'TDarr_Path',
+      name: 'Tdarr_Path',
       type: 'string',
       defaultValue: '',
       inputUI: {
@@ -143,6 +150,20 @@ const details = () => ({
   ],
 });
 
+function checkReply(statusCode, urlNoToken) {
+  if (statusCode === 200) {
+    response.infoLog += `☒ Above shown folder scanned in Plex! \n`
+  } else if (statusCode === 401) {
+    response.infoLog += `Plex replied that the token was not authorized on this server \n`
+  } else if (statusCode === 404) {
+    response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
+  ${urlNoToken}[redacted] \n`
+  } else {
+    response.infoLog += `There was an issue reaching Plex. The URL used was 
+  ${urlNoToken}[redacted] \n`
+  }
+}
+
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -156,32 +177,27 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const http = require('http')
-  const https = require('https')
-
-  const type = inputs.Url_Protocol
-  const url = inputs.Plex_Url
-  const port = inputs.Plex_Port
-  const token = inputs.Plex_Token
-  const key = inputs.Library_Key
-  const plexPath = inputs.Plex_Path
-  const tdarrPath = inputs.TDarr_Path
+  const type = inputs.Url_Protocol;
+  const url = inputs.Plex_Url;
+  const port = inputs.Plex_Port;
+  const token = inputs.Plex_Token;
+  const key = inputs.Library_Key;
+  const plexPath = inputs.Plex_Path;
+  const tdarrPath = inputs.Tdarr_Path;
 
   if (!type || !url || !token || !key) {
-    response.infoLog = `Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required`
-    return response
+    throw new Error('Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required');
   }
 
-  let filePath = file.file.substring(0, filePath.lastIndexOf("/"));
+  let filePath = file.file.substring(0, filePath.lastIndexOf('/'));
 
   if (tdarrPath || plexPath) {
-    filePath = filePath.replace(tdarrPath, plexPath)
+    filePath = filePath.replace(tdarrPath, plexPath);
   }
 
-  response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`
+  response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
 
   const portIfUsed = port ? `:${port}` : ''
-
   const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=`
 
   if (type === 'http') {
@@ -189,36 +205,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       checkReply(res.statusCode, urlNoToken)
       return response
     }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`
-      return response
+      response.infoLog += `We have encountered an error: ${e}`;
+      return response;
     });
   } else if (type === 'https') {
     https.get(urlNoToken + token, (res) => {
       checkReply(res.statusCode, urlNoToken)
       return response
     }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`
-      return response
+      response.infoLog += `We have encountered an error: ${e}`;
+      return response;
     });
   } else {
-    response.infoLog += `Plex could not be updated, the Url_Protocol can only be http or https. ${type} is not valid \n`
-    return response
+    response.infoLog += `Plex could not be updated, \n
+    the Url_Protocol can only be http or https. ${type} is not valid \n`;
+    return response;
   }
-};
 
-function checkReply(statusCode, urlNoToken) {
-  if (statusCode === 200) {
-    response.infoLog += `☒ Above shown folder scanned in Plex! \n`
-  } else if (statusCode === 401) {
-    response.infoLog += `Plex replied that the token was not authorized on this server \n`
-  } else if (statusCode === 404) {
-    response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
-    ${urlNoToken}[redacted] \n`
-  } else {
-    response.infoLog += `There was an issue reaching Plex. The URL used was 
-    ${urlNoToken}[redacted] \n`
-  }
-}
-
-module.exports.details = details;
-module.exports.plugin = plugin;
+  module.exports.details = details;
+  module.exports.plugin = plugin;
