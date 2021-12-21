@@ -1,7 +1,5 @@
-const http = require('http');
-const https = require('https');
 const loadDefaultValues = require('../methods/loadDefaultValues');
-
+/* eslint-disable */
 const details = () => ({
   id: 'Tdarr_Plugin_goof1_URL_Plex_Refresh',
   Stage: 'Post-processing',
@@ -58,7 +56,7 @@ const details = () => ({
         type: 'number',
       },
       tooltip: `
-               The port required to access Plex on the network (may not be required if used with reverse proxy, use 0 if not required)
+               The port required to access Plex on the network (may not be required if used with reverse proxy)
 
                \\nExample:\\n
                32400`,
@@ -162,10 +160,12 @@ function checkReply(statusCode, urlNoToken) {
     response.infoLog += `There was an issue reaching Plex. The URL used was 
   ${urlNoToken}[redacted] \n`
   }
-}
+};
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const http = require('http');
+  const https = require('https');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = loadDefaultValues(inputs, details);
 
@@ -173,7 +173,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     file,
     removeFromDB: false,
     updateDB: false,
-    processFile = false,
+    processFile: false,
     infoLog: '',
   };
 
@@ -221,6 +221,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     the Url_Protocol can only be http or https. ${type} is not valid \n`;
     return response;
   }
+}
 
-  module.exports.details = details;
-  module.exports.plugin = plugin;
+module.exports.details = details;
+module.exports.plugin = plugin;
