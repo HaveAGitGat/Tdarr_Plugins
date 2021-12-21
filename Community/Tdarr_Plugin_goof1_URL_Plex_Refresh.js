@@ -1,4 +1,5 @@
-
+const http = require('http');
+const https = require('https');
 const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => ({
@@ -7,7 +8,7 @@ const details = () => ({
   Name: 'Refresh Plex via URL',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Refreshes folder containing the current file in Plex so changes are picked up properly.`,
+  Description: 'Refreshes folder containing the current file in Plex so changes are picked up properly.',
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -17,7 +18,11 @@ const details = () => ({
       type: 'string',
       defaultValue: 'http',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'http',
+          'https',
+        ],
       },
       tooltip: `
                Specified the type of request to make, http:// or https://
@@ -46,8 +51,8 @@ const details = () => ({
     },
     {
       name: 'Plex_Port',
-      type: 'string',
-      defaultValue: '',
+      type: 'number',
+      defaultValue: 32400,
       inputUI: {
         type: 'text',
       },
@@ -60,7 +65,7 @@ const details = () => ({
     {
       name: 'Plex_Token',
       type: 'string',
-      defaultValue: 'ssQ_eXYYH3hxq3dviDdR',
+      defaultValue: '',
       inputUI: {
         type: 'text',
       },
@@ -85,9 +90,11 @@ const details = () => ({
 
               See the below page under the 'Listing Defined Libraries' heading. 
               The Library key is pointed out here as an example. 
-              This number will be used here for the library relevant to the content being transcoded within this TDarr library. 
+              This number will be used here for the library relevant to the content
+              being transcoded within this Tdarr library. 
 
-              *Note* If this number is wrong everything will behave as though it's working great but the folder will simply not be scanned. 
+              *Note* If this number is wrong everything will behave as though it's
+              working great but the folder will simply not be scanned. 
 
               https://support.plex.tv/articles/201638786-plex-media-server-url-commands/
 
@@ -103,9 +110,10 @@ const details = () => ({
       },
       tooltip: `
               If the Plex path is not the same as the local path you may need to sub parts of the path. 
-              Here is where you would enter the path that Plex uses to find the file. You would only enter the part of the path that is different.
+              Here is where you would enter the path that Plex uses to find the file. 
+              You would only enter the part of the path that is different.
 
-              If your TDarr path is:
+              If your Tdarr path is:
               /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4
               
               And the Plex path to the file is:
@@ -117,7 +125,7 @@ const details = () => ({
                /data/`,
     },
     {
-      name: 'TDarr_Path',
+      name: 'Tdarr_Path',
       type: 'string',
       defaultValue: '',
       inputUI: {
@@ -125,9 +133,10 @@ const details = () => ({
       },
       tooltip: `
               If the Plex path is not the same as the local path you may need to sub parts of the path. 
-              Here is where you would enter the path that Plex uses to find the file. You would only enter the part of the path that is different.
+              Here is where you would enter the path that Plex uses to find the file. You would only enter
+              the part of the path that is different.
 
-              If your TDarr path is:
+              If your Tdarr path is:
               /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4
               
               And the Plex path to the file is:
@@ -141,81 +150,81 @@ const details = () => ({
   ],
 });
 
+function checkReply(response, statusCode, redactedUrl) {
+  if (statusCode === 200) {
+    response.infoLog += '☒ Above shown folder scanned in Plex! \n';
+  } else if (statusCode === 401) {
+    response.infoLog += 'Plex replied that the token was not authorized on this server \n';
+  } else if (statusCode === 404) {
+    response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
+    ${redactedUrl} \n`;
+  } else {
+    response.infoLog += `There was an issue reaching Plex. The URL used was 
+    ${redactedUrl} \n`;
+  }
+}
+
+// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = loadDefaultValues(inputs, details);
 
-  let response = {
+  const response = {
     file,
     removeFromDB: false,
     updateDB: false,
     infoLog: '',
   };
 
-  const http = require('http')
-  const https = require('https')
-
-  const type = inputs.Url_Protocol
-  const url = inputs.Plex_Url
-  const port = inputs.Plex_Port
-  const token = inputs.Plex_Token
-  const key = inputs.Library_Key
-  const plexPath = inputs.Plex_Path
-  const tdarrPath = inputs.TDarr_Path
+  const type = inputs.Url_Protocol;
+  const url = inputs.Plex_Url;
+  const port = inputs.Plex_Port;
+  const token = inputs.Plex_Token;
+  const key = inputs.Library_Key;
+  const plexPath = inputs.Plex_Path;
+  const tdarrPath = inputs.Tdarr_Path;
 
   if (!type || !url || !token || !key) {
-    response.infoLog = `Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required`
-    response.processFile = false
-    return response
+    throw new Error('Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required');
   }
 
-
-  let filePath = file.file
-  filePath = filePath.substring(0, filePath.lastIndexOf("/"));
+  let filePath = file.file;
+  filePath = filePath.substring(0, filePath.lastIndexOf('/'));
 
   if (tdarrPath || plexPath) {
-    filePath = filePath.replace(tdarrPath, plexPath)
+    filePath = filePath.replace(tdarrPath, plexPath);
   }
 
-  response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`
+  response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
 
-  const fullUrl = `${type}://${url}${port ? `:${port}` : ''}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=${token}`
-  const redactedUrl = `${type}://${url}${port ? `:${port}` : ''}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=[redacted]`
+  const root = `${type}://${url}${port ? `:${port}` : ''}`;
+  const fullUrl = `${root}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=${token}`;
+  const redactedUrl = `${root}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=[redacted]`;
 
   if (type === 'http') {
     http.get(fullUrl, (res) => {
-      checkReply(res.statusCode, redactedUrl)
-      return response
+      checkReply(response, res.statusCode, redactedUrl);
+      return response;
     }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`
-      return response
+      response.infoLog += `We have encountered an error: ${e}`;
+      return response;
     });
   } else if (type === 'https') {
     https.get(fullUrl, (res) => {
-      checkReply(res.statusCode, redactedUrl)
-      return response
+      checkReply(response, res.statusCode, redactedUrl);
+      return response;
     }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`
-      return response
+      response.infoLog += `We have encountered an error: ${e}`;
+      return response;
     });
   } else {
-    response.infoLog += `Plex could not be updated, the Url_Protocol can only be http or https. ${type} is not valid \n`
-    return response
+    response.infoLog += `Plex could not be updated, 
+    the Url_Protocol can only be http or https. ${type} is not valid \n`;
+    return response;
   }
-};
 
-function checkReply(statusCode, redactedUrl) {
-  if (statusCode == 200) {
-    response.infoLog += `☒ Above shown folder scanned in Plex! \n`
-  } else if (statusCode == 401) {
-    response.infoLog += `Plex replied that the token was not authorized on this server \n`
-  } else if (statusCode == 404) {
-    response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
-    ${redactedUrl} \n`
-  } else {
-    response.infoLog += `There was an issue reaching Plex. The URL used was 
-    ${redactedUrl} \n`
-  }
-}
+  return response;
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;
