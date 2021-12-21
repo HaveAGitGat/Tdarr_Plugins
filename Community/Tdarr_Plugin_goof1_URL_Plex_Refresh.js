@@ -25,10 +25,8 @@ const details = () => ({
       },
       tooltip: `
                Specified the type of request to make, http:// or https://
-
                \\nExample:\\n
                http
-
                \\nExample:\\n
                https`,
     },
@@ -41,10 +39,8 @@ const details = () => ({
       },
       tooltip: `
                Enter the IP address/URL for Plex. Must include http(s)://
-
                \\nExample:\\n
                192.168.0.10
-
                \\nExample:\\n
                subdomain.domain.tld`,
     },
@@ -57,7 +53,6 @@ const details = () => ({
       },
       tooltip: `
                The port required to access Plex on the network (may not be required if used with reverse proxy)
-
                \\nExample:\\n
                32400`,
     },
@@ -71,9 +66,7 @@ const details = () => ({
       tooltip: `
                Auth token that is used to authenticate this commend on the Plex server. \\n
                Instructions for retrieving the token can be found here. \\n\\n
-
                https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
-
                \\nExample:\\n
                ssQ_eXYYH3hxq3dviDdR`,
     },
@@ -86,7 +79,6 @@ const details = () => ({
       },
       tooltip: `
               Library key for the library in Plex where this content is displayed. \\n
-
               This number lets Plex know which library contains the current path needing a refresh. \\n
               See the below page under the 'Listing Defined Libraries' heading to find the key. \\n
               
@@ -109,15 +101,12 @@ const details = () => ({
               If the Plex path is not the same as the local path you may need to sub parts of the path. \\n
               Here is where you would enter the path that Plex uses to find the file. \\n
               You would only enter the part of the path that is different. \\n\\n
-
               If your TDarr path is: \\n
               /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n\\n
               
               And the Plex path to the file is: \\n
               /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n
-
               then part you would enter here is:
-
                \\nExample:\\n
                /data/`,
     },
@@ -132,15 +121,12 @@ const details = () => ({
               If the Plex path is not the same as the local path you may need to sub parts of the path. \\n
               Here is where you would enter the path that Plex uses to find the file. \\n
               You would only enter the part of the path that is different. \\n
-
               If your TDarr path is: \\n
               /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n\\n
               
               And the Plex path to the file is:\\n
               /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n
-
               then part you would enter here is:
-
                \\nExample:\\n
                /media/local/`,
     },
