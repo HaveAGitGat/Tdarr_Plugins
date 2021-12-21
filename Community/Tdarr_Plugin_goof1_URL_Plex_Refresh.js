@@ -1,12 +1,13 @@
 const loadDefaultValues = require('../methods/loadDefaultValues');
-
+/* eslint-disable */
 const details = () => ({
   id: 'Tdarr_Plugin_goof1_URL_Plex_Refresh',
   Stage: 'Post-processing',
   Name: 'Refresh Plex via URL',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Refreshes folder containing the current file in Plex so changes are picked up properly.`,
+  Description: `Refreshes folder containing the current file in Plex so changes are picked up properly 
+                without the use of external applications or other dockers`,
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -16,7 +17,11 @@ const details = () => ({
       type: 'string',
       defaultValue: 'http',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'http',
+          'https',
+        ],
       },
       tooltip: `
                Specified the type of request to make, http:// or https://
@@ -46,9 +51,9 @@ const details = () => ({
     {
       name: 'Plex_Port',
       type: 'number',
-      defaultValue: '',
+      defaultValue: 32400,
       inputUI: {
-        type: 'number',
+        type: 'text',
       },
       tooltip: `
                The port required to access Plex on the network (may not be required if used with reverse proxy)
@@ -59,13 +64,13 @@ const details = () => ({
     {
       name: 'Plex_Token',
       type: 'string',
-      defaultValue: 'ssQ_eXYYH3hxq3dviDdR',
+      defaultValue: '',
       inputUI: {
         type: 'text',
       },
       tooltip: `
-               Auth token that is used to authenticate this commend on the Plex server. \n
-               Instructions for retrieving the token can be found here. \n\n
+               Auth token that is used to authenticate this commend on the Plex server. \\n
+               Instructions for retrieving the token can be found here. \\n\\n
 
                https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
 
@@ -74,25 +79,24 @@ const details = () => ({
     },
     {
       name: 'Library_Key',
-      type: 'number',
+      type: 'string',
       defaultValue: '1',
       inputUI: {
-        type: 'number',
+        type: 'text',
       },
       tooltip: `
-              Library key for the library in Plex where this content is displayed. \n
+              Library key for the library in Plex where this content is displayed. \\n
 
-              See the below page under the 'Listing Defined Libraries' heading. \n
-              The Library key is pointed out here as an example. \n
-              This number will be used here for the library relevant to the content being transcoded within this TDarr library. \n
-
+              This number lets Plex know which library contains the current path needing a refresh. \\n
+              See the below page under the 'Listing Defined Libraries' heading to find the key. \\n
+              
+              https://support.plex.tv/articles/201638786-plex-media-server-url-commands/ \\n
+              
               *Note* If this number is wrong everything will behave as though it's
-                     working great but the folder will simply not be scanned. \n\n
-
-              https://support.plex.tv/articles/201638786-plex-media-server-url-commands/
-
-               \\nExample:\\n
-               29`,
+                working great but the folder will simply not be scanned. \\n\\n
+              
+              \\nExample:\\n
+              29`,
     },
     {
       name: 'Plex_Path',
@@ -102,15 +106,15 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `
-              If the Plex path is not the same as the local path you may need to sub parts of the path. \n
-              Here is where you would enter the path that Plex uses to find the file. \n
-              You would only enter the part of the path that is different. \n
+              If the Plex path is not the same as the local path you may need to sub parts of the path. \\n
+              Here is where you would enter the path that Plex uses to find the file. \\n
+              You would only enter the part of the path that is different. \\n\\n
 
-              If your TDarr path is: \n
-              /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\n\n
+              If your TDarr path is: \\n
+              /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n\\n
               
-              And the Plex path to the file is: \n
-              /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \n
+              And the Plex path to the file is: \\n
+              /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n
 
               then part you would enter here is:
 
@@ -118,22 +122,22 @@ const details = () => ({
                /data/`,
     },
     {
-      name: 'TDarr_Path',
+      name: 'Tdarr_Path',
       type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
       },
       tooltip: `
-              If the Plex path is not the same as the local path you may need to sub parts of the path. \n
-              Here is where you would enter the path that Plex uses to find the file. \n
-              You would only enter the part of the path that is different. \n
+              If the Plex path is not the same as the local path you may need to sub parts of the path. \\n
+              Here is where you would enter the path that Plex uses to find the file. \\n
+              You would only enter the part of the path that is different. \\n
 
-              If your TDarr path is: \n
-              /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \n\n
+              If your TDarr path is: \\n
+              /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n\\n
               
-              And the Plex path to the file is:\n
-              /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\n
+              And the Plex path to the file is:\\n
+              /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n
 
               then part you would enter here is:
 
@@ -143,69 +147,6 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
-
-  const response = {
-    file,
-    removeFromDB: false,
-    updateDB: false,
-    processFile = false,
-    infoLog: '',
-  };
-
-  const http = require('http')
-  const https = require('https')
-
-  const type = inputs.Url_Protocol
-  const url = inputs.Plex_Url
-  const port = inputs.Plex_Port
-  const token = inputs.Plex_Token
-  const key = inputs.Library_Key
-  const plexPath = inputs.Plex_Path
-  const tdarrPath = inputs.TDarr_Path
-
-  if (!type || !url || !token || !key) {
-    response.infoLog = `Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required`
-    return response
-  }
-
-  let filePath = file.file.substring(0, filePath.lastIndexOf("/"));
-
-  if (tdarrPath || plexPath) {
-    filePath = filePath.replace(tdarrPath, plexPath)
-  }
-
-  response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`
-
-  const portIfUsed = port ? `:${port}` : ''
-
-  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=`
-
-  if (type === 'http') {
-    http.get(urlNoToken + token, (res) => {
-      checkReply(res.statusCode, urlNoToken)
-      return response
-    }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`
-      return response
-    });
-  } else if (type === 'https') {
-    https.get(urlNoToken + token, (res) => {
-      checkReply(res.statusCode, urlNoToken)
-      return response
-    }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`
-      return response
-    });
-  } else {
-    response.infoLog += `Plex could not be updated, the Url_Protocol can only be http or https. ${type} is not valid \n`
-    return response
-  }
-};
-
 function checkReply(statusCode, urlNoToken) {
   if (statusCode === 200) {
     response.infoLog += `☒ Above shown folder scanned in Plex! \n`
@@ -213,12 +154,82 @@ function checkReply(statusCode, urlNoToken) {
     response.infoLog += `Plex replied that the token was not authorized on this server \n`
   } else if (statusCode === 404) {
     response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
-    ${urlNoToken}[redacted] \n`
+  ${urlNoToken}[redacted] \n`
   } else {
     response.infoLog += `There was an issue reaching Plex. The URL used was 
-    ${urlNoToken}[redacted] \n`
+  ${urlNoToken}[redacted] \n`
   }
-}
+};
+
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const http = require('http');
+  const https = require('https');
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
+
+  const response = {
+    file,
+    removeFromDB: false,
+    updateDB: false,
+    processFile: false,
+    infoLog: '',
+  };
+
+  const type = inputs.Url_Protocol;
+  const url = inputs.Plex_Url;
+  const port = inputs.Plex_Port;
+  const token = inputs.Plex_Token;
+  const key = inputs.Library_Key;
+  const plexPath = inputs.Plex_Path;
+  const tdarrPath = inputs.Tdarr_Path;
+
+  if (!type || !url || !token || !key) {
+    throw new Error('Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required');
+  }
+
+  let filePath = file.file.substring(0, file.file.lastIndexOf('/'));
+
+  if ((tdarrPath && !plexPath) || (tdarrPath && plexPath)) {
+    // tdarr: /local/tv && plex: ''/tv || tdarr: /local/tv && plex: /data/tv
+    filePath = filePath.replace(tdarrPath, plexPath);
+  } else if (!tdarrPath && plexPath) {
+    // tdarr: ''/tv && plex: /data/tv
+    filePath = filePath.replace(/^/, plexPath);
+  }
+
+  response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
+
+  const portIfUsed = port ? `:${port}` : ''
+  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=`
+
+  if (type === 'http') {
+    http.get(urlNoToken + token, (res) => {
+      checkReply(res.statusCode, urlNoToken)
+      return response
+    }).on('error', (e) => {
+      response.infoLog += `We have encountered an error: ${e}`;
+      return response;
+    });
+  } else if (type === 'https') {
+    https.get(urlNoToken + token, (res) => {
+      checkReply(res.statusCode, urlNoToken)
+      return response
+    }).on('error', (e) => {
+      response.infoLog += `We have encountered an error: ${e}`;
+      return response;
+    });
+  } else {
+    response.infoLog += `Plex could not be updated, \n
+    the Url_Protocol can only be http or https. ${type} is not valid \n`;
+    return response;
+  }
+
+  //! the below return is only present because the call backs aren't 
+  //! working as intended. Must be removed if they begin to work properly
+  return response
+
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;
