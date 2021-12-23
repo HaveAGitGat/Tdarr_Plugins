@@ -79,10 +79,10 @@ const details = () => ({
     },
     {
       name: 'Library_Key',
-      type: 'number',
+      type: 'text',
       defaultValue: '1',
       inputUI: {
-        type: 'number',
+        type: 'text',
       },
       tooltip: `
               Library key for the library in Plex where this content is displayed. \\n
@@ -188,7 +188,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     throw new Error('Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required');
   }
 
-  let filePath = file.file.substring(0, filePath.lastIndexOf('/'));
+  let filePath = file.file.substring(0, file.file.lastIndexOf('/'));
 
   if ((tdarrPath && !plexPath) || (tdarrPath && plexPath)) {
     // tdarr: /local/tv && plex: ''/tv || tdarr: /local/tv && plex: /data/tv
@@ -224,7 +224,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     the Url_Protocol can only be http or https. ${type} is not valid \n`;
     return response;
   }
-}
+
+  //! the below return is only present because the call backs aren't 
+  //! working as intended. Must be removed if they begin to work properly
+  return response
+
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;
