@@ -190,8 +190,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   let filePath = file.file.substring(0, filePath.lastIndexOf('/'));
 
-  if (tdarrPath || plexPath) {
+  if ((tdarrPath && !plexPath) || (tdarrPath && plexPath)) {
+    // tdarr: /local/tv && plex: ''/tv || tdarr: /local/tv && plex: /data/tv
     filePath = filePath.replace(tdarrPath, plexPath);
+  } else if (!tdarrPath && plexPath) {
+    // tdarr: ''/tv && plex: /data/tv
+    filePath = filePath.replace(/^/, plexPath);
   }
 
   response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
