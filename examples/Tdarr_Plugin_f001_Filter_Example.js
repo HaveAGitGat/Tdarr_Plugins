@@ -1,15 +1,17 @@
-const details = () => {
-  return {
-    id: 'Tdarr_Plugin_bbbb_Filter_Example',
-    Stage: 'Pre-processing',
-    Name: 'Filter keywords ',
-    Type: 'Video',
-    Operation: 'Filter',
-    Description: 'This plugin prevents processing files which contain keywords \n\n',
-    Version: '1.00',
-    Tags: '',
-  };
-};
+// eslint-disable-next-line import/no-unresolved
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
+const details = () => ({
+  id: 'Tdarr_Plugin_f001_Filter_Example',
+  Stage: 'Pre-processing',
+  Name: 'Filter keywords ',
+  Type: 'Video',
+  Operation: 'Filter',
+  Description: 'This plugin prevents processing files which contain keywords \n\n',
+  Version: '1.00',
+  Tags: '',
+  Inputs: [],
+});
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
