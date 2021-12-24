@@ -24,8 +24,6 @@ folders.forEach((folder) => {
   const pluginInputTypes = ['string', 'number', 'boolean'];
 
   for (let i = 0; i < files.length; i += 1) {
-    console.log(`${files[i]}`);
-
     let read = fs.readFileSync(`${folder}/${files[i]}`).toString();
 
     const importDefaultValues = 'const loadDefaultValues = require(\'../methods/loadDefaultValues\');';
@@ -165,6 +163,8 @@ module.exports.plugin = plugin;`;
         }
       }
     }
+
+    console.log(`[✓]${folder}/${files[i]}`);
   }
 });
 
