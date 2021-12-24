@@ -9,8 +9,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: 'Give an error if new file is larger than the original \n\n',
   Version: '1.00',
-  Link: '',
   Tags: '',
+  Inputs: [],
 });
 
 const plugin = (file, librarySettings, inputs, otherArguments) => {

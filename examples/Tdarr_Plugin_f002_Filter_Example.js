@@ -2,15 +2,15 @@
 const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => ({
-  id: 'Tdarr_Plugin_bbbc_Filter_Example',
+  id: 'Tdarr_Plugin_f002_Filter_Example',
   Stage: 'Pre-processing',
   Name: 'Filter resolutions',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'This plugin prevents processing files with specified resolutions \n\n',
   Version: '1.00',
-  Link: '',
   Tags: '',
+  Inputs: [],
 });
 
 // eslint-disable-next-line no-unused-vars
