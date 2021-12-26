@@ -157,6 +157,9 @@ module.exports.plugin = plugin;`;
           console.log(`Plugin Input type does not match defaultValue type:
            '${folder}/${files[i]}' : ${inputs[j].name}`);
           process.exit(1);
+        } else if (!['text', 'dropdown'].includes(inputs[j].inputUI.type)) {
+          console.log(`Plugin Input inputUI is invalid: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          process.exit(1);
         } else if (inputs[j].defaultValue === undefined) {
           console.log(`Plugin Input does not have a default value: '${folder}/${files[i]}' : ${inputs[j].name}`);
           process.exit(1);
