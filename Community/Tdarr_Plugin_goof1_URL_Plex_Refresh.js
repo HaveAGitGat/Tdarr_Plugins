@@ -53,7 +53,7 @@ const details = () => ({
       type: 'number',
       defaultValue: 32400,
       inputUI: {
-        type: 'number',
+        type: 'text',
       },
       tooltip: `
                The port required to access Plex on the network (may not be required if used with reverse proxy)
@@ -79,7 +79,7 @@ const details = () => ({
     },
     {
       name: 'Library_Key',
-      type: 'text',
+      type: 'string',
       defaultValue: '1',
       inputUI: {
         type: 'text',
