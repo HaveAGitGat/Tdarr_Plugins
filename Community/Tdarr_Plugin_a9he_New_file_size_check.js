@@ -1,0 +1,75 @@
+// eslint-disable-next-line import/no-unresolved
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
+const details = () => ({
+  id: 'Tdarr_Plugin_a9he_New_file_size_check',
+  Stage: 'Pre-processing',
+  Name: 'New file size check',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: 'Give an error if new file is not within the specified upper and lower bound limits \n\n',
+  Version: '1.00',
+  Tags: '',
+  Inputs: [
+    {
+      name: 'upperBound',
+      type: 'number',
+      defaultValue: 110,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip:
+        `Enter the upper bound % size for the new file. For example, if '110' is entered, 
+        then if the new file size is 11% larger than the original, an error will be given.`,
+    },
+    {
+      name: 'lowerBound',
+      type: 'number',
+      defaultValue: 90,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip:
+        `Enter the lower bound % size for the new file. For example, if '90' is entered, 
+        then if the new file size is less than 90% of the original, an error will be given.`,
+    },
+  ],
+});
+
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
+  // Must return this object at some point in the function else plugin will fail.
+  const response = {
+    processFile: false,
+    preset: '',
+    handBrakeMode: false,
+    FFmpegMode: true,
+    reQueueAfter: true,
+    infoLog: '',
+  };
+
+  const newSize = file.file_size;
+  const oldSize = otherArguments.originalLibraryFile.file_size;
+
+  const ratio = parseInt((newSize / oldSize) * 100, 10);
+
+  const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
+    + `of original file size:  ${oldSize.toFixed(3)} MB`;
+
+  const errText = 'New file size not within limits.';
+  if (newSize > (inputs.upperBound / 100) * oldSize) {
+    // Item will be errored in UI
+    throw new Error(`${errText} ${sizeText}. upperBound is ${inputs.upperBound}%`);
+  } else if (newSize < (inputs.lowerBound / 100) * oldSize) {
+    // Item will be errored in UI
+    throw new Error(`${errText} ${sizeText}. lowerBound is ${inputs.lowerBound}%`);
+  } else {
+    response.infoLog += sizeText;
+  }
+
+  return response;
+};
+
+module.exports.details = details;
+module.exports.plugin = plugin;
