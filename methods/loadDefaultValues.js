@@ -26,7 +26,7 @@ const loadDefaultValues = (inputs, details) => {
     if (defaultInputs[i].type === 'number') {
       inputs[defaultInputs[i].name] = Number(inputs[defaultInputs[i].name]);
       // eslint-disable-next-line no-restricted-globals
-      if (!isNaN(inputs[defaultInputs[i].name])) {
+      if (isNaN(inputs[defaultInputs[i].name])) {
         inputs[defaultInputs[i].name] = 0;
       }
     }
