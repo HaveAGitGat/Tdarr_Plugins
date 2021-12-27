@@ -355,7 +355,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       if (inputs.nvenc === "true") {
         configuration.RemoveOutputSetting("-c:v copy");
         configuration.AddOutputSetting(
-          `-c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32`
+          `-c:v hevc_nvenc -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32`
         );
 
         if (file.video_codec_name === "h263") {

@@ -128,7 +128,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 1000;
       bitratemax = 1500;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
 
@@ -143,7 +143,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 2000;
       bitratemax = 4000;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //file will be encoded if the resolution is 1080p
@@ -157,7 +157,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 2500;
       bitratemax = 5000;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:V 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:V 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //file will be encoded if the resolution is 4K
@@ -171,7 +171,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 14000;
       bitratemax = 20000;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //check if the file is eligible for transcoding

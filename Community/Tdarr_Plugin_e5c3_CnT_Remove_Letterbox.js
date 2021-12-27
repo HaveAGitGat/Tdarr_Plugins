@@ -381,10 +381,10 @@ function encoder_string(file, avg_rate, max_rate, container) {
   //tree for resolution : quality
   if (file.video_resolution === "1080p" || file.video_resolution === "4KUHD") {
     //file will be encoded if the resolution is 1080p, or greater (it will be downscaled)
-    encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${avg_rate}k -maxrate:v ${max_rate}k`; //-qp 26
+    encoder += ` -pix_fmt p010le -qmin 0 -cq:v 26 -b:v ${avg_rate}k -maxrate:v ${max_rate}k`; //-qp 26
   } else if (file.video_resolution === "720p") {
     //file will be encoded if the resolution is 720p
-    encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${
+    encoder += ` -pix_fmt p010le -qmin 0 -cq:v 26 -b:v ${
       avg_rate / 2
     }k -maxrate:v ${max_rate / 2}k`; //-qp 28
   } else if (
@@ -392,12 +392,12 @@ function encoder_string(file, avg_rate, max_rate, container) {
     file.video_resolution === "576p"
   ) {
     //file will be encoded if the resolution is 480p or 576p
-    encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${
+    encoder += ` -pix_fmt p010le -qmin 0 -cq:v 26 -b:v ${
       avg_rate / 4
     }k -maxrate:v ${max_rate / 4}k`; //-qp 30
   } else {
     //fallback option to 1080p quality
-    encoder += ` -pix_fmt p010le -rc:v vbr_hq -qmin 0 -cq:v 26 -b:v ${avg_rate}k -maxrate:v ${max_rate}k`; //-qp 26
+    encoder += ` -pix_fmt p010le -qmin 0 -cq:v 26 -b:v ${avg_rate}k -maxrate:v ${max_rate}k`; //-qp 26
   }
   encoder += ` -c:v hevc_nvenc -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -dn`;
 
