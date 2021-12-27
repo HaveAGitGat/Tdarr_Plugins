@@ -57,11 +57,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
     + `of original file size:  ${oldSize.toFixed(3)} MB`;
 
+  const getBound = (bound) => (bound / 100) * oldSize;
+
   const errText = 'New file size not within limits.';
-  if (newSize > (inputs.upperBound / 100) * oldSize) {
+  if (newSize > getBound(inputs.upperBound)) {
     // Item will be errored in UI
     throw new Error(`${errText} ${sizeText}. upperBound is ${inputs.upperBound}%`);
-  } else if (newSize < (inputs.lowerBound / 100) * oldSize) {
+  } else if (newSize < getBound(inputs.lowerBound)) {
     // Item will be errored in UI
     throw new Error(`${errText} ${sizeText}. lowerBound is ${inputs.lowerBound}%`);
   } else {
