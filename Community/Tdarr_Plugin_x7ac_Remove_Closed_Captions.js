@@ -1,4 +1,4 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 
 const details = () => ({
   id: 'Tdarr_Plugin_x7ac_Remove_Closed_Captions',
@@ -16,7 +16,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     // eslint-disable-next-line no-useless-escape

@@ -1,5 +1,5 @@
 /* eslint-disable */
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 
 const details = () => {
     return {
@@ -18,7 +18,7 @@ const details = () => {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
 
     //Must return this object at some point
     var response = {

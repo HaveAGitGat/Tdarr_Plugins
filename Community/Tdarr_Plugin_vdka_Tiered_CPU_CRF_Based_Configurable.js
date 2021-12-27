@@ -1,4 +1,4 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 
 const details = () => ({
   id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
@@ -130,7 +130,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   let crf;
   // default values that will be returned
   const response = {

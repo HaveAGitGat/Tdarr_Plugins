@@ -1,4 +1,4 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',
@@ -46,7 +46,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     container: `.${file.container}`,
