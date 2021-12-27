@@ -7,7 +7,8 @@ const details = () => ({
   Name: 'New file duration check',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'Give an error if new file is not within the specified upper and lower bound duration limits \n\n',
+  Description: `Give an error if new file is not within the specified upper and lower bound duration limits.
+  Make sure MediaInfo scan is enabled in library settings \n\n`,
   Version: '1.00',
   Tags: '',
   Inputs: [
