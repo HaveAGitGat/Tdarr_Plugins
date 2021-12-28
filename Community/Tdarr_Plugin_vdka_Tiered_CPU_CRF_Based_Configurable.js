@@ -18,7 +18,7 @@ const details = () => ({
     {
       name: 'sdCRF',
       type: 'string',
-      defaultValue: '19',
+      defaultValue: '20',
       inputUI: {
         type: 'text',
       },
@@ -31,7 +31,7 @@ const details = () => ({
     {
       name: 'hdCRF',
       type: 'string',
-      defaultValue: '21',
+      defaultValue: '22',
       inputUI: {
         type: 'text',
       },
@@ -44,7 +44,7 @@ const details = () => ({
     {
       name: 'fullhdCRF',
       type: 'string',
-      defaultValue: '23',
+      defaultValue: '24',
       inputUI: {
         type: 'text',
       },
@@ -57,7 +57,7 @@ const details = () => ({
     {
       name: 'uhdCRF',
       type: 'string',
-      defaultValue: '26',
+      defaultValue: '28',
       inputUI: {
         type: 'text',
       },
