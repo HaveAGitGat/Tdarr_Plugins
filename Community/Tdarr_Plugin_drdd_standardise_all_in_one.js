@@ -1,5 +1,5 @@
 /* eslint-disable */
-const lib = require('../methods/library');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 const details = () => {
   return {
     id: "Tdarr_Plugin_drdd_standardise_all_in_one",
@@ -410,7 +410,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+  inputs = loadDefaultValues(inputs, details);
   var response = {
     container: ".mkv",
     FFmpegMode: true,

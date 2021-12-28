@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 const details = () => {
   return {
@@ -148,7 +148,7 @@ function getMediaInfo(file) {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+  inputs = loadDefaultValues(inputs, details);
 
   if (file.fileMedium !== "video") {
     response.processFile = false;

@@ -26,7 +26,7 @@ folders.forEach((folder) => {
   for (let i = 0; i < files.length; i += 1) {
     let read = fs.readFileSync(`${folder}/${files[i]}`).toString();
 
-    const importDefaultValues = 'const lib = require(\'../methods/library\');';
+    const importDefaultValues = 'const loadDefaultValues = require(\'../methods/loadDefaultValues\');';
     if (!read.includes(importDefaultValues)) {
       console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${importDefaultValues}`);
       read = `${importDefaultValues}\n${read}`;
@@ -50,7 +50,7 @@ folders.forEach((folder) => {
       process.exit(1);
     }
 
-    const inputsText = 'inputs = lib.loadDefaultValues(inputs, details);';
+    const inputsText = 'inputs = loadDefaultValues(inputs, details);';
     if (!read.includes(inputsText)
     ) {
       console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${inputsText}`);

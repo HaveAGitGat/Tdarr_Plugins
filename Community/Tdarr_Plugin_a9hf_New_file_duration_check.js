@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-const lib = require('../methods/library');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => ({
   id: 'Tdarr_Plugin_a9hf_New_file_duration_check',
@@ -39,7 +39,7 @@ const details = () => ({
 
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
   const response = {
     processFile: false,

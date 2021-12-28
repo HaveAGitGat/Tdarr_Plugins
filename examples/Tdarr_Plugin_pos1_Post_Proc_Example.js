@@ -5,7 +5,8 @@
 /* eslint import/no-extraneous-dependencies: 0 */ // --> OFF
 /* eslint no-console: 0 */ // --> OFF
 
-const lib = require('../methods/library');
+// eslint-disable-next-line import/no-unresolved
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
@@ -60,7 +61,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+  inputs = loadDefaultValues(inputs, details);
 
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');

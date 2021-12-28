@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => ({
   id: 'Tdarr_Plugin_z3ab_TheRealShadoh_FFmpeg_Subs_H264_VeryFast',
@@ -20,7 +20,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+  inputs = loadDefaultValues(inputs, details);
   // Must return this object
 
   const response = {

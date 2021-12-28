@@ -1,7 +1,7 @@
 /* eslint-disable */
 const exec = require("child_process").exec;
 const fs = require("fs");
-const lib = require('../methods/library');
+const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => {
   return {
@@ -49,7 +49,7 @@ const details = () => {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+  inputs = loadDefaultValues(inputs, details);
   if (inputs.languages == "" || typeof inputs.special == "undefined") {
     var languages = ["eng", "en"]; //these languages should be kept, named according to ISO 639-2 language scheme
   } else {
