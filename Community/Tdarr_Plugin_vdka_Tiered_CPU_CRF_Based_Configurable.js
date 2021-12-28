@@ -1,4 +1,4 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 
 const details = () => ({
   id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
@@ -18,7 +18,7 @@ const details = () => ({
     {
       name: 'sdCRF',
       type: 'string',
-      defaultValue: '19',
+      defaultValue: '20',
       inputUI: {
         type: 'text',
       },
@@ -31,7 +31,7 @@ const details = () => ({
     {
       name: 'hdCRF',
       type: 'string',
-      defaultValue: '21',
+      defaultValue: '22',
       inputUI: {
         type: 'text',
       },
@@ -44,7 +44,7 @@ const details = () => ({
     {
       name: 'fullhdCRF',
       type: 'string',
-      defaultValue: '23',
+      defaultValue: '24',
       inputUI: {
         type: 'text',
       },
@@ -57,7 +57,7 @@ const details = () => ({
     {
       name: 'uhdCRF',
       type: 'string',
-      defaultValue: '26',
+      defaultValue: '28',
       inputUI: {
         type: 'text',
       },
@@ -130,7 +130,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   let crf;
   // default values that will be returned
   const response = {

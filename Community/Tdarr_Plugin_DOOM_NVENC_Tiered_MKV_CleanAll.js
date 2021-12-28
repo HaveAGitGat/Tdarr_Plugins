@@ -1,5 +1,5 @@
 /* eslint-disable */
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 const details = () => {
   return {
     id: "Tdarr_Plugin_DOOM_NVENC_Tiered_MKV_CleanAll",
@@ -477,7 +477,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   var response = {
     container: ".mkv",
     FFmpegMode: true,

@@ -1,15 +1,12 @@
 /* eslint-disable */
 var fs = require('fs');
 var path = require('path');
-const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library');
 if (fs.existsSync(path.join(process.cwd(), '/npm'))) {
     var rootModules = path.join(process.cwd(), '/npm/node_modules/')
 } else {
     var rootModules = ''
 }
-
-const importFresh = require(rootModules + 'import-fresh');
-const library = importFresh('../methods/library.js')
 
 const details = () => {
     return {
@@ -28,7 +25,7 @@ const details = () => {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
 
     //Must return this object at some point
     var response = {
