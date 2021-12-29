@@ -45,7 +45,7 @@ const details = () => ({
   {
     name: 'tag_language',
     type: 'string',
-    defaultValue: 'eng',
+    defaultValue: '',
     inputUI: {
       type: 'text',
     },
