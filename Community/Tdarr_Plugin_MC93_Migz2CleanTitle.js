@@ -111,7 +111,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     )
   ) {
     try {
-      ffmpegCommandInsert += ' -metadata title="" ';
+      ffmpegCommandInsert += ' -metadata title= ';
       convert = true;
     } catch (err) {
       // Error
@@ -132,7 +132,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           )
         ) {
           response.infoLog += `☒Video stream title is not empty. Removing title from stream ${i} \n`;
-          ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title="" `;
+          ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title= `;
           convert = true;
         }
         // Increment videoIdx.
@@ -160,7 +160,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           if (file.ffProbeData.streams[i].tags.title.split('.').length - 1 > 3) {
             try {
               response.infoLog += `☒More then 3 full stops in audio title. Removing title from stream ${i} \n`;
-              ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
+              ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title= `;
               convert = true;
             } catch (err) {
               // Error
@@ -170,7 +170,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             try {
               if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
                 response.infoLog += `☒Audio matched custom input. Removing title from stream ${i} \n`;
-                ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title="" `;
+                ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title= `;
                 convert = true;
               }
             } catch (err) {
@@ -203,7 +203,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           if (file.ffProbeData.streams[i].tags.title.split('.').length - 1 > 3) {
             try {
               response.infoLog += `☒More then 3 full stops in subtitle title. Removing title from stream ${i} \n`;
-              ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
+              ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title= `;
               convert = true;
             } catch (err) {
               // Error
@@ -213,7 +213,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             try {
               if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
                 response.infoLog += `☒Subtitle matched custom input. Removing title from stream ${i} \n`;
-                ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title="" `;
+                ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title= `;
                 convert = true;
               }
             } catch (err) {
