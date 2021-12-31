@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',

@@ -1,5 +1,5 @@
 /* eslint-disable */
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 const details = () => {
     return {

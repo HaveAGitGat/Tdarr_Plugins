@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint-disable linebreak-style */
 module.exports.dependencies = [
   'request',

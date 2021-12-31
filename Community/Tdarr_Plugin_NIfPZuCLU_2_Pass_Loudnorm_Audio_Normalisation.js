@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint-disable */
 //PLugin runs multipass loudnorm filter
 //first run gets the required details and stores for the next pass

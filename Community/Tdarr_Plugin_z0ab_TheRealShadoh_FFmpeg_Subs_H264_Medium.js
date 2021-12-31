@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 const details = () => ({
   id: 'Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Medium',

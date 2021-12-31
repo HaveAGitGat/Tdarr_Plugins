@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint-disable */
 const vaapiPrefix = ` -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi `;
 

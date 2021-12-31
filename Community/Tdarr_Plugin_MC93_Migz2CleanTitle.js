@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz2CleanTitle',

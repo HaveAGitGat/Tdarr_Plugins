@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint-disable */
 const details = () => ({
     id: "Tdarr_Plugin_075a_Transcode_Customisable",

@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint max-classes-per-file: ["error", 2] */
 const details = () => ({
   id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',

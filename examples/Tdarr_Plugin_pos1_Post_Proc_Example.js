@@ -5,7 +5,7 @@
 /* eslint import/no-extraneous-dependencies: 0 */ // --> OFF
 /* eslint no-console: 0 */ // --> OFF
 
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [

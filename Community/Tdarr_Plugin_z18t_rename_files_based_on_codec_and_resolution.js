@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 const details = () => ({
   id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',

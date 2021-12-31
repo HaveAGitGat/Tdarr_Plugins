@@ -1,7 +1,7 @@
 /* eslint-disable */
 const fs = require("fs");
 const execSync = require("child_process").execSync;
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 const details = () => {
   return {

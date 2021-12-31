@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 /* eslint-disable */
 /* eslint max-len: 0 */

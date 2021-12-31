@@ -1,5 +1,5 @@
 /* eslint-disable */
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 const details = () => {
   return {
     id: "Tdarr_Plugin_drdd_standardise_all_in_one",

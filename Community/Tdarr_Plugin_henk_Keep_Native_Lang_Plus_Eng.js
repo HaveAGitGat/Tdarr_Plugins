@@ -1,4 +1,4 @@
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 /* eslint-disable no-await-in-loop */
 module.exports.dependencies = ['axios', '@cospired/i18n-iso-languages', 'path'];
 const details = () => ({

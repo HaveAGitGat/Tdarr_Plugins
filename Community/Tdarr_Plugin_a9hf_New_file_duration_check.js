@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
-const lib = require('../methods/library');
+const lib = require('../methods/lib')();
 
 const details = () => ({
   id: 'Tdarr_Plugin_a9hf_New_file_duration_check',
