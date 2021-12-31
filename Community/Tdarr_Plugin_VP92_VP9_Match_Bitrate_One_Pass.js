@@ -22,7 +22,7 @@ const details = () => ({
           'The CQ number (recommended 15-35) for this resolution, default 32',
     },
     {
-      name: 'CG_360p',
+      name: 'CQ_360p',
       type: 'string',
       defaultValue: '31',
       inputUI: {
