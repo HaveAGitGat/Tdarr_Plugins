@@ -164,6 +164,12 @@ module.exports.plugin = plugin;`;
           console.log(`Plugin Input does not have a default value: '${folder}/${files[i]}' : ${inputs[j].name}`);
           process.exit(1);
         }
+
+        const count = read.split(inputs[j].name).length - 1;
+        if (count === 1) {
+          console.log(`Plugin Input is not used: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          process.exit(1);
+        }
       }
     }
 
