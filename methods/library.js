@@ -1,2 +1,5 @@
-module.exports.filters = require('./filters.js');
-module.exports.actions = require('./actions.js');
+const importFresh = require('./node_modules/import-fresh');
+
+module.exports.filters = importFresh('./filters.js');
+module.exports.actions = importFresh('./actions.js');
+module.exports.loadDefaultValues = importFresh('./loadDefaultValues.js');
