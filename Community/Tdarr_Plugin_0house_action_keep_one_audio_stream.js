@@ -5,7 +5,7 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: `
-This action has a built-in filter. Additional filters can be added.
+This action has a built-in filter. Additional filters can be added.\n\n
 
 Tdarr will try to keep the best audio track possible given the requirements specified below.
 If the specified stream does not exist, Tdarr will try to create it using the best stream available.

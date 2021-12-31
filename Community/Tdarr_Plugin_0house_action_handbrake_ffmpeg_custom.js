@@ -35,22 +35,30 @@ const details = () => ({
       tooltip:
         `
 When using FFmpeg, you need to separate the input and output args with <io>. FFmpeg Examples:
-
+\n\n
 -r 1<io>-r 24
+\n\n
 <io>-sn -c:v copy -c:a copy
+\n\n
 <io>-c:v libx265 -crf 23 -ac 6 -c:a aac -preset veryfast
+\n\n
 <io>-map 0 -c copy -c:v libx265 -c:a aac
+\n\n
 -c:v h264_cuvid<io>-c:v hevc_nvenc -preset slow -c:a copy
 
-
+\n\n
 HandBrake examples:
-
+\n\n
 -e x264 -q 20 -B
+\n\n 
 -Z "Very Fast 1080p30"
+\n\n 
 -Z "Fast 1080p30" -e nvenc_h265
+\n\n 
 -Z "Very Fast 1080p30" --all-subtitles --all-audio
+\n\n 
 -Z "Very Fast 480p30"
-
+\n\n 
 --preset-import-file "C:/Users/HaveAGitGat/Desktop/testpreset.json" -Z "My Preset"
 `,
     },

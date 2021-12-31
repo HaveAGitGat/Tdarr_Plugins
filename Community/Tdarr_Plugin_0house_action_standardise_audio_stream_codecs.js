@@ -5,7 +5,7 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: `
-This action has a built-in filter. Additional filters can be added.
+This action has a built-in filter. Additional filters can be added.\n\n
 
 All audio tracks which are not in the specified codec will be transcoded
 into the specified codec. Bitrate and channel count are kept the same.

@@ -5,7 +5,7 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: `
-  This action has a built-in filter. Additional filters can be added.
+  This action has a built-in filter. Additional filters can be added.\n\n
 
   If not in the specified container, the file will be remuxed.
   `,

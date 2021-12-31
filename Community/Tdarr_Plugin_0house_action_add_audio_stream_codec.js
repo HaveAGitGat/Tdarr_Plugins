@@ -5,7 +5,7 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: `
-  This action has a built-in filter. Additional filters can be added above.
+  This action has a built-in filter. Additional filters can be added above. \n\n
 
   If the following audio track does not exist, Tdarr will try to add it using existing audio streams.
   Tdarr will try to create the specified audio stream from the highest channel count stream
