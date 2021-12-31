@@ -1,22 +1,12 @@
-/* eslint-disable */
-var fs = require("fs");
-var path = require("path");
-if (fs.existsSync(path.join(process.cwd(), "/npm"))) {
-  var rootModules = path.join(process.cwd(), "/npm/node_modules/");
-} else {
-  var rootModules = "";
-}
-const importFresh = require(rootModules + "import-fresh");
-
-module.exports.filterByAge = importFresh("./library/filters/filterByAge.js");
-module.exports.filterByCodec = importFresh(
-  "./library/filters/filterByCodec.js"
+module.exports.filterByAge = require('./library/filters/filterByAge.js');
+module.exports.filterByCodec = require(
+  './library/filters/filterByCodec.js',
 );
-module.exports.filterByMedium = importFresh(
-  "./library/filters/filterByMedium.js"
+module.exports.filterByMedium = require(
+  './library/filters/filterByMedium.js',
 );
-module.exports.filterByResolution = importFresh(
-  "./library/filters/filterByResolution.js"
+module.exports.filterByResolution = require(
+  './library/filters/filterByResolution.js',
 );
-module.exports.filterBySize = importFresh("./library/filters/filterBySize.js");
-module.exports.filterByBitrate = importFresh("./library/filters/filterByBitrate.js");
+module.exports.filterBySize = require('./library/filters/filterBySize.js');
+module.exports.filterByBitrate = require('./library/filters/filterByBitrate.js');
