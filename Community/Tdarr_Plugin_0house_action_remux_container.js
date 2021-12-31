@@ -10,7 +10,7 @@ const details = () => ({
   If not in the specified container, the file will be remuxed.
   `,
   Version: '1.00',
-  Tags: 'filter',
+  Tags: 'action',
   Inputs: [
     {
       name: 'container',
