@@ -1,6 +1,5 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-const importFresh = require('import-fresh');
 const loadDefaultValues = require('../methods/loadDefaultValues');
+const lib = require('../methods/library.js');
 
 module.exports.dependencies = ['import-fresh'];
 const details = () => ({
@@ -34,7 +33,6 @@ module.exports.details = details;
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = loadDefaultValues(inputs, details);
-  const library = importFresh('../methods/library.js');
   const response = {
     // 320K selected over 384k intentionally
     // https://en.m.wikipedia.org/wiki/MPEG-1#Part_3:_Audio
@@ -48,8 +46,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const { codecsToInclude } = inputs;
 
-  const filterByCodecInclude = library.filters.filterByCodec(file, 'include', codecsToInclude);
-  const filterByCodecExclude = library.filters.filterByCodec(file, 'exclude', 'mp3');
+  const filterByCodecInclude = lib.filters.filterByCodec(file, 'include', codecsToInclude);
+  const filterByCodecExclude = lib.filters.filterByCodec(file, 'exclude', 'mp3');
 
   response.infoLog += `${filterByCodecInclude.note} ${filterByCodecExclude.note}`;
 
