@@ -40,18 +40,6 @@ const details = () => ({
        \\nExample:\\n
        de`, // Each line following `Example:` will be clearly formatted. \\n used for line breaks
     },
-    {
-      name: 'channels',
-      type: 'string',
-      defaultValue: 'eng',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Desired audio channel number.  
-      
-      \\nExample:\\n
-       2`,
-    },
   ],
 });
 
