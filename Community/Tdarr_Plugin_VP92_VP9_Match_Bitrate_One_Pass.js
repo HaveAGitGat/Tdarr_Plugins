@@ -1,4 +1,3 @@
-const lib = require('../methods/lib')();
 /* eslint max-classes-per-file: ["error", 2] */
 const details = () => ({
   id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
@@ -502,6 +501,8 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // Must return this object

@@ -1,5 +1,3 @@
-const lib = require('../methods/lib')();
-
 const details = () => ({
   id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
   Stage: 'Pre-processing',
@@ -129,6 +127,8 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   let crf;

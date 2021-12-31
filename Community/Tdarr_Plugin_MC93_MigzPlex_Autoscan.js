@@ -1,5 +1,3 @@
-const lib = require('../methods/lib')();
-
 module.exports.dependencies = [
   'request',
 ];
@@ -63,6 +61,8 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // eslint-disable-next-line global-require,import/no-unresolved

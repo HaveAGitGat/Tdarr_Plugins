@@ -1,4 +1,3 @@
-const lib = require('../methods/lib')();
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 // This is almost a line for line copy of Migz1FFMPEG
 // https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js
@@ -58,6 +57,8 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
