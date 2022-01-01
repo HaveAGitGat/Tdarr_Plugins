@@ -14,8 +14,6 @@
 var secondPass = false;
 var logOutFile = '';
 
-var fs = require('fs');
-
 const details = () => {
     return {
         id: "Tdarr_Plugin_NIfPZuCLU_2_Pass_Loudnorm_Audio_Normalisation",
@@ -76,7 +74,7 @@ const details = () => {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     // eslint-disable-next-line global-require
-    const lib = require('../methods/lib')();
+    const lib = require('../methods/lib')(); const fs = require('fs');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
 
@@ -188,7 +186,7 @@ module.exports.onTranscodeSuccess = function onTranscodeSuccess(
     librarySettings,
     inputs
 ) {
-
+    const fs = require('fs');
     var response = {
         file,
         removeFromDB: false,

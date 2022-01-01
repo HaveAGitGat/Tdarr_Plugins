@@ -69,6 +69,23 @@ module.exports.plugin = plugin;`;
       process.exit(1);
     }
 
+    // check deps are within functions
+    const keyWord = 'require(';
+    const requires = read.split(keyWord);
+
+    if (requires.length >= 2) {
+      const allBefore = [];
+      for (let j = 0; j < requires.length - 1; j += 1) {
+        allBefore.push(requires[j]);
+        const countOpen = allBefore.join(keyWord).split('{').length - 1;
+        const countClose = allBefore.join(keyWord).split('}').length - 1;
+        if (countOpen === countClose) {
+          console.log(`Plugin has requires outside of function '${folder}/${files[i]}'`);
+          process.exit(1);
+        }
+      }
+    }
+
     let pluginDetails;
     try {
       // eslint-disable-next-line import/no-dynamic-require,global-require

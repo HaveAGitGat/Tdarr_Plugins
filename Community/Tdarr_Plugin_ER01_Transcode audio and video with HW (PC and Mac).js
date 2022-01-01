@@ -4,7 +4,6 @@
 /* eslint no-bitwise: 0 */
 /* eslint no-mixed-operators: 0 */
 
-const os = require('os');
 const details = () => {
   return {
     id: 'Tdarr_Plugin_ER01_Transcode audio and video with HW (PC and Mac)',
@@ -73,7 +72,7 @@ const details = () => {
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     // eslint-disable-next-line global-require
-    const lib = require('../methods/lib')();
+    const lib = require('../methods/lib')(); const os = require('os');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
