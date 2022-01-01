@@ -1,15 +1,16 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_0house_action_keep_one_audio_stream',
+  id: 'Tdarr_Plugin_0tdarr_action_add_audio_stream_codec',
   Stage: 'Pre-processing',
-  Name: 'Keep one audio stream',
+  Name: 'Standardise audio stream codecs',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `
-This action has a built-in filter. Additional filters can be added.\n\n
+  This action has a built-in filter. Additional filters can be added above. \n\n
 
-Tdarr will try to keep the best audio track possible given the requirements specified below.
-If the specified stream does not exist, Tdarr will try to create it using the best stream available.
-If no specified language track exists, the best untagged/undefined stream will be used/kept.
+  If the following audio track does not exist, Tdarr will try to add it using existing audio streams.
+  Tdarr will try to create the specified audio stream from the highest channel count stream
+  available in the specified language.
+  If no specified language track exists, the best untagged/undefined stream will be used.
   `,
   Version: '1.00',
   Tags: 'action',
@@ -73,7 +74,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const response = {
     processFile: false,
     preset: '',
-    container: `.${file.container}`,
+    container: '',
     handBrakeMode: false,
     FFmpegMode: false,
     reQueueAfter: false,
@@ -82,20 +83,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const { audioCodec, language, channels } = inputs;
 
-  const transcodeKeepOneAudioStream = lib.actions.transcodeKeepOneAudioStream(
+  const transcodeAddAudioStream = lib.actions.transcodeAddAudioStream(
     file,
     audioCodec,
     language,
     channels,
   );
 
-  response.preset = transcodeKeepOneAudioStream.preset;
+  response.preset = transcodeAddAudioStream.preset;
   response.container = `.${file.container}`;
   response.handbrakeMode = false;
-  response.FFmpegMode = true;
+  response.ffmpegMode = true;
   response.reQueueAfter = true;
-  response.processFile = transcodeKeepOneAudioStream.processFile;
-  response.infoLog += transcodeKeepOneAudioStream.note;
+  response.processFile = transcodeAddAudioStream.processFile;
+  response.infoLog += transcodeAddAudioStream.note;
   return response;
 };
 

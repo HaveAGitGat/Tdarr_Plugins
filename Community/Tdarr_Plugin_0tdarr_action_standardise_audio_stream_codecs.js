@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_0house_action_standardise_audio_stream_codecs',
+  id: 'Tdarr_Plugin_0tdarr_action_standardise_audio_stream_codecs',
   Stage: 'Pre-processing',
   Name: 'Standardise audio stream codecs',
   Type: 'Video',

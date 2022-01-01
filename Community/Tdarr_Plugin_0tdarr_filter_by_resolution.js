@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_0house_filter_by_resolution',
+  id: 'Tdarr_Plugin_0tdarr_filter_by_resolution',
   Stage: 'Pre-processing',
   Name: 'Filter by resolution',
   Type: 'Video',
