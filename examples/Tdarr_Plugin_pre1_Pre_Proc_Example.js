@@ -125,40 +125,5 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   return response;
 };
 
-module.exports.onTranscodeSuccess = function onTranscodeSuccess(
-  file,
-  librarySettings,
-  inputs,
-) {
-  console.log(
-    'Transcode success! Now do some stuff with the newly scanned file.',
-  );
-
-  // Optional response if you need to modify database
-  const response = {
-    file,
-    removeFromDB: false,
-    updateDB: false,
-  };
-
-  return response;
-};
-
-module.exports.onTranscodeError = function onTranscodeError(
-  file,
-  librarySettings,
-  inputs,
-) {
-  console.log('Transcode fail! Now do some stuff with the original file.');
-
-  // Optional response if you need to modify database
-  const response = {
-    file,
-    removeFromDB: false,
-    updateDB: false,
-  };
-
-  return response;
-};
 module.exports.details = details;
 module.exports.plugin = plugin;
