@@ -26,10 +26,10 @@ folders.forEach((folder) => {
   for (let i = 0; i < files.length; i += 1) {
     let read = fs.readFileSync(`${folder}/${files[i]}`).toString();
 
-    const importDefaultValues = 'const loadDefaultValues = require(\'../methods/loadDefaultValues\');';
-    if (!read.includes(importDefaultValues)) {
-      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${importDefaultValues}`);
-      read = `${importDefaultValues}\n${read}`;
+    const importLib = 'const lib = require(\'../methods/lib\')();';
+    if (!read.includes(importLib)) {
+      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${importLib}`);
+      read = `${importLib}\n${read}`;
       // fs.writeFileSync(`${folder}/${files[i]}`, read)
       process.exit(1);
     }
@@ -50,7 +50,7 @@ folders.forEach((folder) => {
       process.exit(1);
     }
 
-    const inputsText = 'inputs = loadDefaultValues(inputs, details);';
+    const inputsText = 'inputs = lib.loadDefaultValues(inputs, details);';
     if (!read.includes(inputsText)
     ) {
       console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${inputsText}`);
@@ -157,8 +157,17 @@ module.exports.plugin = plugin;`;
           console.log(`Plugin Input type does not match defaultValue type:
            '${folder}/${files[i]}' : ${inputs[j].name}`);
           process.exit(1);
+        } else if (!['text', 'dropdown'].includes(inputs[j].inputUI.type)) {
+          console.log(`Plugin Input inputUI is invalid: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          process.exit(1);
         } else if (inputs[j].defaultValue === undefined) {
           console.log(`Plugin Input does not have a default value: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          process.exit(1);
+        }
+
+        const count = read.split(inputs[j].name).length - 1;
+        if (count === 1) {
+          console.log(`Plugin Input is not used: '${folder}/${files[i]}' : ${inputs[j].name}`);
           process.exit(1);
         }
       }

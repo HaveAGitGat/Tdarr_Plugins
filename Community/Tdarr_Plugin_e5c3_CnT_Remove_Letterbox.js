@@ -1,7 +1,7 @@
 /* eslint-disable */
 const fs = require("fs");
 const execSync = require("child_process").execSync;
-const loadDefaultValues = require('../methods/loadDefaultValues');
+
 
 const details = () => {
   return {
@@ -38,8 +38,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    // eslint-disable-next-line global-require
+    const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   if (inputs.bitrate == "" || inputs.bitrate == "undefined") {
     var min_bitrate = 6600;
     var avg_rate = 3000;

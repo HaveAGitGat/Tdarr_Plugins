@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint max-classes-per-file: ["error", 2] */
 const details = () => ({
   id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
@@ -23,7 +22,7 @@ const details = () => ({
           'The CQ number (recommended 15-35) for this resolution, default 32',
     },
     {
-      name: 'CG_360p',
+      name: 'CQ_360p',
       type: 'string',
       defaultValue: '31',
       inputUI: {
@@ -502,8 +501,10 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   // Must return this object
   const response = {
     container: '.webm',

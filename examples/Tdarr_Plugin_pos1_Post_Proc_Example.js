@@ -5,9 +5,6 @@
 /* eslint import/no-extraneous-dependencies: 0 */ // --> OFF
 /* eslint no-console: 0 */ // --> OFF
 
-// eslint-disable-next-line import/no-unresolved
-const loadDefaultValues = require('../methods/loadDefaultValues');
-
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
   'import-fresh',
@@ -43,25 +40,15 @@ const details = () => ({
        \\nExample:\\n
        de`, // Each line following `Example:` will be clearly formatted. \\n used for line breaks
     },
-    {
-      name: 'channels',
-      type: 'string',
-      defaultValue: 'eng',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Desired audio channel number.  
-      
-      \\nExample:\\n
-       2`,
-    },
   ],
 });
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
 
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');

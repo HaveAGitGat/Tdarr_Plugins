@@ -1,5 +1,4 @@
 const fs = require('fs');
-const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => ({
   id: 'Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT',
@@ -39,8 +38,10 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
   const response = {
     processFile: true,

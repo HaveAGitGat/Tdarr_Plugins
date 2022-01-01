@@ -1,6 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
-const lib = require('../methods/library.js');
-
 module.exports.dependencies = ['import-fresh'];
 const details = () => ({
   id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
@@ -31,8 +28,10 @@ module.exports.details = details;
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line global-require
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     // 320K selected over 384k intentionally
     // https://en.m.wikipedia.org/wiki/MPEG-1#Part_3:_Audio
