@@ -99,7 +99,7 @@ const response = {
 };
 
 const processStreams = (result, file, user_langs) => {
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line import/no-unresolved
   const languages = require('@cospired/i18n-iso-languages');
   const tracks = {
     keep: [],
@@ -209,7 +209,7 @@ const parseArrResponse = async (body, filePath, arr) => {
       break;
     case 'sonarr':
       // filePath = directory the file is in
-      // eslint-disable-next-line global-require,import/no-unresolved
+      // eslint-disable-next-line import/no-unresolved
       const path = require('path');
       for (let i = 0; i < body.length; i += 1) {
         if (body[i].path) {
@@ -223,11 +223,10 @@ const parseArrResponse = async (body, filePath, arr) => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
-  // eslint-disable-next-line global-require
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line import/no-unresolved
   const axios = require('axios').default;
   response.container = `.${file.container}`;
   let prio = ['radarr', 'sonarr'];
