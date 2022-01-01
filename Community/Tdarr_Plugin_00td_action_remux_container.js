@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_0tdarr_action_remux_container',
+  id: 'Tdarr_Plugin_00td_action_remux_container',
   Stage: 'Pre-processing',
   Name: 'Remux container',
   Type: 'Video',

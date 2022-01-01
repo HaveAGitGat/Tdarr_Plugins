@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_0tdarr_action_keep_one_audio_stream',
+  id: 'Tdarr_Plugin_00td_action_keep_one_audio_stream',
   Stage: 'Pre-processing',
   Name: 'Keep one audio stream',
   Type: 'Video',

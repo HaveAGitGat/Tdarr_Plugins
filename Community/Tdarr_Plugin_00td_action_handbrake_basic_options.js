@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_0tdarr_action_handbrake_basic_options',
+  id: 'Tdarr_Plugin_00td_action_handbrake_basic_options',
   Stage: 'Pre-processing',
   Name: 'HandBrake basic options',
   Type: 'Video',
