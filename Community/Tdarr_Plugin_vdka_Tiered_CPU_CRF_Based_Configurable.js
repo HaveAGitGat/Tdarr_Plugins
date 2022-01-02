@@ -103,7 +103,11 @@ const details = () => ({
       type: 'string',
       defaultValue: 'false',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
       tooltip: `Input "true" if you want to skip SD (480p and 576p) files
         
@@ -152,7 +156,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // check if the file is SD and sdDisable is enabled
   // skip this plugin if so
-  if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled) {
+  if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled === 'true') {
     response.processFile = false;
     response.infoLog += '☒File is SD, not processing\n';
     return response;
