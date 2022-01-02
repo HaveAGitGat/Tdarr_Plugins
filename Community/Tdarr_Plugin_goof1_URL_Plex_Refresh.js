@@ -1,5 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
-/* eslint-disable */
 const details = () => ({
   id: 'Tdarr_Plugin_goof1_URL_Plex_Refresh',
   Stage: 'Post-processing',
@@ -102,10 +100,10 @@ const details = () => ({
               Here is where you would enter the path that Plex uses to find the file. \\n
               You would only enter the part of the path that is different. \\n\\n
               If your TDarr path is: \\n
-              /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n\\n
+/media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n\\n
               
               And the Plex path to the file is: \\n
-              /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n
+/data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n
               then part you would enter here is:
                \\nExample:\\n
                /data/`,
@@ -122,7 +120,7 @@ const details = () => ({
               Here is where you would enter the path that Plex uses to find the file. \\n
               You would only enter the part of the path that is different. \\n
               If your TDarr path is: \\n
-              /media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n\\n
+/media/local/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4 \\n\\n
               
               And the Plex path to the file is:\\n
               /data/tv/The Best Show Evaaaarr/Season 2/The Best Show Evaaaarr - S02E31 - Heck Yea HDTV-720p.mp4\\n
@@ -133,26 +131,27 @@ const details = () => ({
   ],
 });
 
-function checkReply(statusCode, urlNoToken) {
+function checkReply(response, statusCode, urlNoToken) {
   if (statusCode === 200) {
-    response.infoLog += `☒ Above shown folder scanned in Plex! \n`
+    response.infoLog += '☒ Above shown folder scanned in Plex! \n';
   } else if (statusCode === 401) {
-    response.infoLog += `Plex replied that the token was not authorized on this server \n`
+    response.infoLog += 'Plex replied that the token was not authorized on this server \n';
   } else if (statusCode === 404) {
     response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
-  ${urlNoToken}[redacted] \n`
+  ${urlNoToken}[redacted] \n`;
   } else {
     response.infoLog += `There was an issue reaching Plex. The URL used was 
-  ${urlNoToken}[redacted] \n`
+  ${urlNoToken}[redacted] \n`;
   }
-};
+}
 
 // eslint-disable-next-line no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = lib.loadDefaultValues(inputs, details);
   const http = require('http');
   const https = require('https');
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
 
   const response = {
     file,
@@ -186,35 +185,35 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
 
-  const portIfUsed = port ? `:${port}` : ''
-  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=`
+  const portIfUsed = port ? `:${port}` : '';
+  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=`;
 
   if (type === 'http') {
-    http.get(urlNoToken + token, (res) => {
-      checkReply(res.statusCode, urlNoToken)
-      return response
-    }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`;
-      return response;
+    await new Promise((resolve) => {
+      http.get(urlNoToken + token, (res) => {
+        checkReply(response, res.statusCode, urlNoToken);
+        resolve();
+      }).on('error', (e) => {
+        response.infoLog += `We have encountered an error: ${e}`;
+        resolve();
+      });
     });
-  } else if (type === 'https') {
-    https.get(urlNoToken + token, (res) => {
-      checkReply(res.statusCode, urlNoToken)
-      return response
-    }).on('error', (e) => {
-      response.infoLog += `We have encountered an error: ${e}`;
-      return response;
+    return response;
+  } if (type === 'https') {
+    await new Promise((resolve) => {
+      https.get(urlNoToken + token, (res) => {
+        checkReply(response, res.statusCode, urlNoToken);
+        resolve();
+      }).on('error', (e) => {
+        response.infoLog += `We have encountered an error: ${e}`;
+        resolve();
+      });
     });
-  } else {
-    response.infoLog += `Plex could not be updated, \n
-    the Url_Protocol can only be http or https. ${type} is not valid \n`;
     return response;
   }
-
-  //! the below return is only present because the call backs aren't 
-  //! working as intended. Must be removed if they begin to work properly
-  return response
-
+  response.infoLog += `Plex could not be updated, \n
+    the Url_Protocol can only be http or https. ${type} is not valid \n`;
+  return response;
 };
 
 module.exports.details = details;
