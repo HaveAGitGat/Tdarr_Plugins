@@ -86,9 +86,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.language has been configured. If it hasn't then exit plugin.
   if (inputs.language === '') {
-    response.infoLog +=
-      '☒Language/s to keep have not been configured, ' +
-      'please configure required options. Skipping this plugin.  \n';
+    response.infoLog
+      += '☒Language/s to keep have not been configured, '
+      + 'please configure required options. Skipping this plugin.  \n';
     response.processFile = false;
     return response;
   }
@@ -161,7 +161,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('und')
         ) {
           ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-          response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
+          response.infoLog
+            += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
           convert = true;
         }
       } catch (err) {
@@ -173,14 +174,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // No catch error here otherwise it would never detect the metadata as missing.
       if (typeof file.ffProbeData.streams[i].tags === 'undefined') {
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog
+          += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       } else if (typeof file.ffProbeData.streams[i].tags.language === 'undefined') {
       // Checks if the tags.language metadata is completely missing.
       // If so this would cause playback to show language as "undefined".
       // No catch error here otherwise it would never detect the metadata as missing
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog
+          += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       }
     }
