@@ -174,7 +174,7 @@ function findMediaInfoItem(file, index) {
       currMIOrder = -1;
     }
 
-    if (currMIOrder === index || currMIOrder === `0-${index}`) {
+    if (parseInt(currMIOrder, 10) === parseInt(index, 10) || currMIOrder === `0-${index}`) {
       return i;
     }
   }
