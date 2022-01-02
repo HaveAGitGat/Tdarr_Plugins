@@ -111,7 +111,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         ) === -1
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream detected as being unwanted, removing. Stream 0:s:${subtitleIdx} \n`;
+        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} has unwanted language tag ${file.ffProbeData.streams[i].tags.language.toLowerCase()}, removing. \n`;
         convert = true;
       }
     } catch (err) {
@@ -135,7 +135,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('description'))
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream detected as being descriptive, removing. Stream 0:s:${subtitleIdx} \n`;
+        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
         convert = true;
       }
     } catch (err) {
@@ -158,7 +158,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('und')
         ) {
           ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-          response.infoLog += `☒Subtitle stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+          response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as having no language, tagging as ${inputs.tag_language}. \n`;
           convert = true;
         }
       } catch (err) {
@@ -170,14 +170,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // No catch error here otherwise it would never detect the metadata as missing.
       if (typeof file.ffProbeData.streams[i].tags === 'undefined') {
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Subtitle stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as having no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       } else if (typeof file.ffProbeData.streams[i].tags.language === 'undefined') {
       // Checks if the tags.language metadata is completely missing.
       // If so this would cause playback to show language as "undefined".
       // No catch error here otherwise it would never detect the metadata as missing
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Subtitle stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as having no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       }
     }
