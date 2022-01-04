@@ -36,7 +36,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `
-               Enter the IP address/URL for Plex. Must include http(s)://
+               Enter the IP address/URL for Plex.
                \\nExample:\\n
                192.168.0.10
                \\nExample:\\n
