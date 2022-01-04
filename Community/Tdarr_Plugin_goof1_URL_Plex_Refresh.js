@@ -201,7 +201,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   } if (type === 'https') {
     await new Promise((resolve) => {
-      https.get(urlNoToken + token, (res) => {
+      https.get(urlNoToken + token, { rejectUnauthorized: false }, (res) => {
         checkReply(response, res.statusCode, urlNoToken);
         resolve();
       }).on('error', (e) => {
