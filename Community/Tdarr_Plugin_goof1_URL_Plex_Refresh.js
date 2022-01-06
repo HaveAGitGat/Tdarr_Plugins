@@ -186,7 +186,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
 
   const portIfUsed = port ? `:${port}` : '';
-  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${encodeURIComponent(filePath)}&X-Plex-Token=`;
+  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?\
+path=${encodeURIComponent(filePath)}&X-Plex-Token=`;
 
   if (type === 'http') {
     await new Promise((resolve) => {
