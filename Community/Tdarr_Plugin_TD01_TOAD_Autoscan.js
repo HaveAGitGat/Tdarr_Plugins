@@ -93,7 +93,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let filepath = '';
   const response = {};
   filepath = `${file.file.split('/').slice(0, -1).join('/')}/`;
-  filepath = encodeURI(filepath);
+  filepath = encodeURIComponent(filepath);
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
   if (
