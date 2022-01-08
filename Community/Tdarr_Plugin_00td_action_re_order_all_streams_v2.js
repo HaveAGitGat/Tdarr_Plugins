@@ -42,7 +42,7 @@ For example, if 'languages' is first, the streams will be ordered based on that 
     {
       name: 'channels',
       type: 'string',
-      defaultValue: '',
+      defaultValue: '7.1,5.1,2,1',
       inputUI: {
         type: 'text',
       },
