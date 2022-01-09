@@ -36,7 +36,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `
-               Enter the IP address/URL for Plex. Must include http(s)://
+               Enter the IP address/URL for Plex.
                \\nExample:\\n
                192.168.0.10
                \\nExample:\\n
@@ -186,7 +186,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
 
   const portIfUsed = port ? `:${port}` : '';
-  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?path=${filePath}&X-Plex-Token=`;
+  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?`
+    + `path=${encodeURIComponent(filePath)}&X-Plex-Token=`;
 
   if (type === 'http') {
     await new Promise((resolve) => {
@@ -201,7 +202,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   } if (type === 'https') {
     await new Promise((resolve) => {
-      https.get(urlNoToken + token, (res) => {
+      https.get(urlNoToken + token, { rejectUnauthorized: false }, (res) => {
         checkReply(response, res.statusCode, urlNoToken);
         resolve();
       }).on('error', (e) => {
