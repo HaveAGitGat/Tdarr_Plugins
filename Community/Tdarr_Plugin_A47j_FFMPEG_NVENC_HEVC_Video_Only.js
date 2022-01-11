@@ -279,7 +279,7 @@ response.infoLog += `Calculated target is ${Math.round(targetBitrate/1000)}Kbps.
     response.FFmpegMode = true;
     response.infoLog += `☒Transcoding to HEVC.`;
   } else {
-    if (file.container != ".${inputs.container}" ) {
+    if (file.container != "${inputs.container}" ) {
       response_preset = ',-c copy -map 0';
       response.processFile = true;
       response.infoLog += `☒Remuxing to ${inputs.container}`;
