@@ -1,4 +1,3 @@
-/* eslint-disable */
 const details = () => {
   return {
     id: "Tdarr_Plugin_A47j_FFMPEG_NVENC_HEVC_Video_Only",
@@ -136,12 +135,10 @@ function getMediaInfo(file) {
   return;
 } // end  getMediaInfo()
 
-// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+    inputs = lib.loadDefaultValues(inputs, details);
 
   if (file.fileMedium !== "video") {
     response.processFile = false;
