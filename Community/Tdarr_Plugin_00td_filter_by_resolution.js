@@ -55,10 +55,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const resolutions = inputs.resolutionsToProcess.split(',');
     if (resolutions.includes(fileResolution)) {
       response.processFile = true;
-      response.processFile += 'File is in resolutionsToProcess. Moving to next plugin.';
+      response.infoLog += 'File is in resolutionsToProcess. Moving to next plugin.';
     } else {
       response.processFile = false;
-      response.processFile += 'File is not in resolutionsToProcess. Breaking out of plugin stack.';
+      response.infoLog += 'File is not in resolutionsToProcess. Breaking out of plugin stack.';
     }
   }
 
@@ -66,10 +66,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const resolutions = inputs.resolutionsToNotProcess.split(',');
     if (resolutions.includes(fileResolution)) {
       response.processFile = false;
-      response.processFile += 'File is in resolutionsToNotProcess. Breaking out of plugin stack.';
+      response.infoLog += 'File is in resolutionsToNotProcess. Breaking out of plugin stack.';
     } else {
       response.processFile = true;
-      response.processFile += 'File is not in resolutionsToNotProcess. Moving to next plugin.';
+      response.infoLog += 'File is not in resolutionsToNotProcess. Moving to next plugin.';
     }
   }
 
