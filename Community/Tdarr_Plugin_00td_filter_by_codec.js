@@ -47,10 +47,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const codecs = inputs.codecsToProcess.split(',');
     if (codecs.includes(fileCodec)) {
       response.processFile = true;
-      response.processFile += 'File is in codecsToProcess. Moving to next plugin.';
+      response.infoLog += 'File is in codecsToProcess. Moving to next plugin.';
     } else {
       response.processFile = false;
-      response.processFile += 'File is not in codecsToProcess. Breaking out of plugin stack.';
+      response.infoLog += 'File is not in codecsToProcess. Breaking out of plugin stack.';
     }
   }
 
@@ -58,10 +58,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const codecs = inputs.codecsToNotProcess.split(',');
     if (codecs.includes(fileCodec)) {
       response.processFile = false;
-      response.processFile += 'File is in codecsToNotProcess. Breaking out of plugin stack.';
+      response.infoLog += 'File is in codecsToNotProcess. Breaking out of plugin stack.';
     } else {
       response.processFile = true;
-      response.processFile += 'File is not in codecsToNotProcess. Moving to next plugin.';
+      response.infoLog += 'File is not in codecsToNotProcess. Moving to next plugin.';
     }
   }
 
