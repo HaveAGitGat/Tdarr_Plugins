@@ -18,7 +18,7 @@ makes my library the best it could be. Thanks to everyone involved. Especially H
 whos existing code and assistance were invaluable
 My belief is that given enough information about the video file an optimal configuration can be determined
 specific to that file
-This is based on what my goals are and uses a mix of internal and external programs to gather as much 
+This is based on what my goals are and uses a mix of internal and external programs to gather as much
 useful information as possible to make decisions.
 There is a lot that goes into the gather and analysis part because:
 It is the basis of the decisions and "garbage in, garbage out"
