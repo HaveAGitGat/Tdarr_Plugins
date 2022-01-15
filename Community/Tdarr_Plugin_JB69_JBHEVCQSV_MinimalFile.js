@@ -7,7 +7,7 @@
 /*
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 Author: JarBinks, Zachg99, Jeff47
-Date: 12/26/2021
+Date: 01/13/2022
 This is my attempt to create an all in one routine that will maintain my library in optimal format
 !!!!FOR MY REQUIREMENTS!!!! Chances are very good you will need to make some changes to this routine
 and it's partner in order to make it work for you.
@@ -18,8 +18,8 @@ makes my library the best it could be. Thanks to everyone involved. Especially H
 whos existing code and assistance were invaluable
 My belief is that given enough information about the video file an optimal configuration can be determined
 specific to that file
-This is based on what my goals are and uses external programs to gather as much useful information as possible
-to make decisions.
+This is based on what my goals are and uses a mix of internal and external programs to gather as much
+useful information as possible to make decisions.
 There is a lot that goes into the gather and analysis part because:
 It is the basis of the decisions and "garbage in, garbage out"
 The video files are far from perfect when we get them and we need to make sure we learn as much as possible
@@ -33,9 +33,9 @@ This is especially noticeable on a library reset and these scripts because of th
 media files
 Video:  (Only one video stream is used!!)
     The script computes a desired bitrate based on the following equation
-    (videoheight * videowidth * videoFPS) * targetcodeccompression
+    (videoHeight * videoWidth * videoFPS) * targetCodecCompression
     The first 3 give a raw number of bits that the stream requires, however with encoding there is a certain amount
-    of acceptable loss, this is targetcodeccompression
+    of acceptable loss, this is targetCodecCompression
     This number is pretty low for hevc. I have found 0.07 to be about the norm.
     This means that for hevc only 7% of the raw bitrate is necessary to produce some decent results and actually I
     have used, and seen, as low as 3.5%
@@ -85,7 +85,16 @@ Subtitles:
  The order I run them in:
     Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile (JB - H265, AAC, MKV, bitrate optimized)
     Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix (JB - MKV Stats, Chapters, Audio Language)
- I am running the docker image provided for Tdarr
+ I am running the docker image provided for Tdarr.
+
+ This plugin needs (but doesn't require) the mkvtoolnix package. Install command within the container:
+
+    apt install mkvtoolnix
+
+ That needs to be rerun with every rebuild of the container to get the proper mediainfo tags.
+
+ One outstanding issue is I'm getting errors from ffmpeg when I attempt to process .ts files.
+
  Here is my docker config (I am running compose so yours might be a little different)
    tdarr_server:
      container_name: tdarr_server
@@ -156,19 +165,19 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `***You should not use this*** until you read the comments at the top of the code and understand
 how it works **this does alot** and is 1 of 2 routines you should to run **Part 1** \n`,
-  Version: '2.1',
+  Version: '2.2',
   Tags: 'pre-processing,ffmpeg,video,audio,qsv h265,aac',
   Inputs: [],
 });
 
 function findMediaInfoItem(file, index) {
   let currMIOrder = -1;
-  const strstreamType = file.ffProbeData.streams[index].codec_type.toLowerCase();
+  const strStreamType = file.ffProbeData.streams[index].codec_type.toLowerCase();
 
   for (let i = 0; i < file.mediaInfo.track.length; i += 1) {
     if (file.mediaInfo.track[i].StreamOrder) {
       currMIOrder = file.mediaInfo.track[i].StreamOrder;
-    } else if (strstreamType === 'text' || strstreamType === 'subtitle') {
+    } else if (strStreamType === 'text' || strStreamType === 'subtitle') {
       currMIOrder = file.mediaInfo.track[i].ID - 1;
     } else {
       currMIOrder = -1;
@@ -198,7 +207,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const currentfilename = file._id; // .replace(/'/g, "'\"'\"'");
+  const currentFileName = file._id; // .replace(/'/g, "'\"'\"'");
 
   // Settings
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,39 +216,39 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // are older than this it will first update them
 
   // Video
-  const targetvideocodec = 'hevc'; // This is the basis of the routine, if you want to change
+  const targetVideoCodec = 'hevc'; // This is the basis of the routine, if you want to change
   // it you probably want to use a different script
-  const boluse10bit = true; // This will encode in 10 bit
-  const targetframerate = 25; // Any frame rate greater than this will be adjusted
+  const bolUse10bit = true; // This will encode in 10 bit
+  const targetFrameRate = 25; // Any frame rate greater than this will be adjusted
 
-  const minsizedifffortranscode = 1.2; // If the existing bitrate is this much more than the target
+  const minSizeDiffForTranscode = 1.2; // If the existing bitrate is this much more than the target
   // bitrate it is ok to transcode, otherwise there might not be enough extra
   // to get decent quality
-  const targetreductionforcodecswitchonly = 0.8; // When a video codec change happens and the source bitrate is lower
+  const targetReductionForCodecSwitchOnly = 0.8; // When a video codec change happens and the source bitrate is lower
   // than optimal, we still lower the bitrate by this since hevc is ok
   // with a lower rate
 
-  const maxvideoheight = 2160; // Any thing over this size, I.E. 8K, will be reduced to this
-  const targetcodeccompression = 0.08; // This effects the target bitrate by assuming a compression ratio
+  const maxVideoHeight = 2160; // Any thing over this size, I.E. 8K, will be reduced to this
+  const targetCodecCompression = 0.08; // This effects the target bitrate by assuming a compression ratio
 
   // Since videos can have many widths and heights we need to convert to pixels (WxH) to understand what we
   // are dealing with and set a minimal optimal bitrate to not go below
-  const minvideopixels4K = 6500000;
-  const minvideorate4K = 8500000;
+  const minVideoPixels4K = 6500000;
+  const minVideoRate4K = 8500000;
 
-  const minvideopixels2K = 1500000;
-  const minvideorate2K = 2400000;
+  const minVideoPixels2K = 1500000;
+  const minVideoRate2K = 2400000;
 
-  const minvideopixelsHD = 750000;
-  const minvideorateHD = 1100000;
+  const minVideoPixelsHD = 750000;
+  const minVideoRateHD = 1100000;
 
-  const minvideorateSD = 450000;
+  const minVideoRateSD = 450000;
 
   // Audio
-  const targetaudiocodec = 'aac'; // Desired Audio Coded, if you change this it will might require code changes
-  const targetaudiolanguage = 'eng'; // Desired Audio Language
-  const targetaudiobitrateperchannel = 64000; // 64K per channel gives you the good lossy quality out of AAC
-  const targetaudiochannels = 6; // Any thing above this number of channels will be
+  const targetAudioCodec = 'aac'; // Desired Audio Coded, if you change this it will might require code changes
+  const targetAudioLanguage = 'eng'; // Desired Audio Language
+  const targetAudioBitratePerChannel = 64000; // 64K per channel gives you the good lossy quality out of AAC
+  const targetAudioChannels = 6; // Any thing above this number of channels will be
   // reduced to it, because I cannot listen to it
 
   // Subtitles
@@ -253,7 +262,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
   // response.infoLog += "Getting Media Info.\n";
   // var objMedInfo = "";
-  // objMedInfo = JSON.parse(proc.execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
+  // objMedInfo = JSON.parse(proc.execSync('mediainfo "' + currentFileName + '" --output=JSON').toString());
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Run ffprobe with full info and load the results it into an object
@@ -261,7 +270,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // response.infoLog += "Getting FFProbe Info.\n";
   // var objFFProbeInfo = "";
   // objFFProbeInfo = JSON.parse(proc.execSync('ffprobe -v error -print_format json
-  // -show_format -show_streams -show_chapters "' + currentfilename + '"').toString());
+  // -show_format -show_streams -show_chapters "' + currentFileName + '"').toString());
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   //    response.processFile = false;
@@ -330,40 +339,40 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.infoLog += 'Stats need to be updated! \n';
 
       try {
-        proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentfilename}"`);
+        proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
       } catch (err) {
         response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
       }
       response.infoLog += 'Getting Stats Objects, again!\n';
-      // objMedInfo = JSON.parse(proc.execSync('mediainfo "' + currentfilename + '" --output=JSON').toString());
+      // objMedInfo = JSON.parse(proc.execSync('mediainfo "' + currentFileName + '" --output=JSON').toString());
       // objFFProbeInfo = JSON.parse(proc.execSync('ffprobe -v error -print_format json' +
-      // ' -show_format -show_streams -show_chapters "' + currentfilename + '"').toString());
+      // ' -show_format -show_streams -show_chapters "' + currentFileName + '"').toString());
     }
   }
 
   // Logic Controls
-  let bolscaleVideo = false;
-  let boltranscodeVideo = false;
-  let bolchangeframerateVideo = false;
-  let optimalvideobitrate = 0;
-  let videonewwidth = 0;
+  let bolScaleVideo = false;
+  let bolTranscodeVideo = false;
+  let bolChangeFrameRateVideo = false;
+  let optimalVideoBitrate = 0;
+  let videoNewWidth = 0;
   let bolSource10bit = false;
-  let boltranscodeSoftwareDecode = false;
+  let bolTranscodeSoftwareDecode = false;
 
-  let audionewchannels = 0;
-  let boltranscodeAudio = false;
-  let boldownmixAudio = false;
+  let audioNewChannels = 0;
+  let bolTranscodeAudio = false;
+  let bolDownMixAudio = false;
 
   let audioChannels = 0;
   let audioBitrate = 0;
   let audioIdxChannels = 0;
   let audioIdxBitrate = 0;
 
-  let boldosubs = false;
-  let bolforcenosubs = false;
-  let boldosubsconvert = false;
+  let bolDoSubs = false;
+  let bolForceNoSubs = false;
+  let bolDoSubsConvert = false;
 
-  const boldochapters = true;
+  const bolDoChapters = true;
 
   // Set up required variables
   let videoIdx = -1;
@@ -371,24 +380,24 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let audioIdx = -1;
   let audioIdxOther = -1;
 
-  let strstreamType = '';
+  let strStreamType = '';
   let MILoc = -1;
 
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
+    strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
 
     // Looking For Video
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-    if (strstreamType === 'video') {
+    if (strStreamType === 'video') {
       // First we need to check if it is included in the MediaInfo struture, it might not be (mjpeg??, others??)
       MILoc = findMediaInfoItem(file, i);
 
       response.infoLog += `Index ${i} MediaInfo stream: ${MILoc} \n`;
 
       if (MILoc > -1) {
-        const streamheight = file.ffProbeData.streams[i].height * 1;
-        const streamwidth = file.ffProbeData.streams[i].width * 1;
+        const streamHeight = file.ffProbeData.streams[i].height * 1;
+        const streamWidth = file.ffProbeData.streams[i].width * 1;
         const streamFPS = file.mediaInfo.track[MILoc].FrameRate * 1;
         let streamBR = file.mediaInfo.track[MILoc].BitRate * 1;
 
@@ -399,7 +408,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.infoLog
           += `Video stream ${i}:${Math.floor(file.meta.Duration / 60)}:`
           + `${file.ffProbeData.streams[i].codec_name}${(bolSource10bit) ? '(10)' : ''}`;
-        response.infoLog += `:${streamwidth}x${streamheight}x${streamFPS}:${streamBR}bps \n`;
+        response.infoLog += `:${streamWidth}x${streamHeight}x${streamFPS}:${streamBR}bps \n`;
 
         if (videoIdxFirst === -1) {
           videoIdxFirst = i;
@@ -410,16 +419,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         } else {
           const MILocC = findMediaInfoItem(file, videoIdx);
           // const curstreamheight = file.ffProbeData.streams[videoIdx].height * 1; //Not needed
-          const curstreamwidth = file.ffProbeData.streams[videoIdx].width * 1;
+          const curStreamWidth = file.ffProbeData.streams[videoIdx].width * 1;
           // const curstreamFPS = file.mediaInfo.track[MILocC].FrameRate * 1; //Not needed
-          let curstreamBR = file.mediaInfo.track[MILocC].BitRate * 1;
+          let curStreamBR = file.mediaInfo.track[MILocC].BitRate * 1;
 
-          if (isNaN(curstreamBR)) {
-            curstreamBR = file.mediaInfo.track[MILocC].extra.FromStats_BitRate * 1;
+          if (isNaN(curStreamBR)) {
+            curStreamBR = file.mediaInfo.track[MILocC].extra.FromStats_BitRate * 1;
           }
 
           // Only check here based on bitrate and video width
-          if (streamBR > curstreamBR && streamwidth >= curstreamwidth) {
+          if (streamBR > curStreamBR && streamWidth >= curStreamWidth) {
             videoIdx = i;
           }
         }
@@ -429,7 +438,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     // Looking For Audio
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-    if (strstreamType === 'audio') {
+    if (strStreamType === 'audio') {
       // response.processFile = false;
       // response.infoLog += i + ":" + objFFProbeInfo.streams[i].tags.language + " \n";
       // audioIdxFirst = i;
@@ -445,10 +454,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       if (
         file.ffProbeData.streams[i].tags !== undefined
-        && file.ffProbeData.streams[i].tags.language === targetaudiolanguage
+        && file.ffProbeData.streams[i].tags.language === targetAudioLanguage
       ) {
         response.infoLog
-          += `Audio stream ${i}:${targetaudiolanguage}`
+          += `Audio stream ${i}:${targetAudioLanguage}`
           + `:${file.ffProbeData.streams[i].codec_name}:${audioChannels}:${audioBitrate}bps:`;
 
         if (audioIdx === -1) {
@@ -491,22 +500,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     // Looking For Subtitles -- These are causing problems let's just exclude for now
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-    if (!bolforcenosubs && !boldosubs && (strstreamType === 'text' || strstreamType === 'subtitle')) {
+    if (!bolForceNoSubs && !bolDoSubs && (strStreamType === 'text' || strStreamType === 'subtitle')) {
       // A sub has an S_TEXT/WEBVTT codec, ffmpeg will fail with it
       if (file.mediaInfo.track[findMediaInfoItem(file, i)].CodecID !== 'S_TEXT/WEBVTT') {
-        boldosubs = true;
+        bolDoSubs = true;
         if (file.ffProbeData.streams[i].codec_name === 'mov_text') {
-          boldosubsconvert = true;
+          bolDoSubsConvert = true;
           response.infoLog += 'SubTitles Found (mov_text), will convert \n';
         } else {
           response.infoLog += 'SubTitles Found, will copy \n';
         }
       } else {
         response.infoLog += 'SubTitles Found (S_TEXT/WEBVTT), will not copy \n';
-        bolforcenosubs = true;
+        bolForceNoSubs = true;
       }
     }
-    // boldosubs = true;
+    // bolDoSubs = true;
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
   }
 
@@ -520,14 +529,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Bad start times
   //    if (objFFProbeInfo.chapters[i].start_time < 0) {
-  //        boldochapters = false;
+  //        bolDoChapters = false;
   //        break;   //Dont need to continue because we know they are bad
   //    }
 
   // Duplicate start times
   //    for (var x = 0; i < objFFProbeInfo.chapters.length; i+=1) {
   //        if (i != x && objFFProbeInfo.chapters[i].start_time == objFFProbeInfo.chapters[x].start_time) {
-  //            boldochapters = false;
+  //            bolDoChapters = false;
   //            break;   //Dont need to continue because we know they are bad
   //        }
   //    }
@@ -541,11 +550,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  boltranscodeVideo = true; // We will assume we will be transcoding
+  bolTranscodeVideo = true; // We will assume we will be transcoding
   MILoc = findMediaInfoItem(file, videoIdx);
 
-  let videoheight = file.ffProbeData.streams[videoIdx].height * 1;
-  let videowidth = file.ffProbeData.streams[videoIdx].width * 1;
+  let videoHeight = file.ffProbeData.streams[videoIdx].height * 1;
+  let videoWidth = file.ffProbeData.streams[videoIdx].width * 1;
   let videoFPS = file.mediaInfo.track[MILoc].FrameRate * 1;
   let videoBR = file.mediaInfo.track[MILoc].BitRate * 1;
 
@@ -563,51 +572,51 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Source is Variable Frame rate but we will transcode to fixed
   if (file.mediaInfo.track[MILoc].FrameRate_Mode === 'VFR') videoFPS = 9999;
 
-  if (videoFPS > targetframerate) {
-    bolchangeframerateVideo = true; // Need to fix this it does not work :-(
+  if (videoFPS > targetFrameRate) {
+    bolChangeFrameRateVideo = true; // Need to fix this it does not work :-(
   }
 
   // Lets see if we need to scal down the video size
-  if (videoheight > maxvideoheight) {
-    bolscaleVideo = true;
-    videonewwidth = Math.floor((maxvideoheight / videoheight) * videowidth);
+  if (videoHeight > maxVideoHeight) {
+    bolScaleVideo = true;
+    videoNewWidth = Math.floor((maxVideoHeight / videoHeight) * videoWidth);
     response.infoLog
-      += `Video Resolution, ${videowidth}x${videoheight}, need to convert to ${videonewwidth}x${maxvideoheight} \n`;
-    videoheight = maxvideoheight;
-    videowidth = videonewwidth;
+      += `Video Resolution, ${videoWidth}x${videoHeight}, need to convert to ${videoNewWidth}x${maxVideoHeight} \n`;
+    videoHeight = maxVideoHeight;
+    videoWidth = videoNewWidth;
   }
 
   // Figure out the desired bitrate
-  optimalvideobitrate = Math.floor((videoheight * videowidth * targetframerate) * targetcodeccompression);
-  response.infoLog += `Pre Video Calc: ${videoheight}, ${videowidth}, ${videoFPS}, ${optimalvideobitrate} \n`;
+  optimalVideoBitrate = Math.floor((videoHeight * videoWidth * targetFrameRate) * targetCodecCompression);
+  response.infoLog += `Pre Video Calc: ${videoHeight}, ${videoWidth}, ${videoFPS}, ${optimalVideoBitrate} \n`;
 
   // We need to check for a minimum bitrate
-  if ((videoheight * videowidth) > minvideopixels4K && optimalvideobitrate < minvideopixels4K) {
+  if ((videoHeight * videoWidth) > minVideoPixels4K && optimalVideoBitrate < minVideoPixels4K) {
     response.infoLog
-      += `Video Bitrate calulcated for 4K, ${optimalvideobitrate}, is below minimum, ${minvideopixels4K} \n`;
-    optimalvideobitrate = minvideorate4K;
-  } else if ((videoheight * videowidth) > minvideopixels2K && optimalvideobitrate < minvideorate2K) {
+      += `Video Bitrate calulcated for 4K, ${optimalVideoBitrate}, is below minimum, ${minVideoPixels4K} \n`;
+    optimalVideoBitrate = minVideoRate4K;
+  } else if ((videoHeight * videoWidth) > minVideoPixels2K && optimalVideoBitrate < minVideoRate2K) {
     response.infoLog
-      += `Video Bitrate calulcated for 2K, ${optimalvideobitrate}, is below minimum, ${minvideorate2K} \n`;
-    optimalvideobitrate = minvideorate2K;
-  } else if ((videoheight * videowidth) > minvideopixelsHD && optimalvideobitrate < minvideorateHD) {
+      += `Video Bitrate calulcated for 2K, ${optimalVideoBitrate}, is below minimum, ${minVideoRate2K} \n`;
+    optimalVideoBitrate = minVideoRate2K;
+  } else if ((videoHeight * videoWidth) > minVideoPixelsHD && optimalVideoBitrate < minVideoRateHD) {
     response.infoLog
-      += `Video Bitrate calulcated for HD, ${optimalvideobitrate}, is below minimum, ${minvideorateHD} \n`;
-    optimalvideobitrate = minvideorateHD;
-  } else if (optimalvideobitrate < minvideorateSD) {
+      += `Video Bitrate calulcated for HD, ${optimalVideoBitrate}, is below minimum, ${minVideoRateHD} \n`;
+    optimalVideoBitrate = minVideoRateHD;
+  } else if (optimalVideoBitrate < minVideoRateSD) {
     response.infoLog
-      += `Video Bitrate calulcated for SD, ${optimalvideobitrate}, is below minimum, ${minvideorateSD} \n`;
-    optimalvideobitrate = minvideorateSD;
+      += `Video Bitrate calulcated for SD, ${optimalVideoBitrate}, is below minimum, ${minVideoRateSD} \n`;
+    optimalVideoBitrate = minVideoRateSD;
   }
 
   // Check if it is already hvec, if not then we must transcode
-  if (file.ffProbeData.streams[videoIdx].codec_name !== targetvideocodec) {
+  if (file.ffProbeData.streams[videoIdx].codec_name !== targetVideoCodec) {
     response.infoLog
       += `Video existing Codex is ${file.ffProbeData.streams[videoIdx].codec_name}${(bolSource10bit) ? '(10)' : ''}`;
-    response.infoLog += `, need to convert to ${targetvideocodec}${(boluse10bit) ? '(10)' : ''} \n`;
+    response.infoLog += `, need to convert to ${targetVideoCodec}${(bolUse10bit) ? '(10)' : ''} \n`;
 
     if (file.ffProbeData.streams[videoIdx].codec_name === 'mpeg4') {
-      boltranscodeSoftwareDecode = true;
+      bolTranscodeSoftwareDecode = true;
       response.infoLog
         += `Video existing Codex is ${file.ffProbeData.streams[videoIdx].codec_name}, `
         + 'need to decode with software codec \n';
@@ -616,43 +625,43 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       && file.ffProbeData.streams[videoIdx].profile.includes('10')
     ) {
       // If the source is 10 bit then we must software decode since qsv will not decode 264 10 bit??
-      boltranscodeSoftwareDecode = true;
+      bolTranscodeSoftwareDecode = true;
       response.infoLog
       += `Video existing Codex is ${file.ffProbeData.streams[videoIdx].codec_name} 10 bit,`
       + ' need to decode with software codec \n';
     }
   }
 
-  if (videoBR < (optimalvideobitrate * minsizedifffortranscode)) {
+  if (videoBR < (optimalVideoBitrate * minSizeDiffForTranscode)) {
     // We need to be careful here are else we could produce a bad quality
     response.infoLog += 'Low source bitrate! \n';
-    if (file.ffProbeData.streams[videoIdx].codec_name === targetvideocodec) {
-      if (bolSource10bit === boluse10bit) {
+    if (file.ffProbeData.streams[videoIdx].codec_name === targetVideoCodec) {
+      if (bolSource10bit === bolUse10bit) {
         response.infoLog
         += `Video existing Bitrate, ${videoBR}, is close to target Bitrate, `
-        + `${optimalvideobitrate}, using existing stream \n`;
-        boltranscodeVideo = false;
+        + `${optimalVideoBitrate}, using existing stream \n`;
+        bolTranscodeVideo = false;
       } else {
         response.infoLog
         += 'Video existing bit depth is different from target, without a codec change, using using existing bitrate \n';
-        optimalvideobitrate = videoBR;
+        optimalVideoBitrate = videoBR;
       }
     } else {
       // We have a codec change with not much meat so we need to adjust are target rate
       response.infoLog += `Video existing Bitrate, ${videoBR}, is close to, or lower than, target Bitrate, `;
       response.infoLog
-      += `${optimalvideobitrate}, with a codec change, using ${Math.floor(targetreductionforcodecswitchonly * 100)}`
+      += `${optimalVideoBitrate}, with a codec change, using ${Math.floor(targetReductionForCodecSwitchOnly * 100)}`
       + '% of existing \n';
-      optimalvideobitrate = Math.floor(videoBR * targetreductionforcodecswitchonly);
-      boltranscodeVideo = true;
+      optimalVideoBitrate = Math.floor(videoBR * targetReductionForCodecSwitchOnly);
+      bolTranscodeVideo = true;
     }
   } else {
     // We already know the existing bitrate has enough meat for a decent transcode
-    // boltranscodeVideo = true;
+    // bolTranscodeVideo = true;
     response.infoLog += `Video existing Bitrate, ${videoBR}, is higher than target,`
-    + ` ${optimalvideobitrate}, transcoding \n`;
+    + ` ${optimalVideoBitrate}, transcoding \n`;
   }
-  response.infoLog += `Post Video Calc: ${videoheight}, ${videowidth}, ${videoFPS}, ${optimalvideobitrate} \n`;
+  response.infoLog += `Post Video Calc: ${videoHeight}, ${videoWidth}, ${videoFPS}, ${optimalVideoBitrate} \n`;
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Audio Decision section
@@ -674,30 +683,30 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     audioBR = file.mediaInfo.track[findMediaInfoItem(file, audioIdx)].extra.FromStats_BitRate * 1;
   }
 
-  if (file.ffProbeData.streams[audioIdx].channels > targetaudiochannels) {
-    boldownmixAudio = true;
-    audionewchannels = targetaudiochannels;
+  if (file.ffProbeData.streams[audioIdx].channels > targetAudioChannels) {
+    bolDownMixAudio = true;
+    audioNewChannels = targetAudioChannels;
     response.infoLog
     += `Audio existing Channels, ${file.ffProbeData.streams[audioIdx].channels}, `
-    + `is higher than target, ${targetaudiochannels} \n`;
+    + `is higher than target, ${targetAudioChannels} \n`;
   } else {
-    audionewchannels = file.ffProbeData.streams[audioIdx].channels;
+    audioNewChannels = file.ffProbeData.streams[audioIdx].channels;
   }
 
-  let optimalaudiobitrate = audionewchannels * targetaudiobitrateperchannel;
+  let optimalaudiobitrate = audioNewChannels * targetAudioBitratePerChannel;
 
   // Now what are we going todo with the audio part
   if (audioBR > (optimalaudiobitrate * 1.1)) {
-    boltranscodeAudio = true;
+    bolTranscodeAudio = true;
     response.infoLog += `Audio existing Bitrate, ${audioBR}, is higher than target, ${optimalaudiobitrate} \n`;
   }
 
   // If the audio codec is not what we want then we should transcode
-  if (file.ffProbeData.streams[audioIdx].codec_name !== targetaudiocodec) {
-    boltranscodeAudio = true;
+  if (file.ffProbeData.streams[audioIdx].codec_name !== targetAudioCodec) {
+    bolTranscodeAudio = true;
     response.infoLog
     += `Audio Codec, ${file.ffProbeData.streams[audioIdx].codec_name}, is different than target, `
-    + `${targetaudiocodec}, Changing \n`;
+    + `${targetAudioCodec}, Changing \n`;
   }
 
   // If the source bitrate is less than out target bitrate we should not ever go up
@@ -705,7 +714,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += `Audio existing Bitrate, ${audioBR}, is lower than target,`
     + ` ${optimalaudiobitrate}, using existing `;
     optimalaudiobitrate = audioBR;
-    if (file.ffProbeData.streams[audioIdx].codec_name !== targetaudiocodec) {
+    if (file.ffProbeData.streams[audioIdx].codec_name !== targetAudioCodec) {
       response.infoLog += 'rate';
     } else {
       response.infoLog += 'stream';
@@ -716,132 +725,132 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // lets assemble our ffmpeg command
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  const strtrancodebasehw = ' -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi ';
-  const strtrancodebasesw = ' -vaapi_device /dev/dri/renderD128 ';
-  const strtranscodevideomapping = ' <io> -max_muxing_queue_size 8000 -map 0:{0} ';
-  const strtranscodevideocopy = ' -c:v:0 copy ';
-  const strtranscodevideotranscoding = ' -c:v:0 hevc_vaapi ';
+  const strTranCodeBaseHW = ' -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi ';
+  const strTranCodeBaseSW = ' -vaapi_device /dev/dri/renderD128 ';
+  const strTranscodeVideoMapping = ' <io> -max_muxing_queue_size 8000 -map 0:{0} ';
+  const strTranscodeVideoCopy = ' -c:v:0 copy ';
+  const strTranscodeVideoTranscoding = ' -c:v:0 hevc_vaapi ';
   // Used to make the output 10bit, I think the quotes need to be this way for ffmpeg
-  const strtranscodevideooptions = ' -vf "{0}" ';
-  const strtranscodevideoscaling = 'w=-1:h=1080'; // Used when video is above our target of 1080
-  const strtranscodeframerate = 'fps={0}'; // Used to change the framerate to the target framerate
-  const strtranscodevideoformathw = 'scale_vaapi='; // Used to make the output 10bit
-  const strtranscodevideoformat = 'format={0}'; // Used to add filters to the hardware transcode
-  const strtranscodevideo10bit = 'p010'; // Used to make the output 10bit
-  const strtranscodevideo8bit = 'p008'; // Used to make the output 8bit
-  const strtranscodevideoswdecode = 'hwupload'; // Used to make it use software decode if necessary
+  const strTranscodeVideoOptions = ' -vf "{0}" ';
+  const strTranscodeVideoScaling = 'w=-1:h=1080'; // Used when video is above our target of 1080
+  const strTransCodeFrameRate = 'fps={0}'; // Used to change the framerate to the target framerate
+  const strTranscodeVideoFormatHW = 'scale_vaapi='; // Used to make the output 10bit
+  const strTranscodeVideoFormat = 'format={0}'; // Used to add filters to the hardware transcode
+  const strTranscodeVideo10bit = 'p010'; // Used to make the output 10bit
+  const strTranscodeVideo8bit = 'p008'; // Used to make the output 8bit
+  const strTranscodeVideoSWDecode = 'hwupload'; // Used to make it use software decode if necessary
   // Used to make it sure the software decode is in the proper pixel format
-  const strtranscodevideoswdecode10bit = 'nv12|vaapi';
-  const strtranscodevideobitrate = ' -b:v {0} '; // Used when video is above our target of 1080
-  const strtranscodeaudiomapping = ' -map 0:{0} ';
-  const strtranscodeaudiocopy = ' -c:a:0 copy ';
-  const strtranscodeaudiotranscoding = ' -c:a:0 ${targetaudiocodec} -b:a {0} ';
-  const strtranscodeaudiodownmixing = ' -ac {0} ';
-  const strtranscodesubs = ' -map 0:s -scodec copy ';
-  const strtranscodesubsconvert = ' -map 0:s -c:s srt ';
-  const strtranscodesubsnone = ' -map -0:s ';
-  const strtranscodemetadata = ' -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE={0} ';
-  const strtranscodechapters = ' -map_chapters {0} ';
+  const strTranscodeVideoSWDecode10bit = 'nv12|vaapi';
+  const strTranscodeVideoBitrate = ' -b:v {0} '; // Used when video is above our target of 1080
+  const strTranscodeAudioMapping = ' -map 0:{0} ';
+  const strTranscodeAudioCopy = ' -c:a:0 copy ';
+  const strTranscodeAudioTranscoding = ' -c:a:0 ${targetAudioCodec} -b:a {0} ';
+  const strTranscodeAudioDownMixing = ' -ac {0} ';
+  const strTranscodeSubs = ' -map 0:s -scodec copy ';
+  const strTranscodeSubsConvert = ' -map 0:s -c:s srt ';
+  const strTranscodeSubsNone = ' -map -0:s ';
+  const strTranscodeMetadata = ' -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE={0} ';
+  const strTranscodeChapters = ' -map_chapters {0} ';
 
-  const strtranscodefileoptions = ' ';
+  const strTranscodeFileOptions = ' ';
 
   let strFFcmd = '';
-  if (boltranscodeVideo) {
-    if (boltranscodeSoftwareDecode) {
-      strFFcmd += strtrancodebasesw;
+  if (bolTranscodeVideo) {
+    if (bolTranscodeSoftwareDecode) {
+      strFFcmd += strTranCodeBaseSW;
     } else {
-      strFFcmd += strtrancodebasehw;
+      strFFcmd += strTranCodeBaseHW;
     }
   }
-  strFFcmd += strtranscodevideomapping.replace('{0}', videoIdx);
-  if (boltranscodeVideo) {
-    strFFcmd += strtranscodevideotranscoding;
+  strFFcmd += strTranscodeVideoMapping.replace('{0}', videoIdx);
+  if (bolTranscodeVideo) {
+    strFFcmd += strTranscodeVideoTranscoding;
 
-    if (bolscaleVideo || boluse10bit || boltranscodeSoftwareDecode || bolchangeframerateVideo) {
-      let stroptions = '';
-      let strformat = '';
-      if (bolscaleVideo) {
-        stroptions += strtranscodevideoscaling;
+    if (bolScaleVideo || bolUse10bit || bolTranscodeSoftwareDecode || bolChangeFrameRateVideo) {
+      let strOptions = '';
+      let strFormat = '';
+      if (bolScaleVideo) {
+        strOptions += strTranscodeVideoScaling;
       }
 
       let strChangeVideoRateString = '';
-      if (bolchangeframerateVideo) {
-        strChangeVideoRateString = `${strtranscodeframerate.replace('{0}', targetframerate)},`;
+      if (bolChangeFrameRateVideo) {
+        strChangeVideoRateString = `${strTransCodeFrameRate.replace('{0}', targetFrameRate)},`;
       }
 
-      if (strformat.length > 0) {
-        strformat += '=';
+      if (strFormat.length > 0) {
+        strFormat += '=';
       }
 
-      if (boluse10bit && !bolSource10bit) {
-        strformat += strtranscodevideo10bit;
+      if (bolUse10bit && !bolSource10bit) {
+        strFormat += strTranscodeVideo10bit;
       }
 
-      if (!boluse10bit && bolSource10bit) {
-        strformat += strtranscodevideo8bit;
+      if (!bolUse10bit && bolSource10bit) {
+        strFormat += strTranscodeVideo8bit;
       }
 
-      if (boltranscodeSoftwareDecode) {
+      if (bolTranscodeSoftwareDecode) {
         if (bolSource10bit) {
-          if (strformat.length > 0) {
-            strformat += ',';
+          if (strFormat.length > 0) {
+            strFormat += ',';
           }
-          strformat += strtranscodevideoswdecode10bit;
+          strFormat += strTranscodeVideoSWDecode10bit;
         }
-        if (strformat.length > 0) {
-          strformat += ',';
+        if (strFormat.length > 0) {
+          strFormat += ',';
         }
-        strformat += strtranscodevideoswdecode;
+        strFormat += strTranscodeVideoSWDecode;
       }
 
-      if (strformat.length > 0) {
-        if (stroptions.length > 0) {
-          stroptions += ',';
+      if (strFormat.length > 0) {
+        if (strOptions.length > 0) {
+          strOptions += ',';
         }
-        stroptions += strtranscodevideoformat.replace('{0}', strformat);
+        strOptions += strTranscodeVideoFormat.replace('{0}', strFormat);
       }
 
-      if (boltranscodeSoftwareDecode) {
-        strFFcmd += strtranscodevideooptions.replace('{0}', strChangeVideoRateString + stroptions);
+      if (bolTranscodeSoftwareDecode) {
+        strFFcmd += strTranscodeVideoOptions.replace('{0}', strChangeVideoRateString + strOptions);
       } else {
-        strFFcmd += strtranscodevideooptions
-          .replace('{0}', strChangeVideoRateString + strtranscodevideoformathw + stroptions);
+        strFFcmd += strTranscodeVideoOptions
+          .replace('{0}', strChangeVideoRateString + strTranscodeVideoFormatHW + strOptions);
       }
     }
-    strFFcmd += strtranscodevideobitrate.replace('{0}', optimalvideobitrate);
+    strFFcmd += strTranscodeVideoBitrate.replace('{0}', optimalVideoBitrate);
   } else {
-    strFFcmd += strtranscodevideocopy;
+    strFFcmd += strTranscodeVideoCopy;
   }
 
-  strFFcmd += strtranscodeaudiomapping.replace('{0}', audioIdx);
-  if (boltranscodeAudio) {
-    strFFcmd += strtranscodeaudiotranscoding
+  strFFcmd += strTranscodeAudioMapping.replace('{0}', audioIdx);
+  if (bolTranscodeAudio) {
+    strFFcmd += strTranscodeAudioTranscoding
       .replace('{0}', optimalaudiobitrate)
-      .replace('${targetaudiocodec}', targetaudiocodec);
+      .replace('${targetAudioCodec}', targetAudioCodec);
   } else {
-    strFFcmd += strtranscodeaudiocopy;
+    strFFcmd += strTranscodeAudioCopy;
   }
-  if (boldownmixAudio) {
-    strFFcmd += strtranscodeaudiodownmixing.replace('{0}', audionewchannels);
+  if (bolDownMixAudio) {
+    strFFcmd += strTranscodeAudioDownMixing.replace('{0}', audioNewChannels);
   }
-  if (bolforcenosubs) {
-    strFFcmd += strtranscodesubsnone;
-  } else if (boldosubs) {
-    if (boldosubsconvert) {
-      strFFcmd += strtranscodesubsconvert;
+  if (bolForceNoSubs) {
+    strFFcmd += strTranscodeSubsNone;
+  } else if (bolDoSubs) {
+    if (bolDoSubsConvert) {
+      strFFcmd += strTranscodeSubsConvert;
     } else {
-      strFFcmd += strtranscodesubs;
+      strFFcmd += strTranscodeSubs;
     }
   }
 
-  strFFcmd += strtranscodemetadata.replace('{0}', new Date().toISOString());
-  if (boldochapters) {
-    strFFcmd += strtranscodechapters.replace('{0}', '0');
+  strFFcmd += strTranscodeMetadata.replace('{0}', new Date().toISOString());
+  if (bolDoChapters) {
+    strFFcmd += strTranscodeChapters.replace('{0}', '0');
   } else {
-    strFFcmd += strtranscodechapters.replace('{0}', '-1');
+    strFFcmd += strTranscodeChapters.replace('{0}', '-1');
   }
 
-  strFFcmd += strtranscodefileoptions;
+  strFFcmd += strTranscodeFileOptions;
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   // response.infoLog += strFFcmd + "\n";
