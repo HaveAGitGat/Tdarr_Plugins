@@ -340,6 +340,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       try {
         proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+        return response;
       } catch (err) {
         response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
       }
