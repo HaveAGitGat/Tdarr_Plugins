@@ -41,6 +41,9 @@ module.exports = function transcodeStandardiseAudioCodecs(file, audioEncoder) {
     }
 
     if (hasNonSpecifiedAudioCodecStream === true) {
+      if (['dca', 'truehd'].includes(audioEncoder)) {
+        ffmpegCommandInsert += ' -strict -2';
+      }
       return {
         preset: `,-map 0:v -map 0:a -map 0:s? -map 0:d? -c copy ${ffmpegCommandInsert}`,
         processFile: true,
