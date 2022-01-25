@@ -185,7 +185,7 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
               it you probably want to use a different script`,
     },{
       name: 'Use_10bit_Video',
-      type: 'string',
+      type: 'boolean',
       defaultValue: true,
       inputUI: {
         type: 'dropdown',
