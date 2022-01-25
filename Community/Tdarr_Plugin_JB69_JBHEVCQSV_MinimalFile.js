@@ -247,7 +247,7 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
       tooltip: `This effects the target bitrate by assuming a compression ratio.`,
     },{
       name: 'Target_Audio_Codec',
-      type: 'text',
+      type: 'string',
       defaultValue: 'aac',
       inputUI: {
         type: 'text',
