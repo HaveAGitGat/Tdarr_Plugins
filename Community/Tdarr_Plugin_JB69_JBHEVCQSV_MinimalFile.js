@@ -255,7 +255,7 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
       tooltip: `Desired Audio Codec, if you change this it might require code changes.`,
     },{
       name: 'Target_Audio_Language',
-      type: 'text',
+      type: 'string',
       defaultValue: 'eng',
       inputUI: {
         type: 'text',
