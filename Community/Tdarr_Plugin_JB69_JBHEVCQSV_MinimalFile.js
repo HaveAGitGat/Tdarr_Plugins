@@ -226,14 +226,14 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
     },{
       name: 'Max_Video_Height',
       type: 'number',
-      defaultValue: '2160',
+      defaultValue: 2160,
       inputUI: {
         type: 'dropdown',
         options: [
-          '720',
-          '1080',
-          '2160',
-          '4320',
+          720,
+          1080,
+          2160,
+          4320,
         ],
       },
       tooltip: `Any thing over this size, I.E. 8K, will be reduced to this.`,
