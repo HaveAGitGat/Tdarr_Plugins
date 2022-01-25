@@ -89,6 +89,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   );
 
   response.preset = transcodeKeepOneAudioStream.preset;
+  if (['dca', 'truehd'].includes(audioCodec)) {
+    response.preset += ' -strict -2';
+  }
   response.container = `.${file.container}`;
   response.handbrakeMode = false;
   response.FFmpegMode = true;
