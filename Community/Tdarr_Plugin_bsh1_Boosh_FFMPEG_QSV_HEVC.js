@@ -20,7 +20,7 @@ function details() {
     Inputs: [{
       name: 'container',
       type: 'string',
-      defaultValue: 'slower',
+      defaultValue: 'mkv',
       inputUI: {
         type: 'dropdown',
         options: [
