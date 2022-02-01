@@ -9,12 +9,12 @@ function details() {
     Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
     Type: 'Video',
     Operation: 'Transcode',
-    Description: `This is a QSV specific plugin. An INTEL QSV enabled CPU is required. 8th+ gen should work.
-    Files not in H265/HEVC will be transcoded into H265/HEVC using Quick Sync Video (QSV) via Intel GPU with ffmpeg.
-    Settings are dependant on file bitrate working by the logic that H265 can support the same ammount of data at 
-    half the bitrate of H264. This plugin will skip files already in hevc, av1 & vp9 unless "reconvert_hevc" is 
-    marked as true. If it is then these will be reconverted again into hevc if they exceed the bitrate specified 
-    in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.`,
+    Description: `This is a QSV specific plugin, VAPPI is NOT used. So an INTEL QSV enabled CPU is required. 
+    8th+ gen should work. Files not in H265/HEVC will be transcoded into H265/HEVC using Quick Sync Video (QSV) 
+    via Intel GPU with ffmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
+    the same ammount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
+    unless "reconvert_hevc" is marked as true. If it is then these will be reconverted again into hevc if they 
+    exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.`,
     Version: '1.0',
     Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
     Inputs: [{
@@ -54,7 +54,7 @@ function details() {
       },
       tooltip: `Specify the encoder speed/preset to use. 
       Slower options mean slower encode but better quality and faster have quicker encodes but worse quality.
-      \\n Default is "slower". For almost best quality with faster encode`,
+      \\n Default is "slower". For almost best quality with slightly faster encode`,
     },
     {
       name: 'enable_10bit',
@@ -90,9 +90,9 @@ function details() {
       \\n Rate is in kbps.
       \\n Leave empty to ignore.
       \\nExample:\\n
-      2000
+      4000
       \\nExample:\\n
-      1000`,
+      3000`,
     },
     {
       name: 'min_average_bitrate',
