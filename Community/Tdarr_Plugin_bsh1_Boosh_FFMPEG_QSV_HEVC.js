@@ -193,13 +193,13 @@ function plugin(file, librarySettings, inputs) {
 
   // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
-  currentBitrate = (file.file_size / (duration * 0.0075));
+  currentBitrate = Math.round((file.file_size / (duration * 0.0075)));
   // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
   // Logic of h265 can be half the bitrate as h264 without losing quality.
-  targetBitrate = (file.file_size / (duration * 0.0075) / 2);
+  targetBitrate = Math.round((file.file_size / (duration * 0.0075) / 2));
   // Allow some leeway under and over the targetBitrate.
-  minimumBitrate = (targetBitrate * 0.75);
-  maximumBitrate = (targetBitrate * 1.25);
+  minimumBitrate = Math.round((targetBitrate * 0.75));
+  maximumBitrate = Math.round((targetBitrate * 1.25));
 
   response.infoLog += `☑ It looks like the current bitrate is ${currentBitrate}. \n`;
 
@@ -212,11 +212,12 @@ function plugin(file, librarySettings, inputs) {
     return response;
   }
 
-  if (inputs.reconvert_hevc === 'true' && inputs.bitrate_cutoff === '') {
+  if (inputs.reconvert_hevc === 'true' && inputs.bitrate_cutoff === '' && inputs.hevc_max_bitrate === '') {
     response.processFile = false;
-    response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff set 
-    so we have no way to know when to stop processing this file. 
-    Either set reconvert_HEVC to false or set a bitrate cutoff. Skipping this plugin. \n`;
+    response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff 
+    or hevc specific cutoff set so we have no way to know when to stop processing this file. 
+    Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. 
+    Skipping this plugin. \n`;
     return response;
   }
 
@@ -230,7 +231,7 @@ function plugin(file, librarySettings, inputs) {
       response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}. Cancelling plugin. \n`;
       return response;
     }
-    if (currentBitrate > inputs.bitrate_cutoff) {
+    if (currentBitrate > inputs.bitrate_cutoff && inputs.reconvert_hevc === 'false') {
       response.infoLog += '☒ Current bitrate appears to be above the cutoff. Need to process \n';
     }
   }
@@ -241,9 +242,9 @@ function plugin(file, librarySettings, inputs) {
     if (targetBitrate > inputs.max_average_bitrate) {
       response.infoLog += `Our target bitrate is above the max_average_bitrate so 
       target average bitrate clamped at max of ${inputs.max_average_bitrate}. \n`;
-      targetBitrate = inputs.max_average_bitrate;
-      minimumBitrate = (targetBitrate * 0.75);
-      maximumBitrate = (targetBitrate * 1.25);
+      targetBitrate = Math.round(inputs.max_average_bitrate);
+      minimumBitrate = Math.round((targetBitrate * 0.75));
+      maximumBitrate = Math.round((targetBitrate * 1.25));
     }
   }
 
@@ -260,9 +261,9 @@ function plugin(file, librarySettings, inputs) {
     }
     if (targetBitrate < inputs.min_average_bitrate) {
       response.infoLog += `Target average bitrate clamped at min of ${inputs.min_average_bitrate}. \n`;
-      targetBitrate = inputs.min_average_bitrate;
-      minimumBitrate = (targetBitrate * 0.75);
-      maximumBitrate = (targetBitrate * 1.25);
+      targetBitrate = Math.round(inputs.min_average_bitrate);
+      minimumBitrate = Math.round((targetBitrate * 0.75));
+      maximumBitrate = Math.round((targetBitrate * 1.25));
     }
   }
 
@@ -304,28 +305,28 @@ function plugin(file, librarySettings, inputs) {
         // If we're using the hevc max bitrate then update the cutoff to use it
         if (inputs.hevc_max_bitrate !== '') {
           if (currentBitrate > inputs.hevc_max_bitrate) {
-            inflatedCutoff = inputs.bitrate_cutoff;
+            inflatedCutoff = Math.round(inputs.bitrate_cutoff);
             response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1. 
             Using hevc specific cutoff of ${inputs.hevc_max_bitrate}. 
-            \n The file is still above this new cutoff! Reconverting. \n\n`;
+            \n☒ The file is still above this new cutoff! Reconverting. \n`;
           } else {
             response.processFile = false;
-            inflatedCutoff = inputs.bitrate_cutoff;
+            inflatedCutoff = Math.round(inputs.bitrate_cutoff);
             response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1. 
             Using hevc specific cutoff of ${inputs.hevc_max_bitrate}. 
-            \n The file is NOT above this new cutoff. Exiting plugin. \n\n`;
+            \n☑ The file is NOT above this new cutoff. Exiting plugin. \n`;
             return response;
           }
           // If we're not using the hevc max bitrate then we need a safety net
           // to try and ensure we don't keep looping this plugin.
         } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
-          inflatedCutoff = (inputs.bitrate_cutoff * 2);
+          inflatedCutoff = Math.round((inputs.bitrate_cutoff * 2));
           response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1. 
           hevc specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
           Cutoff now temporarily ${inflatedCutoff}. \n The file is still above this new cutoff! Reconverting. \n\n`;
         } else {
           response.processFile = false;
-          inflatedCutoff = (inputs.bitrate_cutoff * 2);
+          inflatedCutoff = Math.round((inputs.bitrate_cutoff * 2));
           response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1 
           so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}. 
           \n The file is NOT above this new cutoff. Exiting plugin. \n\n`;
