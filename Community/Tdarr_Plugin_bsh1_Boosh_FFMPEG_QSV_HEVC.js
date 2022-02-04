@@ -9,10 +9,10 @@ function details() {
     Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
     Type: 'Video',
     Operation: 'Transcode',
-    Description: `This is a QSV specific plugin, VAPPI is NOT used. So an INTEL QSV enabled CPU is required. 
+    Description: `This is a QSV specific plugin, VAAPI is NOT used. So an INTEL QSV enabled CPU is required. 
     8th+ gen should work. Files not in H265/HEVC will be transcoded into H265/HEVC using Quick Sync Video (QSV) 
     via Intel GPU with ffmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
-    the same ammount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
+    the same amount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
     unless "reconvert_hevc" is marked as true. If it is then these will be reconverted again into hevc if they 
     exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.`,
     Version: '1.0',
@@ -37,9 +37,30 @@ function details() {
       mp4`,
     },
     {
+      name: 'force_conform',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `Make the file conform to output containers requirements.
+                  \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
+                  \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
+                  \\n Default is false.
+                      \\nExample:\\n
+                      true
+  
+                      \\nExample:\\n
+                      false`,
+    },
+    {
       name: 'encoder_speedpreset',
       type: 'string',
-      defaultValue: 'slower',
+      defaultValue: 'slow',
       inputUI: {
         type: 'dropdown',
         options: [
@@ -54,7 +75,10 @@ function details() {
       },
       tooltip: `Specify the encoder speed/preset to use. 
       Slower options mean slower encode but better quality and faster have quicker encodes but worse quality.
-      \\n Default is "slower". For almost best quality with slightly faster encode`,
+      For more information see intel document on ffmpeg results using qsv: 
+      https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-
+      video-ffmpeg-white-paper.pdf
+      \\n Default is "slow".`,
     },
     {
       name: 'enable_10bit',
@@ -68,7 +92,7 @@ function details() {
         ],
       },
       tooltip: `Specify if we want to enable 10bit encoding. 
-      If this is enabled 10bit files will be processed and converted into 10bit 
+      If this is enabled files will be processed and converted into 10bit 
       hevc using main10 profile and with p010le pixel format.`,
     },
     {
@@ -118,7 +142,7 @@ function details() {
         ],
       },
       tooltip: `Specify if we want to reprocess HEVC, vp9 or av1 files 
-      (i.e reduce bitrate of files already in those codecs).NOT reccomeneded to use so leave blank if unsure. 
+      (i.e reduce bitrate of files already in those codecs). NOT recommended to use so leave false if unsure. 
       NEEDS to be used in conjuntion with "bitrate_cutoff" otherwise is ignored.
       \\n Will allow files that are already HEVC, vp9 or av1 to be reprocessed
       \\n Useful in certain situations, perhaps you have a file which is HEVC 
@@ -132,7 +156,8 @@ function details() {
     },
     {
       name: 'hevc_max_bitrate',
-      tooltip: `Specify a maximum allowed average bitrate for hevc or similar files. 
+      tooltip: `Has no effect unless reconvert_hevc is set to true.
+      This allows you to specify a maximum allowed average bitrate for hevc or similar files. 
       This option is to be used if you want to ensure hevc files don't exceed a set bitrate.
       \\n Rate is in kbps.
       \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit
@@ -145,7 +170,11 @@ function details() {
   };
 }
 
-function plugin(file, librarySettings, inputs) {
+// eslint-disable-next-line no-unused-vars
+const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -153,11 +182,11 @@ function plugin(file, librarySettings, inputs) {
     FFmpegMode: true,
     reQueueAfter: true,
     infoLog: '',
+    container: `.${inputs.container}`,
   };
 
-  let duration = '';
-
   // Set up required variables.
+  let duration = '';
   let videoIdx = 0;
   let extraArguments = '';
   let bitrateSettings = '';
@@ -166,19 +195,10 @@ function plugin(file, librarySettings, inputs) {
   let targetBitrate = '';
   let minimumBitrate = '';
   let maximumBitrate = '';
-  let main10 = '';
-
-  // Check if inputs.container has been configured. If it hasn't then exit plugin.
-  if (inputs.container === '') {
-    response.infoLog += '☒ Plugin has not been configured, please configure required options. Skipping this plugin. \n';
-    response.processFile = false;
-    return response;
-  }
-  response.container = `.${inputs.container}`;
+  let main10 = false;
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
-    response.processFile = false;
     response.infoLog += 'File is not a video. \n';
     return response;
   }
@@ -193,27 +213,27 @@ function plugin(file, librarySettings, inputs) {
 
   // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
-  currentBitrate = Math.round((file.file_size / (duration * 0.0075)));
+  currentBitrate = Math.round(file.file_size / (duration * 0.0075));
   // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
   // Logic of h265 can be half the bitrate as h264 without losing quality.
-  targetBitrate = Math.round((file.file_size / (duration * 0.0075) / 2));
+  targetBitrate = Math.round(file.file_size / ((duration * 0.0075) / 2));
   // Allow some leeway under and over the targetBitrate.
-  minimumBitrate = Math.round((targetBitrate * 0.75));
-  maximumBitrate = Math.round((targetBitrate * 1.25));
+  minimumBitrate = Math.round(targetBitrate * 0.75);
+  maximumBitrate = Math.round(targetBitrate * 1.25);
 
-  response.infoLog += `☑ It looks like the current bitrate is ${currentBitrate}. \n`;
+  response.infoLog += `☑ It looks like the current bitrate is ${currentBitrate}k. \n`;
 
   // If targetBitrate or currentBitrate comes out as 0 then something
   // has gone wrong and bitrates could not be calculated.
   // Cancel plugin completely.
   if (targetBitrate <= 0 || currentBitrate <= 0) {
-    response.processFile = false;
     response.infoLog += '☒ Target bitrate could not be calculated. Skipping this plugin. \n';
     return response;
   }
 
-  if (inputs.reconvert_hevc === 'true' && inputs.bitrate_cutoff === '' && inputs.hevc_max_bitrate === '') {
-    response.processFile = false;
+  // Ensure that bitrate_cutoff is set if reconvert_hevc is true since we need some protection against a loop
+  // Cancel the plugin
+  if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff === '' && inputs.hevc_max_bitrate === '') {
     response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff 
     or hevc specific cutoff set so we have no way to know when to stop processing this file. 
     Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. 
@@ -227,11 +247,11 @@ function plugin(file, librarySettings, inputs) {
     // Checks if currentBitrate is below inputs.bitrate_cutoff.
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
-      response.processFile = false;
       response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}. Cancelling plugin. \n`;
       return response;
     }
-    if (currentBitrate > inputs.bitrate_cutoff && inputs.reconvert_hevc === 'false') {
+    // If above cutoff then carry on
+    if (currentBitrate > inputs.bitrate_cutoff && inputs.reconvert_hevc === false) {
       response.infoLog += '☒ Current bitrate appears to be above the cutoff. Need to process \n';
     }
   }
@@ -241,10 +261,10 @@ function plugin(file, librarySettings, inputs) {
     // If so then clamp target bitrate
     if (targetBitrate > inputs.max_average_bitrate) {
       response.infoLog += `Our target bitrate is above the max_average_bitrate so 
-      target average bitrate clamped at max of ${inputs.max_average_bitrate}. \n`;
+      target average bitrate clamped at max of ${inputs.max_average_bitrate}k. \n`;
       targetBitrate = Math.round(inputs.max_average_bitrate);
-      minimumBitrate = Math.round((targetBitrate * 0.75));
-      maximumBitrate = Math.round((targetBitrate * 1.25));
+      minimumBitrate = Math.round(targetBitrate * 0.75);
+      maximumBitrate = Math.round(targetBitrate * 1.25);
     }
   }
 
@@ -254,16 +274,60 @@ function plugin(file, librarySettings, inputs) {
     // Checks if inputs.bitrate_cutof is below inputs.min_average_bitrate.
     // If so then set currentBitrate to the minimum allowed.)
     if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
-      response.processFile = false;
       response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff} is less than the set minimum 
-      average bitrate set of ${inputs.min_average_bitrate}. We don't want this. Cancelling plugin. \n`;
+      average bitrate set of ${inputs.min_average_bitrate}k. We don't want this. Cancelling plugin. \n`;
       return response;
     }
     if (targetBitrate < inputs.min_average_bitrate) {
-      response.infoLog += `Target average bitrate clamped at min of ${inputs.min_average_bitrate}. \n`;
+      response.infoLog += `Target average bitrate clamped at min of ${inputs.min_average_bitrate}k. \n`;
       targetBitrate = Math.round(inputs.min_average_bitrate);
-      minimumBitrate = Math.round((targetBitrate * 0.75));
-      maximumBitrate = Math.round((targetBitrate * 1.25));
+      minimumBitrate = Math.round(targetBitrate * 0.75);
+      maximumBitrate = Math.round(targetBitrate * 1.25);
+    }
+  }
+
+  // It's possible to remux or flat out convert from mp4 to mkv so we need to conform to standards
+  // So check streams and add any extra parameters required to make file conform with output format.
+  // i.e drop mov_text for mkv files and drop pgs_subtitles for mp4
+  if (inputs.force_conform === true) {
+    if (inputs.container.toLowerCase() === 'mkv') {
+      extraArguments += '-map -0:d ';
+      for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+        try {
+          if (
+            file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'mov_text'
+            || file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'eia_608'
+            || file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'timed_id3'
+          ) {
+            extraArguments += `-map -0:${i} `;
+          }
+        } catch (err) {
+          // Error
+        }
+      }
+    }
+    if (inputs.container.toLowerCase() === 'mp4') {
+      for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+        try {
+          if (
+            file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'hdmv_pgs_subtitle'
+            || file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'eia_608'
+            || file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'subrip'
+            || file.ffProbeData.streams[i].codec_name
+              .toLowerCase() === 'timed_id3'
+          ) {
+            extraArguments += `-map -0:${i} `;
+          }
+        } catch (err) {
+          // Error
+        }
+      }
     }
   }
 
@@ -276,17 +340,18 @@ function plugin(file, librarySettings, inputs) {
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
         extraArguments += `-map -v:${videoIdx} `;
       }
-      // First check if we're reprocessing HEVC files, if not then we can ensure we don't convert HEVC again
-      if (inputs.reconvert_hevc !== 'true' && (file.ffProbeData.streams[i].codec_name === 'hevc'
+
+      // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
+      if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
         || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
         // Check if codec of stream is hevc vp9, or av1 AND check if file.container matches inputs.container.
         // If so nothing for plugin to do.
         if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
           || file.ffProbeData.streams[i].codec_name === 'av1') && file.container === inputs.container) {
-          response.processFile = false;
           response.infoLog += `☑ File is already hevc or vp9 & in ${inputs.container}. \n`;
           return response;
         }
+
         // Check if codec of stream is hevc, vp9 or av1
         // AND check if file.container does NOT match inputs.container.
         // If so remux file.
@@ -297,57 +362,73 @@ function plugin(file, librarySettings, inputs) {
           response.processFile = true;
           return response;
         }
+
         // New logic for reprocessing HEVC. Mainly done for my own use. Since we're reprocessing we're checking
         // bitrate again and since this can be inaccurate (It calculates overall bitrate not video specific)
         // we have to inflate the current bitrate so we don't keep looping this logic.
-      } else if (inputs.reconvert_hevc === 'true' && (file.ffProbeData.streams[i].codec_name === 'hevc'
+      } else if (inputs.reconvert_hevc === true && (file.ffProbeData.streams[i].codec_name === 'hevc'
         || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
         // If we're using the hevc max bitrate then update the cutoff to use it
+
         if (inputs.hevc_max_bitrate !== '') {
           if (currentBitrate > inputs.hevc_max_bitrate) {
+            // If bitrate is higher then hevc_max_bitrate then need to reencode
             inflatedCutoff = Math.round(inputs.bitrate_cutoff);
             response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1. 
-            Using hevc specific cutoff of ${inputs.hevc_max_bitrate}. 
+            Using hevc specific cutoff of ${inputs.hevc_max_bitrate}k. 
             \n☒ The file is still above this new cutoff! Reconverting. \n`;
           } else {
-            response.processFile = false;
+            // Otherwise we're now below the hevc cutoff and we can exit
             inflatedCutoff = Math.round(inputs.bitrate_cutoff);
             response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1. 
-            Using hevc specific cutoff of ${inputs.hevc_max_bitrate}. 
+            Using hevc specific cutoff of ${inputs.hevc_max_bitrate}k. 
             \n☑ The file is NOT above this new cutoff. Exiting plugin. \n`;
             return response;
           }
-          // If we're not using the hevc max bitrate then we need a safety net
-          // to try and ensure we don't keep looping this plugin.
+
+          // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
+          // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
         } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
-          inflatedCutoff = Math.round((inputs.bitrate_cutoff * 2));
+          inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1. 
           hevc specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
           Cutoff now temporarily ${inflatedCutoff}. \n The file is still above this new cutoff! Reconverting. \n\n`;
         } else {
-          response.processFile = false;
-          inflatedCutoff = Math.round((inputs.bitrate_cutoff * 2));
+          // File is below cutoff so we can exit
+          inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already hevc, vp9 or av1 
           so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}. 
           \n The file is NOT above this new cutoff. Exiting plugin. \n\n`;
           return response;
         }
       }
-    }
 
-    // Are we encoding 10 bit files?
-    if (inputs.enable_10bit === 'true') {
-      // Check if video stream is 10bit. Currently set profile main10 and pixel format.
-      // Still need to test if this really works correctly
-      if (file.ffProbeData.streams[i].profile === 'High 10'
-        || file.ffProbeData.streams[i].bits_per_raw_sample === '10') {
-        main10 = '-profile:v main10 -pix_fmt p010le';
-        response.infoLog += '☑ File is 10bit or HDR. Setting Main10 Profile & pixel format \n\n';
+      // Check for HDR in files. If so exit plugin. We assume HDR files have bt2020 color spaces. HDR can be complicated
+      // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
+      if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
+        && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
+        && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
+        response.infoLog += `☒ This looks to be a HDR file. HDR files are unfortuantely
+     not supported by this plugin. Exiting plugin. \n\n`;
+        return response;
       }
-    }
 
-    // Increment videoIdx.
-    videoIdx += 1;
+      // Are we encoding 10 bit files? If so enable correct format & disable hardware decode.
+      // Otherwise if files are already 10bit then just disable hardware decode as 10bit should be retained
+      // without extra options.
+      if (inputs.enable_10bit === true) {
+        extraArguments += '-profile:v main10 -pix_fmt p010le';
+        main10 = true;
+        response.infoLog += '10 bit encode enabled. Setting Main10 Profile & pixel format \n\n';
+      } else if (file.ffProbeData.streams[i].profile === 'High 10'
+        || file.ffProbeData.streams[i].bits_per_raw_sample === '10') {
+        main10 = true;
+        response.infoLog += 'Input file is 10bit. Disabling hardware decoding to avoid problems\n\n';
+      }
+
+      // Increment video index. Needed to keep track of video id in case there is more than one video track.
+      videoIdx += 1;
+    }
   }
 
   // Set bitrateSettings variable using bitrate information calulcated earlier.
@@ -355,46 +436,58 @@ function plugin(file, librarySettings, inputs) {
     + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `\nContainer for output selected as ${inputs.container}. \n`;
-  response.infoLog += `The current file bitrate = ${currentBitrate} \n`;
+  response.infoLog += `The current file bitrate = ${currentBitrate}k \n`;
   response.infoLog += 'Bitrate settings: \n';
-  response.infoLog += `Target = ${targetBitrate} \n`;
-  response.infoLog += `Minimum = ${minimumBitrate} \n`;
-  response.infoLog += `Maximum = ${maximumBitrate} \n`;
+  response.infoLog += `Target = ${targetBitrate}k \n`;
+  response.infoLog += `Minimum = ${minimumBitrate}k \n`;
+  response.infoLog += `Maximum = ${maximumBitrate}k \n`;
 
   // Codec will be checked so it can be transcoded correctly
   // (QSV doesn't support HW decode of all older codecs, h263 & mpeg1 are SW based currently)
-  // If 10 bit is being used then don't hardware decode, this can cause issues.
-  // Best just to cpu decode to ensure it works.
-  if (main10 === '') {
-    if (file.video_codec_name === 'h263') {
-      response.preset = '-hwaccel qsv -c:v h263';
-    } else if (file.video_codec_name === 'h264') {
-      response.preset = '-hwaccel qsv -c:v h264_qsv';
-    } else if (file.video_codec_name === 'mjpeg') {
-      response.preset = '-hwaccel qsv -c:v mjpeg_qsv';
-    } else if (file.video_codec_name === 'hevc') {
-      response.preset = '-hwaccel qsv -c:v hevc_qsv';
-    } else if (file.video_codec_name === 'mpeg1') {
-      response.preset = '-hwaccel qsv -c:v mpeg1';
-    } else if (file.video_codec_name === 'mpeg2') {
-      response.preset = '-hwaccel qsv -c:v mpeg2_qsv';
-    } else if (file.video_codec_name === 'vc1') {
-      response.preset = '-hwaccel qsv -c:v vc1_qsv';
-    } else if (file.video_codec_name === 'vp8') {
-      response.preset = '-hwaccel qsv -c:v vp8_qsv';
-    } else if (file.video_codec_name === 'av1') {
-      response.preset = '-hwaccel qsv -c:v av1';
+  // If 10 bit is being used then don't hardware decode at all as this can cause issues.
+  // Instead best just to cpu decode to ensure it works.
+  if (main10 === false) {
+    switch (file.video_codec_name) {
+      case 'h263':
+        response.preset = '-hwaccel qsv -c:v h263';
+        break;
+      case 'h264':
+        response.preset = '-hwaccel qsv -c:v h264_qsv';
+        break;
+      case 'mjpeg':
+        response.preset = '-hwaccel qsv -c:v mjpeg_qsv';
+        break;
+      case 'hevc':
+        response.preset = '-hwaccel qsv -c:v hevc_qsv';
+        break;
+      case 'mpeg1':
+        response.preset = '-hwaccel qsv -c:v mpeg1';
+        break;
+      case 'mpeg2':
+        response.preset = '-hwaccel qsv -c:v mpeg2_qsv';
+        break;
+      case 'vc1':
+        response.preset = '-hwaccel qsv -c:v vc1_qsv';
+        break;
+      case 'vp8':
+        response.preset = '-hwaccel qsv -c:v vp8_qsv';
+        break;
+      case 'av1':
+        response.preset = '-hwaccel qsv -c:v av1';
+        break;
+      default:
+        response.preset = '-hwaccel qsv -c:v h264';
     }
   }
 
-  response.preset += `,-map 0 -c:v hevc_qsv ${bitrateSettings} `
-    + `-preset ${inputs.encoder_speedpreset} -look_ahead 1 ${main10} 
-    -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  response.preset += `<io> -map 0 -c:v hevc_qsv ${bitrateSettings} `
+    + `-preset ${inputs.encoder_speedpreset} -look_ahead 1 
+     -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   // Other settings to consider.
   // -b_strategy 1 -adaptive_b 1 -adaptive_i 1 -async_depth 1 -look_ahead 1 -look_ahead_depth 100
   response.processFile = true;
   response.infoLog += 'File Transcoding. \n';
   return response;
-}
+};
 module.exports.details = details;
 module.exports.plugin = plugin;
