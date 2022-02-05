@@ -8,13 +8,13 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `Give an error if new file is not within the specified upper and lower bound duration limits.
   Make sure MediaInfo scan is enabled in library settings \n\n`,
-  Version: '1.00',
+  Version: '1.01',
   Tags: '',
   Inputs: [
     {
       name: 'upperBound',
       type: 'number',
-      defaultValue: 101,
+      defaultValue: 100.5,
       inputUI: {
         type: 'text',
       },
@@ -25,7 +25,7 @@ const details = () => ({
     {
       name: 'lowerBound',
       type: 'number',
-      defaultValue: 99,
+      defaultValue: 99.5,
       inputUI: {
         type: 'text',
       },
@@ -50,8 +50,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  let newData = 0;
-  let oldData = 0;
+  let newData = 0.0;
+  let oldData = 0.0;
 
   const getData = (obj) => {
     try {
@@ -65,12 +65,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   newData = getData(file);
   oldData = getData(otherArguments.originalLibraryFile);
 
-  const ratio = parseInt((newData / oldData) * 100, 10);
+  const ratio = ((newData / oldData) * 100.0).toFixed(2);
 
   const dataText = `New file has duration ${newData} s which is ${ratio}% `
     + `of original file duration:  ${oldData} s`;
 
-  const getBound = (bound) => (bound / 100) * oldData;
+  const getBound = (bound) => (bound / 100.0) * oldData;
 
   const errText = 'New file duration not within limits.';
   if (newData > getBound(inputs.upperBound)) {
