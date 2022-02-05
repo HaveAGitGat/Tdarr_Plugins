@@ -65,7 +65,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   newData = getData(file);
   oldData = getData(otherArguments.originalLibraryFile);
 
-  const ratio = ((newData / oldData) * 100.0).toFixed(2);
+  const ratio = ((newData / oldData) * 100.0).toFixed(3);
 
   const dataText = `New file has duration ${newData} s which is ${ratio}% `
     + `of original file duration:  ${oldData} s`;
