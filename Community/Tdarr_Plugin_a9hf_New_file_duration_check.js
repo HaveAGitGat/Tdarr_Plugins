@@ -8,7 +8,7 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `Give an error if new file is not within the specified upper and lower bound duration limits.
   Make sure MediaInfo scan is enabled in library settings \n\n`,
-  Version: '1.01',
+  Version: '1.02',
   Tags: '',
   Inputs: [
     {
