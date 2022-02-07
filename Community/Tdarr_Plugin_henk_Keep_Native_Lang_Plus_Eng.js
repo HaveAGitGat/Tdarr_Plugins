@@ -108,16 +108,16 @@ const processStreams = (result, file, user_langs) => {
   };
   let streamIndex = 0;
 
-  //If the original language is pulled as Chinese 'cn' is used.  iso-language expects 'zh' for Chinese.
+  // If the original language is pulled as Chinese 'cn' is used.  iso-language expects 'zh' for Chinese.
   const langsTemp = result.original_language === 'cn' ? 'zh' : result.original_language;
-  
+
   let langs = [];
 
   langs.push(languages.alpha2ToAlpha3B(langsTemp));
-  
-  //Some console reporting for clarification of what the plugin is using and reporting.
+
+  // Some console reporting for clarification of what the plugin is using and reporting.
   response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(langsTemp)}\n`;
-  
+
   if (user_langs) {
     langs = langs.concat(user_langs);
   }
