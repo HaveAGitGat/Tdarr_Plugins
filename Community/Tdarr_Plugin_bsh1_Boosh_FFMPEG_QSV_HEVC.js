@@ -32,7 +32,7 @@ const details = () => ({
           'mp4',
         ],
       },
-      tooltip: `Specifies the output container of the file
+      tooltip: `Specifies the output container of the file.
       \\n Ensure that all stream types you may have are supported by your chosen container.
       \\n MKV is recommended.
       \\nExample:\\n
@@ -105,7 +105,7 @@ const details = () => ({
       If this is enabled files will be processed and converted into 10bit 
       HEVC using main10 profile and with p010le pixel format. \n
       If you just want to retain 10 bit already in files then this can be left as false, as 
-      10bit to 10bit in ffmpeg should be automatic
+      10bit to 10bit in ffmpeg should be automatic.
       \\n Default is "false". 
       \\nExample:\\n
       true
@@ -180,10 +180,10 @@ const details = () => ({
       tooltip: `Specify if we want to reprocess HEVC, VP9 or AV1 files 
       (i.e reduce bitrate of files already in those codecs). NOT recommended to use so leave false if unsure. 
       NEEDS to be used in conjunction with "bitrate_cutoff" otherwise is ignored.
-      \\n Will allow files that are already HEVC, VP9 or AV1 to be reprocessed
+      \\n Will allow files that are already HEVC, VP9 or AV1 to be reprocessed.
       \\n Useful in certain situations, perhaps you have a file which is HEVC 
-      but extremely high bitrate and you'd like to reduce
-      \\n\\n WARNING!! IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION
+      but extremely high bitrate and you'd like to reduce it.
+      \\n\\n WARNING!! IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION.
       \\n
       \\nExample:\\n
       true
@@ -203,7 +203,7 @@ const details = () => ({
       As with the cutoff, getting the bitrate of the video from files is unreliable, so bitrate
       here refers to the total bitrate of the file and not just the video steam.
       \\n Rate is in kbps.
-      \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit
+      \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit.
       \\nExample:\\n
       4000
       \\nExample:\\n
