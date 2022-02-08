@@ -6,22 +6,22 @@
 // eslint-disable-next-line max-len
 // https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
 
-const details = () => {
-  return {
-    id: 'Tdarr_Plugin_bsh1_Boosh_FFMPEG_QSV_HEVC',
-    Stage: 'Pre-processing',
-    Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
-    Type: 'Video',
-    Operation: 'Transcode',
-    Description: `This is a QSV specific plugin, VAAPI is NOT used. So an INTEL QSV enabled CPU is required. 
+const details = () => ({
+  id: 'Tdarr_Plugin_bsh1_Boosh_FFMPEG_QSV_HEVC',
+  Stage: 'Pre-processing',
+  Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
+  Type: 'Video',
+  Operation: 'Transcode',
+  Description: `This is a QSV specific plugin, VAAPI is NOT used. So an INTEL QSV enabled CPU is required. 
     8th+ gen CPUs should work. Files not in H265/HEVC will be transcoded into H265/HEVC using Quick Sync Video (QSV) 
     via Intel GPU with ffmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
     the same amount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
     unless "reconvert_hevc" is marked as true. If it is then these will be reconverted again into HEVC if they 
     exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.`,
-    Version: '1.0',
-    Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
-    Inputs: [{
+  Version: '1.0',
+  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
+  Inputs: [
+    {
       name: 'container',
       type: 'string',
       defaultValue: 'mkv',
@@ -32,7 +32,7 @@ const details = () => {
           'mp4',
         ],
       },
-      tooltip: `Specifies the output container of the file
+      tooltip: `Specifies the output container of the file.
       \\n Ensure that all stream types you may have are supported by your chosen container.
       \\n MKV is recommended.
       \\nExample:\\n
@@ -82,8 +82,8 @@ const details = () => {
       tooltip: `Specify the encoder speed/preset to use. 
       Slower options mean slower encode but better quality and faster have quicker encodes but worse quality.
       For more information see intel white paper on ffmpeg results using qsv: \\n`
-      // eslint-disable-next-line max-len
-      + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
+        // eslint-disable-next-line max-len
+        + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
       \\n Default is "slow". 
       \\nExample:\\n
       medium
@@ -105,7 +105,7 @@ const details = () => {
       If this is enabled files will be processed and converted into 10bit 
       HEVC using main10 profile and with p010le pixel format. \n
       If you just want to retain 10 bit already in files then this can be left as false, as 
-      10bit to 10bit in ffmpeg should be automatic
+      10bit to 10bit in ffmpeg should be automatic.
       \\n Default is "false". 
       \\nExample:\\n
       true
@@ -114,6 +114,11 @@ const details = () => {
     },
     {
       name: 'bitrate_cutoff',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify bitrate cutoff, files with a total bitrate lower then this will not be processed.
       Since getting the bitrate of the video from files is unreliable, bitrate here refers to the total 
       bitrate of the file and not just the video steam.
@@ -126,6 +131,11 @@ const details = () => {
     },
     {
       name: 'max_average_bitrate',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Specify a maximum average video bitrate. When encoding we take the current total bitrate and halve it 
       to get an average target. This option sets a upper limit to that average 
       (i.e if you have a video bitrate of 10000, half is 5000, if your maximum desired average bitrate is 4000
@@ -140,10 +150,15 @@ const details = () => {
     },
     {
       name: 'min_average_bitrate',
-      tooltip: `Specify a minimum average video bitrate. When encoding we take the current total bitrate and halve it to
-      get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate of 3000, 
-      half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead of 1500).
-      Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify a minimum average video bitrate. When encoding we take the current total bitrate and halve 
+        it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
+        of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
+        of 1500). Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
       \\n Rate is in kbps.
       \\n Leave empty to ignore.
       \\nExample:\\n
@@ -165,10 +180,10 @@ const details = () => {
       tooltip: `Specify if we want to reprocess HEVC, VP9 or AV1 files 
       (i.e reduce bitrate of files already in those codecs). NOT recommended to use so leave false if unsure. 
       NEEDS to be used in conjunction with "bitrate_cutoff" otherwise is ignored.
-      \\n Will allow files that are already HEVC, VP9 or AV1 to be reprocessed
+      \\n Will allow files that are already HEVC, VP9 or AV1 to be reprocessed.
       \\n Useful in certain situations, perhaps you have a file which is HEVC 
-      but extremely high bitrate and you'd like to reduce
-      \\n\\n WARNING!! IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION
+      but extremely high bitrate and you'd like to reduce it.
+      \\n\\n WARNING!! IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION.
       \\n
       \\nExample:\\n
       true
@@ -177,21 +192,25 @@ const details = () => {
     },
     {
       name: 'hevc_max_bitrate',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
       tooltip: `Has no effect unless reconvert_hevc is set to true.
       This allows you to specify a maximum allowed average bitrate for HEVC or similar files. 
       This option is to be used if you want to ensure HEVC files don't exceed a set bitrate.
       As with the cutoff, getting the bitrate of the video from files is unreliable, so bitrate
       here refers to the total bitrate of the file and not just the video steam.
       \\n Rate is in kbps.
-      \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit
+      \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit.
       \\nExample:\\n
       4000
       \\nExample:\\n
       3000`,
     },
-    ],
-  };
-}
+  ],
+});
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -290,13 +309,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Check if inputs.min_average_bitrate has something entered.
   // (Entered means user actually wants something to happen, empty would disable this).
   if (inputs.min_average_bitrate !== '') {
-    // Checks if inputs.bitrate_cutoff is below inputs.min_average_bitrate.
-    // If so then set currentBitrate to the minimum allowed.)
+    // Exit the plugin is the cutoff is less than the min average bitrate. Most likely user error
     if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
       response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff} is less than the set minimum 
       average bitrate set of ${inputs.min_average_bitrate}k. We don't want this. Cancelling plugin. \n`;
       return response;
     }
+    // Checks if inputs.bitrate_cutoff is below inputs.min_average_bitrate.
+    // If so then set currentBitrate to the minimum allowed.)
     if (targetBitrate < inputs.min_average_bitrate) {
       response.infoLog += `Target average bitrate clamped at min of ${inputs.min_average_bitrate}k. \n`;
       targetBitrate = Math.round(inputs.min_average_bitrate);
