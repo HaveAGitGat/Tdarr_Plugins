@@ -1,29 +1,4 @@
-// List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
-module.exports.dependencies = [
-  'import-fresh',
-];
-
-const getStreamBitRate = (streamDuration, streamSize) => {
-  const duration = streamDuration * 0.0166667;
-  // eslint-disable-next-line no-bitwise
-  return ~~(streamSize / (duration * 0.0075));
-};
-
-// eslint-disable-next-line consistent-return
-const createBitRateFromString = (rate) => {
-  // eslint-disable-next-line default-case
-  switch (true) {
-    case rate.includes('k'):
-      return parseInt(rate.replace('k', ''), 10) * 1000;
-    case rate.includes('M'):
-      return parseInt(rate.replace('M'), 10) * 1000000;
-  }
-};
-
-// eslint-disable-next-line max-len
-const createBitRateStringFromBitRate = (rate) => (rate > 1000000
-  ? `${Math.round((rate / 1000000) * 10) / 10}M`
-  : `${Math.round((rate / 1000) * 10) / 10}k`);
+const supportedResolutions = ['320p', '480p', '576p', '720p', '1080p', '4KUHD', '8KUHD'];
 
 const CODEC_TYPE = {
   VIDEO: 'video',
@@ -31,23 +6,20 @@ const CODEC_TYPE = {
   SUBTITLE: 'subtitle',
 };
 
-const CUSTOM_TAG = 'DAVE_THE_ONLY_JOB_DONE';
-
 const AAC_AUDIO_STREAM = 'aac';
 
-// const HDR_COLOR_SPACE = 'bt2020nc';
-// const HDR_COLOR_TRANSFER = 'smpte2084';
-const HDR_COLOR_PRIMARIES = 'bt2020';
-
 const HWACCEL_OPTIONS = {
-  NVENC: 'nvenc',
-  INTEL_AMD: 'intel-amd',
-  TOOLBOX: 'mac-toolbox',
+  NONE: 'none',
+  NVENC: 'nVidia (NVENC)',
+  INTEL_AMD_VAAPI: 'Intel/AMD (VAAPI)',
+  INTEL_QUICKSYNC: 'Intel (QuickSync)',
+  TOOLBOX: 'MacOS (Toolbox)',
 };
 
 const hwaccelModeMap = {
   [HWACCEL_OPTIONS.NVENC]: 'cuvid',
-  [HWACCEL_OPTIONS.INTEL_AMD]: 'vaapi',
+  [HWACCEL_OPTIONS.INTEL_AMD_VAAPI]: 'vaapi',
+  [HWACCEL_OPTIONS.INTEL_QUICKSYNC]: 'qsv',
 };
 
 const hwaccelEncoderMap = {
@@ -55,9 +27,13 @@ const hwaccelEncoderMap = {
     hevc: 'hevc_nvenc',
     h264: 'h264_nvenc',
   },
-  [HWACCEL_OPTIONS.INTEL_AMD]: {
+  [HWACCEL_OPTIONS.INTEL_AMD_VAAPI]: {
     hevc: 'hevc_vaapi',
     h264: 'h264_vaapi',
+  },
+  [HWACCEL_OPTIONS.INTEL_QUICKSYNC]: {
+    hevc: 'hevc_qsv',
+    h264: 'h264_qsv',
   },
   [HWACCEL_OPTIONS.TOOLBOX]: {
     hevc: 'hevc_videotoolbox',
@@ -69,30 +45,61 @@ const DDP_ATMOS_CODEC_TYPE = 'eac3';
 const TRUEHD_ATMOS_CODEC_TYPE = 'truehd';
 const ATMOS_CODECS = [DDP_ATMOS_CODEC_TYPE, TRUEHD_ATMOS_CODEC_TYPE];
 
+const createBitRateFromString = (rates) => rates.reduce((acc, resolutionWithRate) => {
+  const [resolution, rate] = resolutionWithRate;
+
+  // eslint-disable-next-line max-len
+  if (!supportedResolutions[resolution]) throw new Error(`Unsupported Resolution: ${resolution}, supported are only ${supportedResolutions.join(', ')}`);
+
+  // eslint-disable-next-line default-case
+  switch (true) {
+    case rate.includes('k'):
+      acc[resolution] = parseInt(rate.replace('k', ''), 10) * 1000;
+      break;
+    case rate.includes('M'):
+      acc[resolution] = parseInt(rate.replace('M'), 10) * 1000000;
+      break;
+  }
+
+  return acc;
+}, {});
+
+// eslint-disable-next-line max-len
+const createBitRateStringFromBitRate = (rate) => (rate > 1000000
+  ? `${Math.round((rate / 1000000) * 10) / 10}M`
+  : `${Math.round((rate / 1000) * 10) / 10}k`);
+
+// @TODO: Still requires to work on DTS sound and its counterpart to Atmos
+// @TODO: finish other hw acceleration implementations (I only have access to Intel enabled QSV)
+// @TODO: Add option to do HDR -> SDR Tone Mapping (That is not something I want, might take a while)
 const details = () => ({
-  id: 'Tdarr_Plugin_DaveThe0nly_bullet',
+  id: 'Tdarr_Plugin_DaveThe0nly_HWACCEL_SINGLE_TRANSCODER',
   Stage: 'Pre-processing',
-  Name: 'Bullet All in one Transcode',
+  Name: 'OnePassMonsterTrasncoder',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'Me',
+  // eslint-disable-next-line max-len
+  Description: '[Contains built-in filter] Single-pass transcoder to optimize a media file to be used with Plex/Emby etc.',
   Version: '1.0',
-  Tags: 'ffmpeg',
+  Tags: 'pre-processing,ffmpeg,hevc,x264,vaapi,nvenc,configurable,audi,video,subtitles',
   Inputs: [
     {
-      name: 'targetBitrate',
-      type: 'text',
-      description: 'In ffmpeg compatible format (8M, or 800k)',
-      defaultValue: '',
+      name: 'targetResolutionBitrate',
+      type: 'string',
+      // eslint-disable-next-line max-len
+      tooltip: `A mapping of resolution(${supportedResolutions.join(', ')}):bitrate(FFMPEG friendly format 8M or 8000k),
+      seperated by a comma eg: "4KUHD:10M,1080p:5M,etc...".
+      Keep blank to keep video stream as is (still transcodes to HEVC).`,
+      defaultValue: '4KUHD:10M,1080p:5M',
       inputUI: {
         type: 'text',
       },
     },
     {
       name: 'hwAccelerate',
-      type: 'text',
-      description: 'Keep blank if none',
-      defaultValue: '',
+      type: 'string',
+      tooltip: 'Keep blank if none',
+      defaultValue: 'none',
       inputUI: {
         type: 'dropdown',
         options: Object.values(HWACCEL_OPTIONS),
@@ -104,22 +111,43 @@ const details = () => ({
       tooltip: 'Forces HEVC conversion on x264 video',
       defaultValue: 'false',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
     },
     {
       name: 'createOptimizedAudioTrack',
-      type: 'text',
+      type: 'boolean',
       tooltip: 'Creates an optimized audio track for clients that do not support atmos, keep empty to not optimize',
-      defaultValue: '',
+      defaultValue: 'true',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+    },
+    {
+      name: 'createStereoAudioTrack',
+      type: 'boolean',
+      tooltip: 'Creates a stereo audio track in acc',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
     },
     {
       name: 'keepAudioTracks',
-      type: 'text',
-      tooltip: 'Keeps an audio track of selected language eng',
+      type: 'string',
+      tooltip: 'Keeps an audio track of selected language/s, separated by ","',
       defaultValue: 'eng',
       inputUI: {
         type: 'text',
@@ -128,29 +156,44 @@ const details = () => ({
     {
       name: 'outputContainer',
       type: 'string',
+      tooltip: 'Container',
       defaultValue: '.mp4',
       inputUI: {
         type: 'dropdown',
         options: ['.mp4', '.mkv'],
       },
     },
+    {
+      name: 'extractSubtitles',
+      type: 'string',
+      tooltip: 'Extracts subtitles by language from the file',
+      defaultValue: 'eng,cs,cz',
+      inputUI: {
+        type: 'string',
+      },
+    },
   ],
 });
 
-const plugin = (file, librarySettings, inputs) => {
+const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
 
   const {
     targetBitrate: _targetBitrate,
+    extractSubtitles: _extractSubtitles,
     outputContainer,
     hwAccelerate,
     forceHevc,
     createOptimizedAudioTrack,
+    createStereoAudioTrack,
     keepAudioTracks: _keepAudioTracks,
   } = lib.loadDefaultValues(inputs, details);
 
-  const targetBitrate = createBitRateFromString(_targetBitrate);
+  const resolution = file.video_resolution === 'DCI4K' ? '4KUHD' : file.video_resolution;
+  // If target bitrate is set, try and get it from the setting otherwise set to Infinity to ignore the resolution
+  const targetBitrate = _targetBitrate ? createBitRateFromString(_targetBitrate)[resolution] || Infinity : Infinity;
   const keepAudioTracks = _keepAudioTracks.split(',');
+  const extractSubtitles = _extractSubtitles.split(',');
 
   const response = {
     processFile: false,
@@ -165,158 +208,246 @@ const plugin = (file, librarySettings, inputs) => {
     reQueueAfter: false,
   };
 
-  const isAlreadyProcessed = file.ffProbeData.tags[CUSTOM_TAG] === 'YES';
-
-  if (isAlreadyProcessed) {
-    response.processFile = false;
-    response.infoLog += 'File already Processed! \n';
-    return response;
-  }
-
   if (file.fileMedium !== 'video') {
     response.processFile = false;
     response.infoLog += 'File is not a video. Exiting \n';
     return response;
   }
 
+  if (!file.ffProbeData.streams.length) {
+    response.processFile = false;
+    response.infoLog += 'No streams to process!! \n';
+    return response;
+  }
+
+  const { originalLibraryFile } = otherArguments;
+
+  const fileName = originalLibraryFile && originalLibraryFile.file ? originalLibraryFile.file : file.file;
+
   // get all the info from video stream
   const [videoStream] = file.ffProbeData.streams.filter((stream) => stream.codec_type === CODEC_TYPE.VIDEO);
   const audioStreams = file.ffProbeData.streams.filter((stream) => stream.codec_type === CODEC_TYPE.AUDIO);
 
   // video setup
-  const isHDRStream = videoStream.color_primaries === HDR_COLOR_PRIMARIES;
   const videoStreamUsesCodec = videoStream.codec_name;
   const videoStreamUsesHEVC = videoStreamUsesCodec === 'hevc' || videoStreamUsesCodec === 'x265';
   const pixelFormat = videoStream.pix_fmt;
-  const is10BitEncoded = pixelFormat.includes('10le');
+  const is10BitEncoded = (pixelFormat || '').includes('10le') || !!fileName.match(/10bit/gi);
   // eslint-disable-next-line max-len
-  const videoStreamBitRate = getStreamBitRate((file.meta.Duration !== 'undefined'
-    ? file.meta.Duration
-    : videoStream.duration), file.size);
+  const videoStreamBitRate = file.bit_rate;
+
+  response.infoLog += `Current Bitrate: ${videoStreamBitRate}\n`;
+  response.infoLog += `Target Bitrate: ${targetBitrate}\n`;
+
+  // If the resolution is supposed to not be change "targetBitrate" is going to be Infinity - therefore ignored
   const isOverBitrate = videoStreamBitRate > targetBitrate;
 
   // audio setup
-  const audioStreamInfo = [];
+  const unsortedAudioStreamInfo = [];
   let hasOptimizedStream = false;
+  let hasStereoStream = false;
+  let hasOptimizedStereoStream = false;
+
+  // subtitles
+  const totalSubtitles = file.ffProbeData.streams.filter((row) => row.codec_type === 'subtitle');
+  const hasSubtitles = totalSubtitles.length > 0;
 
   audioStreams.forEach((stream, index) => {
     const lang = (stream.tags.lang || stream.tags.language).toLowerCase();
     if (keepAudioTracks.includes(lang)) {
-      if (stream.codec_name === AAC_AUDIO_STREAM) {
+      const isStreamOptimized = stream.codec_name === AAC_AUDIO_STREAM;
+
+      if (isStreamOptimized) {
         response.infoLog += 'Found optimized audio stream\n';
         hasOptimizedStream = true;
       }
-      audioStreamInfo.push({
+
+      const channels = parseInt(stream.channels, 10);
+
+      // either 2.1 or 2.0
+      if ((channels === 3 || channels === 2) && isStreamOptimized) {
+        hasStereoStream = true;
+        hasOptimizedStereoStream = true;
+      }
+
+      unsortedAudioStreamInfo.push({
         index,
         language: lang,
         isAtmos: ATMOS_CODECS.includes(stream.codec_name),
-        isTrueHd: TRUEHD_ATMOS_CODEC_TYPE === stream.codec_name,
+        isLossless: TRUEHD_ATMOS_CODEC_TYPE === stream.codec_name,
         codec: stream.codec_name,
-        channels: parseInt(stream.channels),
+        channels,
       });
     }
   });
 
-  if (!audioStreamInfo.length) {
+  if (!unsortedAudioStreamInfo.length) {
     response.processFile = false;
     response.infoLog += 'No allowed audio stream available\n';
     return response;
   }
 
+  // This puts the best audio stream as the first one, favoring Atmos Streams over higher count surround stream
+  const audioStreamsInfo = unsortedAudioStreamInfo.sort((a, b) => {
+    if (a.isAtmos || a.isLossless) return -Infinity - 1;
+    if (a.isAtmos && a.isLossless) return -Infinity;
+    if (a.isAtmos && a.isLossless && (a.channels - b.channels) !== 0) return -Infinity - (a.channels - b.channels);
+    if (b.isAtmos || b.isLossless) return Infinity;
+    if (b.isAtmos && b.isLossless) return Infinity + 1;
+    if (b.isAtmos && b.isLossless && (a.channels - b.channels) !== 0) return Infinity + (a.channels - b.channels);
+    return b.channels - a.channels;
+  });
+
   const ffmpegHWAccelSettings = [];
+  const format = [];
   let ffmpegVideoEncoderSettings = [];
+  let codec;
 
   // Setup HW Accel Settings
-  if (inputs.hwAccelerate.length) {
+  if (hwAccelerate !== HWACCEL_OPTIONS.NONE) {
     response.infoLog += 'Using HW Accel!\n';
     const mode = hwaccelModeMap[hwAccelerate];
-    const codec = hwaccelEncoderMap[hwAccelerate][forceHevc ? 'hevc' : videoStreamUsesCodec];
-    const format = [];
+    codec = hwaccelEncoderMap[hwAccelerate][forceHevc ? 'hevc' : videoStreamUsesCodec];
 
-    // eslint-disable-next-line default-case
-    switch (mode) {
-      case HWACCEL_OPTIONS.INTEL_AMD:
-        response.infoLog += 'Using VAAPI\n';
+    response.infoLog += `Using HW_ACCEL mode: ${mode}\n`;
+
+    switch (hwAccelerate) {
+      case HWACCEL_OPTIONS.INTEL_AMD_VAAPI:
+      case HWACCEL_OPTIONS.INTEL_QUICKSYNC: // Maybe works :D
         ffmpegHWAccelSettings.push(`-hwaccel ${mode}`);
         ffmpegHWAccelSettings.push('-hwaccel_device /dev/dri/renderD128');
         ffmpegHWAccelSettings.push(`-hwaccel_output_format ${mode}`);
-        format.push('scale_vappi=');
 
-        if (is10BitEncoded) {
-          format.push('format=p010');
-        } else {
-          format.push('format=p008');
-        }
+        if (is10BitEncoded) format.push('scale_vaapi=');
 
         break;
+      // I do not have a nvidia GPU to try and set it up correctly
       case HWACCEL_OPTIONS.NVENC:
-        response.infoLog += 'Using NVENC\n';
         ffmpegHWAccelSettings.push(`-hwaccel ${mode}`);
         break;
+      default:
+        response.infoLog += `Incorrect HW_ACCEL mode selected: ${mode}\n`;
+        response.processFile = false;
+        response.reQueueAfter = true;
+        throw new Error(JSON.stringify(response));
     }
-
-    ffmpegVideoEncoderSettings.push(`-c:v:${videoStream.index} ${codec}`);
-    ffmpegVideoEncoderSettings.push(format.join(''));
+  } else {
+    codec = forceHevc ? 'hevc' : videoStreamUsesCodec;
   }
 
-  if (isHDRStream && videoStreamUsesHEVC) {
-    response.infoLog += 'Keeping HDR stream\n';
-    const HDRKeep = [];
+  if (is10BitEncoded) format.push('format=p010');
 
-    HDRKeep.push(`-color_primaries ${videoStream.color_primaries}`);
-    HDRKeep.push(`-colorspace ${videoStream.color_space}`);
-    HDRKeep.push(`-color_trc ${videoStream.color_transfer}`);
-    HDRKeep.push(`-color_range ${videoStream.color_range}`);
-    HDRKeep.push(`-chroma_location ${videoStream.chroma_location}`);
-
-    ffmpegVideoEncoderSettings.push(HDRKeep.join(' '));
-  }
+  ffmpegVideoEncoderSettings.push(`-c:v:${videoStream.index} ${codec}`);
 
   if (isOverBitrate) {
-    response.infoLog += 'Is over target bitrate encoding!\n';
+    // only apply "-vf if over bitrate"
+    if (!format.length) ffmpegVideoEncoderSettings.push(`-vf "${format.join('')}"`);
+
+    ffmpegVideoEncoderSettings.push(`-preset slow -bufsize ${createBitRateStringFromBitRate(targetBitrate * 2)}`);
+
+    // keep picture settings (also keeps HDR!)
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_transfer && ffmpegVideoEncoderSettings.push(`-color_trc ${videoStream.color_transfer}`);
+    // eslint-disable-next-line no-unused-expressions,max-len
+    videoStream.chroma_location && ffmpegVideoEncoderSettings.push(`-chroma_sample_location ${videoStream.chroma_location}`);
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_primaries && ffmpegVideoEncoderSettings.push(`-color_primaries ${videoStream.color_primaries}`);
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_space && ffmpegVideoEncoderSettings.push(`-colorspace ${videoStream.color_space}`);
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_range && ffmpegVideoEncoderSettings.push(`-color_range ${videoStream.color_range}`);
+
+    response.infoLog += 'Is over target bitrate transcoding video!\n';
     // eslint-disable-next-line max-len
     ffmpegVideoEncoderSettings.push(`-b:v ${createBitRateStringFromBitRate(targetBitrate * 0.8)} -maxrate ${createBitRateStringFromBitRate(targetBitrate)}`);
   } else {
-    response.infoLog += 'Is below bitrate copying codec and video (re-muxing)!\n';
-    ffmpegVideoEncoderSettings = ['-c:v:0 copy'];
+    response.infoLog += 'Is below bitrate copying video (re-muxing)!\n';
+
+    // if we already are using HEVEC and forcing it replace everything with this to just remux
+    if (forceHevc && videoStreamUsesHEVC) ffmpegVideoEncoderSettings = ['-c:v:0 copy'];
   }
 
-  if (createOptimizedAudioTrack && !hasOptimizedStream) {
-    response.infoLog += 'Optimizing audio!\n';
-    const [bestAudioStream] = audioStreamInfo.sort((a, b) => {
-      if (a.channels > b.channels && a) return a;
-      return b;
-    });
+  if (extractSubtitles.length) {
+    const { ffmpegPath } = otherArguments;
+    const { exec } = require('child_process');
 
-    const isTrueHDStream = bestAudioStream.isTrueHd;
-    const totalStreamCount = isTrueHDStream ? bestAudioStream.channels - 1 : bestAudioStream.channels;
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < totalSubtitles.length; i++) {
+      const subStream = totalSubtitles[i];
+      let lang = '';
+
+      if (subStream.tags) {
+        lang = subStream.tags.language;
+      }
+
+      const { index } = subStream;
+
+      // eslint-disable-next-line no-continue
+      if (!lang) continue;
+      // eslint-disable-next-line no-continue
+      if (!extractSubtitles.includes(lang)) continue;
+
+      response.infoLog += 'Extracting sub\n';
+      response.infoLog += `Sub Lang ${lang}\n`;
+
+      const subsFile = fileName.split('.');
+
+      // adds a lang to the filename and changes the extension to srt
+      subsFile.splice(subsFile.length - 2, 0, lang);
+      subsFile[subsFile.length - 1] = 'srt';
+      const subsFileName = subsFile.join('.');
+
+      // eslint-disable-next-line max-len
+      const command = `${ffmpegPath} -i "${file.file}" -map 0:s:${index} "${subsFileName}" -map 0:s:${index} -c:s webvtt "${subsFileName.replace('srt', 'vtt')}"`;
+
+      exec(command);
+    }
+  }
+
+  if ((createOptimizedAudioTrack || createStereoAudioTrack) && (!hasOptimizedStream || !hasStereoStream)) {
+    response.infoLog += 'Optimizing audio!\n';
 
     ffmpegVideoEncoderSettings.push('-map 0:v');
+
     // add all the wanted audio streams after the video
-    audioStreamInfo.forEach(({ index }) => ffmpegVideoEncoderSettings.push(`-map 0:${index}`));
-
-    // add the new track after
-    ffmpegVideoEncoderSettings.push(`-map 0:a:${bestAudioStream.index}`);
-    // length is index + 1
-    ffmpegVideoEncoderSettings.push(`-c:a:${audioStreamInfo.length} libfdk_aac`);
-    ffmpegVideoEncoderSettings.push(`-ac ${totalStreamCount}`);
-
-    ffmpegVideoEncoderSettings.push('-map 0:s?');
-    ffmpegVideoEncoderSettings.push('-map 0:d?');
+    // eslint-disable-next-line max-len
+    audioStreamsInfo.forEach(({ index }, newIndex) => ffmpegVideoEncoderSettings.push(`-map 0:a:${index} -c:a:${newIndex} copy`));
   }
 
-  // Allows custom tags/metadata in mp4
-  if (outputContainer.includes('mp4')) ffmpegVideoEncoderSettings.push('-movflags use_metadata_tags');
+  // This takes the first stream as the best stream
+  const [{ channels, isLossless, index: bestStreamOriginalIndex }] = audioStreamsInfo;
 
-  ffmpegVideoEncoderSettings.push(`-map_metadata:g -1 -metadata ${CUSTOM_TAG}=YES `);
+  let usedAudiMappingIndex = audioStreamsInfo.length;
+
+  if (createOptimizedAudioTrack && !hasOptimizedStream) {
+    const totalChannelCount = isLossless ? channels - 1 : channels;
+
+    // length is index + 1
+    ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
+    // eslint-disable-next-line no-plusplus
+    ffmpegVideoEncoderSettings.push(`-c:a:${usedAudiMappingIndex++} aac`);
+    ffmpegVideoEncoderSettings.push(`-ac ${totalChannelCount}`);
+  }
+
+  // Todo do some ffmpeg dark magic with the stereo stream to properly downmix the center channel
+  if (createStereoAudioTrack && !hasStereoStream && !hasOptimizedStereoStream) {
+    ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
+    // eslint-disable-next-line no-plusplus
+    ffmpegVideoEncoderSettings.push(`-c:a:${usedAudiMappingIndex++} aac`); // Or OPUS? Plex loves opus though
+    ffmpegVideoEncoderSettings.push('-ac 3'); // 3 or 2 for 2.1?
+  }
 
   response.processFile = true;
   response.preset = [
-    [
-      ffmpegHWAccelSettings.join(' '),
-    ].filter(Boolean).join(' '),
+    ffmpegHWAccelSettings.join(' '),
+    '<io>',
     ffmpegVideoEncoderSettings.join(' '),
-  ].join(` <io> -max_muxing_queue_size 8000 -map 0:${videoStream.index} `);
+  ].join(' ');
+
+  if (!hasSubtitles && !isOverBitrate && hasOptimizedStream && hasStereoStream) response.processFile = false;
 
   return response;
 };
+
+module.exports.details = details;
+module.exports.plugin = plugin;
