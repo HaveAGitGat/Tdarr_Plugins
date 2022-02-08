@@ -18,7 +18,9 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify if audio titles should be checked & cleaned. Optional.
+    tooltip: `
+Specify if audio titles should be checked & cleaned. 
+Optional. Only removes titles if they contain at least 3 '.' characters.
                \\nExample:\\n
                true
 
@@ -36,7 +38,9 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify if subtitle titles should be checked & cleaned. Optional.
+    tooltip: `
+Specify if subtitle titles should be checked & cleaned.
+Optional. Only removes titles if they contain at least 3 '.' characters.
                \\nExample:\\n
                true
 
@@ -51,9 +55,9 @@ const details = () => ({
       type: 'text',
     },
     tooltip: `If you enable audio or subtitle cleaning the plugin only looks for titles with more then 3 full stops.
-                  //nThis is one way to identify junk metadata without removing real metadata that you might want.
-                  //nHere you can specify your own text for it to also search for to match and remove.
-                  //nComma separated. Optional.
+                  \\nThis is one way to identify junk metadata without removing real metadata that you might want.
+                  \\nHere you can specify your own text for it to also search for to match and remove.
+                  \\nComma separated. Optional.
                \\nExample:\\n
                MiNX - Small HD episodes
 
