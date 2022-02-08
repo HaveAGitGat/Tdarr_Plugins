@@ -114,7 +114,7 @@ const details = () => ({
     },
     {
       name: 'bitrate_cutoff',
-      type: 'string',
+      type: 'number',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -131,7 +131,7 @@ const details = () => ({
     },
     {
       name: 'max_average_bitrate',
-      type: 'string',
+      type: 'number',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -150,7 +150,7 @@ const details = () => ({
     },
     {
       name: 'min_average_bitrate',
-      type: 'string',
+      type: 'number',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -192,7 +192,7 @@ const details = () => ({
     },
     {
       name: 'hevc_max_bitrate',
-      type: 'string',
+      type: 'number',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -285,7 +285,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Checks if currentBitrate is below inputs.bitrate_cutoff.
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
-      response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}. Cancelling plugin. \n`;
+      response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}k. Cancelling plugin. \n`;
       return response;
     }
     // If above cutoff then carry on
@@ -311,7 +311,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (inputs.min_average_bitrate !== '') {
     // Exit the plugin is the cutoff is less than the min average bitrate. Most likely user error
     if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
-      response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff} is less than the set minimum 
+      response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff}k is less than the set minimum 
       average bitrate set of ${inputs.min_average_bitrate}k. We don't want this. Cancelling plugin. \n`;
       return response;
     }
@@ -439,12 +439,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
           HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
-          Cutoff now temporarily ${inflatedCutoff}. \n The file is still above this new cutoff! Reconverting. \n\n`;
+          Cutoff now temporarily ${inflatedCutoff}k. \n The file is still above this new cutoff! Reconverting. \n\n`;
         } else {
           // File is below cutoff so we can exit
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1 
-          so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}. \n
+          so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}k. \n
           The file is NOT above this new cutoff. Exiting plugin. \n\n`;
           return response;
         }
