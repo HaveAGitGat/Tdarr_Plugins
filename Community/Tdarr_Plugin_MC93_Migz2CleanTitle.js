@@ -18,7 +18,9 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify if audio titles should be checked & cleaned. Optional. Only removes titles if they contain at least 3 '.' characters.
+    tooltip: `
+Specify if audio titles should be checked & cleaned. 
+Optional. Only removes titles if they contain at least 3 '.' characters.
                \\nExample:\\n
                true
 
@@ -36,7 +38,9 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify if subtitle titles should be checked & cleaned. Optional. Only removes titles if they contain at least 3 '.' characters.
+    tooltip: `
+Specify if subtitle titles should be checked & cleaned.
+Optional. Only removes titles if they contain at least 3 '.' characters.
                \\nExample:\\n
                true
 
