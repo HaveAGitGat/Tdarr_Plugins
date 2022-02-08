@@ -180,6 +180,9 @@ const details = () => ({
       tooltip: `Specify if we want to reprocess HEVC, VP9 or AV1 files 
       (i.e reduce bitrate of files already in those codecs). NOT recommended to use so leave false if unsure. 
       NEEDS to be used in conjunction with "bitrate_cutoff" otherwise is ignored.
+      \\n Also bare in mind that you can convert a file to HEVC and still be above your cutoff meaning it would 
+      be converted again if this is set to true (since it's now HEVC). Again, not recommended unless you're sure
+      you want to do this and if you use this be sure to set the min & max average bitrates as needed.
       \\n Will allow files that are already HEVC, VP9 or AV1 to be reprocessed.
       \\n Useful in certain situations, perhaps you have a file which is HEVC 
       but extremely high bitrate and you'd like to reduce it.
@@ -199,8 +202,14 @@ const details = () => ({
       },
       tooltip: `Has no effect unless reconvert_hevc is set to true.
       This allows you to specify a maximum allowed average bitrate for HEVC or similar files. 
-      This option is to be used if you want to ensure HEVC files don't exceed a set bitrate.
-      As with the cutoff, getting the bitrate of the video from files is unreliable, so bitrate
+      This option is to set a maximum acceptable bitrate for HEVC files. i.e HEVC files shouldn't be
+      greater than a bitrate of 5000. This is NOT a cutoff so bare that in mind.
+      \\n Highly suggested you use the min & max average bitrate in combination with this. You
+      will want those to control the bitrate otherwise you may end up repeatedly reprocessing HEVC files.
+      i.e your file might have a bitrate of 200000, if your hevc cutoff is 5000 then it's going to reconvert 
+      multiple times before it'll fall below that cutoff. This is why hevc reprocessing can be useful
+      but also why it is NOT recommended!
+      \\n As with the cutoff, getting the bitrate of the video from files is unreliable, so bitrate
       here refers to the total bitrate of the file and not just the video steam.
       \\n Rate is in kbps.
       \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit.
@@ -280,7 +289,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Ensure that bitrate_cutoff is set if reconvert_hevc is true since we need some protection against a loop
   // Cancel the plugin
-  if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff === '' && inputs.hevc_max_bitrate === '') {
+  if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff === 0 && inputs.hevc_max_bitrate === 0) {
     response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff 
     or HEVC specific cutoff set so we have no way to know when to stop processing this file. 
     Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. 
@@ -290,7 +299,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.bitrate cutoff has something entered.
   // (Entered means user actually wants something to happen, empty would disable this).
-  if (inputs.bitrate_cutoff !== '') {
+  if (inputs.bitrate_cutoff > 0) {
     // Checks if currentBitrate is below inputs.bitrate_cutoff.
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
@@ -303,7 +312,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  if (inputs.max_average_bitrate !== '') {
+  if (inputs.max_average_bitrate > 0) {
     // Checks if targetBitrate is above inputs.max_average_bitrate.
     // If so then clamp target bitrate
     if (targetBitrate > inputs.max_average_bitrate) {
@@ -317,7 +326,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.min_average_bitrate has something entered.
   // (Entered means user actually wants something to happen, empty would disable this).
-  if (inputs.min_average_bitrate !== '') {
+  if (inputs.min_average_bitrate > 0) {
     // Exit the plugin is the cutoff is less than the min average bitrate. Most likely user error
     if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
       response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff}k is less than the set minimum 
@@ -426,7 +435,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
         // If we're using the hevc max bitrate then update the cutoff to use it
 
-        if (inputs.hevc_max_bitrate !== '') {
+        if (inputs.hevc_max_bitrate > 0) {
           if (currentBitrate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
             inflatedCutoff = Math.round(inputs.bitrate_cutoff);
