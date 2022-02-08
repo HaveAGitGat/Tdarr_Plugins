@@ -1,3 +1,5 @@
+/* eslint-disable no-bitwise,no-restricted-globals */
+
 const details = () => ({
 
   id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
@@ -13,7 +15,7 @@ const details = () => ({
   Version: '1.00',
   Tags: 'pre-processing,ffmpeg,video only,h265,configurable',
 
-    Inputs: [
+  Inputs: [
     {
       name: 'sdbitrate_cutoff',
       type: 'string',
@@ -158,14 +160,14 @@ const details = () => ({
     {
       name: 'use10Bit',
       type: 'boolean',
-		  defaultValue: false,
-		  inputUI: {
-		  type: 'dropdown',
-		  options: [
-			'false',
-			'true',
-		  ],
-		},
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
       tooltip: `Input "true" if you want to use 10 Bit colorDepth for your Encoder
         
         \\nExample:\\n
@@ -174,62 +176,62 @@ const details = () => ({
     {
       name: 'sdDisabled',
       type: 'boolean',
-	  	defaultValue: false,
-	  	inputUI: {
-		  type: 'dropdown',
-		  options: [
-			'false',
-			'true',
-		  ],
-		},
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
       tooltip: `Input "true" if you want to skip SD (480p and 576p) files
         
         \\nExample:\\n
         true`,
     },
-	  {
+    {
       name: 'hdDisabled',
       type: 'boolean',
       defaultValue: false,
-	  	inputUI: {
-		  type: 'dropdown',
-		  options: [
-			'false',
-			'true',
-		  ],
-		},
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
       tooltip: `Input "true" if you want to skip HD (720p) files
         
         \\nExample:\\n
         true`,
     },
-	  {
+    {
       name: 'fullhdDisabled',
       type: 'boolean',
-	  	defaultValue: false,
-	  	inputUI: {
-		  type: 'dropdown',
-		  options: [
-			'false',
-			'true',
-		  ],
-		},
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
       tooltip: `Input "true" if you want to skip FullHD (1080p) files
         
         \\nExample:\\n
         true`,
     },
-	  {
+    {
       name: 'uhdDisabled',
       type: 'boolean',
-		  defaultValue: true,
-	  	inputUI: {
-		  type: 'dropdown',
-		  options: [
-			'false',
-			'true',
-		  ],
-		},
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
       tooltip: `Input "true" if you want to skip 4k (UHD) files
         
         \\nExample:\\n
@@ -266,6 +268,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += '☑File is a video! \n';
 
   // Check if duration info is filled, if so times it by 0.0166667 to get time in minutes.
+
+  let duration;
   // If not filled then get duration of stream 0 and do the same.
   if (typeof file.meta.Duration !== 'undefined') {
     duration = file.meta.Duration * 0.0166667;
@@ -281,19 +285,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const mediaInfoVideoBitrate = ~~(Number(file.mediaInfo.track[1].BitRate) / 1000);
   const calculatedBitrate = ~~(file.file_size / (duration * 0.0075));
   let currentBitrate;
- 
-  if ((typeof mediaInfoVideoBitrate !== 'undefined') && !isNaN(mediaInfoVideoBitrate)){
+
+  if ((typeof mediaInfoVideoBitrate !== 'undefined') && !isNaN(mediaInfoVideoBitrate)) {
     currentBitrate = mediaInfoVideoBitrate;
-  } 
-  else {
+  } else {
     currentBitrate = calculatedBitrate;
-  } 
+  }
   const sdbitratecutoff = inputs.sdbitrate_cutoff ? inputs.sdbitrate_cutoff : 999999;
   const hdbitratecutoff = inputs.hdbitrate_cutoff ? inputs.hdbitrate_cutoff : 999999;
   const fullhdbitratecutoff = inputs.fullhdbitrate_cutoff ? inputs.fullhdbitrate_cutoff : 999999;
-  const uhdbitratecutoff = inputs.uhdbitrate_cutoff ? inputs.uhdbitrate_cutoff : 999999; 
-  
-    // set crf by resolution
+  const uhdbitratecutoff = inputs.uhdbitrate_cutoff ? inputs.uhdbitrate_cutoff : 999999;
+
+  // set crf by resolution
   switch (file.video_resolution) {
     case '480p':
     case '576p':
@@ -313,10 +316,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.processFile = false;
       return response;
   }
-  
-  
-  
-  
+
   // Check if inputs.bitrate cutoff has something entered.
   // (Entered means user actually wants something to happen, empty would disable this).
   if (bitratecutoff !== '') {
@@ -328,8 +328,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       + `of ${bitratecutoff}. Nothing to do, cancelling plugin. \n`;
       return response;
     }
-  } 
-    
+  }
+
   // check if the file is SD and sdDisable is enabled
   // skip this plugin if so
   if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled) {
@@ -345,7 +345,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += '☒File is 720p, not processing\n';
     return response;
   }
-  
+
   // check if the file is hdready and fullhdDisabled is enabled
   // skip this plugin if so
   if (['1080p'].includes(file.video_resolution) && inputs.fullhdDisabled) {
@@ -353,7 +353,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += '☒File is 1080p, not processing\n';
     return response;
   }
-  
+
   // check if the file is 4k and 4kDisable is enabled
   // skip this plugin if so
   if (file.video_resolution === '4KUHD' && inputs.uhdDisabled) {
@@ -381,14 +381,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const fullhdCRF = inputs.fullhdCRF ? inputs.fullhdCRF : 24;
   const uhdCRF = inputs.uhdCRF ? inputs.uhdCRF : 28;
   const bframe = inputs.bframe ? inputs.bframe : 8;
-  let use10Bit = "";
-  
+  let use10Bit = '';
+
   if (!inputs.use10Bit) {
     response.infoLog += '☑Using 8Bit for colorDepth';
   } else {
-    use10Bit = "-pix_fmt yuv420p10le";
-    response.infoLog += `☑Using 10Bit for colorDepth \n`;
-  } 
+    use10Bit = '-pix_fmt yuv420p10le';
+    response.infoLog += '☑Using 10Bit for colorDepth \n';
+  }
 
   // set preset to slow if not configured
   let ffmpegPreset = 'slow';
@@ -423,7 +423,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // encoding settings
   response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset}`
   + ` ${use10Bit} -x265-params crf=${crf}:qpmax=40:bframes=${bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
-  + ' -a53cc 0 -c:a copy -c:s copy -metadata:g title= -metadata:s:v:0 titel= -metadata:s:v:0 name= -max_muxing_queue_size 9999';
+  + ' -a53cc 0 -c:a copy -c:s copy -metadata:g title= -metadata:s:v:0 titel= -metadata:s:v:0 name= '
+  + '-max_muxing_queue_size 9999';
   response.infoLog += `☑File hast a bitrate of ${currentBitrate}, going for transcode!\n`;
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
   response.infoLog += 'File is being transcoded!\n';
