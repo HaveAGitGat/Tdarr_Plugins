@@ -140,7 +140,7 @@ const details = () => ({
       to get an average target. This option sets a upper limit to that average 
       (i.e if you have a video bitrate of 10000, half is 5000, if your maximum desired average bitrate is 4000
       then we use that as the target instead of 5000).
-      Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
+      \\n Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
       \\n Rate is in kbps.
       \\n Leave empty to ignore.
       \\nExample:\\n
@@ -158,7 +158,8 @@ const details = () => ({
       tooltip: `Specify a minimum average video bitrate. When encoding we take the current total bitrate and halve 
         it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
         of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
-        of 1500). Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
+        of 1500).
+        \\nBitrate here is referring to video bitrate as we want to set the video bitrate on encode.
       \\n Rate is in kbps.
       \\n Leave empty to ignore.
       \\nExample:\\n
@@ -178,14 +179,16 @@ const details = () => ({
         ],
       },
       tooltip: `Specify if we want to reprocess HEVC, VP9 or AV1 files 
-      (i.e reduce bitrate of files already in those codecs). NOT recommended to use so leave false if unsure. 
-      NEEDS to be used in conjunction with "bitrate_cutoff" otherwise is ignored.
-      \\n Also bare in mind that you can convert a file to HEVC and still be above your cutoff meaning it would 
-      be converted again if this is set to true (since it's now HEVC). Again, not recommended unless you're sure
-      you want to do this and if you use this be sure to set the min & max average bitrates as needed.
-      \\n Will allow files that are already HEVC, VP9 or AV1 to be reprocessed.
-      \\n Useful in certain situations, perhaps you have a file which is HEVC 
-      but extremely high bitrate and you'd like to reduce it.
+      (i.e reduce bitrate of files already in those codecs). Since this uses the same logic as normal, halving the
+      current bitrate, this is NOT recommended unless you know what you are doing, so leave false if unsure. 
+      NEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
+      This is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
+      bitrate and you'd like to reduce it.
+      \\n Bare in mind that you can convert a file to HEVC and still be above your cutoff meaning it would 
+      be converted again if this is set to true (since it's now HEVC). So if you use this be sure to set
+      "hevc_max_bitrate" & "max_average_bitrate" to prevent the plugin looping. Also it is highly suggested 
+      that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
+      \\n Again if you are unsure, please leave this as false!
       \\n\\n WARNING!! IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION.
       \\n
       \\nExample:\\n
@@ -200,19 +203,18 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: `Has no effect unless reconvert_hevc is set to true.
-      This allows you to specify a maximum allowed average bitrate for HEVC or similar files. 
-      This option is to set a maximum acceptable bitrate for HEVC files. i.e HEVC files shouldn't be
-      greater than a bitrate of 5000. This is NOT a cutoff so bare that in mind.
-      \\n Highly suggested you use the min & max average bitrate in combination with this. You
+      tooltip: `Has no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
+      allowed average bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
+      specifically for HEVC files. It should be set HIGHER then your standard cutoff for safety.
+      \\n Also, it's highly suggested you use the min & max average bitrate options in combination with this. You
       will want those to control the bitrate otherwise you may end up repeatedly reprocessing HEVC files.
-      i.e your file might have a bitrate of 200000, if your hevc cutoff is 5000 then it's going to reconvert 
-      multiple times before it'll fall below that cutoff. This is why hevc reprocessing can be useful
-      but also why it is NOT recommended!
+      i.e your file might have a bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
+      multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful
+      this is why it is NOT recommended!
       \\n As with the cutoff, getting the bitrate of the video from files is unreliable, so bitrate
       here refers to the total bitrate of the file and not just the video steam.
       \\n Rate is in kbps.
-      \\n If empty we will take the bitrate_cutoff and multiply x2 for a safe limit.
+      \\n If empty we will take the "bitrate_cutoff" and multiply x2 for a safe limit.
       \\nExample:\\n
       4000
       \\nExample:\\n
@@ -438,13 +440,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         if (inputs.hevc_max_bitrate > 0) {
           if (currentBitrate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
-            inflatedCutoff = Math.round(inputs.bitrate_cutoff);
             response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
             Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}k. \n
             ☒ The file is still above this new cutoff! Reconverting. \n\n`;
           } else {
             // Otherwise we're now below the hevc cutoff and we can exit
-            inflatedCutoff = Math.round(inputs.bitrate_cutoff);
             response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
             Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}k. \n
             ☑ The file is NOT above this new cutoff. Exiting plugin. \n\n`;
