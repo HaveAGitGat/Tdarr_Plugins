@@ -254,7 +254,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const currentBitrate = Math.round(file.file_size / (duration * 0.0075));
   // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
   // Logic of h265 can be half the bitrate as h264 without losing quality.
-  let targetBitrate = Math.round(file.file_size / ((duration * 0.0075) / 2));
+  let targetBitrate = Math.round((file.file_size / (duration * 0.0075)) / 2);
   // Allow some leeway under and over the targetBitrate.
   let minimumBitrate = Math.round(targetBitrate * 0.75);
   let maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -266,6 +266,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Cancel plugin completely.
   if (targetBitrate <= 0 || currentBitrate <= 0) {
     response.infoLog += '☒ Target bitrate could not be calculated. Skipping this plugin. \n';
+    return response;
+  }
+
+  // If targetBitrate is equal or greater than currentBitrate then something
+  // has gone wrong as that is not what we want.
+  // Cancel plugin completely.
+  if (targetBitrate >= currentBitrate) {
+    response.infoLog += `☒ Target bitrate has been calculated as ${targetBitrate}k. This is equal or greater
+    than the current bitrate... Something has gone wrong and this shouldn't happen! Skipping this plugin. \n`;
     return response;
   }
 
