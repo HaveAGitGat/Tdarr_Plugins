@@ -114,7 +114,7 @@ const details = () => ({
     },
     {
       name: 'bitrate_cutoff',
-      type: 'number',
+      type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -131,7 +131,7 @@ const details = () => ({
     },
     {
       name: 'max_average_bitrate',
-      type: 'number',
+      type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -150,7 +150,7 @@ const details = () => ({
     },
     {
       name: 'min_average_bitrate',
-      type: 'number',
+      type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -198,7 +198,7 @@ const details = () => ({
     },
     {
       name: 'hevc_max_bitrate',
-      type: 'number',
+      type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
@@ -291,7 +291,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Ensure that bitrate_cutoff is set if reconvert_hevc is true since we need some protection against a loop
   // Cancel the plugin
-  if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff === 0 && inputs.hevc_max_bitrate === 0) {
+  if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff === '' && inputs.hevc_max_bitrate === '') {
     response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff 
     or HEVC specific cutoff set so we have no way to know when to stop processing this file. 
     Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. 
@@ -301,7 +301,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.bitrate cutoff has something entered.
   // (Entered means user actually wants something to happen, empty would disable this).
-  if (inputs.bitrate_cutoff > 0) {
+  if (inputs.bitrate_cutoff !== '') {
     // Checks if currentBitrate is below inputs.bitrate_cutoff.
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
@@ -314,7 +314,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  if (inputs.max_average_bitrate > 0) {
+  if (inputs.max_average_bitrate !== '') {
     // Checks if targetBitrate is above inputs.max_average_bitrate.
     // If so then clamp target bitrate
     if (targetBitrate > inputs.max_average_bitrate) {
@@ -328,7 +328,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.min_average_bitrate has something entered.
   // (Entered means user actually wants something to happen, empty would disable this).
-  if (inputs.min_average_bitrate > 0) {
+  if (inputs.min_average_bitrate !== '') {
     // Exit the plugin is the cutoff is less than the min average bitrate. Most likely user error
     if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
       response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff}k is less than the set minimum 
@@ -408,6 +408,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         extraArguments += `-map -v:${videoIdx} `;
       }
 
+      // Check for HDR in files. If so exit plugin. We assume HDR files have bt2020 color spaces. HDR can be complicated
+      // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
+      if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
+        && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
+        && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
+        response.infoLog += `☒ This looks to be a HDR file. HDR files are unfortunately
+        not supported by this plugin. Exiting plugin. \n\n`;
+        return response;
+      }
+
       // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
       if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
         || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
@@ -437,7 +447,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
         // If we're using the hevc max bitrate then update the cutoff to use it
 
-        if (inputs.hevc_max_bitrate > 0) {
+        if (inputs.hevc_max_bitrate !== '') {
           if (currentBitrate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
             response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
@@ -466,16 +476,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           The file is NOT above this new cutoff. Exiting plugin. \n\n`;
           return response;
         }
-      }
-
-      // Check for HDR in files. If so exit plugin. We assume HDR files have bt2020 color spaces. HDR can be complicated
-      // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
-      if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
-        && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
-        && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
-        response.infoLog += `☒ This looks to be a HDR file. HDR files are unfortunately
-     not supported by this plugin. Exiting plugin. \n\n`;
-        return response;
       }
 
       // If files are already 10bit then disable hardware decode to avoid problems with encode
