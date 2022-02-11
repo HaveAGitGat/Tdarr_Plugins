@@ -146,6 +146,8 @@ const processStreams = (result, file, user_langs) => {
       if (stream.tags.language) {
         if (langs.includes(stream.tags.language)) {
           tracks.keep.push(streamIndex);
+          // Set processed flag
+          response.preset += `-c:a copy -metadata:s:a:${streamIndex} copyright="henk_knlpe" `
         } else {
           tracks.remove.push(streamIndex);
           response.preset += `-map -0:a:${streamIndex} `;
@@ -230,7 +232,27 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let radarrResult = null;
   let sonarrResult = null;
   let tmdbResult = null;
+  let killPlugin = false;
 
+  // Probe for copyright metadata in audio to check if file has been processed
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const currStream = file.ffProbeData.streams[i];
+    if (
+      currStream.codec_type.toLowerCase() === 'audio'
+      && currStream.tags
+    ) {
+      if (currStream.tags.COPYRIGHT === 'henk_knlpe' || currStream.tags.COPYRIGHT === '"henk_knlpe"') {
+        killPlugin = true;
+      }
+    }
+  }
+
+  if (killPlugin) {
+    response.infoLog
+      += '☑File has already been processed by this plugin.\n';
+    return response;
+  }
+  
   if (inputs.priority) {
     if (inputs.priority === 'sonarr') {
       prio = ['sonarr', 'radarr'];
@@ -298,6 +320,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } else {
     response.infoLog += '☒Couldn\'t find the IMDB id of this file. Skipping. \n';
   }
+  // Only to set processed flag 
+  if (!response.processFile) {
+    response.preset = ', -map 0 -c:v copy -c:a copy -metadata:s:a copyright="henk_knlpe" -c:s copy';
+    response.processFile = true;
+	  response.infoLog += '☑Setting processed flag ONLY to prevent needless TMDB api calls. \n';
+  }
+  
   return response;
 };
 
