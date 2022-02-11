@@ -147,7 +147,7 @@ const processStreams = (result, file, user_langs) => {
         if (langs.includes(stream.tags.language)) {
           tracks.keep.push(streamIndex);
           // Set processed flag
-          response.preset += `-c:a copy -metadata:s:a:${streamIndex} copyright="henk_knlpe" `
+          response.preset += `-c:a copy -metadata:s:a:${streamIndex} copyright="henk_knlpe" `;
         } else {
           tracks.remove.push(streamIndex);
           response.preset += `-map -0:a:${streamIndex} `;
@@ -252,7 +252,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       += '☑File has already been processed by this plugin.\n';
     return response;
   }
-  
+
   if (inputs.priority) {
     if (inputs.priority === 'sonarr') {
       prio = ['sonarr', 'radarr'];
@@ -320,13 +320,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } else {
     response.infoLog += '☒Couldn\'t find the IMDB id of this file. Skipping. \n';
   }
-  // Only to set processed flag 
+  // Only to set processed flag
   if (!response.processFile) {
     response.preset = ', -map 0 -c:v copy -c:a copy -metadata:s:a copyright="henk_knlpe" -c:s copy';
     response.processFile = true;
-	  response.infoLog += '☑Setting processed flag ONLY to prevent needless TMDB api calls. \n';
+    response.infoLog += '☑Setting processed flag ONLY to prevent needless TMDB api calls. \n';
   }
-  
+
   return response;
 };
 
