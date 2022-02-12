@@ -55,6 +55,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
+        file.ffProbeData.streams[i].disposition.comment == 1 ||
         file.ffProbeData.streams[i].tags.title
           .toLowerCase()
           .includes("commentary")
