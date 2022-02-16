@@ -7,7 +7,7 @@
 /*
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 Author: JarBinks, Zachg99, Jeff47
-Date: 01/13/2022
+Date: 01/20/2022
 This is my attempt to create an all in one routine that will maintain my library in optimal format
 !!!!FOR MY REQUIREMENTS!!!! Chances are very good you will need to make some changes to this routine
 and it's partner in order to make it work for you.
@@ -18,8 +18,8 @@ makes my library the best it could be. Thanks to everyone involved. Especially H
 whos existing code and assistance were invaluable
 My belief is that given enough information about the video file an optimal configuration can be determined
 specific to that file
-This is based on what my goals are and uses a mix of internal and external programs to gather as much
-useful information as possible to make decisions.
+This is based on what my goals are and uses external programs to gather as much useful information as possible
+to make decisions.
 There is a lot that goes into the gather and analysis part because:
 It is the basis of the decisions and "garbage in, garbage out"
 The video files are far from perfect when we get them and we need to make sure we learn as much as possible
@@ -85,16 +85,10 @@ Subtitles:
  The order I run them in:
     Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile (JB - H265, AAC, MKV, bitrate optimized)
     Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix (JB - MKV Stats, Chapters, Audio Language)
- I am running the docker image provided for Tdarr.
-
- This plugin needs (but doesn't require) the mkvtoolnix package. Install command within the container:
-
+ I am running the docker image provided for Tdarr
+ ****To get the proper video bitrate you need to run this in the docker container:
     apt install mkvtoolnix
-
- That needs to be rerun with every rebuild of the container to get the proper mediainfo tags.
-
- One outstanding issue is I'm getting errors from ffmpeg when I attempt to process .ts files.
-
+ If those tools are added that no longer needs to be run.
  Here is my docker config (I am running compose so yours might be a little different)
    tdarr_server:
      container_name: tdarr_server
@@ -137,7 +131,7 @@ Subtitles:
        - TZ=${TZ} # timezone, defined in .env
        - serverIP=192.168.x.x #container name of the server, should be modified if server is on another machine
        - serverPort=8266
-       - nodeID=TDARRNODE_2
+       - nodeID=TDARRNODE_1
        - nodeIP=192.168.x.x #container name of the node
        - nodePort=9267 #not exposed via a "ports: " setting as the server/node communication is done on the internal
                        #docker network and can communicate on all ports
@@ -164,10 +158,122 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: `***You should not use this*** until you read the comments at the top of the code and understand
-how it works **this does alot** and is 1 of 2 routines you should to run **Part 1** \n`,
+how it works **this does a lot** and is 1 of 2 routines you should to run **Part 1** \n`,
   Version: '2.2',
-  Tags: 'pre-processing,ffmpeg,video,audio,qsv h265,aac',
-  Inputs: [],
+  Tags: 'pre-processing,ffmpeg,video,audio,qsv,h265,aac',
+  Inputs: [{
+    name: 'Stats_Days',
+    type: 'number',
+    defaultValue: 21,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `If the stats date on the file are older than this it will first update them,\\n
+                usually for mkv only.`,
+  }, {
+    name: 'Target_Video_Codec',
+    type: 'string',
+    defaultValue: 'hevc',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `This is the basis of the routine, if you want to change,\\n 
+              it you probably want to use a different script`,
+  }, {
+    name: 'Use_10bit_Video',
+    type: 'boolean',
+    defaultValue: true,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'true',
+        'false',
+      ],
+    },
+    tooltip: 'This will encode in 10 bit? Some processors can not.',
+  }, {
+    name: 'Target_Framerate',
+    type: 'number',
+    defaultValue: 25,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'Any frame rate greater than this will be adjusted.',
+  }, {
+    name: 'Min_Size_Difference_to_Transcode',
+    type: 'number',
+    defaultValue: 1.2,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `If the existing bitrate is this much more than the target bitrate\\n
+                it is ok to transcode, otherwise there might not be enough extra\\n
+                to get decent quality.`,
+  }, {
+    name: 'Target_Reduction_for_Code_Switch',
+    type: 'number',
+    defaultValue: 0.8,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `When a video codec change happens and the source bitrate is lower\\n
+                than optimal, we still lower the bitrate by this since hevc is ok\\n
+                with a lower rate.`,
+  }, {
+    name: 'Max_Video_Height',
+    type: 'number',
+    defaultValue: 2160,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        720,
+        1080,
+        2160,
+        4320,
+      ],
+    },
+    tooltip: 'Any thing over this size, I.E. 8K, will be reduced to this.',
+  }, {
+    name: 'Target_Codec_Compression',
+    type: 'number',
+    defaultValue: 0.08,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'This effects the target bitrate by assuming a compression ratio.',
+  }, {
+    name: 'Target_Audio_Codec',
+    type: 'string',
+    defaultValue: 'aac',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'Desired Audio Codec, if you change this it might require code changes.',
+  }, {
+    name: 'Target_Audio_Language',
+    type: 'string',
+    defaultValue: 'eng',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'Desired Audio Language.',
+  }, {
+    name: 'Target_Audio_Bitrate_Per_Channel',
+    type: 'number',
+    defaultValue: 64000,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: '64K per channel gives you the good lossy quality out of AAC.',
+  }, {
+    name: 'Target_Audio_Channels',
+    type: 'number',
+    defaultValue: 6,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'Any thing above this number of channels will be reduced to it.',
+  }],
 });
 
 function findMediaInfoItem(file, index) {
@@ -212,24 +318,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Settings
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Process Handling
-  const intStatsDays = 21; // If the stats date on the file, usually for mkv only,
-  // are older than this it will first update them
+  const intStatsDays = inputs.Stats_Days;
 
   // Video
-  const targetVideoCodec = 'hevc'; // This is the basis of the routine, if you want to change
-  // it you probably want to use a different script
-  const bolUse10bit = true; // This will encode in 10 bit
-  const targetFrameRate = 25; // Any frame rate greater than this will be adjusted
-
-  const minSizeDiffForTranscode = 1.2; // If the existing bitrate is this much more than the target
-  // bitrate it is ok to transcode, otherwise there might not be enough extra
-  // to get decent quality
-  const targetReductionForCodecSwitchOnly = 0.8; // When a video codec change happens and the source bitrate is lower
-  // than optimal, we still lower the bitrate by this since hevc is ok
-  // with a lower rate
-
-  const maxVideoHeight = 2160; // Any thing over this size, I.E. 8K, will be reduced to this
-  const targetCodecCompression = 0.08; // This effects the target bitrate by assuming a compression ratio
+  const targetVideoCodec = inputs.Target_Video_Codec;
+  const bolUse10bit = inputs.Use_10bit_Video;
+  const targetFrameRate = inputs.Target_Framerate;
+  const minSizeDiffForTranscode = inputs.Min_Size_Difference_to_Transcode;
+  const targetReductionForCodecSwitchOnly = inputs.Target_Reduction_for_Code_Switch;
+  const maxVideoHeight = inputs.Max_Video_Height;
+  const targetCodecCompression = inputs.Target_Codec_Compression;
 
   // Since videos can have many widths and heights we need to convert to pixels (WxH) to understand what we
   // are dealing with and set a minimal optimal bitrate to not go below
@@ -245,50 +343,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const minVideoRateSD = 450000;
 
   // Audio
-  const targetAudioCodec = 'aac'; // Desired Audio Coded, if you change this it will might require code changes
-  const targetAudioLanguage = 'eng'; // Desired Audio Language
-  const targetAudioBitratePerChannel = 64000; // 64K per channel gives you the good lossy quality out of AAC
-  const targetAudioChannels = 6; // Any thing above this number of channels will be
-  // reduced to it, because I cannot listen to it
+  const targetAudioCodec = inputs.Target_Audio_Codec;
+  const targetAudioLanguage = inputs.Target_Audio_Language;
+  const targetAudioBitratePerChannel = inputs.Target_Audio_Bitrate_Per_Channel;
+  const targetAudioChannels = inputs.Target_Audio_Channels;
 
   // Subtitles
-  // const bolIncludeSubs = true; //not used
+  // const bolIncludeSubs = true; //not currently used, it's possible to remove subs but not setup now
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-  const proc = require('child_process'); // Causes lint error, hopefully not needed
+  const proc = require('child_process');
   let bolStatsAreCurrent = false;
-
-  // Run MediaInfo and load the results it into an object
-  /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  // response.infoLog += "Getting Media Info.\n";
-  // var objMedInfo = "";
-  // objMedInfo = JSON.parse(proc.execSync('mediainfo "' + currentFileName + '" --output=JSON').toString());
-  /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Run ffprobe with full info and load the results it into an object
-  /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  // response.infoLog += "Getting FFProbe Info.\n";
-  // var objFFProbeInfo = "";
-  // objFFProbeInfo = JSON.parse(proc.execSync('ffprobe -v error -print_format json
-  // -show_format -show_streams -show_chapters "' + currentFileName + '"').toString());
-  /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-  //    response.processFile = false;
-  //    response.infoLog += objMedInfo + " \n";
-  //    return response;
-
-  // response.infoLog += "HomePath:" + JSON.stringify(otherArguments, null, 4) + "\n";
-  // response.infoLog += "FIID:" + file._id + "\n";
-  // response.infoLog += "IPID:" + inputs._id + "\n";
-  // response.infoLog += "FIDB:" + JSON.stringify(file, null, 4) + "\n";
-  // response.infoLog += "CacheDir:" + librarySettings.cache + "\n";
-  // response.infoLog += "filename:" + require("crypto").createHash("md5").update(file._id).digest("hex") + "\n";
-  // response.infoLog += "MediaInfo:" + JSON.stringify(objMedInfo, null, 4) + "\n";
-  // response.infoLog += "FFProbeInfo:" + JSON.stringify(objFFProbeInfo, null, 4) + "\n";
-  // response.infoLog += "objFFProbeInfo:" + JSON.stringify(objFFProbeInfo, null, 4) + "\n";
-
-  // response.processFile = false;
-  // return response;
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
@@ -340,6 +405,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       try {
         proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+        return response;
       } catch (err) {
         response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
       }

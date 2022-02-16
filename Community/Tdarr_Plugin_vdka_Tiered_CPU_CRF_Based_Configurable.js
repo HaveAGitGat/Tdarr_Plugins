@@ -173,7 +173,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // check if the file is already hevc
   // it will not be transcoded if true and the plugin will be stopped immediately
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
+    if (file.ffProbeData.streams[i].codec_name && file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
       response.processFile = false;
       response.infoLog += '☑File is already in hevc! \n';
       return response;
