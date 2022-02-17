@@ -869,10 +869,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
 
       if (bolTranscodeSoftwareDecode) {
-        strFFcmd += ` -vf "${strChangeVideoRateString + strOptions}" `;
+        strFFcmd += ` -vf "${strChangeVideoRateString} ${strOptions}" `;
       } else {
-        //strFFcmd += ` -vf "${strChangeVideoRateString + strTranscodeVideoFormatHW + strOptions}" `;
-        strFFcmd += ` -vf "${strChangeVideoRateString + 'scale_vaapi=' + strOptions}" `;
+        // strFFcmd += ` -vf "${strChangeVideoRateString + strTranscodeVideoFormatHW + strOptions}" `;
+        strFFcmd += ` -vf "${strChangeVideoRateString} scale_vaapi=${strOptions}" `;
       }
     }
     // strFFcmd += strTranscodeVideoBitrate;
