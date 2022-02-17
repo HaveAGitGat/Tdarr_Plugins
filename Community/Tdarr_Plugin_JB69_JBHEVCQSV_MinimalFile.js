@@ -7,7 +7,7 @@
 /*
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 Author: JarBinks, Zachg99, Jeff47
-Date: 01/20/2022
+Date: 02/16/2022
 This is my attempt to create an all in one routine that will maintain my library in optimal format
 !!!!FOR MY REQUIREMENTS!!!! Chances are very good you will need to make some changes to this routine
 and it's partner in order to make it work for you.
@@ -159,7 +159,7 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `***You should not use this*** until you read the comments at the top of the code and understand
 how it works **this does a lot** and is 1 of 2 routines you should to run **Part 1** \n`,
-  Version: '2.2',
+  Version: '2.3',
   Tags: 'pre-processing,ffmpeg,video,audio,qsv,h265,aac',
   Inputs: [{
     name: 'Stats_Days',
@@ -638,7 +638,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Source is Variable Frame rate but we will transcode to fixed
   if (file.mediaInfo.track[MILoc].FrameRate_Mode === 'VFR') videoFPS = 9999;
 
-  if (videoFPS > targetFrameRate) {
+  if (videoFPS > targetFrameRate && file.container !== 'ts') {
     bolChangeFrameRateVideo = true; // Need to fix this it does not work :-(
   }
 
@@ -759,12 +759,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     audioNewChannels = file.ffProbeData.streams[audioIdx].channels;
   }
 
-  let optimalaudiobitrate = audioNewChannels * targetAudioBitratePerChannel;
+  let optimalAudioBitrate = audioNewChannels * targetAudioBitratePerChannel;
 
   // Now what are we going todo with the audio part
-  if (audioBR > (optimalaudiobitrate * 1.1)) {
+  if (audioBR > (optimalAudioBitrate * 1.1)) {
     bolTranscodeAudio = true;
-    response.infoLog += `Audio existing Bitrate, ${audioBR}, is higher than target, ${optimalaudiobitrate} \n`;
+    response.infoLog += `Audio existing Bitrate, ${audioBR}, is higher than target, ${optimalAudioBitrate} \n`;
   }
 
   // If the audio codec is not what we want then we should transcode
@@ -776,10 +776,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // If the source bitrate is less than out target bitrate we should not ever go up
-  if (audioBR < optimalaudiobitrate) {
+  if (audioBR < optimalAudioBitrate) {
     response.infoLog += `Audio existing Bitrate, ${audioBR}, is lower than target,`
-    + ` ${optimalaudiobitrate}, using existing `;
-    optimalaudiobitrate = audioBR;
+    + ` ${optimalAudioBitrate}, using existing `;
+    optimalAudioBitrate = audioBR;
     if (file.ffProbeData.streams[audioIdx].codec_name !== targetAudioCodec) {
       response.infoLog += 'rate';
     } else {
@@ -791,57 +791,41 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // lets assemble our ffmpeg command
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  const strTranCodeBaseHW = ' -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi ';
-  const strTranCodeBaseSW = ' -vaapi_device /dev/dri/renderD128 ';
-  const strTranscodeVideoMapping = ' <io> -max_muxing_queue_size 8000 -map 0:{0} ';
-  const strTranscodeVideoCopy = ' -c:v:0 copy ';
-  const strTranscodeVideoTranscoding = ' -c:v:0 hevc_vaapi ';
-  // Used to make the output 10bit, I think the quotes need to be this way for ffmpeg
-  const strTranscodeVideoOptions = ' -vf "{0}" ';
-  const strTranscodeVideoScaling = 'w=-1:h=1080'; // Used when video is above our target of 1080
-  const strTransCodeFrameRate = 'fps={0}'; // Used to change the framerate to the target framerate
-  const strTranscodeVideoFormatHW = 'scale_vaapi='; // Used to make the output 10bit
-  const strTranscodeVideoFormat = 'format={0}'; // Used to add filters to the hardware transcode
-  const strTranscodeVideo10bit = 'p010'; // Used to make the output 10bit
-  const strTranscodeVideo8bit = 'p008'; // Used to make the output 8bit
-  const strTranscodeVideoSWDecode = 'hwupload'; // Used to make it use software decode if necessary
-  // Used to make it sure the software decode is in the proper pixel format
-  const strTranscodeVideoSWDecode10bit = 'nv12|vaapi';
-  const strTranscodeVideoBitrate = ' -b:v {0} '; // Used when video is above our target of 1080
-  const strTranscodeAudioMapping = ' -map 0:{0} ';
-  const strTranscodeAudioCopy = ' -c:a:0 copy ';
-  const strTranscodeAudioTranscoding = ' -c:a:0 ${targetAudioCodec} -b:a {0} ';
-  const strTranscodeAudioDownMixing = ' -ac {0} ';
-  const strTranscodeSubs = ' -map 0:s -scodec copy ';
-  const strTranscodeSubsConvert = ' -map 0:s -c:s srt ';
-  const strTranscodeSubsNone = ' -map -0:s ';
-  const strTranscodeMetadata = ' -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE={0} ';
-  const strTranscodeChapters = ' -map_chapters {0} ';
 
   const strTranscodeFileOptions = ' ';
 
   let strFFcmd = '';
   if (bolTranscodeVideo) {
     if (bolTranscodeSoftwareDecode) {
-      strFFcmd += strTranCodeBaseSW;
+      // strFFcmd += strTranCodeBaseSW;
+      strFFcmd += ' -vaapi_device /dev/dri/renderD128 ';
     } else {
-      strFFcmd += strTranCodeBaseHW;
+      // strFFcmd += strTranCodeBaseHW;
+      strFFcmd += ' -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi ';
     }
   }
-  strFFcmd += strTranscodeVideoMapping.replace('{0}', videoIdx);
+
+  // strFFcmd += strTranscodeVideoMapping;
+  strFFcmd += ` <io> -max_muxing_queue_size 8000 -map 0:${videoIdx} `;
   if (bolTranscodeVideo) {
-    strFFcmd += strTranscodeVideoTranscoding;
+    // strFFcmd += strTranscodeVideoTranscoding;
+    // Used to make the output 10bit, I think the quotes need to be this way for ffmpeg
+    strFFcmd += ' -c:v:0 hevc_vaapi ';
 
     if (bolScaleVideo || bolUse10bit || bolTranscodeSoftwareDecode || bolChangeFrameRateVideo) {
       let strOptions = '';
       let strFormat = '';
       if (bolScaleVideo) {
-        strOptions += strTranscodeVideoScaling;
+        // strOptions += strTranscodeVideoScaling;
+        // Used when video is above our target
+        strOptions += `w=-1:h=${maxVideoHeight}`;
       }
 
       let strChangeVideoRateString = '';
       if (bolChangeFrameRateVideo) {
-        strChangeVideoRateString = `${strTransCodeFrameRate.replace('{0}', targetFrameRate)},`;
+        // strChangeVideoRateString = strTransCodeFrameRate;
+        // Used to change the framerate to the target framerate
+        strChangeVideoRateString = `fps=${targetFrameRate},`;
       }
 
       if (strFormat.length > 0) {
@@ -849,11 +833,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
 
       if (bolUse10bit && !bolSource10bit) {
-        strFormat += strTranscodeVideo10bit;
+        // strFormat += strTranscodeVideo10bit;
+        // Used to make the output 10bit
+        strFormat += 'p010';
       }
 
       if (!bolUse10bit && bolSource10bit) {
-        strFormat += strTranscodeVideo8bit;
+        // strFormat += strTranscodeVideo8bit;
+        // Used to make the output 8bit
+        strFormat += 'p008';
       }
 
       if (bolTranscodeSoftwareDecode) {
@@ -861,59 +849,72 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           if (strFormat.length > 0) {
             strFormat += ',';
           }
-          strFormat += strTranscodeVideoSWDecode10bit;
+          // strFormat += strTranscodeVideoSWDecode10bit;
+          // Used to make it sure the software decode is in the proper pixel format
+          strFormat += 'nv12|vaapi';
         }
         if (strFormat.length > 0) {
           strFormat += ',';
         }
-        strFormat += strTranscodeVideoSWDecode;
+        // strFormat += strTranscodeVideoSWDecode;
+        // Used to make it use software decode if necessary
+        strFormat += 'hwupload';
       }
 
       if (strFormat.length > 0) {
         if (strOptions.length > 0) {
           strOptions += ',';
         }
-        strOptions += strTranscodeVideoFormat.replace('{0}', strFormat);
+        strOptions += `format=${strFormat}`;
       }
 
       if (bolTranscodeSoftwareDecode) {
-        strFFcmd += strTranscodeVideoOptions.replace('{0}', strChangeVideoRateString + strOptions);
+        strFFcmd += ` -vf "${strChangeVideoRateString + strOptions}" `;
       } else {
-        strFFcmd += strTranscodeVideoOptions
-          .replace('{0}', strChangeVideoRateString + strTranscodeVideoFormatHW + strOptions);
+        //strFFcmd += ` -vf "${strChangeVideoRateString + strTranscodeVideoFormatHW + strOptions}" `;
+        strFFcmd += ` -vf "${strChangeVideoRateString + 'scale_vaapi=' + strOptions}" `;
       }
     }
-    strFFcmd += strTranscodeVideoBitrate.replace('{0}', optimalVideoBitrate);
+    // strFFcmd += strTranscodeVideoBitrate;
+    // Used when video is above our target
+    strFFcmd += ` -b:v ${optimalVideoBitrate} `;
   } else {
-    strFFcmd += strTranscodeVideoCopy;
+    // strFFcmd += strTranscodeVideoCopy;
+    strFFcmd += ' -c:v:0 copy ';
   }
 
-  strFFcmd += strTranscodeAudioMapping.replace('{0}', audioIdx);
+  // strFFcmd += strTranscodeAudioMapping;
+  strFFcmd += ` -map 0:${audioIdx} `;
   if (bolTranscodeAudio) {
-    strFFcmd += strTranscodeAudioTranscoding
-      .replace('{0}', optimalaudiobitrate)
-      .replace('${targetAudioCodec}', targetAudioCodec);
+    // strFFcmd += strTranscodeAudioTranscoding;
+    strFFcmd += ` -c:a:0 ${targetAudioCodec} -b:a ${optimalAudioBitrate} `;
   } else {
-    strFFcmd += strTranscodeAudioCopy;
+    // strFFcmd += strTranscodeAudioCopy;
+    strFFcmd += ' -c:a:0 copy ';
   }
   if (bolDownMixAudio) {
-    strFFcmd += strTranscodeAudioDownMixing.replace('{0}', audioNewChannels);
+    // strFFcmd += strTranscodeAudioDownMixing;
+    strFFcmd += ` -ac ${audioNewChannels} `;
   }
   if (bolForceNoSubs) {
-    strFFcmd += strTranscodeSubsNone;
+    // strFFcmd += strTranscodeSubsNone;
+    strFFcmd += ' -map -0:s ';
   } else if (bolDoSubs) {
     if (bolDoSubsConvert) {
-      strFFcmd += strTranscodeSubsConvert;
+      // strFFcmd += strTranscodeSubsConvert;
+      strFFcmd += ' -map 0:s -c:s srt ';
     } else {
-      strFFcmd += strTranscodeSubs;
+      // strFFcmd += strTranscodeSubs;
+      strFFcmd += ' -map 0:s -scodec copy ';
     }
   }
 
-  strFFcmd += strTranscodeMetadata.replace('{0}', new Date().toISOString());
+  // strFFcmd += strTranscodeMetadata;
+  strFFcmd += ` -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE=${new Date().toISOString()} `;
   if (bolDoChapters) {
-    strFFcmd += strTranscodeChapters.replace('{0}', '0');
+    strFFcmd += ' -map_chapters 0 ';
   } else {
-    strFFcmd += strTranscodeChapters.replace('{0}', '-1');
+    strFFcmd += ' -map_chapters -1 ';
   }
 
   strFFcmd += strTranscodeFileOptions;
