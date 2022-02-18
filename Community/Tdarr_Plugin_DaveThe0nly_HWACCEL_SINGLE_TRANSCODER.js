@@ -6,8 +6,6 @@ const CODEC_TYPE = {
   SUBTITLE: 'subtitle',
 };
 
-const AAC_AUDIO_STREAM = 'aac';
-
 const HWACCEL_OPTIONS = {
   NONE: 'none',
   NVENC: 'nVidia (NVENC)',
@@ -46,10 +44,10 @@ const TRUEHD_ATMOS_CODEC_TYPE = 'truehd';
 const ATMOS_CODECS = [DDP_ATMOS_CODEC_TYPE, TRUEHD_ATMOS_CODEC_TYPE];
 
 const createBitRateFromString = (rates) => rates.reduce((acc, resolutionWithRate) => {
-  const [resolution, rate] = resolutionWithRate;
+  const [resolution, rate] = resolutionWithRate.split(':');
 
   // eslint-disable-next-line max-len
-  if (!supportedResolutions[resolution]) throw new Error(`Unsupported Resolution: ${resolution}, supported are only ${supportedResolutions.join(', ')}`);
+  if (!supportedResolutions.includes(resolution)) throw new Error(`Unsupported Resolution: ${resolution}, supported are only ${supportedResolutions.join(', ')}`);
 
   // eslint-disable-next-line default-case
   switch (true) {
@@ -119,35 +117,36 @@ const details = () => ({
       },
     },
     {
-      name: 'createOptimizedAudioTrack',
-      type: 'boolean',
-      tooltip: 'Creates an optimized audio track for clients that do not support atmos, keep empty to not optimize',
-      defaultValue: 'true',
+      name: 'hevcCompressionLevel',
+      type: 'number',
+      tooltip: 'Sets the compression level for HEVC transcoding (1-7)',
+      defaultValue: 5,
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'text',
       },
     },
     {
-      name: 'createStereoAudioTrack',
-      type: 'boolean',
-      tooltip: 'Creates a stereo audio track in acc',
-      defaultValue: 'true',
+      name: 'x264quality',
+      type: 'string',
+      tooltip: 'Sets quality of x264 being preset:crf (veryfast:27) being default',
+      defaultValue: 'veryfast:27',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'text',
+      },
+    },
+    {
+      name: 'createOptimizedAudioTrack',
+      type: 'text',
+      tooltip: 'Creates an optimized audio track/s codec:channels (aac:2,ac3:6)',
+      defaultValue: 'ac3:6,aac:6,aac:3',
+      inputUI: {
+        type: 'text',
       },
     },
     {
       name: 'keepAudioTracks',
       type: 'string',
-      tooltip: 'Keeps an audio track of selected language/s, separated by ","',
+      tooltip: 'Keeps an audio track of selected language/s, separated by ",", if empty all are kept',
       defaultValue: 'eng',
       inputUI: {
         type: 'text',
@@ -160,14 +159,14 @@ const details = () => ({
       defaultValue: '.mp4',
       inputUI: {
         type: 'dropdown',
-        options: ['.mp4', '.mkv'],
+        options: ['.mp4', '.mkv', 'keep'],
       },
     },
     {
       name: 'extractSubtitles',
       type: 'string',
       tooltip: 'Extracts subtitles by language from the file',
-      defaultValue: 'eng,cs,cz',
+      defaultValue: 'none',
       inputUI: {
         type: 'string',
       },
@@ -179,26 +178,30 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
 
   const {
-    targetBitrate: _targetBitrate,
+    targetResolutionBitrate: _targetBitrate,
     extractSubtitles: _extractSubtitles,
     outputContainer,
     hwAccelerate,
     forceHevc,
-    createOptimizedAudioTrack,
-    createStereoAudioTrack,
+    createOptimizedAudioTrack: _createOptimizedAudioTrack,
     keepAudioTracks: _keepAudioTracks,
+    hevcCompressionLevel,
+    x264quality: _x264quality,
   } = lib.loadDefaultValues(inputs, details);
 
   const resolution = file.video_resolution === 'DCI4K' ? '4KUHD' : file.video_resolution;
+
   // If target bitrate is set, try and get it from the setting otherwise set to Infinity to ignore the resolution
-  const targetBitrate = _targetBitrate ? createBitRateFromString(_targetBitrate)[resolution] || Infinity : Infinity;
+  const targetBitrate = _targetBitrate
+    ? createBitRateFromString(_targetBitrate.split(','))[resolution] || Infinity
+    : Infinity;
   const keepAudioTracks = _keepAudioTracks.split(',');
   const extractSubtitles = _extractSubtitles.split(',');
 
   const response = {
     processFile: false,
     preset: '',
-    container: outputContainer,
+    container: outputContainer === 'keep' ? `.${file.container}` : outputContainer,
     handBrakeMode: false,
     FFmpegMode: true,
     infoLog: '',
@@ -231,22 +234,24 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // video setup
   const videoStreamUsesCodec = videoStream.codec_name;
   const videoStreamUsesHEVC = videoStreamUsesCodec === 'hevc' || videoStreamUsesCodec === 'x265';
-  const pixelFormat = videoStream.pix_fmt;
-  const is10BitEncoded = (pixelFormat || '').includes('10le') || !!fileName.match(/10bit/gi);
+  // const pixelFormat = videoStream.pix_fmt;
+  // const is10BitEncoded = (pixelFormat || '').includes('10le') || !!fileName.match(/10bit/gi);
   // eslint-disable-next-line max-len
   const videoStreamBitRate = file.bit_rate;
+  const isHDRStream = videoStream.color_transfer === 'smpte2084' && videoStream.color_primaries === 'bt2020';
 
   response.infoLog += `Current Bitrate: ${videoStreamBitRate}\n`;
   response.infoLog += `Target Bitrate: ${targetBitrate}\n`;
 
   // If the resolution is supposed to not be change "targetBitrate" is going to be Infinity - therefore ignored
-  const isOverBitrate = videoStreamBitRate > targetBitrate;
+  // Can be 15% over target bitrate to get ignored
+  const isOverBitrate = videoStreamBitRate > (targetBitrate * 1.15);
 
   // audio setup
+  const audioStreamsToCreate = _createOptimizedAudioTrack.split(',')
+    .map((track) => track.split(':'))
+    .map(([codec, channels]) => ([codec, parseInt(channels, 10)]));
   const unsortedAudioStreamInfo = [];
-  let hasOptimizedStream = false;
-  let hasStereoStream = false;
-  let hasOptimizedStereoStream = false;
 
   // subtitles
   const totalSubtitles = file.ffProbeData.streams.filter((row) => row.codec_type === 'subtitle');
@@ -254,21 +259,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   audioStreams.forEach((stream, index) => {
     const lang = (stream.tags.lang || stream.tags.language).toLowerCase();
-    if (keepAudioTracks.includes(lang)) {
-      const isStreamOptimized = stream.codec_name === AAC_AUDIO_STREAM;
-
-      if (isStreamOptimized) {
-        response.infoLog += 'Found optimized audio stream\n';
-        hasOptimizedStream = true;
-      }
-
+    if (keepAudioTracks.length === 0 || keepAudioTracks.includes(lang)) {
       const channels = parseInt(stream.channels, 10);
 
-      // either 2.1 or 2.0
-      if ((channels === 3 || channels === 2) && isStreamOptimized) {
-        hasStereoStream = true;
-        hasOptimizedStereoStream = true;
-      }
+      // eslint-disable-next-line max-len
+      const exists = audioStreamsToCreate.findIndex(([stream_codec, stream_channel]) => stream_codec === stream.codec_name && stream_channel === channels);
+
+      //  Removes stream if already exists
+      if (exists > 0) audioStreamsToCreate.splice(exists, 1);
 
       unsortedAudioStreamInfo.push({
         index,
@@ -299,7 +297,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   });
 
   const ffmpegHWAccelSettings = [];
-  const format = [];
   let ffmpegVideoEncoderSettings = [];
   let codec;
 
@@ -318,8 +315,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         ffmpegHWAccelSettings.push('-hwaccel_device /dev/dri/renderD128');
         ffmpegHWAccelSettings.push(`-hwaccel_output_format ${mode}`);
 
-        if (is10BitEncoded) format.push('scale_vaapi=');
-
         break;
       // I do not have a nvidia GPU to try and set it up correctly
       case HWACCEL_OPTIONS.NVENC:
@@ -335,17 +330,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     codec = forceHevc ? 'hevc' : videoStreamUsesCodec;
   }
 
-  if (is10BitEncoded) format.push('format=p010');
-
-  ffmpegVideoEncoderSettings.push(`-c:v:${videoStream.index} ${codec}`);
+  ffmpegVideoEncoderSettings.push('-map 0:V');
+  ffmpegVideoEncoderSettings.push(`-c:V:${videoStream.index} ${codec}`);
 
   if (isOverBitrate) {
-    // only apply "-vf if over bitrate"
-    if (!format.length) ffmpegVideoEncoderSettings.push(`-vf "${format.join('')}"`);
+    if (videoStreamUsesHEVC || forceHevc) {
+      ffmpegVideoEncoderSettings.push(`-compression_level ${hevcCompressionLevel}`);
+    } else if (!videoStreamUsesHEVC && !forceHevc) {
+      const [preset, crf] = _x264quality.split(':');
+      ffmpegVideoEncoderSettings.push(`-preset ${preset}`);
+      ffmpegVideoEncoderSettings.push(`-crf ${crf}`);
+    }
 
-    ffmpegVideoEncoderSettings.push(`-preset slow -bufsize ${createBitRateStringFromBitRate(targetBitrate * 2)}`);
+    ffmpegVideoEncoderSettings.push(`-bufsize ${createBitRateStringFromBitRate(targetBitrate * 2)}`);
 
-    // keep picture settings (also keeps HDR!)
+    if (isHDRStream) ffmpegVideoEncoderSettings.push('-sei hdr');
+
     // eslint-disable-next-line no-unused-expressions
     videoStream.color_transfer && ffmpegVideoEncoderSettings.push(`-color_trc ${videoStream.color_transfer}`);
     // eslint-disable-next-line no-unused-expressions,max-len
@@ -364,13 +364,69 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += 'Is below bitrate copying video (re-muxing)!\n';
 
     // if we already are using HEVEC and forcing it replace everything with this to just remux
-    if (forceHevc && videoStreamUsesHEVC) ffmpegVideoEncoderSettings = ['-c:v:0 copy'];
+    ffmpegVideoEncoderSettings = ['-map 0:V', '-c:V copy'];
   }
 
-  if (extractSubtitles.length) {
-    const { ffmpegPath } = otherArguments;
-    const { exec } = require('child_process');
+  ffmpegVideoEncoderSettings.push('-map_metadata 0');
+  ffmpegVideoEncoderSettings.push('-map_chapters 0');
 
+  audioStreamsInfo
+    .forEach(({ index }, newIndex) => ffmpegVideoEncoderSettings.push(`-map 0:a:${index} -c:a:${newIndex} copy`));
+
+  // This takes the first stream as the best stream
+  const [{ index: bestStreamOriginalIndex, channels, codec: bestAudioStreamCodec }] = audioStreamsInfo;
+  let usedAudioMappingIndex = audioStreamsInfo.length;
+
+  if (audioStreamsToCreate) {
+    response.infoLog += 'Adding new audio stream\n';
+    audioStreamsToCreate.forEach(([audioCodec, audioChannels]) => {
+      if (channels >= audioChannels) {
+        ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
+        ffmpegVideoEncoderSettings.push(`-c:a:${usedAudioMappingIndex} ${audioCodec}`);
+        // eslint-disable-next-line no-plusplus
+        ffmpegVideoEncoderSettings.push(`-ac:${usedAudioMappingIndex++} ${audioChannels}`);
+      } else {
+        response.infoLog += 'Best stream does not have enough channels\n';
+      }
+    });
+
+    // Means no stream was created because we are lacking channels
+    // Create the stream with the best stream count
+    if (usedAudioMappingIndex === audioStreamsInfo.length) {
+      response.infoLog += 'Creating optimized stream with channels from best stream\n';
+      const newCodecsToCreate = audioStreamsToCreate
+        .map(([audiCodec]) => audiCodec)
+        .filter((val, index, self) => self.indexOf(val) === index);
+
+      newCodecsToCreate.forEach((audioCodec) => {
+        const alreadyHasStream = audioStreamsInfo.findIndex(({
+          codec: existingStreamCodec,
+          channels: existingStreamChannels,
+        }) => existingStreamCodec === audioCodec && existingStreamChannels === channels);
+
+        if (alreadyHasStream > -1) {
+          response.infoLog += `Already existing ${audioCodec} with ${channels} channels\n`;
+          // eslint-disable-next-line max-len
+          let existing = audioStreamsToCreate.findIndex(([audioCodecToCreate, channelsToCreate]) => audioCodecToCreate === audioCodec && channelsToCreate > channels);
+          while (existing > -1) {
+            audioStreamsToCreate.splice(existing, 1);
+            // eslint-disable-next-line max-len
+            existing = audioStreamsToCreate.findIndex(([audioCodecToCreate, channelsToCreate]) => audioCodecToCreate === audioCodec && channelsToCreate > channels);
+          }
+        }
+
+        if (alreadyHasStream === -1 && bestAudioStreamCodec !== audioCodec) {
+          response.infoLog += `Creating ${audioCodec} with ${channels} channels\n`;
+          ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
+          ffmpegVideoEncoderSettings.push(`-c:a:${usedAudioMappingIndex} ${audioCodec}`);
+          // eslint-disable-next-line no-plusplus
+          ffmpegVideoEncoderSettings.push(`-ac:${usedAudioMappingIndex++} ${channels}`);
+        }
+      });
+    }
+  }
+
+  if (extractSubtitles.length && _extractSubtitles !== 'none') {
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < totalSubtitles.length; i++) {
       const subStream = totalSubtitles[i];
@@ -393,48 +449,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       const subsFile = fileName.split('.');
 
       // adds a lang to the filename and changes the extension to srt
-      subsFile.splice(subsFile.length - 2, 0, lang);
+      subsFile.splice(subsFile.length - 1, 0, lang);
       subsFile[subsFile.length - 1] = 'srt';
       const subsFileName = subsFile.join('.');
 
-      // eslint-disable-next-line max-len
-      const command = `${ffmpegPath} -i "${file.file}" -map 0:s:${index} "${subsFileName}" -map 0:s:${index} -c:s webvtt "${subsFileName.replace('srt', 'vtt')}"`;
-
-      exec(command);
+      ffmpegVideoEncoderSettings.push(`-map 0:s:${index} "${subsFileName}"`);
+      ffmpegVideoEncoderSettings.push(`-map 0:s:${index} "${subsFileName.replace('srt', 'ass')}"`);
     }
-  }
-
-  if ((createOptimizedAudioTrack || createStereoAudioTrack) && (!hasOptimizedStream || !hasStereoStream)) {
-    response.infoLog += 'Optimizing audio!\n';
-
-    ffmpegVideoEncoderSettings.push('-map 0:v');
-
-    // add all the wanted audio streams after the video
-    // eslint-disable-next-line max-len
-    audioStreamsInfo.forEach(({ index }, newIndex) => ffmpegVideoEncoderSettings.push(`-map 0:a:${index} -c:a:${newIndex} copy`));
-  }
-
-  // This takes the first stream as the best stream
-  const [{ channels, isLossless, index: bestStreamOriginalIndex }] = audioStreamsInfo;
-
-  let usedAudiMappingIndex = audioStreamsInfo.length;
-
-  if (createOptimizedAudioTrack && !hasOptimizedStream) {
-    const totalChannelCount = isLossless ? channels - 1 : channels;
-
-    // length is index + 1
-    ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
-    // eslint-disable-next-line no-plusplus
-    ffmpegVideoEncoderSettings.push(`-c:a:${usedAudiMappingIndex++} aac`);
-    ffmpegVideoEncoderSettings.push(`-ac ${totalChannelCount}`);
-  }
-
-  // Todo do some ffmpeg dark magic with the stereo stream to properly downmix the center channel
-  if (createStereoAudioTrack && !hasStereoStream && !hasOptimizedStereoStream) {
-    ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
-    // eslint-disable-next-line no-plusplus
-    ffmpegVideoEncoderSettings.push(`-c:a:${usedAudiMappingIndex++} aac`); // Or OPUS? Plex loves opus though
-    ffmpegVideoEncoderSettings.push('-ac 3'); // 3 or 2 for 2.1?
+    ffmpegVideoEncoderSettings.push('-sn');
+  } else {
+    ffmpegVideoEncoderSettings.push('-map 0:s? -c:s copy');
   }
 
   response.processFile = true;
@@ -444,7 +468,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     ffmpegVideoEncoderSettings.join(' '),
   ].join(' ');
 
-  if (!hasSubtitles && !isOverBitrate && hasOptimizedStream && hasStereoStream) response.processFile = false;
+  // eslint-disable-next-line max-len
+  if ((_extractSubtitles === 'none' || !hasSubtitles) && !isOverBitrate && audioStreamsToCreate.length === 0) response.processFile = false;
 
   return response;
 };
