@@ -230,6 +230,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // get all the info from video stream
   const [videoStream] = file.ffProbeData.streams.filter((stream) => stream.codec_type === CODEC_TYPE.VIDEO);
   const audioStreams = file.ffProbeData.streams.filter((stream) => stream.codec_type === CODEC_TYPE.AUDIO);
+  const subtitleStreams = file.ffProbeData.streams.filter((stream) => stream.codec_type === CODEC_TYPE.SUBTITLE);
 
   // video setup
   const videoStreamUsesCodec = videoStream.codec_name;
@@ -254,19 +255,26 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const unsortedAudioStreamInfo = [];
 
   // subtitles
-  const totalSubtitles = file.ffProbeData.streams.filter((row) => row.codec_type === 'subtitle');
-  const hasSubtitles = totalSubtitles.length > 0;
+  const hasSubtitles = subtitleStreams.length > 0;
 
   audioStreams.forEach((stream, index) => {
     const lang = (stream.tags.lang || stream.tags.language).toLowerCase();
     if (keepAudioTracks.length === 0 || keepAudioTracks.includes(lang)) {
       const channels = parseInt(stream.channels, 10);
 
-      // eslint-disable-next-line max-len
-      const exists = audioStreamsToCreate.findIndex(([stream_codec, stream_channel]) => stream_codec === stream.codec_name && stream_channel === channels);
+      const exists = audioStreamsToCreate
+        // eslint-disable-next-line max-len
+        .findIndex(([stream_codec, stream_channels]) => stream_codec === stream.codec_name && stream_channels === channels);
 
       //  Removes stream if already exists
-      if (exists > 0) audioStreamsToCreate.splice(exists, 1);
+      if (exists !== -1) {
+        response.infoLog += `Stream with codec: ${stream.codec_name} and channels ${channels} already exists\n`;
+        response.infoLog += `Not creating ${JSON.stringify(audioStreamsToCreate[exists])}\n`;
+        audioStreamsToCreate.splice(exists, 1);
+      }
+
+      // eslint-disable-next-line max-len
+      response.infoLog += `Keeping audio track codec: ${stream.codec_name}, lang: ${lang}, channels: ${channels}, atmos: ${ATMOS_CODECS.includes(stream.codec_name)}\n`;
 
       unsortedAudioStreamInfo.push({
         index,
@@ -334,6 +342,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   ffmpegVideoEncoderSettings.push(`-c:V:${videoStream.index} ${codec}`);
 
   if (isOverBitrate) {
+    response.infoLog += 'Video stream is over bitrate transcoding\n';
+
     if (videoStreamUsesHEVC || forceHevc) {
       ffmpegVideoEncoderSettings.push(`-compression_level ${hevcCompressionLevel}`);
     } else if (!videoStreamUsesHEVC && !forceHevc) {
@@ -356,8 +366,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     videoStream.color_space && ffmpegVideoEncoderSettings.push(`-colorspace ${videoStream.color_space}`);
     // eslint-disable-next-line no-unused-expressions
     videoStream.color_range && ffmpegVideoEncoderSettings.push(`-color_range ${videoStream.color_range}`);
-
-    response.infoLog += 'Is over target bitrate transcoding video!\n';
     // eslint-disable-next-line max-len
     ffmpegVideoEncoderSettings.push(`-b:v ${createBitRateStringFromBitRate(targetBitrate * 0.8)} -maxrate ${createBitRateStringFromBitRate(targetBitrate)}`);
   } else {
@@ -373,7 +381,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   audioStreamsInfo
     .forEach(({ index }, newIndex) => ffmpegVideoEncoderSettings.push(`-map 0:a:${index} -c:a:${newIndex} copy`));
 
-  // This takes the first stream as the best stream
+  // This takes the first stream as the best stream to derive new ones from
   const [{ index: bestStreamOriginalIndex, channels, codec: bestAudioStreamCodec }] = audioStreamsInfo;
   let usedAudioMappingIndex = audioStreamsInfo.length;
 
@@ -428,8 +436,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   if (extractSubtitles.length && _extractSubtitles !== 'none') {
     // eslint-disable-next-line no-plusplus
-    for (let i = 0; i < totalSubtitles.length; i++) {
-      const subStream = totalSubtitles[i];
+    for (let i = 0; i < subtitleStreams.length; i++) {
+      const subStream = subtitleStreams[i];
       let lang = '';
 
       if (subStream.tags) {
