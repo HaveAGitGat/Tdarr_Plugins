@@ -1,5 +1,12 @@
 const supportedResolutions = ['320p', '480p', '576p', '720p', '1080p', '4KUHD', '8KUHD'];
 
+const subtitleDispositionMap = {
+  forced: 'forced',
+  hearing_impaired: 'sdh',
+};
+
+const image_subtitle_codec = ['dvbsub', 'dvdsub', 'dvd_subtitle', 'pgssub', 'xsub', 'hdmv_pgs_subtitle'];
+
 const CODEC_TYPE = {
   VIDEO: 'video',
   AUDIO: 'audio',
@@ -120,7 +127,7 @@ const details = () => ({
       name: 'hevcCompressionLevel',
       type: 'number',
       tooltip: 'Sets the compression level for HEVC transcoding (1-7)',
-      defaultValue: 5,
+      defaultValue: 7,
       inputUI: {
         type: 'text',
       },
@@ -171,6 +178,15 @@ const details = () => ({
         type: 'string',
       },
     },
+    {
+      name: 'subtitleFormat',
+      type: 'string',
+      tooltip: 'Comma separated list of subtitle formats to create',
+      defaultValue: 'srt,ass', // most compatible with plex
+      inputUI: {
+        type: 'string',
+      },
+    },
   ],
 });
 
@@ -187,6 +203,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     keepAudioTracks: _keepAudioTracks,
     hevcCompressionLevel,
     x264quality: _x264quality,
+    subtitleFormat: _subtitleFormat,
   } = lib.loadDefaultValues(inputs, details);
 
   const resolution = file.video_resolution === 'DCI4K' ? '4KUHD' : file.video_resolution;
@@ -197,6 +214,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     : Infinity;
   const keepAudioTracks = _keepAudioTracks.split(',');
   const extractSubtitles = _extractSubtitles.split(',');
+  const subtitleFormat = _subtitleFormat.split(',');
 
   const response = {
     processFile: false,
@@ -235,11 +253,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // video setup
   const videoStreamUsesCodec = videoStream.codec_name;
   const videoStreamUsesHEVC = videoStreamUsesCodec === 'hevc' || videoStreamUsesCodec === 'x265';
-  // const pixelFormat = videoStream.pix_fmt;
-  // const is10BitEncoded = (pixelFormat || '').includes('10le') || !!fileName.match(/10bit/gi);
+  const pixelFormat = videoStream.pix_fmt;
+  const is10BitEncoded = (pixelFormat || '').includes('10le') || !!fileName.match(/10bit/gi);
   // eslint-disable-next-line max-len
   const videoStreamBitRate = file.bit_rate;
   const isHDRStream = videoStream.color_transfer === 'smpte2084' && videoStream.color_primaries === 'bt2020';
+
+  // subtitles
+  const hasSubtitles = subtitleStreams.length > 0;
+
+  response.infoLog += '_________Checking Bitrate___________\n';
 
   response.infoLog += `Current Bitrate: ${videoStreamBitRate}\n`;
   response.infoLog += `Target Bitrate: ${targetBitrate}\n`;
@@ -248,36 +271,127 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Can be 15% over target bitrate to get ignored
   const isOverBitrate = videoStreamBitRate > (targetBitrate * 1.15);
 
+  response.infoLog += '_________Figuring HW Accel___________\n';
+
+  const ffmpegHWAccelSettings = [];
+  let ffmpegVideoEncoderSettings = ['-max_muxing_queue_size 9999'];
+  let codec;
+  const format = [];
+
+  // Setup HW Accel Settings
+  if (hwAccelerate !== HWACCEL_OPTIONS.NONE) {
+    response.infoLog += 'Using HW Accel!\n';
+    const mode = hwaccelModeMap[hwAccelerate];
+    codec = hwaccelEncoderMap[hwAccelerate][forceHevc ? 'hevc' : videoStreamUsesCodec];
+
+    response.infoLog += `Using HW_ACCEL mode: ${mode}\n`;
+
+    switch (hwAccelerate) {
+      case HWACCEL_OPTIONS.INTEL_AMD_VAAPI:
+      case HWACCEL_OPTIONS.INTEL_QUICKSYNC: // Maybe works :D
+        ffmpegHWAccelSettings.push(`-hwaccel ${mode}`);
+        ffmpegHWAccelSettings.push('-hwaccel_device /dev/dri/renderD128');
+        ffmpegHWAccelSettings.push(`-hwaccel_output_format ${mode}`);
+
+        format.push('scale_vaapi=');
+
+        break;
+      // I do not have a nvidia GPU to try and set it up correctly
+      case HWACCEL_OPTIONS.NVENC:
+        ffmpegHWAccelSettings.push(`-hwaccel ${mode}`);
+        break;
+      default:
+        response.infoLog += `Incorrect HW_ACCEL mode selected: ${mode}\n`;
+        response.processFile = false;
+        response.reQueueAfter = true;
+        throw new Error(JSON.stringify(response));
+    }
+  } else {
+    codec = forceHevc ? 'hevc' : videoStreamUsesCodec;
+  }
+
+  response.infoLog += '_________Figuring out video settings___________\n';
+
+  ffmpegVideoEncoderSettings.push(`-map 0:${videoStream.index}`);
+  ffmpegVideoEncoderSettings.push(`-c:V:0 ${codec}`);
+
+  if (isOverBitrate) {
+    response.infoLog += 'Video stream is over bitrate transcoding\n';
+
+    if (videoStreamUsesHEVC || forceHevc) {
+      response.infoLog += 'Video is HEVC\n';
+      ffmpegVideoEncoderSettings.push(`-rc_mode QVBR -compression_level ${hevcCompressionLevel}`);
+    } else if (!videoStreamUsesHEVC && !forceHevc) {
+      response.infoLog += `Video is x264 using preset: ${_x264quality}`;
+      const [preset, crf] = _x264quality.split(':');
+      ffmpegVideoEncoderSettings.push(`-preset:V:0 ${preset}`);
+      ffmpegVideoEncoderSettings.push(`-crf:V:0 ${crf}`);
+    }
+
+    ffmpegVideoEncoderSettings.push(`-bufsize ${createBitRateStringFromBitRate(targetBitrate * 5)}`);
+
+    if (is10BitEncoded) {
+      format.push('format=p010');
+    } else {
+      format.push('format=nv12');
+    }
+
+    ffmpegVideoEncoderSettings.push(`-vf ${format.join('')}`);
+
+    // eslint-disable-next-line max-len
+    ffmpegVideoEncoderSettings.push(`-b:V:0 ${createBitRateStringFromBitRate(targetBitrate * 0.8)} -maxrate:V:0 ${createBitRateStringFromBitRate(targetBitrate)}`);
+
+    if (isHDRStream) {
+      ffmpegVideoEncoderSettings.push('-sei hdr');
+    }
+
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_transfer && ffmpegVideoEncoderSettings.push(`-color_trc ${videoStream.color_transfer}`);
+    // eslint-disable-next-line no-unused-expressions,max-len
+    videoStream.chroma_location && ffmpegVideoEncoderSettings.push(`-chroma_sample_location ${videoStream.chroma_location}`);
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_primaries && ffmpegVideoEncoderSettings.push(`-color_primaries ${videoStream.color_primaries}`);
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_space && ffmpegVideoEncoderSettings.push(`-colorspace ${videoStream.color_space}`);
+    // eslint-disable-next-line no-unused-expressions
+    videoStream.color_range && ffmpegVideoEncoderSettings.push(`-color_range ${videoStream.color_range}`);
+  } else {
+    response.infoLog += 'Is below bitrate copying video (re-muxing/copying video source)!\n';
+
+    // if we already are using HEVEC and forcing it replace everything with this to just remux
+    ffmpegVideoEncoderSettings = ['-map 0:V:0', '-c:V:0 copy'];
+  }
+
+  ffmpegVideoEncoderSettings.push('-map_metadata 0');
+  ffmpegVideoEncoderSettings.push('-map_chapters 0');
+
+  response.infoLog += '_________Figuring out audio streams___________\n';
+
   // audio setup
-  const audioStreamsToCreate = _createOptimizedAudioTrack.split(',')
+  // eslint-disable-next-line no-underscore-dangle
+  const _audioStreamsToCreate = _createOptimizedAudioTrack.split(',')
     .map((track) => track.split(':'))
-    .map(([codec, channels]) => ([codec, parseInt(channels, 10)]));
+    .map(([audioCodec, channels]) => ([audioCodec, parseInt(channels, 10)]));
   const unsortedAudioStreamInfo = [];
 
-  // subtitles
-  const hasSubtitles = subtitleStreams.length > 0;
+  response.infoLog += `User wants these streams created: ${JSON.stringify(_audioStreamsToCreate)}\n`;
+  response.infoLog += `User wants to keep these streams: ${_keepAudioTracks}\n`;
 
-  audioStreams.forEach((stream, index) => {
-    const lang = (stream.tags.lang || stream.tags.language).toLowerCase();
-    if (keepAudioTracks.length === 0 || keepAudioTracks.includes(lang)) {
+  audioStreams.forEach((stream) => {
+    // Probably english but I would not bet on it
+    const lang = (stream.tags.lang || stream.tags.language || '').toLowerCase();
+    if (keepAudioTracks.length === 0 || keepAudioTracks.includes(lang || 'eng')) {
       const channels = parseInt(stream.channels, 10);
 
-      const exists = audioStreamsToCreate
-        // eslint-disable-next-line max-len
-        .findIndex(([stream_codec, stream_channels]) => stream_codec === stream.codec_name && stream_channels === channels);
-
-      //  Removes stream if already exists
-      if (exists !== -1) {
-        response.infoLog += `Stream with codec: ${stream.codec_name} and channels ${channels} already exists\n`;
-        response.infoLog += `Not creating ${JSON.stringify(audioStreamsToCreate[exists])}\n`;
-        audioStreamsToCreate.splice(exists, 1);
-      }
-
       // eslint-disable-next-line max-len
-      response.infoLog += `Keeping audio track codec: ${stream.codec_name}, lang: ${lang}, channels: ${channels}, atmos: ${ATMOS_CODECS.includes(stream.codec_name)}\n`;
+      response.infoLog += `Keeping audio track:
+      - codec: ${stream.codec_name}
+      - lang: ${lang}
+      - channels: ${channels}
+      - atmos: ${ATMOS_CODECS.includes(stream.codec_name)}\n`;
 
       unsortedAudioStreamInfo.push({
-        index,
+        index: stream.index,
         language: lang,
         isAtmos: ATMOS_CODECS.includes(stream.codec_name),
         isLossless: TRUEHD_ATMOS_CODEC_TYPE === stream.codec_name,
@@ -304,137 +418,66 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return b.channels - a.channels;
   });
 
-  const ffmpegHWAccelSettings = [];
-  let ffmpegVideoEncoderSettings = [];
-  let codec;
-
-  // Setup HW Accel Settings
-  if (hwAccelerate !== HWACCEL_OPTIONS.NONE) {
-    response.infoLog += 'Using HW Accel!\n';
-    const mode = hwaccelModeMap[hwAccelerate];
-    codec = hwaccelEncoderMap[hwAccelerate][forceHevc ? 'hevc' : videoStreamUsesCodec];
-
-    response.infoLog += `Using HW_ACCEL mode: ${mode}\n`;
-
-    switch (hwAccelerate) {
-      case HWACCEL_OPTIONS.INTEL_AMD_VAAPI:
-      case HWACCEL_OPTIONS.INTEL_QUICKSYNC: // Maybe works :D
-        ffmpegHWAccelSettings.push(`-hwaccel ${mode}`);
-        ffmpegHWAccelSettings.push('-hwaccel_device /dev/dri/renderD128');
-        ffmpegHWAccelSettings.push(`-hwaccel_output_format ${mode}`);
-
-        break;
-      // I do not have a nvidia GPU to try and set it up correctly
-      case HWACCEL_OPTIONS.NVENC:
-        ffmpegHWAccelSettings.push(`-hwaccel ${mode}`);
-        break;
-      default:
-        response.infoLog += `Incorrect HW_ACCEL mode selected: ${mode}\n`;
-        response.processFile = false;
-        response.reQueueAfter = true;
-        throw new Error(JSON.stringify(response));
-    }
-  } else {
-    codec = forceHevc ? 'hevc' : videoStreamUsesCodec;
-  }
-
-  ffmpegVideoEncoderSettings.push('-map 0:V');
-  ffmpegVideoEncoderSettings.push(`-c:V:${videoStream.index} ${codec}`);
-
-  if (isOverBitrate) {
-    response.infoLog += 'Video stream is over bitrate transcoding\n';
-
-    if (videoStreamUsesHEVC || forceHevc) {
-      ffmpegVideoEncoderSettings.push(`-compression_level ${hevcCompressionLevel}`);
-    } else if (!videoStreamUsesHEVC && !forceHevc) {
-      const [preset, crf] = _x264quality.split(':');
-      ffmpegVideoEncoderSettings.push(`-preset ${preset}`);
-      ffmpegVideoEncoderSettings.push(`-crf ${crf}`);
-    }
-
-    ffmpegVideoEncoderSettings.push(`-bufsize ${createBitRateStringFromBitRate(targetBitrate * 2)}`);
-
-    if (isHDRStream) ffmpegVideoEncoderSettings.push('-sei hdr');
-
-    // eslint-disable-next-line no-unused-expressions
-    videoStream.color_transfer && ffmpegVideoEncoderSettings.push(`-color_trc ${videoStream.color_transfer}`);
-    // eslint-disable-next-line no-unused-expressions,max-len
-    videoStream.chroma_location && ffmpegVideoEncoderSettings.push(`-chroma_sample_location ${videoStream.chroma_location}`);
-    // eslint-disable-next-line no-unused-expressions
-    videoStream.color_primaries && ffmpegVideoEncoderSettings.push(`-color_primaries ${videoStream.color_primaries}`);
-    // eslint-disable-next-line no-unused-expressions
-    videoStream.color_space && ffmpegVideoEncoderSettings.push(`-colorspace ${videoStream.color_space}`);
-    // eslint-disable-next-line no-unused-expressions
-    videoStream.color_range && ffmpegVideoEncoderSettings.push(`-color_range ${videoStream.color_range}`);
-    // eslint-disable-next-line max-len
-    ffmpegVideoEncoderSettings.push(`-b:v ${createBitRateStringFromBitRate(targetBitrate * 0.8)} -maxrate ${createBitRateStringFromBitRate(targetBitrate)}`);
-  } else {
-    response.infoLog += 'Is below bitrate copying video (re-muxing)!\n';
-
-    // if we already are using HEVEC and forcing it replace everything with this to just remux
-    ffmpegVideoEncoderSettings = ['-map 0:V', '-c:V copy'];
-  }
-
-  ffmpegVideoEncoderSettings.push('-map_metadata 0');
-  ffmpegVideoEncoderSettings.push('-map_chapters 0');
-
   audioStreamsInfo
-    .forEach(({ index }, newIndex) => ffmpegVideoEncoderSettings.push(`-map 0:a:${index} -c:a:${newIndex} copy`));
-
-  // This takes the first stream as the best stream to derive new ones from
-  const [{ index: bestStreamOriginalIndex, channels, codec: bestAudioStreamCodec }] = audioStreamsInfo;
-  let usedAudioMappingIndex = audioStreamsInfo.length;
-
-  if (audioStreamsToCreate) {
-    response.infoLog += 'Adding new audio stream\n';
-    audioStreamsToCreate.forEach(([audioCodec, audioChannels]) => {
-      if (channels >= audioChannels) {
-        ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
-        ffmpegVideoEncoderSettings.push(`-c:a:${usedAudioMappingIndex} ${audioCodec}`);
-        // eslint-disable-next-line no-plusplus
-        ffmpegVideoEncoderSettings.push(`-ac:${usedAudioMappingIndex++} ${audioChannels}`);
-      } else {
-        response.infoLog += 'Best stream does not have enough channels\n';
-      }
+    .forEach(({ index, language }, newIndex) => {
+      ffmpegVideoEncoderSettings.push(`-map 0:${index} -c:a:${newIndex} copy`);
+      if (!language) ffmpegVideoEncoderSettings.push(`-metadata:s:a:${newIndex} language=eng`);
     });
 
-    // Means no stream was created because we are lacking channels
-    // Create the stream with the best stream count
-    if (usedAudioMappingIndex === audioStreamsInfo.length) {
-      response.infoLog += 'Creating optimized stream with channels from best stream\n';
-      const newCodecsToCreate = audioStreamsToCreate
-        .map(([audiCodec]) => audiCodec)
-        .filter((val, index, self) => self.indexOf(val) === index);
+  // This takes the first stream as the best stream to derive new ones from
+  const [
+    {
+      index: bestStreamOriginalIndex, channels: bestStreamChannels, codec: bestAudioStreamCodec, ...bestAudioStream
+    },
+  ] = audioStreamsInfo;
 
-      newCodecsToCreate.forEach((audioCodec) => {
-        const alreadyHasStream = audioStreamsInfo.findIndex(({
-          codec: existingStreamCodec,
-          channels: existingStreamChannels,
-        }) => existingStreamCodec === audioCodec && existingStreamChannels === channels);
+  response.infoLog += `Best stream selected as:
+  - codec: ${bestAudioStreamCodec}
+  - channels: ${bestStreamChannels}\n`;
 
-        if (alreadyHasStream > -1) {
-          response.infoLog += `Already existing ${audioCodec} with ${channels} channels\n`;
-          // eslint-disable-next-line max-len
-          let existing = audioStreamsToCreate.findIndex(([audioCodecToCreate, channelsToCreate]) => audioCodecToCreate === audioCodec && channelsToCreate > channels);
-          while (existing > -1) {
-            audioStreamsToCreate.splice(existing, 1);
-            // eslint-disable-next-line max-len
-            existing = audioStreamsToCreate.findIndex(([audioCodecToCreate, channelsToCreate]) => audioCodecToCreate === audioCodec && channelsToCreate > channels);
-          }
-        }
+  // eslint-disable-next-line max-len
+  const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none' ? _audioStreamsToCreate : []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
+    response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
 
-        if (alreadyHasStream === -1 && bestAudioStreamCodec !== audioCodec) {
-          response.infoLog += `Creating ${audioCodec} with ${channels} channels\n`;
-          ffmpegVideoEncoderSettings.push(`-map 0:a:${bestStreamOriginalIndex}`);
-          ffmpegVideoEncoderSettings.push(`-c:a:${usedAudioMappingIndex} ${audioCodec}`);
-          // eslint-disable-next-line no-plusplus
-          ffmpegVideoEncoderSettings.push(`-ac:${usedAudioMappingIndex++} ${channels}`);
-        }
-      });
+    let finalToCreateChannels = toCreateChannels;
+
+    // If the best stream does not have enough channels, use only best stream channels
+    if (toCreateChannels > bestStreamChannels) {
+      response.infoLog += `Not enough channels to create ${toCreateChannels}, falling back to ${bestStreamChannels}\n`;
+      finalToCreateChannels = bestStreamChannels;
     }
+
+    // First check if the stream already exists
+    // eslint-disable-next-line max-len
+    const exists = audioStreamsInfo.findIndex(({
+      codec: existingCodec,
+      channels: existingChannels,
+    }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
+    // check if we don't have the same stream
+    const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
+
+    if (alreadyHasStream === -1 && exists === -1) {
+      acc.push([toCreateCodec, finalToCreateChannels]);
+    } else {
+      // eslint-disable-next-line max-len
+      response.infoLog += `Stream with codec: ${toCreateCodec} and channels ${finalToCreateChannels} already exists, not creating\n`;
+    }
+
+    return acc;
+  }, []);
+
+  if (audioStreamsToCreate.length > 0) {
+    audioStreamsToCreate.forEach(([audioCodec, audioChannels], index) => {
+      const audioIndex = index + audioStreamsInfo.length;
+      response.infoLog += `Adding new audio stream - codec: ${audioCodec}, channels: ${audioChannels}\n`;
+      // eslint-disable-next-line max-len
+      ffmpegVideoEncoderSettings.push(`-map 0:a:0 -c:a:${audioIndex} ${audioCodec} -ac:a:${audioIndex} ${audioChannels} -metadata:s:a:${audioIndex} language=${bestAudioStream.language || 'eng'}`);
+    });
   }
 
-  if (extractSubtitles.length && _extractSubtitles !== 'none') {
+  if (extractSubtitles.length && _extractSubtitles !== 'none' && hasSubtitles) {
+    response.infoLog += '_________Figuring out subtitles___________\n';
+    const subtitlesToExtract = [];
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < subtitleStreams.length; i++) {
       const subStream = subtitleStreams[i];
@@ -446,38 +489,74 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       const { index } = subStream;
 
-      // eslint-disable-next-line no-continue
-      if (!lang) continue;
-      // eslint-disable-next-line no-continue
-      if (!extractSubtitles.includes(lang)) continue;
+      if (image_subtitle_codec.includes(subStream.codec_name)) {
+        response.infoLog += 'Image based subtitltes! Skipping\n';
+        // eslint-disable-next-line no-continue
+        continue;
+      }
 
-      response.infoLog += 'Extracting sub\n';
-      response.infoLog += `Sub Lang ${lang}\n`;
+      if (!lang) {
+        response.infoLog += `language not set: ${lang}\n`;
+        // eslint-disable-next-line no-continue
+        if (subtitleStreams.length !== 1) continue;
+        // assume if we have only one sub stream that it is eng
+        lang = 'eng';
+      }
 
-      const subsFile = fileName.split('.');
+      if (!extractSubtitles.includes(lang)) {
+        response.infoLog += `${lang} is not wanted\n`;
+        // eslint-disable-next-line no-continue
+        continue;
+      }
 
-      // adds a lang to the filename and changes the extension to srt
-      subsFile.splice(subsFile.length - 1, 0, lang);
-      subsFile[subsFile.length - 1] = 'srt';
-      const subsFileName = subsFile.join('.');
+      const { forced, hearing_impaired } = subStream.disposition;
 
-      ffmpegVideoEncoderSettings.push(`-map 0:s:${index} "${subsFileName}"`);
-      ffmpegVideoEncoderSettings.push(`-map 0:s:${index} "${subsFileName.replace('srt', 'ass')}"`);
+      const isForced = !!forced;
+      const isSDH = !!hearing_impaired;
+
+      response.infoLog += `Extracting sub: ${lang}\n`;
+
+      // removes file name
+      const fileWithoutExtension = fileName.replace(/\.[a-z0-9]+$/gi, '');
+
+      subtitleFormat.forEach((subtitleExtension) => {
+        const subsFile = [fileWithoutExtension, lang];
+        if (isSDH) subsFile.push(subtitleDispositionMap.hearing_impaired);
+        if (isForced) subsFile.push(subtitleDispositionMap.forced);
+
+        subsFile.push(subtitleExtension);
+        subtitlesToExtract.push(`-map 0:${index} "${subsFile.join('.')}"`);
+      });
     }
-    ffmpegVideoEncoderSettings.push('-sn');
+
+    if (hasSubtitles) {
+      // Needs to go first to make it easy for output mapping
+      ffmpegVideoEncoderSettings.unshift(`${subtitlesToExtract.join(' ')} -sn`);
+    }
   } else {
     ffmpegVideoEncoderSettings.push('-map 0:s? -c:s copy');
   }
 
   response.processFile = true;
   response.preset = [
-    ffmpegHWAccelSettings.join(' '),
+    '-y',
+    (isOverBitrate ? ffmpegHWAccelSettings : []).join(' '),
     '<io>',
     ffmpegVideoEncoderSettings.join(' '),
   ].join(' ');
 
+  response.infoLog += `_____Filter Flags:____
+    _extractSubtitles: ${_extractSubtitles}
+    hasSubtitles: ${hasSubtitles}
+    isOverBitrate: ${isOverBitrate}
+    audioStreamsToCreate: ${audioStreamsToCreate.length}
+  `;
+
   // eslint-disable-next-line max-len
-  if ((_extractSubtitles === 'none' || !hasSubtitles) && !isOverBitrate && audioStreamsToCreate.length === 0) response.processFile = false;
+  if ((_extractSubtitles === 'none' || !hasSubtitles) && !isOverBitrate && audioStreamsToCreate.length === 0) {
+    response.infoLog = 'Video already processed! Skipping!';
+    response.processFile = false;
+  }
 
   return response;
 };
