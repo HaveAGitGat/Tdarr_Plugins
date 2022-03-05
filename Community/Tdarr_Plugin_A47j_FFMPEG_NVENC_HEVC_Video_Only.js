@@ -224,7 +224,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   response.preset += ',-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc'
-    + ` -rc:v vbr_hq -preset ${inputs.ffmpegPreset} -profile:v main10 -rc-lookahead 32 `
+    + ` -preset ${inputs.ffmpegPreset} -profile:v main10 -rc-lookahead 32 `
     + '-spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 ';
   response.infoLog += `Video bitrate is ${Math.round(MediaInfo.videoBR / 1000)}Kbps,`
     + ` overall is ${Math.round(MediaInfo.overallBR / 1000)}Kbps. `;

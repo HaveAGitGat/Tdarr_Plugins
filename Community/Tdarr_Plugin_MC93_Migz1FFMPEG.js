@@ -321,7 +321,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `,-map 0 -c:v hevc_nvenc -rc:v vbr_hq -cq:v 19 ${bitrateSettings} `
+  response.preset += `,-map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
   + `-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
