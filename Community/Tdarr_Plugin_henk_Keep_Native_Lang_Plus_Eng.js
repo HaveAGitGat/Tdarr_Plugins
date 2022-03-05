@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable no-await-in-loop */
 module.exports.dependencies = ['axios', '@cospired/i18n-iso-languages', 'path'];
 const details = () => ({
@@ -100,7 +99,7 @@ const response = {
 };
 
 const processStreams = (result, file, user_langs) => {
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line import/no-unresolved
   const languages = require('@cospired/i18n-iso-languages');
   const tracks = {
     keep: [],
@@ -109,18 +108,15 @@ const processStreams = (result, file, user_langs) => {
   };
   let streamIndex = 0;
 
-  const langsTemp = result.original_language;
+  // If the original language is pulled as Chinese 'cn' is used.  iso-language expects 'zh' for Chinese.
+  const langsTemp = result.original_language === 'cn' ? 'zh' : result.original_language;
+
   let langs = [];
 
-  if (Array.isArray(langsTemp)) {
-    // For loop because I thought some imdb stuff returns multiple languages
-    // Translates 'en' to 'eng', because imdb uses a different format compared to ffmpeg
-    for (let i = 0; i < langsTemp.length; i += 1) {
-      langs.push(languages.alpha2ToAlpha3B(langsTemp));
-    }
-  } else {
-    langs.push(languages.alpha2ToAlpha3B(langsTemp));
-  }
+  langs.push(languages.alpha2ToAlpha3B(langsTemp));
+
+  // Some console reporting for clarification of what the plugin is using and reporting.
+  response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(langsTemp)}\n`;
 
   if (user_langs) {
     langs = langs.concat(user_langs);
@@ -210,7 +206,7 @@ const parseArrResponse = async (body, filePath, arr) => {
       break;
     case 'sonarr':
       // filePath = directory the file is in
-      // eslint-disable-next-line global-require,import/no-unresolved
+      // eslint-disable-next-line import/no-unresolved
       const path = require('path');
       for (let i = 0; i < body.length; i += 1) {
         if (body[i].path) {
@@ -224,9 +220,10 @@ const parseArrResponse = async (body, filePath, arr) => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
-  // eslint-disable-next-line global-require,import/no-unresolved
+  inputs = lib.loadDefaultValues(inputs, details);
+  // eslint-disable-next-line import/no-unresolved
   const axios = require('axios').default;
   response.container = `.${file.container}`;
   let prio = ['radarr', 'sonarr'];

@@ -1,5 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
-
 const details = () => ({
   id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
   Stage: 'Post-processing',
@@ -14,10 +12,10 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   try {
-    // eslint-disable-next-line global-require
     const fs = require('fs');
     const fileNameOld = file._id;
 

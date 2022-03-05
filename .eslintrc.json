@@ -15,6 +15,7 @@
         "ecmaVersion": 2018
     },
     "rules": {
+        "global-require":0,
         "class-methods-use-this": 0,
         "no-case-declarations": 0,
         "camelcase": 0,

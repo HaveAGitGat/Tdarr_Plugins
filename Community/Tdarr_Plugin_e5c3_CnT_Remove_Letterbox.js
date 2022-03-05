@@ -1,7 +1,4 @@
 /* eslint-disable */
-const fs = require("fs");
-const execSync = require("child_process").execSync;
-const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => {
   return {
@@ -38,8 +35,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    
+    const lib = require('../methods/lib')(); const fs = require("fs");
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   if (inputs.bitrate == "" || inputs.bitrate == "undefined") {
     var min_bitrate = 6600;
     var avg_rate = 3000;
@@ -148,6 +147,8 @@ function highres(file) {
 }
 
 function generate_crop_values(file, otherArguments) {
+  const fs = require("fs");
+  const execSync = require("child_process").execSync;
   var source = file.meta.SourceFile; //source file
   var dir = file.meta.Directory; //source directory
   var sourcename = file.meta.FileName.substring(
@@ -281,6 +282,7 @@ function crop_decider(file, crop_height) {
 }
 
 function size_check(file, min_bitrate) {
+  const fs = require("fs");
   var duration = file.meta.Duration; //duration of video in seconds
   var source = file.meta.SourceFile; //source file
   var stats = fs.statSync(source);

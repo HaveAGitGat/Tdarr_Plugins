@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 const details = () => {
   return {
@@ -16,8 +15,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    
+    const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   var transcode = 0; //if this var changes to 1 the file will be transcoded
   //default values that will be returned
   var response = {

@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz3CleanAudio',
@@ -50,7 +49,7 @@ const details = () => ({
   {
     name: 'tag_language',
     type: 'string',
-    defaultValue: 'eng',
+    defaultValue: '',
     inputUI: {
       type: 'text',
     },
@@ -88,8 +87,9 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -139,7 +139,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       ) {
         audioStreamsRemoved += 1;
         ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
-        response.infoLog += `☒Audio stream detected as being unwanted, removing. Audio stream 0:a:${audioIdx} \n`;
+        response.infoLog += `☒Audio stream 0:a:${audioIdx} has unwanted language tag ${file.ffProbeData.streams[
+          i
+        ].tags.language.toLowerCase()}, removing. \n`;
         convert = true;
       }
     } catch (err) {
@@ -165,7 +167,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       ) {
         audioStreamsRemoved += 1;
         ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
-        response.infoLog += `☒Audio stream detected as being descriptive, removing. Stream 0:a:${audioIdx} \n`;
+        response.infoLog += `☒Audio stream 0:a:${audioIdx} detected as being descriptive, removing. \n`;
         convert = true;
       }
     } catch (err) {
@@ -188,7 +190,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('und')
         ) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `;
-          response.infoLog += `☒Audio stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+          response.infoLog
+            += `☒Audio stream 0:a:${audioIdx} detected as having no language, tagging as ${inputs.tag_language}. \n`;
           convert = true;
         }
       } catch (err) {
@@ -200,14 +203,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // No catch error here otherwise it would never detect the metadata as missing.
       if (typeof file.ffProbeData.streams[i].tags === 'undefined') {
         ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Audio stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog
+          += `☒Audio stream 0:a:${audioIdx} detected as having no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       } else if (typeof file.ffProbeData.streams[i].tags.language === 'undefined') {
         // Checks if the tags.language metadata is completely missing.
         // If so this would cause playback to show language as "undefined".
         // No catch error here otherwise it would never detect the metadata as missing.
         ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Audio stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog
+          += `☒Audio stream 0:a:${audioIdx} detected as having no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       }
     }
@@ -222,17 +227,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       ) {
         if (file.ffProbeData.streams[i].channels === 8) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} title="7.1" `;
-          response.infoLog += `☒Audio stream detected as 8 channel with no title, tagging. Stream 0:a:${audioIdx} \n`;
+          response.infoLog += `☒Audio stream 0:a:${audioIdx} detected as 8 channel with no title, tagging. \n`;
           convert = true;
         }
         if (file.ffProbeData.streams[i].channels === 6) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} title="5.1" `;
-          response.infoLog += `☒Audio stream detected as 6 channel with no title, tagging. Stream 0:a:${audioIdx} \n`;
+          response.infoLog += `☒Audio stream 0:a:${audioIdx} detected as 6 channel with no title, tagging. \n`;
           convert = true;
         }
         if (file.ffProbeData.streams[i].channels === 2) {
           ffmpegCommandInsert += `-metadata:s:a:${audioIdx} title="2.0" `;
-          response.infoLog += `☒Audio stream detected as 2 channel with no title, tagging. Stream 0:a:${audioIdx} \n`;
+          response.infoLog += `☒Audio stream 0:a:${audioIdx} detected as 2 channel with no title, tagging. \n`;
           convert = true;
         }
       }

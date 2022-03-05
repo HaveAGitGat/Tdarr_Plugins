@@ -5,7 +5,6 @@
 /* eslint import/no-extraneous-dependencies: 0 */ // --> OFF
 /* eslint no-console: 0 */ // --> OFF
 
-const loadDefaultValues = require('../methods/loadDefaultValues');
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
   'import-fresh',
@@ -71,8 +70,9 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');
 
@@ -124,40 +124,5 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   return response;
 };
 
-module.exports.onTranscodeSuccess = function onTranscodeSuccess(
-  file,
-  librarySettings,
-  inputs,
-) {
-  console.log(
-    'Transcode success! Now do some stuff with the newly scanned file.',
-  );
-
-  // Optional response if you need to modify database
-  const response = {
-    file,
-    removeFromDB: false,
-    updateDB: false,
-  };
-
-  return response;
-};
-
-module.exports.onTranscodeError = function onTranscodeError(
-  file,
-  librarySettings,
-  inputs,
-) {
-  console.log('Transcode fail! Now do some stuff with the original file.');
-
-  // Optional response if you need to modify database
-  const response = {
-    file,
-    removeFromDB: false,
-    updateDB: false,
-  };
-
-  return response;
-};
 module.exports.details = details;
 module.exports.plugin = plugin;

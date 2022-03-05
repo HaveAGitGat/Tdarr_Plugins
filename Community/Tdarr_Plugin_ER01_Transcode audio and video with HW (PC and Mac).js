@@ -1,11 +1,9 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 /* eslint-disable */
 /* eslint max-len: 0 */
 /* eslint no-bitwise: 0 */
 /* eslint no-mixed-operators: 0 */
 
-const os = require('os');
 const details = () => {
   return {
     id: 'Tdarr_Plugin_ER01_Transcode audio and video with HW (PC and Mac)',
@@ -73,8 +71,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    
+    const lib = require('../methods/lib')(); const os = require('os');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     container: '.mkv',
     processFile: false,

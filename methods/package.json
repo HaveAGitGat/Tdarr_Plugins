@@ -1,0 +1,12 @@
+{
+  "name": "methods",
+  "version": "1.0.0",
+  "description": "",
+  "main": "library.js",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "import-fresh": "^3.3.0"
+  }
+}

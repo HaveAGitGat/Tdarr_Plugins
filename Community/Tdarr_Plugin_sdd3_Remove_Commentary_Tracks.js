@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 const details = () => {
   return {
@@ -16,8 +15,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    
+    const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   //Must return this object
 
   var response = {
@@ -54,6 +55,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
+        file.ffProbeData.streams[i].disposition.comment == 1 ||
         file.ffProbeData.streams[i].tags.title
           .toLowerCase()
           .includes("commentary")

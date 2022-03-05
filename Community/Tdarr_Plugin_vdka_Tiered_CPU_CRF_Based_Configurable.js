@@ -1,5 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
-
 const details = () => ({
   id: 'Tdarr_Plugin_vdka_Tiered_CPU_CRF_Based_Configurable',
   Stage: 'Pre-processing',
@@ -18,7 +16,7 @@ const details = () => ({
     {
       name: 'sdCRF',
       type: 'string',
-      defaultValue: '19',
+      defaultValue: '20',
       inputUI: {
         type: 'text',
       },
@@ -31,7 +29,7 @@ const details = () => ({
     {
       name: 'hdCRF',
       type: 'string',
-      defaultValue: '21',
+      defaultValue: '22',
       inputUI: {
         type: 'text',
       },
@@ -44,7 +42,7 @@ const details = () => ({
     {
       name: 'fullhdCRF',
       type: 'string',
-      defaultValue: '23',
+      defaultValue: '24',
       inputUI: {
         type: 'text',
       },
@@ -57,7 +55,7 @@ const details = () => ({
     {
       name: 'uhdCRF',
       type: 'string',
-      defaultValue: '26',
+      defaultValue: '28',
       inputUI: {
         type: 'text',
       },
@@ -105,7 +103,11 @@ const details = () => ({
       type: 'string',
       defaultValue: 'false',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
       tooltip: `Input "true" if you want to skip SD (480p and 576p) files
         
@@ -129,8 +131,9 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   let crf;
   // default values that will be returned
   const response = {
@@ -153,7 +156,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // check if the file is SD and sdDisable is enabled
   // skip this plugin if so
-  if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled) {
+  if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled === 'true') {
     response.processFile = false;
     response.infoLog += '☒File is SD, not processing\n';
     return response;
@@ -170,7 +173,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // check if the file is already hevc
   // it will not be transcoded if true and the plugin will be stopped immediately
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
+    if (file.ffProbeData.streams[i].codec_name && file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
       response.processFile = false;
       response.infoLog += '☑File is already in hevc! \n';
       return response;

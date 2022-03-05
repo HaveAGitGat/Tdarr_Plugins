@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 //PLugin runs multipass loudnorm filter
 //first run gets the required details and stores for the next pass
@@ -14,8 +13,6 @@ const loadDefaultValues = require('../methods/loadDefaultValues');
 
 var secondPass = false;
 var logOutFile = '';
-
-var fs = require('fs');
 
 const details = () => {
     return {
@@ -76,8 +73,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    
+    const lib = require('../methods/lib')(); const fs = require('fs');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
 
     //Must return this object at some point
     var response = {
@@ -187,7 +186,7 @@ module.exports.onTranscodeSuccess = function onTranscodeSuccess(
     librarySettings,
     inputs
 ) {
-
+    const fs = require('fs');
     var response = {
         file,
         removeFromDB: false,

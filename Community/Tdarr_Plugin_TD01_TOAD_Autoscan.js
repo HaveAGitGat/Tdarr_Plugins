@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable linebreak-style */
 module.exports.dependencies = [
   'request',
@@ -77,9 +76,10 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
-  // eslint-disable-next-line global-require,import/no-unresolved,import/no-extraneous-dependencies
+  inputs = lib.loadDefaultValues(inputs, details);
+  // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const request = require('request');
   // Set up required variables.
   const ADDRESS = inputs.autoscan_address;
@@ -93,7 +93,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let filepath = '';
   const response = {};
   filepath = `${file.file.split('/').slice(0, -1).join('/')}/`;
-  filepath = encodeURI(filepath);
+  filepath = encodeURIComponent(filepath);
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
   if (

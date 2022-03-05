@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint-disable */
 const details = () => {
   return {
@@ -106,8 +105,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+    
+    const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   var transcode = 0 //if this var changes to 1 the file will be transcoded
   var subcli = `-c:s copy`
   var maxmux = ''
@@ -218,7 +219,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === '480p' || file.video_resolution === '576p') {
     cqvinuse = `${inputs.sdCQV}`
-    response.preset += `,${map} -dn -c:v hevc_nvenc-rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.sdCQV} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
+    response.preset += `,${map} -dn -c:v hevc_nvenc -rc vbr_hq -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.sdCQV} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
     transcode = 1
   }
 

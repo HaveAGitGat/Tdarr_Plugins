@@ -1,4 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz4CleanSubs',
@@ -45,7 +44,7 @@ const details = () => ({
   {
     name: 'tag_language',
     type: 'string',
-    defaultValue: 'eng',
+    defaultValue: '',
     inputUI: {
       type: 'text',
     },
@@ -63,8 +62,9 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
     preset: '',
@@ -86,8 +86,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.language has been configured. If it hasn't then exit plugin.
   if (inputs.language === '') {
-    response.infoLog += '☒Language/s to keep have not been configured, '
-    + 'please configure required options. Skipping this plugin.  \n';
+    response.infoLog
+      += '☒Language/s to keep have not been configured, '
+      + 'please configure required options. Skipping this plugin.  \n';
     response.processFile = false;
     return response;
   }
@@ -111,7 +112,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         ) === -1
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream detected as being unwanted, removing. Stream 0:s:${subtitleIdx} \n`;
+        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} has unwanted language tag ${file.ffProbeData.streams[
+          i
+        ].tags.language.toLowerCase()}, removing. \n`;
         convert = true;
       }
     } catch (err) {
@@ -135,7 +138,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('description'))
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream detected as being descriptive, removing. Stream 0:s:${subtitleIdx} \n`;
+        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
         convert = true;
       }
     } catch (err) {
@@ -158,7 +161,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('und')
         ) {
           ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-          response.infoLog += `☒Subtitle stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+          response.infoLog
+            += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
           convert = true;
         }
       } catch (err) {
@@ -170,14 +174,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // No catch error here otherwise it would never detect the metadata as missing.
       if (typeof file.ffProbeData.streams[i].tags === 'undefined') {
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Subtitle stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog
+          += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       } else if (typeof file.ffProbeData.streams[i].tags.language === 'undefined') {
       // Checks if the tags.language metadata is completely missing.
       // If so this would cause playback to show language as "undefined".
       // No catch error here otherwise it would never detect the metadata as missing
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog += `☒Subtitle stream detected as having no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog
+          += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
         convert = true;
       }
     }

@@ -1,5 +1,3 @@
-const loadDefaultValues = require('../methods/loadDefaultValues');
-
 module.exports.dependencies = [
   'axios',
   'path-extra',
@@ -66,13 +64,14 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
-  // eslint-disable-next-line global-require,import/no-unresolved
+  inputs = lib.loadDefaultValues(inputs, details);
+  // eslint-disable-next-line import/no-unresolved
   const axios = require('axios');
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line import/no-unresolved
   const touch = require('touch');
-  // eslint-disable-next-line global-require,import/no-unresolved
+  // eslint-disable-next-line import/no-unresolved
   const path = require('path-extra');
 
   function log(msg) {

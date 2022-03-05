@@ -1,7 +1,4 @@
 /* eslint-disable */
-const fs = require("fs");
-const execSync = require("child_process").execSync;
-const loadDefaultValues = require('../methods/loadDefaultValues');
 
 const details = () => {
   return {
@@ -38,8 +35,10 @@ const details = () => {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  
+  const lib = require('../methods/lib')(); const fs = require("fs"); const execSync = require("child_process").execSync;
   // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = loadDefaultValues(inputs, details);
+  inputs = lib.loadDefaultValues(inputs, details);
   //default response
   var response = {
     processFile: false,
