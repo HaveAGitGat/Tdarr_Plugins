@@ -123,7 +123,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     FFmpegMode: false,
     reQueueAfter: true,
     infoLog: '',
-    maxmux: false
   }
 
   //check if the file is a video, if not the function will be stopped immediately
