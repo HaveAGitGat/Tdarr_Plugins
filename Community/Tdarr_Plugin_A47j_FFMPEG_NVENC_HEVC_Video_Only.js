@@ -261,7 +261,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         new_bitrate = Math.max(new_bitrate, Math.min(MediaInfo.videoBR, targetBitrate * 0.6));
       }
       response.preset += ` -b:v ${new_bitrate} -maxrate ${Math.round(new_bitrate * 1.3)}`
-      + `-minrate ${Math.round(new_bitrate * 0.7)}  -bufsize ${bufsize}`;
+      + ` -minrate ${Math.round(new_bitrate * 0.7)}  -bufsize ${bufsize}`;
       response.infoLog += `☒H264 Resolution is ${file.video_resolution},`
       + ` bitrate was ${Math.round(MediaInfo.videoBR / 1000)}Kbps.`
       + ` HEVC target bitrate will be ${Math.round(new_bitrate / 1000)}Kbps.\n`;
