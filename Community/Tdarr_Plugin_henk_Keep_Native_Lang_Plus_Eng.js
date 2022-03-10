@@ -256,7 +256,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
             imdbId = radarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Radarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Radarr/Sonarr, grabbing it from file name \n';
+            response.infoLog += 'Couldn\'t grab ID from Radarr \n';
             imdbId = file.meta.FileName;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
@@ -275,7 +275,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
             imdbId = sonarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Sonarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Radarr/Sonarr, grabbing it from file name \n';
+            response.infoLog += 'Couldn\'t grab ID from Sonarr \n';
             imdbId = file.meta.FileName;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
