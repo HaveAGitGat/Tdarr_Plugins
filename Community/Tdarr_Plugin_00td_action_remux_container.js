@@ -48,7 +48,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   );
 
   response.preset = ', -map 0 -c copy';
-  response.container = '.mkv';
+  response.container = `.${inputs.container}`;
   response.handbrakeMode = false;
   response.FFmpegMode = true;
   response.reQueueAfter = true;
