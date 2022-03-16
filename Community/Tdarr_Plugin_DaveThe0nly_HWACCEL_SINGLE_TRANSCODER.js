@@ -264,12 +264,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   response.infoLog += '_________Checking Bitrate___________\n';
 
+  const originalBitrate = originalLibraryFile.bit_rate;
+
+  response.infoLog += `Original File: ${originalBitrate}\n`;
   response.infoLog += `Current Bitrate: ${videoStreamBitRate}\n`;
   response.infoLog += `Target Bitrate: ${targetBitrate}\n`;
 
   // If the resolution is supposed to not be change "targetBitrate" is going to be Infinity - therefore ignored
   // Can be 15% over target bitrate to get ignored
-  const isOverBitrate = videoStreamBitRate > (targetBitrate * 1.15);
+  // If the original bitrate is over the current bitrate it was already processed QVBR
+  // sometimes gives higher bitrate than set
+  const bufferedTargetBitrate = targetBitrate * 1.25;
+  let isOverBitrate = false;
+
+  if (originalBitrate === videoStreamBitRate) isOverBitrate = videoStreamBitRate > bufferedTargetBitrate;
 
   response.infoLog += '_________Figuring HW Accel___________\n';
 
@@ -509,10 +517,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         continue;
       }
 
-      const { forced, hearing_impaired } = subStream.disposition;
+      const { forced, hearing_impaired, tags } = subStream.disposition;
 
-      const isForced = !!forced;
+      let isForced = !!forced;
       const isSDH = !!hearing_impaired;
+
+      if (forced === undefined || forced === null) isForced = tags.handler_name.includes('forced');
+      if (hearing_impaired === undefined || hearing_impaired === null) isForced = tags.handler_name.includes('CC');
 
       response.infoLog += `Extracting sub: ${lang}\n`;
 
@@ -525,7 +536,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         if (isForced) subsFile.push(subtitleDispositionMap.forced);
 
         subsFile.push(subtitleExtension);
-        subtitlesToExtract.push(`-map 0:${index} "${subsFile.join('.')}"`);
+        subtitlesToExtract.push(`-map 0:${index} '${subsFile.join('.')}'`);
       });
     }
 
