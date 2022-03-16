@@ -517,13 +517,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         continue;
       }
 
-      const { forced, hearing_impaired, tags } = subStream.disposition;
+      const { forced, hearing_impaired } = subStream.disposition;
 
-      let isForced = !!forced;
-      const isSDH = !!hearing_impaired;
-
-      if (forced === undefined || forced === null) isForced = tags.handler_name.includes('forced');
-      if (hearing_impaired === undefined || hearing_impaired === null) isForced = tags.handler_name.includes('CC');
+      const isForced = subStream.tags.handler_name.includes('forced') || !!forced;
+      const isSDH = subStream.tags.handler_name.includes('CC') || !!hearing_impaired;
 
       response.infoLog += `Extracting sub: ${lang}\n`;
 
