@@ -444,9 +444,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   - channels: ${bestStreamChannels}\n`;
 
   // eslint-disable-next-line max-len
-  const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none' ?
-    _audioStreamsToCreate :
-    []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
+  const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none'
+    ? _audioStreamsToCreate
+    : []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
     response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
 
     let finalToCreateChannels = toCreateChannels;
@@ -460,9 +460,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // First check if the stream already exists
     // eslint-disable-next-line max-len
     const exists = audioStreamsInfo.findIndex(({
-                                                 codec: existingCodec,
-                                                 channels: existingChannels,
-                                               }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
+      codec: existingCodec,
+      channels: existingChannels,
+    }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
     // check if we don't have the same stream
     const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
 
