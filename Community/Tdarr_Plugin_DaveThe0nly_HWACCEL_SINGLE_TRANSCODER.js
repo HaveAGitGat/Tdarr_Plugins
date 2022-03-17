@@ -444,7 +444,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   - channels: ${bestStreamChannels}\n`;
 
   // eslint-disable-next-line max-len
-  const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none' ? _audioStreamsToCreate : []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
+  const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none' ?
+    _audioStreamsToCreate :
+    []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
     response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
 
     let finalToCreateChannels = toCreateChannels;
@@ -458,9 +460,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // First check if the stream already exists
     // eslint-disable-next-line max-len
     const exists = audioStreamsInfo.findIndex(({
-      codec: existingCodec,
-      channels: existingChannels,
-    }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
+                                                 codec: existingCodec,
+                                                 channels: existingChannels,
+                                               }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
     // check if we don't have the same stream
     const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
 
@@ -519,8 +521,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       const { forced, hearing_impaired } = subStream.disposition;
 
-      const isForced = (subStream.tags.handler_name || '').includes('forced') || !!forced;
-      const isSDH = (subStream.tags.handler_name || '').includes('CC') || !!hearing_impaired;
+      const isForced = !!forced || (subStream.tags.title || subStream.tags.handler_name || '').includes('forced');
+      // eslint-disable-next-line max-len
+      const isSDH = !!hearing_impaired || !!(subStream.tags.title || subStream.tags.handler_name || '').match(/(SDH|CC)/gi);
 
       response.infoLog += `Extracting sub: ${lang}\n`;
 
