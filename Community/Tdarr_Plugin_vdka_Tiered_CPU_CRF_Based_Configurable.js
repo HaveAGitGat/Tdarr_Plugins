@@ -126,6 +126,24 @@ const details = () => ({
         \\nExample:\\n
         true`,
     },
+    {
+    name: 'enable10bit',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `Specify if output file should be 10bit. Default is false.
+                    \\nExample:\\n
+                    true
+
+                    \\nExample:\\n
+                    false`,
+    },
   ],
 });
 
@@ -222,8 +240,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // encoding settings
   response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset}`
-  + ` -x265-params crf=${crf}:bframes=${bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
-  + ' -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999';
+  response.preset += ` -x265-params crf=${crf}:bframes=${bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
+  response.preset += ' -a53cc 0 -c:a copy -c:s copy';
+
+  // Check if 10bit variable is true.
+  if (inputs.enable10bit === true) {
+    // If set to true then add 10bit argument
+    response.preset += ' -pix_fmt p010le';
+  }
+
+  response.preset += ' -max_muxing_queue_size 9999';
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
   response.infoLog += 'File is being transcoded!\n';
 
