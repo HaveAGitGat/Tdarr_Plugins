@@ -37,7 +37,7 @@ const details = () => {
     {
       name: 'resize',
       type: 'string',
-      defaultValue: 'false',
+      defaultValue: 'no',
       inputUI: {
         type: 'text',
       },
