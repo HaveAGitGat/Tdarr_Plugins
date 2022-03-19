@@ -80,7 +80,7 @@ const createBitRateStringFromBitRate = (rate) => (rate > 1000000
 const details = () => ({
   id: 'Tdarr_Plugin_dt0y_DaveThe0nly_HWACCEL_SINGLE_TRANSCODER',
   Stage: 'Pre-processing',
-  Name: 'OnePassMonsterTrasncoder',
+  Name: 'OnePassMonsterTranscoder',
   Type: 'Video',
   Operation: 'Transcode',
   // eslint-disable-next-line max-len
