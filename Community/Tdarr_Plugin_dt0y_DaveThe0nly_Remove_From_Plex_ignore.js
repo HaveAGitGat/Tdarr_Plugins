@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_DaveThe0nly_Remove_From_Plex_ignore',
+  id: 'Tdarr_Plugin_dt0y_DaveThe0nly_Remove_From_Plex_ignore',
   Stage: 'Post-processing',
   Name: 'Remove from plexignore file',
   Type: 'Video',

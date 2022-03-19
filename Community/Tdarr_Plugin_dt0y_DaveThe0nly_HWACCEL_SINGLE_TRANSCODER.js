@@ -78,7 +78,7 @@ const createBitRateStringFromBitRate = (rate) => (rate > 1000000
 // @TODO: finish other hw acceleration implementations (I only have access to Intel enabled QSV)
 // @TODO: Add option to do HDR -> SDR Tone Mapping (That is not something I want, might take a while)
 const details = () => ({
-  id: 'Tdarr_Plugin_DaveThe0nly_HWACCEL_SINGLE_TRANSCODER',
+  id: 'Tdarr_Plugin_dt0y_DaveThe0nly_HWACCEL_SINGLE_TRANSCODER',
   Stage: 'Pre-processing',
   Name: 'OnePassMonsterTrasncoder',
   Type: 'Video',

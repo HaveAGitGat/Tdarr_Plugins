@@ -4,7 +4,7 @@ const dispositionMap = {
 };
 
 const details = () => ({
-  id: 'Tdarr_Plugin_DaveThe0nly_Subtitle_Extractor',
+  id: 'Tdarr_Plugin_dt0y_DaveThe0nly_Subtitle_Extractor',
   Stage: 'Pre-processing',
   Name: 'Extract Subtitles from video',
   Type: 'Video',
