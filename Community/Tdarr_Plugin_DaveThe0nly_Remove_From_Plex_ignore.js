@@ -12,7 +12,6 @@ const details = () => ({
     {
       name: 'plexingoreFileLocation',
       type: 'string',
-      tooltip: 'The plexignore that should be targeted',
       defaultValue: 'libraryRoot',
       inputUI: {
         type: 'dropdown',
@@ -21,6 +20,7 @@ const details = () => ({
           'fileRoot',
         ],
       },
+      tooltip: 'The plexignore that should be targeted',
     },
   ],
 });

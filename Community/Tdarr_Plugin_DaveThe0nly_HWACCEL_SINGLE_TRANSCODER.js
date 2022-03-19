@@ -91,30 +91,29 @@ const details = () => ({
     {
       name: 'targetResolutionBitrate',
       type: 'string',
-      // eslint-disable-next-line max-len
-      tooltip: `A mapping of resolution(${supportedResolutions.join(', ')}):bitrate(FFMPEG friendly format 8M or 8000k),
-      seperated by a comma eg: "4KUHD:10M,1080p:5M,etc...".
-      Keep blank to keep video stream as is (still transcodes to HEVC).`,
       defaultValue: '4KUHD:10M,1080p:5M',
       inputUI: {
         type: 'text',
       },
+      // eslint-disable-next-line max-len
+      tooltip: `A mapping of resolution(${supportedResolutions.join(', ')}):bitrate(FFMPEG friendly format 8M or 8000k),
+      seperated by a comma eg: "4KUHD:10M,1080p:5M,etc...".
+      Keep blank to keep video stream as is (still transcodes to HEVC).`,
     },
     {
       name: 'hwAccelerate',
       type: 'string',
-      tooltip: 'Keep blank if none',
       defaultValue: 'none',
       inputUI: {
         type: 'dropdown',
         options: Object.values(HWACCEL_OPTIONS),
       },
+      tooltip: 'Keep blank if none',
     },
     {
       name: 'forceHevc',
       type: 'boolean',
-      tooltip: 'Forces HEVC conversion on x264 video',
-      defaultValue: 'false',
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -122,70 +121,71 @@ const details = () => ({
           'true',
         ],
       },
+      tooltip: 'Forces HEVC conversion on x264 video',
     },
     {
       name: 'hevcCompressionLevel',
       type: 'number',
-      tooltip: 'Sets the compression level for HEVC transcoding (1-7)',
       defaultValue: 7,
       inputUI: {
         type: 'text',
       },
+      tooltip: 'Sets the compression level for HEVC transcoding (1-7)',
     },
     {
       name: 'x264quality',
       type: 'string',
-      tooltip: 'Sets quality of x264 being preset:crf (veryfast:27) being default',
       defaultValue: 'veryfast:27',
       inputUI: {
         type: 'text',
       },
+      tooltip: 'Sets quality of x264 being preset:crf (veryfast:27) being default',
     },
     {
       name: 'createOptimizedAudioTrack',
-      type: 'text',
-      tooltip: 'Creates an optimized audio track/s codec:channels (aac:2,ac3:6)',
+      type: 'string',
       defaultValue: 'ac3:6,aac:6,aac:3',
       inputUI: {
         type: 'text',
       },
+      tooltip: 'Creates an optimized audio track/s codec:channels (aac:2,ac3:6)',
     },
     {
       name: 'keepAudioTracks',
       type: 'string',
-      tooltip: 'Keeps an audio track of selected language/s, separated by ",", if empty all are kept',
       defaultValue: 'eng',
       inputUI: {
         type: 'text',
       },
+      tooltip: 'Keeps an audio track of selected language/s, separated by ",", if empty all are kept',
     },
     {
       name: 'outputContainer',
       type: 'string',
-      tooltip: 'Container',
       defaultValue: '.mp4',
       inputUI: {
         type: 'dropdown',
         options: ['.mp4', '.mkv', 'keep'],
       },
+      tooltip: 'Container',
     },
     {
       name: 'extractSubtitles',
       type: 'string',
-      tooltip: 'Extracts subtitles by language from the file',
       defaultValue: 'none',
       inputUI: {
-        type: 'string',
+        type: 'text',
       },
+      tooltip: 'Extracts subtitles by language from the file',
     },
     {
       name: 'subtitleFormat',
       type: 'string',
-      tooltip: 'Comma separated list of subtitle formats to create',
       defaultValue: 'srt,ass', // most compatible with plex
       inputUI: {
-        type: 'string',
+        type: 'text',
       },
+      tooltip: 'Comma separated list of subtitle formats to create',
     },
   ],
 });
@@ -447,34 +447,34 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none'
     ? _audioStreamsToCreate
     : []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
-    response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
+      response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
 
-    let finalToCreateChannels = toCreateChannels;
+      let finalToCreateChannels = toCreateChannels;
 
-    // If the best stream does not have enough channels, use only best stream channels
-    if (toCreateChannels > bestStreamChannels) {
-      response.infoLog += `Not enough channels to create ${toCreateChannels}, falling back to ${bestStreamChannels}\n`;
-      finalToCreateChannels = bestStreamChannels;
-    }
+      // If the best stream does not have enough channels, use only best stream channels
+      if (toCreateChannels > bestStreamChannels) {
+        response.infoLog += `Not enough channels to create ${toCreateChannels}, falling back to ${bestStreamChannels}\n`;
+        finalToCreateChannels = bestStreamChannels;
+      }
 
-    // First check if the stream already exists
-    // eslint-disable-next-line max-len
-    const exists = audioStreamsInfo.findIndex(({
-      codec: existingCodec,
-      channels: existingChannels,
-    }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
-    // check if we don't have the same stream
-    const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
-
-    if (alreadyHasStream === -1 && exists === -1) {
-      acc.push([toCreateCodec, finalToCreateChannels]);
-    } else {
+      // First check if the stream already exists
       // eslint-disable-next-line max-len
-      response.infoLog += `Stream with codec: ${toCreateCodec} and channels ${finalToCreateChannels} already exists, not creating\n`;
-    }
+      const exists = audioStreamsInfo.findIndex(({
+        codec: existingCodec,
+        channels: existingChannels,
+      }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
+      // check if we don't have the same stream
+      const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
 
-    return acc;
-  }, []);
+      if (alreadyHasStream === -1 && exists === -1) {
+        acc.push([toCreateCodec, finalToCreateChannels]);
+      } else {
+        // eslint-disable-next-line max-len
+        response.infoLog += `Stream with codec: ${toCreateCodec} and channels ${finalToCreateChannels} already exists, not creating\n`;
+      }
+
+      return acc;
+    }, []);
 
   if (audioStreamsToCreate.length > 0) {
     audioStreamsToCreate.forEach(([audioCodec, audioChannels], index) => {

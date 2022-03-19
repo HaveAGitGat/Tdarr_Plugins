@@ -17,20 +17,20 @@ const details = () => ({
     {
       name: 'extractSubtitles',
       type: 'string',
-      tooltip: 'Extracts subtitles by language from the file',
       defaultValue: 'eng,cs,cz',
       inputUI: {
-        type: 'string',
+        type: 'text',
       },
+       tooltip: 'Extracts subtitles by language from the file',
     },
     {
       name: 'subtitleFormat',
       type: 'string',
-      tooltip: 'Comma separated list of subtitle formats to create',
       defaultValue: 'srt,ass', // most compatible with plex
       inputUI: {
-        type: 'string',
+        type: 'text',
       },
+      tooltip: 'Comma separated list of subtitle formats to create',
     },
   ],
 });
