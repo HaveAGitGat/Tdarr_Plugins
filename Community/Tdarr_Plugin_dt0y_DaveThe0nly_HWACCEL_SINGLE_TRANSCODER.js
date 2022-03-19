@@ -447,34 +447,34 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const audioStreamsToCreate = (_createOptimizedAudioTrack !== 'none'
     ? _audioStreamsToCreate
     : []).reduce((acc, [toCreateCodec, toCreateChannels]) => {
-      response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
+    response.infoLog += `${toCreateCodec} ${toCreateChannels}\n`;
 
-      let finalToCreateChannels = toCreateChannels;
+    let finalToCreateChannels = toCreateChannels;
 
-      // If the best stream does not have enough channels, use only best stream channels
-      if (toCreateChannels > bestStreamChannels) {
-        response.infoLog += `Not enough channels to create ${toCreateChannels}, falling back to ${bestStreamChannels}\n`;
-        finalToCreateChannels = bestStreamChannels;
-      }
+    // If the best stream does not have enough channels, use only best stream channels
+    if (toCreateChannels > bestStreamChannels) {
+      response.infoLog += `Not enough channels to create ${toCreateChannels}, falling back to ${bestStreamChannels}\n`;
+      finalToCreateChannels = bestStreamChannels;
+    }
 
-      // First check if the stream already exists
-      // eslint-disable-next-line max-len
-      const exists = audioStreamsInfo.findIndex(({
-        codec: existingCodec,
-        channels: existingChannels,
-      }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
+    // First check if the stream already exists
+    // eslint-disable-next-line max-len
+    const exists = audioStreamsInfo.findIndex(({
+      codec: existingCodec,
+      channels: existingChannels,
+    }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
       // check if we don't have the same stream
-      const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
+    const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
 
-      if (alreadyHasStream === -1 && exists === -1) {
-        acc.push([toCreateCodec, finalToCreateChannels]);
-      } else {
-        // eslint-disable-next-line max-len
-        response.infoLog += `Stream with codec: ${toCreateCodec} and channels ${finalToCreateChannels} already exists, not creating\n`;
-      }
+    if (alreadyHasStream === -1 && exists === -1) {
+      acc.push([toCreateCodec, finalToCreateChannels]);
+    } else {
+      // eslint-disable-next-line max-len
+      response.infoLog += `Stream with codec: ${toCreateCodec} and channels ${finalToCreateChannels} already exists, not creating\n`;
+    }
 
-      return acc;
-    }, []);
+    return acc;
+  }, []);
 
   if (audioStreamsToCreate.length > 0) {
     audioStreamsToCreate.forEach(([audioCodec, audioChannels], index) => {

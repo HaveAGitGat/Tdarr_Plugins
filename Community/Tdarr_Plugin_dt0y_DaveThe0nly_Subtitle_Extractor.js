@@ -21,7 +21,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-       tooltip: 'Extracts subtitles by language from the file',
+      tooltip: 'Extracts subtitles by language from the file',
     },
     {
       name: 'subtitleFormat',
