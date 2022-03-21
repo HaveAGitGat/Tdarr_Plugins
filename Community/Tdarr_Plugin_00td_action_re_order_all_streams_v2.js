@@ -113,7 +113,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
           if (
             streams[j].codec_long_name
-            && streams[j].codec_long_name.includes('image')
+            && (
+              streams[j].codec_long_name.includes('image')
+              || streams[j].codec_name.includes('png')
+            )
           ) {
             // do nothing, ffmpeg bug, doesn't move image streams
           } else {
