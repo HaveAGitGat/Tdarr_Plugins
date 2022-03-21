@@ -111,9 +111,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       const matchedStreams = [];
       for (let j = 0; j < streams.length; j += 1) {
         if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
-          matchedStreams.push(streams[j]);
-          streams.splice(j, 1);
-          j -= 1;
+          if (
+            streams[j].codec_long_name
+            && streams[j].codec_long_name.includes('image')
+          ) {
+            // do nothing, ffmpeg bug, doesn't move image streams
+          } else {
+            matchedStreams.push(streams[j]);
+            streams.splice(j, 1);
+            j -= 1;
+          }
         }
       }
       streams = matchedStreams.concat(streams);
