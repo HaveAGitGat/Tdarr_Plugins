@@ -242,7 +242,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset}`
   + ` -x265-params crf=${crf}:bframes=${bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
   + ' -a53cc 0 -c:a copy -c:s copy'
-  + inputs.enable10bit ? ' -pix_fmt p010le' : ''
+  + inputs.force10bit ? ' -pix_fmt p010le' : ''
   + ' -max_muxing_queue_size 9999';
   
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
