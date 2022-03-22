@@ -159,6 +159,20 @@ const details = () => ({
       },
       tooltip: 'Keeps an audio track of selected language/s, separated by ",", if empty all are kept',
     },
+
+    {
+      name: 'keepCommentaryAudioTracks',
+      type: 'string',
+      tooltip: 'Keeps or removes all commentary audio tracks (This is based on track title)',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+    },
     {
       name: 'outputContainer',
       type: 'string',
@@ -204,6 +218,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     hevcCompressionLevel,
     x264quality: _x264quality,
     subtitleFormat: _subtitleFormat,
+    keepCommentaryAudioTracks,
   } = lib.loadDefaultValues(inputs, details);
 
   const resolution = file.video_resolution === 'DCI4K' ? '4KUHD' : file.video_resolution;
@@ -385,10 +400,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `User wants these streams created: ${JSON.stringify(_audioStreamsToCreate)}\n`;
   response.infoLog += `User wants to keep these streams: ${_keepAudioTracks}\n`;
 
+  // eslint-disable-next-line consistent-return
   audioStreams.forEach((stream) => {
     // Probably english but I would not bet on it
     const lang = (stream.tags.lang || stream.tags.language || '').toLowerCase();
     if (keepAudioTracks.length === 0 || keepAudioTracks.includes(lang || 'eng')) {
+      if (!keepCommentaryAudioTracks && !!(stream.tags.title || '').match(/commentary/gi)) {
+        return null;
+      }
+
       const channels = parseInt(stream.channels, 10);
 
       // eslint-disable-next-line max-len
@@ -404,6 +424,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         isAtmos: ATMOS_CODECS.includes(stream.codec_name),
         isLossless: TRUEHD_ATMOS_CODEC_TYPE === stream.codec_name,
         codec: stream.codec_name,
+        title: stream.tags.title || '',
+        commentary: !!(stream.tags.title || '').match(/commentary/gi),
         channels,
       });
     }
@@ -462,8 +484,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const exists = audioStreamsInfo.findIndex(({
       codec: existingCodec,
       channels: existingChannels,
-    }) => existingCodec === toCreateCodec && finalToCreateChannels === existingChannels);
-      // check if we don't have the same stream
+      commentary: existingIsCommentary,
+    }) => existingCodec === toCreateCodec
+      && finalToCreateChannels === existingChannels
+      && existingIsCommentary === false);
+    // check if we don't have the same stream
     const alreadyHasStream = acc.findIndex((inacc) => inacc[0] === toCreateCodec && inacc[1] === finalToCreateChannels);
 
     if (alreadyHasStream === -1 && exists === -1) {
@@ -536,7 +561,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         if (isForced) subsFile.push(subtitleDispositionMap.forced);
 
         subsFile.push(subtitleExtension);
-        subtitlesToExtract.push(`-map 0:${index} '${subsFile.join('.')}'`);
+        subtitlesToExtract.push(`-map 0:${index} "${subsFile.join('.')}"`);
       });
     }
 
