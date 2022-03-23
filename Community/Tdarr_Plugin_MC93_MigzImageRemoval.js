@@ -5,7 +5,7 @@ const details = () => ({
   Name: 'Migz-Remove image formats from file',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'Identify any unwanted image formats in the file and remove those streams. MJPEG & PNG \n\n',
+  Description: 'Identify any unwanted image formats in the file and remove those streams. MJPEG, PNG & GIF \n\n',
   Version: '1.3',
   Tags: 'pre-processing,ffmpeg,video only',
   Inputs: [],
@@ -42,10 +42,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is video.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
-      // Check if stream codec is mjpeg or png. Remove if so.
+      // Check if stream codec is mjpeg, png or gif. Remove if so.
       if (
         file.ffProbeData.streams[i].codec_name === 'mjpeg'
         || file.ffProbeData.streams[i].codec_name === 'png'
+        || file.ffProbeData.streams[i].codec_name === 'gif'
       ) {
         convert = true;
         extraArguments += `-map -v:${videoIdx} `;
