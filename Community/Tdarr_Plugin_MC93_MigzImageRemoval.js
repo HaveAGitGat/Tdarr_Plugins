@@ -6,7 +6,7 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Identify any unwanted image formats in the file and remove those streams. MJPEG, PNG & GIF \n\n',
-  Version: '1.3',
+  Version: '1.4',
   Tags: 'pre-processing,ffmpeg,video only',
   Inputs: [],
 });
