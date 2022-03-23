@@ -28,7 +28,7 @@ function details() {
       infoLog: '',
     };
    
-    if (file.ffProbeData.streams.filter((x) => x.codec_type === 'video').length) {
+    if (file.ffProbeData.streams.filter((x) => x.codec_type === 'video' && x.avg_frame_rate !== '0/0').length) {
       response.infoLog += '☒File contains video!\n';
       return response;
     }
