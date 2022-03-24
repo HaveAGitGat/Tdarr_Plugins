@@ -2,7 +2,7 @@ function details() {
     return {
       id: 'Tdarr_Plugin_fu72_aune_alac_to_flac',
       Stage: 'Pre-processing',
-      Name: 'Aune - ALAC to Flac',
+      Name: 'Aune - ALAC to FLAC',
       Type: 'Audio',
       Operation: 'Transcode',
       Description: '[Contains built-in filter] This plugin transcodes all ALAC-tracks to FLAC. '
