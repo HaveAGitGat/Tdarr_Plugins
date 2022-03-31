@@ -315,6 +315,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v mpeg1_cuvid';
   } else if (file.video_codec_name === 'mpeg2') {
     response.preset = '-c:v mpeg2_cuvid';
+  } else if (file.video_codec_name === 'mpeg4') {
+    response.preset = '-c:v mpeg4_cuvid';
   } else if (file.video_codec_name === 'vc1') {
     response.preset = '-c:v vc1_cuvid';
   } else if (file.video_codec_name === 'vp8') {
