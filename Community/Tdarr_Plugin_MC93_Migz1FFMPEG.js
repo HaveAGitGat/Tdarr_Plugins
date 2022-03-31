@@ -10,7 +10,7 @@ const details = () => ({
                   Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
                   NVDEC & NVENC compatable GPU required.
                   This plugin will skip any files that are in the VP9 codec.`,
-  Version: '3.0',
+  Version: '3.1',
   Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
   Inputs: [{
     name: 'container',
