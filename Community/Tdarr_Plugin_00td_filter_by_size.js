@@ -16,7 +16,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter the upper bound size in MB for files which should be processed.',
+        'Enter the upper bound size in MB for files which should be processed. Files above this size won\'t be processed.',
     },
     {
       name: 'lowerBound',
@@ -26,7 +26,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter the lower bound size in MB for files which should be processed.',
+        'Enter the lower bound size in MB for files which should be processed. Files below this size won\'t be processed.',
     },
   ],
 });
