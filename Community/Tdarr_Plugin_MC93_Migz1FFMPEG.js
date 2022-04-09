@@ -136,7 +136,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += 'File is not a video. \n';
     return response;
   }
-  
+
   // Check if duration info is filled, if so times it by 0.0166667 to get time in minutes.
   // If not filled then get duration of stream 0 and do the same.
   if (typeof file.meta.Duration !== 'undefined') {
@@ -164,9 +164,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const minimumBitrate = ~~(targetBitrate * 0.7);
   // eslint-disable-next-line no-bitwise
   const maximumBitrate = ~~(targetBitrate * 1.3);
-  
+
   // If Container .ts or .avi set genpts to fix unknown timestamp
-  if (inputs.container.toLowerCase() === 'ts' || inputs.container.toLowerCase() === 'avi'){
+  if (inputs.container.toLowerCase() === 'ts' || inputs.container.toLowerCase() === 'avi') {
     genpts = '-fflags +genpts';
   }
 
