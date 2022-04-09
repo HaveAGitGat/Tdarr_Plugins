@@ -95,7 +95,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  let { streams } = file.ffProbeData;
+  let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
