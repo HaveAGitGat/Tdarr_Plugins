@@ -10,7 +10,7 @@ const details = () => ({
                   Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
                   NVDEC & NVENC compatable GPU required.
                   This plugin will skip any files that are in the VP9 codec.`,
-  Version: '3.0',
+  Version: '3.1',
   Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
   Inputs: [{
     name: 'container',
@@ -149,6 +149,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let videoIdx = 0;
   let CPU10 = false;
   let extraArguments = '';
+  let genpts = '';
   let bitrateSettings = '';
   // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
@@ -163,6 +164,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const minimumBitrate = ~~(targetBitrate * 0.7);
   // eslint-disable-next-line no-bitwise
   const maximumBitrate = ~~(targetBitrate * 1.3);
+
+  // If Container .ts or .avi set genpts to fix unknown timestamp
+  if (inputs.container.toLowerCase() === 'ts' || inputs.container.toLowerCase() === 'avi') {
+    genpts = '-fflags +genpts';
+  }
 
   // If targetBitrate comes out as 0 then something has gone wrong and bitrates could not be calculated.
   // Cancel plugin completely.
@@ -321,7 +327,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `,-map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
+  response.preset += `${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
   + `-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
