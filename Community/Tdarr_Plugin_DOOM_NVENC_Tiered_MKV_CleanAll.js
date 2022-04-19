@@ -113,6 +113,17 @@ const details = () => {
                 .50`,
       },
       {
+        name: "bframe",
+        type: 'string',
+        defaultValue: '5',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Set max number of B frames between non-B-frames. Must be an integer between -1 and 16. 0 means that B-frames are disabled. If a value of -1 is used, it will choose an automatic value depending on the encoder. 
+                \\nDefault:\\n
+                5`,
+      },
+      {
         name: "audio_language",
         type: 'string',
         defaultValue: 'eng',
@@ -554,7 +565,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     id++;
   }
   // b frames argument
-  response.preset += ` -bf 5`;
+  response.preset += ` -bf ${inputs.bframe}`;
 
   // fix probe size errors
   response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
