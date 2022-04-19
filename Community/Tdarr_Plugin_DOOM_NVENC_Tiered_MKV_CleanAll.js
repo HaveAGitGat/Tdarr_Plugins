@@ -119,7 +119,7 @@ const details = () => {
         inputUI: {
           type: 'text',
         },
-        tooltip: `Set max number of B frames between non-B-frames. Must be an integer between -1 and 16. 0 means that B-frames are disabled. If a value of -1 is used, it will choose an automatic value depending on the encoder. 
+        tooltip: `Set max number of B frames between non-B-frames. Must be an integer between -1 and 5. 0 means that B-frames are disabled. If a value of -1 is used, it will choose an automatic value depending on the encoder. 
                 \\nDefault:\\n
                 5`,
       },
