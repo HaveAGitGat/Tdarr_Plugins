@@ -10,7 +10,7 @@ const details = () => {
     Operation: "Transcode",
     Description:
       "In a single pass ensures all files are in MKV containers and where possible encoded in h265 (Tiered bitrate based on resolution), removes audio and subtitles that are not in the configured language or marked as commentary.",
-    Version: "2.0",
+    Version: "2.1",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
@@ -56,6 +56,50 @@ const details = () => {
         tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Otherwise target_pct_reduction will be used.
                 \\nExample 14 Mbps:\\n
                 14000000`,
+      },
+      {
+        name: "target_cq_480p576p",
+        type: 'string',
+        defaultValue: '29',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 480p and 576p files. Lower value equals less compression.
+                \\nDefault:\\n
+                29`,
+      },
+      {
+        name: "target_cq_720p",
+        type: 'string',
+        defaultValue: '30',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 720p files. Lower value equals less compression.
+                \\nDefault:\\n
+                30`,
+      },
+      {
+        name: "target_cq_1080p",
+        type: 'string',
+        defaultValue: '31',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 1080p files. Lower value equals less compression.
+                \\nDefault:\\n
+                31`,
+      },
+      {
+        name: "target_cq_4KUHD",
+        type: 'string',
+        defaultValue: '31',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 4KUHD files. Lower value equals less compression.
+                \\nDefault:\\n
+                31`,
       },
       {
         name: "target_pct_reduction",
@@ -370,32 +414,32 @@ function buildVideoConfiguration(inputs, file, logger) {
     "480p": {
       "bitrate": inputs.target_bitrate_480p576p,
       "max_increase": 500,
-      "cq": 29
+      "cq": inputs.target_cq_480p576p
     },
     "576p": {
       "bitrate": inputs.target_bitrate_480p576p,
       "max_increase": 500,
-      "cq": 29
+      "cq": inputs.target_cq_480p576p
     },
     "720p": {
       "bitrate": inputs.target_bitrate_720p,
       "max_increase": 2000,
-      "cq": 30
+      "cq": inputs.target_cq_720p
     },
     "1080p": {
       "bitrate": inputs.target_bitrate_1080p,
       "max_increase": 2500,
-      "cq": 31
+      "cq": inputs.target_cq_1080p
     },
     "4KUHD": {
       "bitrate": inputs.target_bitrate_4KUHD,
       "max_increase": 6000,
-      "cq": 31
+      "cq": inputs.target_cq_4KUHD
     },
     "Other": {
       "bitrate": inputs.target_bitrate_1080p,
       "max_increase": 2500,
-      "cq": 31
+      "cq": inputs.target_cq_1080p
     }
   };
 
@@ -447,7 +491,7 @@ function buildVideoConfiguration(inputs, file, logger) {
         bitratetarget = parseInt(tier["bitrate"] / 1000);
       }
       bitratemax = bitratetarget + tier["max_increase"];
-      cq = tier["cq"];
+      cq = parseInt(tier["cq"]);
 
       configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
