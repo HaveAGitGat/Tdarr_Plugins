@@ -59,7 +59,7 @@ const details = () => {
       },
       {
         name: "target_cq_480p576p",
-        type: 'string',
+        type: 'number',
         defaultValue: '29',
         inputUI: {
           type: 'text',
@@ -70,7 +70,7 @@ const details = () => {
       },
       {
         name: "target_cq_720p",
-        type: 'string',
+        type: 'number',
         defaultValue: '30',
         inputUI: {
           type: 'text',
@@ -81,7 +81,7 @@ const details = () => {
       },
       {
         name: "target_cq_1080p",
-        type: 'string',
+        type: 'number',
         defaultValue: '31',
         inputUI: {
           type: 'text',
@@ -92,7 +92,7 @@ const details = () => {
       },
       {
         name: "target_cq_4KUHD",
-        type: 'string',
+        type: 'number',
         defaultValue: '31',
         inputUI: {
           type: 'text',
@@ -114,7 +114,7 @@ const details = () => {
       },
       {
         name: "bframe",
-        type: 'string',
+        type: 'number',
         defaultValue: '5',
         inputUI: {
           type: 'text',
@@ -502,7 +502,7 @@ function buildVideoConfiguration(inputs, file, logger) {
         bitratetarget = parseInt(tier["bitrate"] / 1000);
       }
       bitratemax = bitratetarget + tier["max_increase"];
-      cq = parseInt(tier["cq"]);
+      cq = tier["cq"];
 
       configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
