@@ -60,7 +60,7 @@ const details = () => {
       {
         name: "target_cq_480p576p",
         type: 'number',
-        defaultValue: '29',
+        defaultValue: 29,
         inputUI: {
           type: 'text',
         },
@@ -71,7 +71,7 @@ const details = () => {
       {
         name: "target_cq_720p",
         type: 'number',
-        defaultValue: '30',
+        defaultValue: 30,
         inputUI: {
           type: 'text',
         },
@@ -82,7 +82,7 @@ const details = () => {
       {
         name: "target_cq_1080p",
         type: 'number',
-        defaultValue: '31',
+        defaultValue: 31,
         inputUI: {
           type: 'text',
         },
@@ -93,7 +93,7 @@ const details = () => {
       {
         name: "target_cq_4KUHD",
         type: 'number',
-        defaultValue: '31',
+        defaultValue: 31,
         inputUI: {
           type: 'text',
         },
@@ -115,7 +115,7 @@ const details = () => {
       {
         name: "bframe",
         type: 'number',
-        defaultValue: '5',
+        defaultValue: 5,
         inputUI: {
           type: 'text',
         },
