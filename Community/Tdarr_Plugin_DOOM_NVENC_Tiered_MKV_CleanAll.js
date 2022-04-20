@@ -530,25 +530,21 @@ function buildVideoConfiguration(inputs, file, logger) {
     if (stream.codec_name === "png") {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
     } else if (stream.codec_name !== "hevc" && stream.codec_name !== "vp9") {  // Check if should Transcode.
-      var bitrateprobe = calculateBitrate(file);
-      var bitratetarget = 0;
-      var bitratemax = 0;
-      var cq = 0;
-
       /*  Determine tiered bitrate variables */
-      var tier = tiered[file.video_resolution];
+      const tier = tiered[file.video_resolution];
+      const bitratedesired = tier["bitrate"];
+      const bitratedesiredmax = bitratedesired + tier["max_increase"];
 
-      if (bitrateprobe !== null && bitrateprobe < tier["bitrate"]) {
-        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
-      } else {
-        bitratetarget = parseInt(tier["bitrate"] / 1000);
-      }
-      bitratemax = bitratetarget + tier["max_increase"];
-      cq = tier["cq"];
+      const bitrateprobe = calculateBitrate(file) || bitratedesired / inputs.target_pct_reduction;
+      const bitrateexpected = bitrateprobe * inputs.target_pct_reduction;
+      const bitrateexpectedmax = bitrateexpected * (1 + tier["max_increase"] / bitratedesired);
+
+      const bitratetarget = Math.floor(Math.min(bitratedesired, bitrateexpected) / 1000);
+      const bitratemax = Math.floor(Math.min(bitratedesiredmax, bitrateexpectedmax, bitrateprobe) / 1000);
 
       configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
-        `-c:v hevc_nvenc -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
+        `-c:v hevc_nvenc -qmin 0 -cq:v ${tier["cq"]} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
       );
 
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
