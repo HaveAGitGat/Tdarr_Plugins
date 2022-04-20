@@ -490,13 +490,11 @@ function buildVideoConfiguration(inputs, file, logger) {
       var bitratetarget = 0;
       var bitratemax = 0;
       var cq = 0;
-      var bitratecheck = 0;
 
       /*  Determine tiered bitrate variables */
       var tier = tiered[file.video_resolution];
 
-      bitratecheck = parseInt(tier["bitrate"]);
-      if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
+      if (bitrateprobe !== null && bitrateprobe < tier["bitrate"]) {
         bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
       } else {
         bitratetarget = parseInt(tier["bitrate"] / 1000);
