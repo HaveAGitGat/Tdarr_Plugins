@@ -168,6 +168,21 @@ const details = () => {
                 5`,
       },
       {
+        name: 'ignore_low_bitrate_video',
+        type: 'boolean',
+        defaultValue: false,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            'false',
+            'true',
+          ],
+        },
+        tooltip: `Specify if video tracks below the target bitrate should be ignored. Does not affect audio or subtitle processing.
+                \\nExample:\\n
+                true`,
+      },
+      {
         name: "audio_language",
         type: 'string',
         defaultValue: 'eng',
@@ -541,6 +556,11 @@ function buildVideoConfiguration(inputs, file, logger) {
 
       const bitratetarget = Math.floor(Math.min(bitratedesired, bitrateexpected) / 1000);
       const bitratemax = Math.floor(Math.min(bitratedesiredmax, bitrateexpectedmax, bitrateprobe) / 1000);
+
+      if (bitrateprobe < bitratedesired && inputs.ignore_low_bitrate_video) {
+        logger.AddError("Low bitrate. Ignoring video stream");
+        return;
+      }
 
       configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
