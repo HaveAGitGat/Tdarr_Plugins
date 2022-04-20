@@ -58,6 +58,50 @@ const details = () => {
                 14000000`,
       },
       {
+        name: "target_max_increase_480p576p",
+        type: 'number',
+        defaultValue: 500000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 480p and 576p files.
+                \\nExample 1 Kbps:\\n
+                500000`,
+      },
+      {
+        name: "target_max_increase_720p",
+        type: 'number',
+        defaultValue: 2000000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 720p files.
+                \\nExample 2 Mbps:\\n
+                2000000`,
+      },
+      {
+        name: "target_max_increase_1080p",
+        type: 'number',
+        defaultValue: 2500000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 1080p files.
+                \\nExample 2.5 Mbps:\\n
+                2500000`,
+      },
+      {
+        name: "target_max_increase_4KUHD",
+        type: 'number',
+        defaultValue: 6000000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 4KUHD files.
+                \\nExample 6 Mbps:\\n
+                6000000`,
+      },
+      {
         name: "target_cq_480p576p",
         type: 'number',
         defaultValue: 29,
@@ -421,35 +465,35 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 function buildVideoConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
 
-  var tiered = {
+  const tiered = {
     "480p": {
       "bitrate": inputs.target_bitrate_480p576p,
-      "max_increase": 500,
+      "max_increase": inputs.target_max_increase_480p576p,
       "cq": inputs.target_cq_480p576p
     },
     "576p": {
       "bitrate": inputs.target_bitrate_480p576p,
-      "max_increase": 500,
+      "max_increase": inputs.target_max_increase_480p576p,
       "cq": inputs.target_cq_480p576p
     },
     "720p": {
       "bitrate": inputs.target_bitrate_720p,
-      "max_increase": 2000,
+      "max_increase": inputs.target_max_increase_720p,
       "cq": inputs.target_cq_720p
     },
     "1080p": {
       "bitrate": inputs.target_bitrate_1080p,
-      "max_increase": 2500,
+      "max_increase": inputs.target_max_increase_1080p,
       "cq": inputs.target_cq_1080p
     },
     "4KUHD": {
       "bitrate": inputs.target_bitrate_4KUHD,
-      "max_increase": 6000,
+      "max_increase": inputs.target_max_increase_4KUHD,
       "cq": inputs.target_cq_4KUHD
     },
     "Other": {
       "bitrate": inputs.target_bitrate_1080p,
-      "max_increase": 2500,
+      "max_increase": inputs.target_max_increase_1080p,
       "cq": inputs.target_cq_1080p
     }
   };
