@@ -15,8 +15,8 @@ const details = () => {
     Inputs: [
       {
         name: "target_bitrate_480p576p",
-        type: 'string',
-        defaultValue: '1000000',
+        type: 'number',
+        defaultValue: 1000000,
         inputUI: {
           type: 'text',
         },
@@ -26,8 +26,8 @@ const details = () => {
       },
       {
         name: "target_bitrate_720p",
-        type: 'string',
-        defaultValue: '2000000',
+        type: 'number',
+        defaultValue: 2000000,
         inputUI: {
           type: 'text',
         },
@@ -37,8 +37,8 @@ const details = () => {
       },
       {
         name: "target_bitrate_1080p",
-        type: 'string',
-        defaultValue: '2500000',
+        type: 'number',
+        defaultValue: 2500000,
         inputUI: {
           type: 'text',
         },
@@ -48,8 +48,8 @@ const details = () => {
       },
       {
         name: "target_bitrate_4KUHD",
-        type: 'string',
-        defaultValue: '14000000',
+        type: 'number',
+        defaultValue: 14000000,
         inputUI: {
           type: 'text',
         },
@@ -103,8 +103,8 @@ const details = () => {
       },
       {
         name: "target_pct_reduction",
-        type: 'string',
-        defaultValue: '.50',
+        type: 'number',
+        defaultValue: .5,
         inputUI: {
           type: 'text',
         },
