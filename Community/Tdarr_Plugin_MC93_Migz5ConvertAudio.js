@@ -30,7 +30,7 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: `Specify if downmixing should be used to create extra audio tracks.
+    tooltip: `Specify if downmix should be used to create extra audio tracks.
                     \\nI.e if you have an 8ch but no 2ch or 6ch, create the missing audio tracks from the 8 ch.
                     \\nLikewise if you only have 6ch, create the missing 2ch from it. Optional.
              \\nExample:\\n
