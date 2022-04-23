@@ -89,7 +89,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Set up inputs
-  let debug = true;
+  let debug = false;
   let aacStereo = (inputs.aac_stereo?.toLowerCase() || 'false') === 'true';
   let downmix = (inputs.downmix?.toLowerCase() || 'false') === 'true';
   let downmixLanguageAware = (inputs.downmix_language_aware?.toLowerCase() || 'false') === 'true';
