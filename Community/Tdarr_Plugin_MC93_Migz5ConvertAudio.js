@@ -46,7 +46,7 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: `Specify if downmixing should be language aware. If downmixing is not set to true, this will have no effect.
+    tooltip: `Specify if downmix should be language aware. If downmix is not set to true, this will have no effect.
                     \\nI.e if false : audio track 6 channels in english + audio track 2 channels in french => does nothing.
                     \\nI.e if true : audio track 6 channels in english + audio track 2 channels in french => creates an audio track 2 channels in english.
              \\nExample:\\n
