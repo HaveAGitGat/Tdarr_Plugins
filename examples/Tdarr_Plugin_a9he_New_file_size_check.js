@@ -28,7 +28,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const oldSize = otherArguments.originalLibraryFile.file_size;
   if (newSize > oldSize) {
     // Item will be errored in UI
-    throw new Error(`Error! New file has size ${newSize} which is larger than original file ${oldSize}`);
+    throw new Error(
+      `Error! New file has size ${newSize} which is larger than original file ${oldSize}`,
+    );
   } else if (newSize < oldSize) {
     response.infoLog += `New file has size ${newSize} which is smaller than original file ${oldSize}`;
   }

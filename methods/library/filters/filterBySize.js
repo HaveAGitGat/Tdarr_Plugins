@@ -1,8 +1,8 @@
 function filterBySize(file, lowerBound, upperBound) {
   try {
     if (
-      file.file_size / 1000 >= lowerBound
-      && file.file_size / 1000 <= upperBound
+      file.file_size / 1000 >= lowerBound &&
+      file.file_size / 1000 <= upperBound
     ) {
       const response = {
         outcome: true,

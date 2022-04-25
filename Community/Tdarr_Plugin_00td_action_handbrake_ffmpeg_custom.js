@@ -17,13 +17,9 @@ const details = () => ({
       defaultValue: 'ffmpeg',
       inputUI: {
         type: 'dropdown',
-        options: [
-          'ffmpeg',
-          'handbrake',
-        ],
+        options: ['ffmpeg', 'handbrake'],
       },
-      tooltip:
-        'Enter the desired video encoder',
+      tooltip: 'Enter the desired video encoder',
     },
     {
       name: 'arguments',
@@ -32,8 +28,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `
+      tooltip: `
 When using FFmpeg, you need to separate the input and output args with <io>. FFmpeg Examples:
 \n\n
 -r 1<io>-r 24
@@ -69,8 +64,7 @@ HandBrake examples:
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        'Enter the desired container',
+      tooltip: 'Enter the desired container',
     },
   ],
 });

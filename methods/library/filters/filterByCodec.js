@@ -25,7 +25,8 @@ function filterByCodec(file, mode, codecs) {
         note: '☒Codec excluded \n',
       };
       return response;
-    } if (mode === 'exclude') {
+    }
+    if (mode === 'exclude') {
       if (included) {
         const response = {
           outcome: false,

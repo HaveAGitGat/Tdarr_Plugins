@@ -19,7 +19,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 32',
+        'The CQ number (recommended 15-35) for this resolution, default 32',
     },
     {
       name: 'CQ_360p',
@@ -29,7 +29,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 31',
+        'The CQ number (recommended 15-35) for this resolution, default 31',
     },
     {
       name: 'CQ_480p',
@@ -39,7 +39,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 28',
+        'The CQ number (recommended 15-35) for this resolution, default 28',
     },
     {
       name: 'CQ_720p',
@@ -49,7 +49,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 27',
+        'The CQ number (recommended 15-35) for this resolution, default 27',
     },
     {
       name: 'CQ_1080p',
@@ -59,7 +59,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 26',
+        'The CQ number (recommended 15-35) for this resolution, default 26',
     },
     {
       name: 'CQ_4KUHD',
@@ -69,7 +69,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 15',
+        'The CQ number (recommended 15-35) for this resolution, default 15',
     },
     {
       name: 'CQ_8KUHD',
@@ -79,7 +79,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-          'The CQ number (recommended 15-35) for this resolution, default 15',
+        'The CQ number (recommended 15-35) for this resolution, default 15',
     },
     {
       name: 'audio_language',
@@ -281,7 +281,9 @@ function buildAudioConfiguration(inputs, file, logger) {
     }
 
     if (
-      (stream.channel_layout === '5.1(side)' || (stream.codec_name === 'eac3' && stream.channels === 6)) && opusFormat
+      (stream.channel_layout === '5.1(side)' ||
+        (stream.codec_name === 'eac3' && stream.channels === 6)) &&
+      opusFormat
     ) {
       logger.AddSuccess(
         `Determined audio to be ${stream.channel_layout}, adding mapping configuration for proper conversion`,
@@ -309,12 +311,14 @@ function buildAudioConfiguration(inputs, file, logger) {
     }
 
     if (
-      'tags' in stream && 'title' in stream.tags && inputs.audio_commentary.toLowerCase() === 'true'
+      'tags' in stream &&
+      'title' in stream.tags &&
+      inputs.audio_commentary.toLowerCase() === 'true'
     ) {
       if (
-        stream.tags.title.toLowerCase().includes('commentary')
-        || stream.tags.title.toLowerCase().includes('description')
-        || stream.tags.title.toLowerCase().includes('sdh')
+        stream.tags.title.toLowerCase().includes('commentary') ||
+        stream.tags.title.toLowerCase().includes('description') ||
+        stream.tags.title.toLowerCase().includes('sdh')
       ) {
         streams_removing += 1;
         configuration.AddOutputSetting(`-map -0:a:${id}`);
@@ -387,7 +391,10 @@ function buildVideoConfiguration(inputs, file, logger) {
       targetQuality = inputs.CQ_240p || 32;
       tileColumns = 0;
       speed = 1;
-    } else if (file.video_resolution === '360p' || file.video_resolution === '576p') {
+    } else if (
+      file.video_resolution === '360p' ||
+      file.video_resolution === '576p'
+    ) {
       targetQuality = inputs.CQ_360p || 31;
       tileColumns = 1;
       speed = 1;
@@ -404,7 +411,9 @@ function buildVideoConfiguration(inputs, file, logger) {
       tileColumns = 2;
       speed = 2;
     } else if (
-      file.video_resolution === '1440p' || file.video_resolution === '2560p' || file.video_resolution === '4KUHD'
+      file.video_resolution === '1440p' ||
+      file.video_resolution === '2560p' ||
+      file.video_resolution === '4KUHD'
     ) {
       targetQuality = inputs.CQ_4KUHD || 15;
       tileColumns = 3;
@@ -442,9 +451,9 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
   loopOverStreamsOfType(file, 'subtitle', (stream, id) => {
     if (
-      stream.codec_name === 'hdmv_pgs_subtitle'
-      || stream.codec_name === 'eia_608'
-      || stream.codec_name === 'dvd_subtitle'
+      stream.codec_name === 'hdmv_pgs_subtitle' ||
+      stream.codec_name === 'eia_608' ||
+      stream.codec_name === 'dvd_subtitle'
     ) {
       logger.AddError(
         `Removing subtitle in invalid codec ${stream.codec_name}`,
@@ -467,13 +476,13 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
       // Remove commentary subtitles
       if (
-        'title' in stream.tags
-        && inputs.subtitle_commentary.toLowerCase() === 'true'
+        'title' in stream.tags &&
+        inputs.subtitle_commentary.toLowerCase() === 'true'
       ) {
         if (
-          stream.tags.title.toLowerCase().includes('commentary')
-          || stream.tags.title.toLowerCase().includes('description')
-          || stream.tags.title.toLowerCase().includes('sdh')
+          stream.tags.title.toLowerCase().includes('commentary') ||
+          stream.tags.title.toLowerCase().includes('description') ||
+          stream.tags.title.toLowerCase().includes('sdh')
         ) {
           configuration.AddOutputSetting(`-map -0:s:${id}`);
           logger.AddError(
@@ -521,9 +530,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
-  response.processFile = audioSettings.shouldProcess
-    || videoSettings.shouldProcess
-    || subtitleSettings.shouldProcess;
+  response.processFile =
+    audioSettings.shouldProcess ||
+    videoSettings.shouldProcess ||
+    subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
     logger.AddSuccess('No need to process file');

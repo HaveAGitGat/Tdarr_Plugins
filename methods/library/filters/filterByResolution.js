@@ -15,7 +15,8 @@ function filterByResolution(file, mode, resolution) {
         note: '☑File is not in excluded resolution. \n',
       };
       return response;
-    } if (mode === 'include') {
+    }
+    if (mode === 'include') {
       if (
         resolution.toLowerCase().includes(file.video_resolution.toLowerCase())
       ) {

@@ -21,10 +21,11 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
-        + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
-        + '\\nExample:\\n'
-        + 'nld,nor',
+      tooltip:
+        'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.' +
+        '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)' +
+        '\\nExample:\\n' +
+        'nld,nor',
     },
     {
       name: 'priority',
@@ -33,9 +34,10 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Priority for either Radarr or Sonarr. Leaving it empty defaults to Radarr first.'
-        + '\\nExample:\\n'
-        + 'sonarr',
+      tooltip:
+        'Priority for either Radarr or Sonarr. Leaving it empty defaults to Radarr first.' +
+        '\\nExample:\\n' +
+        'sonarr',
     },
     {
       name: 'api_key',
@@ -44,7 +46,8 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
+      tooltip:
+        'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
     },
     {
       name: 'radarr_api_key',
@@ -62,9 +65,10 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your Radarr url here. (Without http://). Do include the port.'
-        + '\\nExample:\\n'
-        + '192.168.1.2:7878',
+      tooltip:
+        'Input your Radarr url here. (Without http://). Do include the port.' +
+        '\\nExample:\\n' +
+        '192.168.1.2:7878',
     },
     {
       name: 'sonarr_api_key',
@@ -82,9 +86,10 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your Sonarr url here. (Without http://). Do include the port.'
-        + '\\nExample:\\n'
-        + '192.168.1.2:8989',
+      tooltip:
+        'Input your Sonarr url here. (Without http://). Do include the port.' +
+        '\\nExample:\\n' +
+        '192.168.1.2:8989',
     },
   ],
 });
@@ -109,14 +114,17 @@ const processStreams = (result, file, user_langs) => {
   let streamIndex = 0;
 
   // If the original language is pulled as Chinese 'cn' is used.  iso-language expects 'zh' for Chinese.
-  const langsTemp = result.original_language === 'cn' ? 'zh' : result.original_language;
+  const langsTemp =
+    result.original_language === 'cn' ? 'zh' : result.original_language;
 
   let langs = [];
 
   langs.push(languages.alpha2ToAlpha3B(langsTemp));
 
   // Some console reporting for clarification of what the plugin is using and reporting.
-  response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(langsTemp)}\n`;
+  response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(
+    langsTemp,
+  )}\n`;
 
   if (user_langs) {
     langs = langs.concat(user_langs);
@@ -149,7 +157,10 @@ const processStreams = (result, file, user_langs) => {
         } else {
           tracks.remove.push(streamIndex);
           response.preset += `-map -0:a:${streamIndex} `;
-          tracks.remLangs += `${languages.getName(stream.tags.language, 'en')}, `;
+          tracks.remLangs += `${languages.getName(
+            stream.tags.language,
+            'en',
+          )}, `;
         }
         streamIndex += 1;
       } else {
@@ -176,9 +187,16 @@ const tmdbApi = async (filename, api_key, axios) => {
   }
 
   if (fileName) {
-    const result = await axios.get(`https://api.themoviedb.org/3/find/${fileName}?api_key=`
-      + `${api_key}&language=en-US&external_source=imdb_id`)
-      .then((resp) => (resp.data.movie_results.length > 0 ? resp.data.movie_results[0] : resp.data.tv_results[0]));
+    const result = await axios
+      .get(
+        `https://api.themoviedb.org/3/find/${fileName}?api_key=` +
+          `${api_key}&language=en-US&external_source=imdb_id`,
+      )
+      .then((resp) =>
+        resp.data.movie_results.length > 0
+          ? resp.data.movie_results[0]
+          : resp.data.tv_results[0],
+      );
 
     if (!result) {
       response.infoLog += '☒No IMDB result was found. \n';
@@ -247,16 +265,20 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         if (tmdbResult) break;
         if (inputs.radarr_api_key) {
           radarrResult = await parseArrResponse(
-            await axios.get(`http://${inputs.radarr_url}/api/v3/movie?apiKey=${inputs.radarr_api_key}`)
+            await axios
+              .get(
+                `http://${inputs.radarr_url}/api/v3/movie?apiKey=${inputs.radarr_api_key}`,
+              )
               .then((resp) => resp.data),
-            file.meta.FileName, 'radarr',
+            file.meta.FileName,
+            'radarr',
           );
 
           if (radarrResult) {
             imdbId = radarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Radarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Radarr \n';
+            response.infoLog += "Couldn't grab ID from Radarr \n";
             imdbId = file.meta.FileName;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
@@ -266,16 +288,20 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         if (tmdbResult) break;
         if (inputs.sonarr_api_key) {
           sonarrResult = await parseArrResponse(
-            await axios.get(`http://${inputs.sonarr_url}/api/series?apikey=${inputs.sonarr_api_key}`)
+            await axios
+              .get(
+                `http://${inputs.sonarr_url}/api/series?apikey=${inputs.sonarr_api_key}`,
+              )
               .then((resp) => resp.data),
-            file.meta.Directory, 'sonarr',
+            file.meta.Directory,
+            'sonarr',
           );
 
           if (sonarrResult) {
             imdbId = sonarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Sonarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Sonarr \n';
+            response.infoLog += "Couldn't grab ID from Sonarr \n";
             imdbId = file.meta.FileName;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
@@ -284,21 +310,29 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (tmdbResult) {
-    const tracks = processStreams(tmdbResult, file, inputs.user_langs ? inputs.user_langs.split(',') : '');
+    const tracks = processStreams(
+      tmdbResult,
+      file,
+      inputs.user_langs ? inputs.user_langs.split(',') : '',
+    );
 
     if (tracks.remove.length > 0) {
       if (tracks.keep.length > 0) {
-        response.infoLog += `☑Removing tracks with languages: ${tracks.remLangs.slice(0, -2)}. \n`;
+        response.infoLog += `☑Removing tracks with languages: ${tracks.remLangs.slice(
+          0,
+          -2,
+        )}. \n`;
         response.processFile = true;
         response.infoLog += '\n';
       } else {
-        response.infoLog += '☒Cancelling plugin otherwise all audio tracks would be removed. \n';
+        response.infoLog +=
+          '☒Cancelling plugin otherwise all audio tracks would be removed. \n';
       }
     } else {
       response.infoLog += '☒No audio tracks to be removed. \n';
     }
   } else {
-    response.infoLog += '☒Couldn\'t find the IMDB id of this file. Skipping. \n';
+    response.infoLog += "☒Couldn't find the IMDB id of this file. Skipping. \n";
   }
   return response;
 };

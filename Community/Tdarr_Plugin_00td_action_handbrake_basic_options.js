@@ -97,8 +97,7 @@ const details = () => ({
           'Production Proxy 540p',
         ],
       },
-      tooltip:
-        'Enter the desired HandBrake preset',
+      tooltip: 'Enter the desired HandBrake preset',
     },
     {
       name: 'videoEncoder',
@@ -123,8 +122,7 @@ const details = () => ({
           'theora',
         ],
       },
-      tooltip:
-        'Enter the desired video encoder',
+      tooltip: 'Enter the desired video encoder',
     },
     {
       name: 'keepSubtitles',
@@ -132,13 +130,9 @@ const details = () => ({
       defaultValue: true,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'true',
-          'false',
-        ],
+        options: ['true', 'false'],
       },
-      tooltip:
-        'Specify whether to keep subs or not',
+      tooltip: 'Specify whether to keep subs or not',
     },
     {
       name: 'container',
@@ -147,8 +141,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        'Enter the desired container',
+      tooltip: 'Enter the desired container',
     },
   ],
 });

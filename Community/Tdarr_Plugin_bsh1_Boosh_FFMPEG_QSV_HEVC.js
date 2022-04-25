@@ -27,10 +27,7 @@ const details = () => ({
       defaultValue: 'mkv',
       inputUI: {
         type: 'dropdown',
-        options: [
-          'mkv',
-          'mp4',
-        ],
+        options: ['mkv', 'mp4'],
       },
       tooltip: `Specifies the output container of the file.
       \\n Ensure that all stream types you may have are supported by your chosen container.
@@ -46,10 +43,7 @@ const details = () => ({
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
       tooltip: `Make the file conform to output containers requirements.
       Use if you need to ensure the encode works from mp4>mkv or mkv>mp4.
@@ -79,11 +73,12 @@ const details = () => ({
           'veryslow',
         ],
       },
-      tooltip: `Specify the encoder speed/preset to use. 
+      tooltip:
+        `Specify the encoder speed/preset to use. 
       Slower options mean slower encode but better quality and faster have quicker encodes but worse quality.
-      For more information see intel white paper on ffmpeg results using qsv: \\n`
+      For more information see intel white paper on ffmpeg results using qsv: \\n` +
         // eslint-disable-next-line max-len
-        + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
+        `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
       \\n Default is "slow". 
       \\nExample:\\n
       medium
@@ -96,10 +91,7 @@ const details = () => ({
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
       tooltip: `Specify if we want to enable 10bit encoding. 
       If this is enabled files will be processed and converted into 10bit 
@@ -176,10 +168,7 @@ const details = () => ({
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
       tooltip: `Specify if we want to reprocess HEVC, VP9 or AV1 files 
       (i.e reduce bitrate of files already in those codecs). Since this uses the same logic as normal, halving the
@@ -269,7 +258,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const currentBitrate = Math.round(file.file_size / (duration * 0.0075));
   // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
   // Logic of h265 can be half the bitrate as h264 without losing quality.
-  let targetBitrate = Math.round((file.file_size / (duration * 0.0075)) / 2);
+  let targetBitrate = Math.round(file.file_size / (duration * 0.0075) / 2);
   // Allow some leeway under and over the targetBitrate.
   let minimumBitrate = Math.round(targetBitrate * 0.75);
   let maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -280,7 +269,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // has gone wrong and bitrates could not be calculated.
   // Cancel plugin completely.
   if (targetBitrate <= 0 || currentBitrate <= 0) {
-    response.infoLog += '☒ Target bitrate could not be calculated. Skipping this plugin. \n';
+    response.infoLog +=
+      '☒ Target bitrate could not be calculated. Skipping this plugin. \n';
     return response;
   }
 
@@ -295,7 +285,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Ensure that bitrate_cutoff is set if reconvert_hevc is true since we need some protection against a loop
   // Cancel the plugin
-  if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff <= 0 && inputs.hevc_max_bitrate <= 0) {
+  if (
+    inputs.reconvert_hevc === true &&
+    inputs.bitrate_cutoff <= 0 &&
+    inputs.hevc_max_bitrate <= 0
+  ) {
     response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff 
     or HEVC specific cutoff set so we have no way to know when to stop processing this file. 
     Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. 
@@ -313,8 +307,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       return response;
     }
     // If above cutoff then carry on
-    if (currentBitrate > inputs.bitrate_cutoff && inputs.reconvert_hevc === false) {
-      response.infoLog += '☒ Current bitrate appears to be above the cutoff. Need to process \n';
+    if (
+      currentBitrate > inputs.bitrate_cutoff &&
+      inputs.reconvert_hevc === false
+    ) {
+      response.infoLog +=
+        '☒ Current bitrate appears to be above the cutoff. Need to process \n';
     }
   }
 
@@ -358,12 +356,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'mov_text'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'eia_608'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'mov_text' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
@@ -376,14 +373,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'hdmv_pgs_subtitle'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'eia_608'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'subrip'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'hdmv_pgs_subtitle' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'subrip' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
@@ -399,7 +394,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (inputs.enable_10bit === true) {
     main10 = true;
     extraArguments += '-profile:v main10 -pix_fmt p010le ';
-    response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
+    response.infoLog +=
+      '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
   }
 
   // Go through each stream in the file.
@@ -408,27 +404,40 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
       // Check if codec of stream is mjpeg/png, if so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
-      if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
+      if (
+        file.ffProbeData.streams[i].codec_name === 'mjpeg' ||
+        file.ffProbeData.streams[i].codec_name === 'png'
+      ) {
         extraArguments += `-map -v:${videoIdx} `;
       }
 
       // Check for HDR in files. If so exit plugin. We assume HDR files have bt2020 color spaces. HDR can be complicated
       // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
-      if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
-        && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
-        && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
+      if (
+        file.ffProbeData.streams[i].color_space === 'bt2020nc' &&
+        file.ffProbeData.streams[i].color_transfer === 'smpte2084' &&
+        file.ffProbeData.streams[i].color_primaries === 'bt2020'
+      ) {
         response.infoLog += `☒ This looks to be a HDR file. HDR files are unfortunately
         not supported by this plugin. Exiting plugin. \n\n`;
         return response;
       }
 
       // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
-      if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
-        || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
+      if (
+        inputs.reconvert_hevc === false &&
+        (file.ffProbeData.streams[i].codec_name === 'hevc' ||
+          file.ffProbeData.streams[i].codec_name === 'vp9' ||
+          file.ffProbeData.streams[i].codec_name === 'av1')
+      ) {
         // Check if codec of stream is HEVC, VP9 or AV1 AND check if file.container matches inputs.container.
         // If so nothing for plugin to do.
-        if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
-          || file.ffProbeData.streams[i].codec_name === 'av1') && file.container === inputs.container) {
+        if (
+          (file.ffProbeData.streams[i].codec_name === 'hevc' ||
+            file.ffProbeData.streams[i].codec_name === 'vp9' ||
+            file.ffProbeData.streams[i].codec_name === 'av1') &&
+          file.container === inputs.container
+        ) {
           response.infoLog += `☑ File is already HEVC, VP9 or AV1 & in ${inputs.container}. \n`;
           return response;
         }
@@ -436,8 +445,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         // Check if codec of stream is HEVC, Vp9 or AV1
         // AND check if file.container does NOT match inputs.container.
         // If so remux file.
-        if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
-          || file.ffProbeData.streams[i].codec_name === 'av1') && file.container !== inputs.container) {
+        if (
+          (file.ffProbeData.streams[i].codec_name === 'hevc' ||
+            file.ffProbeData.streams[i].codec_name === 'vp9' ||
+            file.ffProbeData.streams[i].codec_name === 'av1') &&
+          file.container !== inputs.container
+        ) {
           response.infoLog += `☒ File is HEVC, VP9 or AV1 but is not in ${inputs.container} container. Remuxing. \n`;
           response.preset = `<io> -map 0 -c copy ${extraArguments}`;
           response.processFile = true;
@@ -447,8 +460,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         // New logic for reprocessing HEVC. Mainly done for my own use. Since we're reprocessing we're checking
         // bitrate again and since this can be inaccurate (It calculates overall bitrate not video specific)
         // we have to inflate the current bitrate so we don't keep looping this logic.
-      } else if (inputs.reconvert_hevc === true && (file.ffProbeData.streams[i].codec_name === 'hevc'
-        || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
+      } else if (
+        inputs.reconvert_hevc === true &&
+        (file.ffProbeData.streams[i].codec_name === 'hevc' ||
+          file.ffProbeData.streams[i].codec_name === 'vp9' ||
+          file.ffProbeData.streams[i].codec_name === 'av1')
+      ) {
         // If we're using the hevc max bitrate then update the cutoff to use it
 
         if (inputs.hevc_max_bitrate > 0) {
@@ -467,7 +484,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
           // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
           // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
-        } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
+        } else if (currentBitrate > inputs.bitrate_cutoff * 2) {
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
           HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
@@ -484,11 +501,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       // If files are already 10bit then disable hardware decode to avoid problems with encode
       // 10 bit from source file should be retained without extra arguments.
-      if (file.ffProbeData.streams[i].profile === 'High 10'
-        || file.ffProbeData.streams[i].profile === 'Main 10'
-        || file.ffProbeData.streams[i].bits_per_raw_sample === '10') {
+      if (
+        file.ffProbeData.streams[i].profile === 'High 10' ||
+        file.ffProbeData.streams[i].profile === 'Main 10' ||
+        file.ffProbeData.streams[i].bits_per_raw_sample === '10'
+      ) {
         main10 = true;
-        response.infoLog += 'Input file is 10bit. Disabling hardware decoding to avoid problems. \n\n';
+        response.infoLog +=
+          'Input file is 10bit. Disabling hardware decoding to avoid problems. \n\n';
       }
 
       // Increment video index. Needed to keep track of video id in case there is more than one video track.
@@ -498,8 +518,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Set bitrateSettings variable using bitrate information calculated earlier.
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
-    + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
+  bitrateSettings =
+    `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k ` +
+    `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `\nContainer for output selected as ${inputs.container}. \n`;
   response.infoLog += `The current file bitrate = ${currentBitrate}k \n`;
@@ -546,8 +567,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  response.preset += `<io> -map 0 -c:v hevc_qsv ${bitrateSettings} `
-    + `-preset ${inputs.encoder_speedpreset} -look_ahead 1 
+  response.preset +=
+    `<io> -map 0 -c:v hevc_qsv ${bitrateSettings} ` +
+    `-preset ${inputs.encoder_speedpreset} -look_ahead 1 
      -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   // Other settings to consider.
   // -b_strategy 1 -adaptive_b 1 -adaptive_i 1 -async_depth 1 -look_ahead 1 -look_ahead_depth 100

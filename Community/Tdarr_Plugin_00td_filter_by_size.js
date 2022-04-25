@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'Filter by size',
   Type: 'Video',
   Operation: 'Filter',
-  Description: 'Only allow files to be transcoded which are within the lower and upper bounds (MB) \n\n',
+  Description:
+    'Only allow files to be transcoded which are within the lower and upper bounds (MB) \n\n',
   Version: '1.00',
   Tags: 'filter',
   Inputs: [
@@ -16,8 +17,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter the upper bound size in MB for files which should be processed.'
-        + ' Files above this size won\'t be processed.',
+        'Enter the upper bound size in MB for files which should be processed.' +
+        " Files above this size won't be processed.",
     },
     {
       name: 'lowerBound',
@@ -27,8 +28,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter the lower bound size in MB for files which should be processed.'
-        + ' Files below this size won\'t be processed.',
+        'Enter the lower bound size in MB for files which should be processed.' +
+        " Files below this size won't be processed.",
     },
   ],
 });
@@ -46,9 +47,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const fileSize = file.file_size;
   if (fileSize >= inputs.lowerBound && fileSize <= inputs.upperBound) {
     response.processFile = true;
-    response.infoLog += 'File is within lower and upper bound size limits. Moving to next plugin.';
+    response.infoLog +=
+      'File is within lower and upper bound size limits. Moving to next plugin.';
   } else {
-    response.infoLog += 'File is not within lower and upper bound size limits. Breaking out of plugin stack.';
+    response.infoLog +=
+      'File is not within lower and upper bound size limits. Breaking out of plugin stack.';
   }
 
   return response;

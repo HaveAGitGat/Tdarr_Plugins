@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'Filter by bitrate',
   Type: 'Video',
   Operation: 'Filter',
-  Description: 'Only allow files to be transcoded which are within the lower and upper bounds (Kb) \n\n',
+  Description:
+    'Only allow files to be transcoded which are within the lower and upper bounds (Kb) \n\n',
   Version: '1.00',
   Tags: 'filter',
   Inputs: [
@@ -42,14 +43,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   if (
-    file.bit_rate >= inputs.lowerBound * 1000
-    && file.bit_rate <= inputs.upperBound * 1000
+    file.bit_rate >= inputs.lowerBound * 1000 &&
+    file.bit_rate <= inputs.upperBound * 1000
   ) {
     response.processFile = true;
-    response.infoLog += '☑File bitrate is within filter limits. Moving to next plugin.';
+    response.infoLog +=
+      '☑File bitrate is within filter limits. Moving to next plugin.';
   } else {
     response.processFile = false;
-    response.infoLog += '☒File bitrate is not within filter limits. Breaking out of plugin stack.\n';
+    response.infoLog +=
+      '☒File bitrate is not within filter limits. Breaking out of plugin stack.\n';
     return response;
   }
   return response;

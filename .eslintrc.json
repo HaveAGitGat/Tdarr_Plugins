@@ -1,31 +1,43 @@
 {
-    "env": {
-        "commonjs": true,
-        "es6": true,
-        "node": true
-    },
-    "extends": [
-        "airbnb-base"
+  "env": {
+    "commonjs": true,
+    "es6": true,
+    "node": true
+  },
+  "extends": [
+    "airbnb-base",
+    "plugin:prettier/recommended"
+  ],
+  "globals": {
+    "Atomics": "readonly",
+    "SharedArrayBuffer": "readonly"
+  },
+  "parserOptions": {
+    "ecmaVersion": 2018
+  },
+  "rules": {
+    "prettier/prettier": "error",
+    "global-require": 0,
+    "class-methods-use-this": 0,
+    "no-case-declarations": 0,
+    "camelcase": 0,
+    "jsx-a11y/click-events-have-key-events": 0,
+    "max-len": [
+      "error",
+      {
+        "code": 120
+      }
     ],
-    "globals": {
-        "Atomics": "readonly",
-        "SharedArrayBuffer": "readonly"
-    },
-    "parserOptions": {
-        "ecmaVersion": 2018
-    },
-    "rules": {
-        "global-require":0,
-        "class-methods-use-this": 0,
-        "no-case-declarations": 0,
-        "camelcase": 0,
-        "jsx-a11y/click-events-have-key-events": 0,
-        "no-underscore-dangle": ["error", { "allow": ["_id"] }],
-        "max-len": [
-          "error",
-          {
-            "code": 120
-          }
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": [
+          "_id"
         ]
       }
+    ]
+  },
+  "plugins": [
+    "prettier"
+  ]
 }

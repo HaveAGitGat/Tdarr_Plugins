@@ -72,7 +72,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check that inputs.container has been configured, else dump out
   if (inputs.container === '') {
-    response.infoLog += 'Plugin has not been configured, please configure required options. Skipping this plugin. \n';
+    response.infoLog +=
+      'Plugin has not been configured, please configure required options. Skipping this plugin. \n';
     response.processFile = false;
     return response;
   }
@@ -110,7 +111,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // This shouldn't be 0, for any reason, and if it is, you should get outta there.
   if (targetBitrate === 0) {
     response.processFile = false;
-    response.infoLog += 'Target bitrate could not be calculated. Skipping this plugin. \n';
+    response.infoLog +=
+      'Target bitrate could not be calculated. Skipping this plugin. \n';
     return response;
   }
 
@@ -122,17 +124,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'mov_text'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'eia_608'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'mov_text' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
         } catch (err) {
-        // Error
+          // Error
         }
       }
     }
@@ -140,19 +141,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'hdmv_pgs_subtitle'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'eia_608'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'subrip'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'hdmv_pgs_subtitle' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'subrip' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
         } catch (err) {
-        // Error
+          // Error
         }
       }
     }
@@ -164,21 +163,30 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
       // Check if the video stream is mjpeg/png, and removes it.
       // These are embedded image streams which ffmpeg doesn't like to work with as a video stream
-      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg'
-                || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png') {
-        response.infoLog += 'File Contains mjpeg / png video streams, removing.';
+      if (
+        file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg' ||
+        file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png'
+      ) {
+        response.infoLog +=
+          'File Contains mjpeg / png video streams, removing.';
         extraArguments += `-map -v:${videoIdx} `;
       }
 
       // If video is h264, and container matches desired container, we don't need to do anything
-      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' && file.container === inputs.container) {
+      if (
+        file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' &&
+        file.container === inputs.container
+      ) {
         response.processFile = false;
         response.infoLog += `File is already H264 and in ${inputs.container} \n`;
         return response;
       }
 
       // if video is h264, but container does NOT match desired container, do a remux
-      if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' && file.container !== inputs.container) {
+      if (
+        file.ffProbeData.streams[i].codec_name.toLowerCase() === 'h264' &&
+        file.container !== inputs.container
+      ) {
         response.processFile = true;
         response.infoLog += `File is already H264 but file is not in ${inputs.container}. Remuxing \n`;
         response.preset = `, -map 0 -c copy ${extraArguments}`;
@@ -191,8 +199,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Set bitrateSettings variable using bitrate information calulcated earlier.
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
-  + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
+  bitrateSettings =
+    `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k ` +
+    `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `Container for output selected as ${inputs.container}. \n`;
   response.infoLog += `Current bitrate = ${currentBitrate} \n`;
@@ -222,8 +231,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film ${bitrateSettings} `
-  + `-c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;
+  response.preset +=
+    `,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film ${bitrateSettings} ` +
+    `-c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not h264. Transcoding. \n';
   return response;

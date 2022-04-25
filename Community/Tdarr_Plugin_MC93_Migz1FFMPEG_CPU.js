@@ -11,14 +11,15 @@ const details = () => ({
                 This plugin will  skip any files that are in the VP9 codec.`,
   Version: '1.9',
   Tags: 'pre-processing,ffmpeg,video only,configurable,h265',
-  Inputs: [{
-    name: 'container',
-    type: 'string',
-    defaultValue: 'mkv',
-    inputUI: {
-      type: 'text',
-    },
-    tooltip: `Specify output container of file.
+  Inputs: [
+    {
+      name: 'container',
+      type: 'string',
+      defaultValue: 'mkv',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify output container of file.
                   \\n Ensure that all stream types you may have are supported by your chosen container.
                   \\n mkv is recommended.
                     \\nExample:\\n
@@ -26,15 +27,15 @@ const details = () => ({
 
                     \\nExample:\\n
                     mp4`,
-  },
-  {
-    name: 'bitrate_cutoff',
-    type: 'string',
-    defaultValue: '',
-    inputUI: {
-      type: 'text',
     },
-    tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.
+    {
+      name: 'bitrate_cutoff',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.
                   \\n Rate is in kbps.
                   \\n Leave empty to disable.
                     \\nExample:\\n
@@ -42,37 +43,31 @@ const details = () => ({
 
                     \\nExample:\\n
                     4000`,
-  },
-  {
-    name: 'enable_10bit',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
     },
-    tooltip: `Specify if output file should be 10bit. Default is false.
+    {
+      name: 'enable_10bit',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: ['false', 'true'],
+      },
+      tooltip: `Specify if output file should be 10bit. Default is false.
                     \\nExample:\\n
                     true
 
                     \\nExample:\\n
                     false`,
-  },
-  {
-    name: 'force_conform',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
     },
-    tooltip: `Make the file conform to output containers requirements.
+    {
+      name: 'force_conform',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: ['false', 'true'],
+      },
+      tooltip: `Make the file conform to output containers requirements.
                 \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
                 \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
@@ -81,7 +76,7 @@ const details = () => ({
 
                     \\nExample:\\n
                     false`,
-  },
+    },
   ],
 });
 
@@ -103,7 +98,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.container has been configured. If it hasn't then exit plugin.
   if (inputs.container === '') {
-    response.infoLog += 'Plugin has not been configured, please configure required options. Skipping this plugin. \n';
+    response.infoLog +=
+      'Plugin has not been configured, please configure required options. Skipping this plugin. \n';
     response.processFile = false;
     return response;
   }
@@ -146,7 +142,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Cancel plugin completely.
   if (targetBitrate === 0) {
     response.processFile = false;
-    response.infoLog += 'Target bitrate could not be calculated. Skipping this plugin. \n';
+    response.infoLog +=
+      'Target bitrate could not be calculated. Skipping this plugin. \n';
     return response;
   }
 
@@ -157,8 +154,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
       response.processFile = false;
-      response.infoLog += 'Current bitrate is below set bitrate cutoff '
-      + `of ${inputs.bitrate_cutoff}. Nothing to do, cancelling plugin. \n`;
+      response.infoLog +=
+        'Current bitrate is below set bitrate cutoff ' +
+        `of ${inputs.bitrate_cutoff}. Nothing to do, cancelling plugin. \n`;
       return response;
     }
   }
@@ -171,12 +169,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'mov_text'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'eia_608'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'mov_text' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
@@ -189,14 +186,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'hdmv_pgs_subtitle'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'eia_608'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'subrip'
-                        || file.ffProbeData.streams[i].codec_name
-                          .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'hdmv_pgs_subtitle' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'subrip' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
@@ -220,15 +215,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Check if codec of stream is mjpeg/png.
       // If so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
-      if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
+      if (
+        file.ffProbeData.streams[i].codec_name === 'mjpeg' ||
+        file.ffProbeData.streams[i].codec_name === 'png'
+      ) {
         extraArguments += `-map -v:${videoIdx} `;
       }
       // Check if codec of stream is hevc or vp9
       // AND check if file.container matches inputs.container.
       // If so nothing for plugin to do.
       if (
-        (file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9')
-                && file.container === `${inputs.container}`
+        (file.ffProbeData.streams[i].codec_name === 'hevc' ||
+          file.ffProbeData.streams[i].codec_name === 'vp9') &&
+        file.container === `${inputs.container}`
       ) {
         response.processFile = false;
         response.infoLog += `File is already hevc or vp9 & in ${inputs.container}. \n`;
@@ -238,8 +237,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // AND check if file.container does NOT match inputs.container.
       // If so remux file.
       if (
-        (file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9')
-                && file.container !== `${inputs.container}`
+        (file.ffProbeData.streams[i].codec_name === 'hevc' ||
+          file.ffProbeData.streams[i].codec_name === 'vp9') &&
+        file.container !== `${inputs.container}`
       ) {
         response.infoLog += `File is hevc or vp9 but is not in ${inputs.container} container. Remuxing. \n`;
         response.preset = `, -map 0 -c copy ${extraArguments}`;
@@ -252,8 +252,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Set bitrateSettings variable using bitrate information calulcated earlier.
-  bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
-  + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
+  bitrateSettings =
+    `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k ` +
+    `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `Container for output selected as ${inputs.container}. \n`;
   response.infoLog += `Current bitrate = ${currentBitrate} \n`;
@@ -262,8 +263,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
-  response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} `
-  + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  response.preset +=
+    `,-map 0 -c:v libx265 ${bitrateSettings} ` +
+    `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;

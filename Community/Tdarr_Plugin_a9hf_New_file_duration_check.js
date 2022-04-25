@@ -18,8 +18,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter the upper bound % for the new file duration. For example, if '110' is entered, 
+      tooltip: `Enter the upper bound % for the new file duration. For example, if '110' is entered, 
         then if the new file duration is 11% larger than the original, an error will be given.`,
     },
     {
@@ -29,8 +28,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter the lower bound % for the new file duration. For example, if '90' is entered, 
+      tooltip: `Enter the lower bound % for the new file duration. For example, if '90' is entered, 
         then if the new file duration is less than 90% of the original, an error will be given.`,
     },
   ],
@@ -55,7 +53,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const getData = (obj) => {
     try {
-      return Number(obj.mediaInfo.track.filter((row) => row['@type'] === 'General')[0].Duration);
+      return Number(
+        obj.mediaInfo.track.filter((row) => row['@type'] === 'General')[0]
+          .Duration,
+      );
     } catch (err) {
       // err
     }
@@ -67,18 +68,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const ratio = ((newData / oldData) * 100.0).toFixed(3);
 
-  const dataText = `New file has duration ${newData} s which is ${ratio}% `
-    + `of original file duration:  ${oldData} s`;
+  const dataText =
+    `New file has duration ${newData} s which is ${ratio}% ` +
+    `of original file duration:  ${oldData} s`;
 
   const getBound = (bound) => (bound / 100.0) * oldData;
 
   const errText = 'New file duration not within limits.';
   if (newData > getBound(inputs.upperBound)) {
     // Item will be errored in UI
-    throw new Error(`${errText} ${dataText}. upperBound is ${inputs.upperBound}%`);
+    throw new Error(
+      `${errText} ${dataText}. upperBound is ${inputs.upperBound}%`,
+    );
   } else if (newData < getBound(inputs.lowerBound)) {
     // Item will be errored in UI
-    throw new Error(`${errText} ${dataText}. lowerBound is ${inputs.lowerBound}%`);
+    throw new Error(
+      `${errText} ${dataText}. lowerBound is ${inputs.lowerBound}%`,
+    );
   } else {
     response.infoLog += dataText;
   }

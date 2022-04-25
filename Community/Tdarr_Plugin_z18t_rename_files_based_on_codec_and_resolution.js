@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'Rename based on codec and resolution',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: '[Contains built-in filter]This plugin renames files depending on codec and resolution\n\n',
+  Description:
+    '[Contains built-in filter]This plugin renames files depending on codec and resolution\n\n',
   Version: '1.00',
   Tags: 'post-processing',
   Inputs: [],
@@ -93,17 +94,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
 
       // clean up word breakers
-      const breakers = [
-        '.',
-        '_',
-        '-',
-      ];
+      const breakers = ['.', '_', '-'];
 
       fileName = fileName.split('');
       for (let i = 0; i < fileName.length; i += 1) {
         for (let j = 0; j < breakers.length; j += 1) {
           for (let k = 0; k < breakers.length; k += 1) {
-            if (fileName[i] === breakers[j] && fileName[i + 1] === breakers[k]) {
+            if (
+              fileName[i] === breakers[j] &&
+              fileName[i + 1] === breakers[k]
+            ) {
               fileName.splice(i, 1);
               i -= 1;
             }

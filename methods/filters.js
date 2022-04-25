@@ -11,4 +11,6 @@ module.exports.filterByResolution = importFresh(
   './library/filters/filterByResolution.js',
 );
 module.exports.filterBySize = importFresh('./library/filters/filterBySize.js');
-module.exports.filterByBitrate = importFresh('./library/filters/filterByBitrate.js');
+module.exports.filterByBitrate = importFresh(
+  './library/filters/filterByBitrate.js',
+);

@@ -18,8 +18,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Specify the process order.
+      tooltip: `Specify the process order.
 For example, if 'languages' is first, the streams will be ordered based on that first.
 
         \\nExample:\\n
@@ -33,8 +32,7 @@ For example, if 'languages' is first, the streams will be ordered based on that 
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Specify the language tags order, separated by commas. Leave blank to disable.
+      tooltip: `Specify the language tags order, separated by commas. Leave blank to disable.
         \\nExample:\\n
         eng,fre
         `,
@@ -46,8 +44,7 @@ For example, if 'languages' is first, the streams will be ordered based on that 
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Specify the channels order, separated by commas. Leave blank to disable.
+      tooltip: `Specify the channels order, separated by commas. Leave blank to disable.
           
           \\nExample:\\n
           7.1,5.1,2,1`,
@@ -59,8 +56,7 @@ For example, if 'languages' is first, the streams will be ordered based on that 
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Specify the codec order, separated by commas. Leave blank to disable.
+      tooltip: `Specify the codec order, separated by commas. Leave blank to disable.
           
           \\nExample:\\n
           aac,ac3`,
@@ -72,8 +68,7 @@ For example, if 'languages' is first, the streams will be ordered based on that 
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Specify the streamTypes order, separated by commas. Leave blank to disable.
+      tooltip: `Specify the streamTypes order, separated by commas. Leave blank to disable.
         \\nExample:\\n
         video,audio,subtitle
         `,
@@ -112,11 +107,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let j = 0; j < streams.length; j += 1) {
         if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
           if (
-            streams[j].codec_long_name
-            && (
-              streams[j].codec_long_name.includes('image')
-              || streams[j].codec_name.includes('png')
-            )
+            streams[j].codec_long_name &&
+            (streams[j].codec_long_name.includes('image') ||
+              streams[j].codec_name.includes('png'))
           ) {
             // do nothing, ffmpeg bug, doesn't move image streams
           } else {
@@ -130,13 +123,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   };
 
-  let {
-    processOrder,
-  } = inputs;
+  let { processOrder } = inputs;
 
-  const {
-    languages, codecs, channels, streamTypes,
-  } = inputs;
+  const { languages, codecs, channels, streamTypes } = inputs;
 
   const sortTypes = {
     languages: {

@@ -16,10 +16,7 @@ const details = () => ({
       defaultValue: 'http',
       inputUI: {
         type: 'dropdown',
-        options: [
-          'http',
-          'https',
-        ],
+        options: ['http', 'https'],
       },
       tooltip: `
                Specified the type of request to make, http:// or https://
@@ -135,7 +132,8 @@ function checkReply(response, statusCode, urlNoToken) {
   if (statusCode === 200) {
     response.infoLog += '☒ Above shown folder scanned in Plex! \n';
   } else if (statusCode === 401) {
-    response.infoLog += 'Plex replied that the token was not authorized on this server \n';
+    response.infoLog +=
+      'Plex replied that the token was not authorized on this server \n';
   } else if (statusCode === 404) {
     response.infoLog += `404 Plex not found, http/https is set properly? The URL used was 
   ${urlNoToken}[redacted] \n`;
@@ -170,7 +168,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const tdarrPath = inputs.Tdarr_Path;
 
   if (!type || !url || !token || !key) {
-    throw new Error('Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required');
+    throw new Error(
+      'Url_Protocol, Plex_Url, Plex_Token, and Library_Key are all required',
+    );
   }
 
   let filePath = file.file.substring(0, file.file.lastIndexOf('/'));
@@ -186,29 +186,35 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Attempting to update Plex path ${filePath} in library ${key}\n`;
 
   const portIfUsed = port ? `:${port}` : '';
-  const urlNoToken = `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?`
-    + `path=${encodeURIComponent(filePath)}&X-Plex-Token=`;
+  const urlNoToken =
+    `${type}://${url}${portIfUsed}/library/sections/${key}/refresh?` +
+    `path=${encodeURIComponent(filePath)}&X-Plex-Token=`;
 
   if (type === 'http') {
     await new Promise((resolve) => {
-      http.get(urlNoToken + token, (res) => {
-        checkReply(response, res.statusCode, urlNoToken);
-        resolve();
-      }).on('error', (e) => {
-        response.infoLog += `We have encountered an error: ${e}`;
-        resolve();
-      });
+      http
+        .get(urlNoToken + token, (res) => {
+          checkReply(response, res.statusCode, urlNoToken);
+          resolve();
+        })
+        .on('error', (e) => {
+          response.infoLog += `We have encountered an error: ${e}`;
+          resolve();
+        });
     });
     return response;
-  } if (type === 'https') {
+  }
+  if (type === 'https') {
     await new Promise((resolve) => {
-      https.get(urlNoToken + token, { rejectUnauthorized: false }, (res) => {
-        checkReply(response, res.statusCode, urlNoToken);
-        resolve();
-      }).on('error', (e) => {
-        response.infoLog += `We have encountered an error: ${e}`;
-        resolve();
-      });
+      https
+        .get(urlNoToken + token, { rejectUnauthorized: false }, (res) => {
+          checkReply(response, res.statusCode, urlNoToken);
+          resolve();
+        })
+        .on('error', (e) => {
+          response.infoLog += `We have encountered an error: ${e}`;
+          resolve();
+        });
     });
     return response;
   }

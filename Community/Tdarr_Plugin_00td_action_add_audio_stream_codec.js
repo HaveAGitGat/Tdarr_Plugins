@@ -32,8 +32,7 @@ const details = () => ({
           'truehd',
         ],
       },
-      tooltip:
-        'Enter the desired audio codec',
+      tooltip: 'Enter the desired audio codec',
     },
     {
       name: 'language',
@@ -43,8 +42,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Tdarr will check to see if the stream language tag includes the tag you specify.'
-        + ' Case-insensitive. One tag only',
+        'Tdarr will check to see if the stream language tag includes the tag you specify.' +
+        ' Case-insensitive. One tag only',
     },
     {
       name: 'channels',
@@ -52,15 +51,9 @@ const details = () => ({
       defaultValue: 2,
       inputUI: {
         type: 'dropdown',
-        options: [
-          '1',
-          '2',
-          '6',
-          '8',
-        ],
+        options: ['1', '2', '6', '8'],
       },
-      tooltip:
-        'Enter the desired number of channels',
+      tooltip: 'Enter the desired number of channels',
     },
   ],
 });

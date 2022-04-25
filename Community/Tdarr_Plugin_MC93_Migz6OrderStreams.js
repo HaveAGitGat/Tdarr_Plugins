@@ -5,7 +5,8 @@ const details = () => ({
   Name: 'Migz-Order Streams',
   Type: 'Any',
   Operation: 'Transcode',
-  Description: 'Orders streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n',
+  Description:
+    'Orders streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n',
   Version: '1.3',
   Tags: 'pre-processing,ffmpeg,',
   Inputs: [],
@@ -95,7 +96,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         subtitleIdx += 1;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -104,13 +105,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       // Check if stream is video AND is not a mjpeg.
       if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video'
-        && file.ffProbeData.streams[i].codec_name.toLowerCase() !== 'mjpeg'
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video' &&
+        file.ffProbeData.streams[i].codec_name.toLowerCase() !== 'mjpeg'
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -119,13 +120,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       // Check if stream is audio AND 2 channel.
       if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels === 2
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio' &&
+        file.ffProbeData.streams[i].channels === 2
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -134,13 +135,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       // Check if stream is audio AND 6 channel.
       if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels === 6
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio' &&
+        file.ffProbeData.streams[i].channels === 6
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -149,13 +150,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       // Check if stream is audio AND 8 channel.
       if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels === 8
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio' &&
+        file.ffProbeData.streams[i].channels === 8
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -164,15 +165,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       // Check if stream is audio AND not 2, 6 or 8 channel.
       if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-        && file.ffProbeData.streams[i].channels !== 2
-        && file.ffProbeData.streams[i].channels !== 6
-        && file.ffProbeData.streams[i].channels !== 8
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio' &&
+        file.ffProbeData.streams[i].channels !== 2 &&
+        file.ffProbeData.streams[i].channels !== 6 &&
+        file.ffProbeData.streams[i].channels !== 8
       ) {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -184,7 +185,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         ffmpegCommandInsert += `-map 0:${i} `;
       }
     } catch (err) {
-    // Error
+      // Error
     }
   }
 
@@ -193,8 +194,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.processFile = true;
     response.preset = `,${ffmpegCommandInsert} -c copy -max_muxing_queue_size 9999`;
     response.reQueueAfter = true;
-    response.infoLog
-      += '☒ Streams are out of order, reorganizing streams. Video, Audio, Subtitles. \n';
+    response.infoLog +=
+      '☒ Streams are out of order, reorganizing streams. Video, Audio, Subtitles. \n';
   } else {
     response.infoLog += '☑ Streams are in expected order. \n ';
     response.processFile = false;
