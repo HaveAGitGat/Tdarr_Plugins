@@ -202,7 +202,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.infoLog += `Language ${languagesAudioStreams[i].language};
           hasChannel2 ${languagesAudioStreams[i].hasChannel2}${languagesAudioStreams[i].hasChannel2 ? ` {audio track ${languagesAudioStreams[i].channel2.index}}` : ''};
           hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''};
-          hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
+          hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel8 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
 
       if (languagesAudioStreams[i].hasChannel8 && !languagesAudioStreams[i].hasChannel6) {
         ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
