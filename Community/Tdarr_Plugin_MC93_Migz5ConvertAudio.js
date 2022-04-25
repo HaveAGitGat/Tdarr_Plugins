@@ -200,8 +200,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < languagesAudioStreams.length; i++) {
       if (debug)
         response.infoLog += `Language ${languagesAudioStreams[i].language};`
-          + ` hasChannel2 ${languagesAudioStreams[i].hasChannel2}${languagesAudioStreams[i].hasChannel2 ? ` {audio track ${languagesAudioStreams[i].channel2.index}}` : ''}`
-          + ` hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''}`
+          + ` hasChannel2 ${languagesAudioStreams[i].hasChannel2}${languagesAudioStreams[i].hasChannel2 ? ` {audio track ${languagesAudioStreams[i].channel2.index}}` : ''};`
+          + ` hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''};`
           + ` hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel8 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
 
       if (languagesAudioStreams[i].hasChannel8 && !languagesAudioStreams[i].hasChannel6) {
