@@ -11,7 +11,7 @@ const details = () => ({
   Inputs: [{
     name: 'aac_stereo',
     type: 'boolean',
-    defaultValue: true,
+    defaultValue: false,
     inputUI: {
       type: 'dropdown',
       options: [
@@ -30,7 +30,7 @@ const details = () => ({
   {
     name: 'downmix',
     type: 'boolean',
-    defaultValue: true,
+    defaultValue: false,
     inputUI: {
       type: 'dropdown',
       options: [
@@ -50,7 +50,7 @@ const details = () => ({
   {
     name: 'downmix_language_aware',
     type: 'boolean',
-    defaultValue: true,
+    defaultValue: false,
     inputUI: {
       type: 'dropdown',
       options: [
@@ -70,7 +70,7 @@ const details = () => ({
   {
     name: 'debug',
     type: 'boolean',
-    defaultValue: true,
+    defaultValue: false,
     inputUI: {
       type: 'dropdown',
       options: [
