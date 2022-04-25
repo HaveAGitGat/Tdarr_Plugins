@@ -2,10 +2,7 @@
 
 const fs = require('fs');
 
-const folders = [
-  './Community',
-  './examples',
-];
+const folders = ['./Community', './examples'];
 
 folders.forEach((folder) => {
   const files = fs.readdirSync(folder).filter((row) => row.includes('.js'));
@@ -26,9 +23,11 @@ folders.forEach((folder) => {
   for (let i = 0; i < files.length; i += 1) {
     let read = fs.readFileSync(`${folder}/${files[i]}`).toString();
 
-    const importLib = 'const lib = require(\'../methods/lib\')();';
+    const importLib = "const lib = require('../methods/lib')();";
     if (!read.includes(importLib)) {
-      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${importLib}`);
+      console.log(
+        `Plugin error: '${folder}/${files[i]}' does not contain ${importLib}`,
+      );
       read = `${importLib}\n${read}`;
       // fs.writeFileSync(`${folder}/${files[i]}`, read)
       process.exit(1);
@@ -36,24 +35,29 @@ folders.forEach((folder) => {
 
     const detailsText = 'const details = () =>';
     if (!read.includes(detailsText)) {
-      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${detailsText}`);
+      console.log(
+        `Plugin error: '${folder}/${files[i]}' does not contain ${detailsText}`,
+      );
       process.exit(1);
     }
 
-    const syncText = 'const plugin = (file, librarySettings, inputs, otherArguments) => {';
-    const asyncText = 'const plugin = async (file, librarySettings, inputs, otherArguments) => {';
+    const syncText =
+      'const plugin = (file, librarySettings, inputs, otherArguments) => {';
+    const asyncText =
+      'const plugin = async (file, librarySettings, inputs, otherArguments) => {';
 
-    if (!read.includes(syncText)
-      && !read.includes(asyncText)
-    ) {
-      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${syncText} or ${asyncText}`);
+    if (!read.includes(syncText) && !read.includes(asyncText)) {
+      console.log(
+        `Plugin error: '${folder}/${files[i]}' does not contain ${syncText} or ${asyncText}`,
+      );
       process.exit(1);
     }
 
     const inputsText = 'inputs = lib.loadDefaultValues(inputs, details);';
-    if (!read.includes(inputsText)
-    ) {
-      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${inputsText}`);
+    if (!read.includes(inputsText)) {
+      console.log(
+        `Plugin error: '${folder}/${files[i]}' does not contain ${inputsText}`,
+      );
       process.exit(1);
     }
 
@@ -61,7 +65,9 @@ folders.forEach((folder) => {
 module.exports.plugin = plugin;`;
 
     if (!read.includes(exportText)) {
-      console.log(`Plugin error: '${folder}/${files[i]}' does not contain ${exportText}`);
+      console.log(
+        `Plugin error: '${folder}/${files[i]}' does not contain ${exportText}`,
+      );
       read = read.replace('module.exports.details = details;', '');
       read = read.replace('module.exports.plugin = plugin;', '');
       read += `\n${exportText}`;
@@ -80,7 +86,9 @@ module.exports.plugin = plugin;`;
         const countOpen = allBefore.join(keyWord).split('{').length - 1;
         const countClose = allBefore.join(keyWord).split('}').length - 1;
         if (countOpen === countClose) {
-          console.log(`Plugin has requires outside of function '${folder}/${files[i]}'`);
+          console.log(
+            `Plugin has requires outside of function '${folder}/${files[i]}'`,
+          );
           process.exit(1);
         }
       }
@@ -99,14 +107,18 @@ module.exports.plugin = plugin;`;
 
     detailsOrder.forEach((detail) => {
       if (detailsKeys.indexOf(detail) === -1) {
-        console.log(`Plugin details is missing '${folder}/${files[i]}' : ${detail}`);
+        console.log(
+          `Plugin details is missing '${folder}/${files[i]}' : ${detail}`,
+        );
         process.exit(1);
       }
     });
 
     detailsKeys.forEach((detail, index) => {
       if (detailsOrder[index] !== detail) {
-        console.log(`Plugin details keys are not in the correct order: '${folder}/${files[i]}' ${detail}`);
+        console.log(
+          `Plugin details keys are not in the correct order: '${folder}/${files[i]}' ${detail}`,
+        );
         process.exit(1);
       }
     });
@@ -127,12 +139,16 @@ module.exports.plugin = plugin;`;
     }
 
     if (files[i].split('.js').join('') !== pluginDetails.id) {
-      console.log(`Plugin file name does not match details id'${folder}/${files[i]}'`);
+      console.log(
+        `Plugin file name does not match details id'${folder}/${files[i]}'`,
+      );
       process.exit(1);
     }
 
     if (!['Transcode', 'Filter'].includes(pluginDetails.Operation)) {
-      console.log(`Plugin does not have a valid Operation '${folder}/${files[i]}'`);
+      console.log(
+        `Plugin does not have a valid Operation '${folder}/${files[i]}'`,
+      );
       process.exit(1);
     } else if (detailsKeys.length > detailsOrder.length) {
       console.log(`Plugin details are too many '${folder}/${files[i]}'`);
@@ -147,7 +163,9 @@ module.exports.plugin = plugin;`;
       for (let j = 0; j < inputs.length; j += 1) {
         // Prevent duplicate plugin inputs
         if (savedInputs[inputs[j].name] === true) {
-          console.log(`Plugin Input already exists: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          console.log(
+            `Plugin Input already exists: '${folder}/${files[i]}' : ${inputs[j].name}`,
+          );
           process.exit(1);
         } else {
           savedInputs[inputs[j].name] = true;
@@ -155,36 +173,52 @@ module.exports.plugin = plugin;`;
 
         const inputKeys = Object.keys(inputs[j]);
         if (
-          inputKeys[0] !== 'name'
-          || inputKeys[1] !== 'type'
-          || inputKeys[2] !== 'defaultValue'
-          || inputKeys[3] !== 'inputUI'
-          || inputKeys[4] !== 'tooltip'
+          inputKeys[0] !== 'name' ||
+          inputKeys[1] !== 'type' ||
+          inputKeys[2] !== 'defaultValue' ||
+          inputKeys[3] !== 'inputUI' ||
+          inputKeys[4] !== 'tooltip'
         ) {
-          console.log(`Plugin Input keys are not in correct order: '${folder}/${files[i]}' : ${inputs[j].name}`);
-          process.exit(1);
-        } else if (inputs[j].type === undefined || !pluginInputTypes.includes(inputs[j].type)) {
-          console.log(`Plugin Input does not have a type: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          console.log(
+            `Plugin Input keys are not in correct order: '${folder}/${files[i]}' : ${inputs[j].name}`,
+          );
           process.exit(1);
         } else if (
-          (inputs[j].type === 'string' && typeof inputs[j].defaultValue !== 'string')
-          || (inputs[j].type === 'number' && typeof inputs[j].defaultValue !== 'number')
-          || (inputs[j].type === 'boolean' && typeof inputs[j].defaultValue !== 'boolean')
+          inputs[j].type === undefined ||
+          !pluginInputTypes.includes(inputs[j].type)
+        ) {
+          console.log(
+            `Plugin Input does not have a type: '${folder}/${files[i]}' : ${inputs[j].name}`,
+          );
+          process.exit(1);
+        } else if (
+          (inputs[j].type === 'string' &&
+            typeof inputs[j].defaultValue !== 'string') ||
+          (inputs[j].type === 'number' &&
+            typeof inputs[j].defaultValue !== 'number') ||
+          (inputs[j].type === 'boolean' &&
+            typeof inputs[j].defaultValue !== 'boolean')
         ) {
           console.log(`Plugin Input type does not match defaultValue type:
            '${folder}/${files[i]}' : ${inputs[j].name}`);
           process.exit(1);
         } else if (!['text', 'dropdown'].includes(inputs[j].inputUI.type)) {
-          console.log(`Plugin Input inputUI is invalid: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          console.log(
+            `Plugin Input inputUI is invalid: '${folder}/${files[i]}' : ${inputs[j].name}`,
+          );
           process.exit(1);
         } else if (inputs[j].defaultValue === undefined) {
-          console.log(`Plugin Input does not have a default value: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          console.log(
+            `Plugin Input does not have a default value: '${folder}/${files[i]}' : ${inputs[j].name}`,
+          );
           process.exit(1);
         }
 
         const count = read.split(inputs[j].name).length - 1;
         if (count === 1) {
-          console.log(`Plugin Input is not used: '${folder}/${files[i]}' : ${inputs[j].name}`);
+          console.log(
+            `Plugin Input is not used: '${folder}/${files[i]}' : ${inputs[j].name}`,
+          );
           process.exit(1);
         }
       }

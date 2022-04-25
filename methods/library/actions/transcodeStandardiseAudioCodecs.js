@@ -29,8 +29,8 @@ module.exports = function transcodeStandardiseAudioCodecs(file, audioEncoder) {
 
       try {
         if (
-          file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-          && file.ffProbeData.streams[i].codec_name !== audioCodec
+          file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio' &&
+          file.ffProbeData.streams[i].codec_name !== audioCodec
         ) {
           ffmpegCommandInsert += ` -c:a:${audioIdx} ${audioEncoder}`;
           hasNonSpecifiedAudioCodecStream = true;

@@ -35,15 +35,7 @@ encoding.\\n\\n
       defaultValue: 'false',
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          '8KUHD',
-          '4KUHD',
-          '1080p',
-          '720p',
-          '576p',
-          '480p',
-        ],
+        options: ['false', '8KUHD', '4KUHD', '1080p', '720p', '576p', '480p'],
       },
       tooltip: `== Maximum Resolution ==\\n\\n
         Videos that exceed this resolution will be resized down to this resolution.\\n
@@ -76,16 +68,12 @@ encoding.\\n\\n
       defaultValue: 'mp4',
       inputUI: {
         type: 'dropdown',
-        options: [
-          'mp4',
-          'mkv',
-        ],
+        options: ['mp4', 'mkv'],
       },
       tooltip: `== Container ==\\n\\n
         mkv or mp4.\\n`,
     },
   ],
-
 });
 
 const MediaInfo = {
@@ -177,19 +165,24 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Set decoding options here
   switch (file.ffProbeData.streams[0].codec_name) {
     case 'hevc':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid  ';
+      response.preset =
+        '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid  ';
       break;
     case 'h264':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v h264_cuvid ';
+      response.preset =
+        '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v h264_cuvid ';
       break;
     case 'vc1':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vc1_cuvid ';
+      response.preset =
+        '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vc1_cuvid ';
       break;
     case 'vp8':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vp8_cuvid ';
+      response.preset =
+        '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vp8_cuvid ';
       break;
     case 'vp9':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vp9_cuvid ';
+      response.preset =
+        '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vp9_cuvid ';
       break;
     default:
       break;
@@ -198,15 +191,27 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let targetBitrate;
 
   // Resize high resolution videos to 1080p.
-  if (resolutionOrder.indexOf(file.video_resolution) > resolutionOrder.indexOf(maxResolution)) {
+  if (
+    resolutionOrder.indexOf(file.video_resolution) >
+    resolutionOrder.indexOf(maxResolution)
+  ) {
     // File resolution exceeds limit, need to resize.
     response.preset += ` -resize ${resolutions[maxResolution].dimensions} `;
     response.infoLog += `Resizing to ${resolutions[maxResolution].dimensions}.\n`;
     response.processFile = true;
-    targetBitrate = Math.round((resolutions[maxResolution].pixelCount * MediaInfo.videoFPS) * compressionFactor);
+    targetBitrate = Math.round(
+      resolutions[maxResolution].pixelCount *
+        MediaInfo.videoFPS *
+        compressionFactor,
+    );
   } else {
     // No resize needed.
-    targetBitrate = Math.round((MediaInfo.videoWidth * MediaInfo.videoHeight * MediaInfo.videoFPS) * compressionFactor);
+    targetBitrate = Math.round(
+      MediaInfo.videoWidth *
+        MediaInfo.videoHeight *
+        MediaInfo.videoFPS *
+        compressionFactor,
+    );
   }
 
   // Calculate bitrates
@@ -223,12 +228,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     bufsize = Math.round(MediaInfo.videoBR);
   }
 
-  response.preset += ',-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc'
-    + ` -preset ${inputs.ffmpegPreset} -profile:v main10 -rc-lookahead 32 `
-    + '-spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 ';
-  response.infoLog += `Video bitrate is ${Math.round(MediaInfo.videoBR / 1000)}Kbps,`
-    + ` overall is ${Math.round(MediaInfo.overallBR / 1000)}Kbps. `;
-  response.infoLog += `Calculated target is ${Math.round(targetBitrate / 1000)}Kbps.\n`;
+  response.preset +=
+    ',-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc' +
+    ` -preset ${inputs.ffmpegPreset} -profile:v main10 -rc-lookahead 32 ` +
+    '-spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 ';
+  response.infoLog +=
+    `Video bitrate is ${Math.round(MediaInfo.videoBR / 1000)}Kbps,` +
+    ` overall is ${Math.round(MediaInfo.overallBR / 1000)}Kbps. `;
+  response.infoLog += `Calculated target is ${Math.round(
+    targetBitrate / 1000,
+  )}Kbps.\n`;
 
   // Adjust target bitrates by codec and bitrate
   switch (file.ffProbeData.streams[0].codec_name) {
@@ -237,14 +246,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.processFile = true;
         targetBitrate = Math.min(MediaInfo.overallBR, targetBitrate);
         response.preset += ` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate} -bufsize ${bufsize} `;
-        response.infoLog += `☒HEVC Bitrate for ${file.video_resolution} could not be determined, 
+        response.infoLog += `☒HEVC Bitrate for ${
+          file.video_resolution
+        } could not be determined, 
           using sensible default of ${Math.round(targetBitrate / 1000)}Kbps.\n`;
-      } else if ((MediaInfo.videoBR > targetBitrate * 1.5) || file.forceProcessing === true) {
+      } else if (
+        MediaInfo.videoBR > targetBitrate * 1.5 ||
+        file.forceProcessing === true
+      ) {
         response.processFile = true;
         response.preset += ` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate} -bufsize ${bufsize} `;
-        response.infoLog += `☒HEVC Bitrate for ${file.video_resolution}`
-          + ` exceeds ${Math.round((targetBitrate * 1.5) / 1000)}Kbps,`
-          + ` downsampling to ${Math.round(targetBitrate / 1000)}Kbps.\n`;
+        response.infoLog +=
+          `☒HEVC Bitrate for ${file.video_resolution}` +
+          ` exceeds ${Math.round((targetBitrate * 1.5) / 1000)}Kbps,` +
+          ` downsampling to ${Math.round(targetBitrate / 1000)}Kbps.\n`;
       } else {
         response.infoLog += '☑HEVC Bitrate is within limits.\n';
       }
@@ -256,22 +271,33 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (isNaN(MediaInfo.videoBR)) {
         new_bitrate = Math.min(MediaInfo.overallBR * 0.7, targetBitrate);
       } else {
-        new_bitrate = Math.min(Math.round(MediaInfo.videoBR * 0.7), targetBitrate);
+        new_bitrate = Math.min(
+          Math.round(MediaInfo.videoBR * 0.7),
+          targetBitrate,
+        );
         // New bitrate should not be lower than our 60% of our target.
-        new_bitrate = Math.max(new_bitrate, Math.min(MediaInfo.videoBR, targetBitrate * 0.6));
+        new_bitrate = Math.max(
+          new_bitrate,
+          Math.min(MediaInfo.videoBR, targetBitrate * 0.6),
+        );
       }
-      response.preset += ` -b:v ${new_bitrate} -maxrate ${Math.round(new_bitrate * 1.3)}`
-      + ` -minrate ${Math.round(new_bitrate * 0.7)}  -bufsize ${bufsize}`;
-      response.infoLog += `☒H264 Resolution is ${file.video_resolution},`
-      + ` bitrate was ${Math.round(MediaInfo.videoBR / 1000)}Kbps.`
-      + ` HEVC target bitrate will be ${Math.round(new_bitrate / 1000)}Kbps.\n`;
+      response.preset +=
+        ` -b:v ${new_bitrate} -maxrate ${Math.round(new_bitrate * 1.3)}` +
+        ` -minrate ${Math.round(new_bitrate * 0.7)}  -bufsize ${bufsize}`;
+      response.infoLog +=
+        `☒H264 Resolution is ${file.video_resolution},` +
+        ` bitrate was ${Math.round(MediaInfo.videoBR / 1000)}Kbps.` +
+        ` HEVC target bitrate will be ${Math.round(new_bitrate / 1000)}Kbps.\n`;
       break; // case "h264"
     default:
       response.processFile = true;
       response.preset += ` -b:v ${targetBitrate} -maxrate ${maxBitrate} -minrate ${minBitrate} -bufsize ${bufsize} `;
-      response.infoLog += `☒${file.ffProbeData.streams[0].codec_name} resolution is ${file.video_resolution},`
-      + ` bitrate was ${Math.round(MediaInfo.videoBR / 1000)}Kbps.`
-        + ` HEVC target bitrate will be ${Math.round(targetBitrate / 1000)}Kbps.\n`;
+      response.infoLog +=
+        `☒${file.ffProbeData.streams[0].codec_name} resolution is ${file.video_resolution},` +
+        ` bitrate was ${Math.round(MediaInfo.videoBR / 1000)}Kbps.` +
+        ` HEVC target bitrate will be ${Math.round(
+          targetBitrate / 1000,
+        )}Kbps.\n`;
       break; // default
   } // switch (file.ffProbeData.streams[0].codec_name)
 

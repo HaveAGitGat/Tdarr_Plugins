@@ -19,8 +19,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        'Enter the desired container',
+      tooltip: 'Enter the desired container',
     },
   ],
 });
@@ -42,10 +41,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const { container } = inputs;
 
-  const remuxContainer = lib.actions.remuxContainer(
-    file,
-    container,
-  );
+  const remuxContainer = lib.actions.remuxContainer(file, container);
 
   response.preset = ', -map 0 -c copy';
   response.container = `.${inputs.container}`;

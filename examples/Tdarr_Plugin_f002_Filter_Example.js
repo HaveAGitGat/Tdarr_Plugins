@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'Filter resolutions',
   Type: 'Video',
   Operation: 'Filter',
-  Description: 'This plugin prevents processing files with specified resolutions \n\n',
+  Description:
+    'This plugin prevents processing files with specified resolutions \n\n',
   Version: '1.00',
   Tags: '',
   Inputs: [],
@@ -20,10 +21,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const resolutionsToSkip = [
-    '1080p',
-    '4KUHD',
-  ];
+  const resolutionsToSkip = ['1080p', '4KUHD'];
 
   for (let i = 0; i < resolutionsToSkip.length; i += 1) {
     if (file.video_resolution === resolutionsToSkip[i]) {

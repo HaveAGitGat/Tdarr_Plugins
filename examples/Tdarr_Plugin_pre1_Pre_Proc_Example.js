@@ -7,9 +7,7 @@
 /* eslint no-param-reassign: 0 */ // --> OFF
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
-module.exports.dependencies = [
-  'import-fresh',
-];
+module.exports.dependencies = ['import-fresh'];
 
 const details = () => ({
   id: 'Tdarr_Plugin_pre1_Pre_Proc_Example',
@@ -17,7 +15,8 @@ const details = () => ({
   Name: 'No title meta data ',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n',
+  Description:
+    'This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n',
   Version: '1.00',
   Tags: 'ffmpeg,h265', // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
 
@@ -56,11 +55,7 @@ const details = () => ({
       defaultValue: 2,
       inputUI: {
         type: 'dropdown',
-        options: [
-          '1',
-          '2',
-          '6',
-        ],
+        options: ['1', '2', '6'],
       },
       tooltip: `Desired audio channel number.
       \\nExample:\\n

@@ -4,10 +4,11 @@ const details = () => ({
   Name: 'drpeppershaker Extract embedded subtitles and optionally remove them',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'This plugin extracts embedded subs in one pass inside Tdarr and will optionally remove them. \n\n '
-      + 'All processes happen within Tdarr without the use of any exec() functions, which lets the progress bar '
-      + 'report the status correctly. AND all subtitles are extracted in one pass, which is much faster than '
-      + 'other options.',
+  Description:
+    'This plugin extracts embedded subs in one pass inside Tdarr and will optionally remove them. \n\n ' +
+    'All processes happen within Tdarr without the use of any exec() functions, which lets the progress bar ' +
+    'report the status correctly. AND all subtitles are extracted in one pass, which is much faster than ' +
+    'other options.',
   // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
   // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
   Version: '1.04',
@@ -36,7 +37,8 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-  const lib = require('../methods/lib')(); const fs = require('fs');
+  const lib = require('../methods/lib')();
+  const fs = require('fs');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
@@ -56,7 +58,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  const subsArr = file.ffProbeData.streams.filter((row) => row.codec_name === 'subrip');
+  const subsArr = file.ffProbeData.streams.filter(
+    (row) => row.codec_name === 'subrip',
+  );
 
   if (subsArr.length === 0) {
     response.infoLog += 'No subs in file to extract!\n';
@@ -98,7 +102,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const { index } = subStream;
     if (fs.existsSync(`${subsFile}`)) {
       response.infoLog += `${lang}.srt already exists. Skipping!\n`;
-    } else if (title.toLowerCase().includes('commentary') || title.toLowerCase().includes('description')) {
+    } else if (
+      title.toLowerCase().includes('commentary') ||
+      title.toLowerCase().includes('description')
+    ) {
       response.infoLog += `Stream ${i} ${lang}.srt is a ${title} track. Skipping!\n`;
     } else {
       response.infoLog += `Extracting ${lang}.srt\n`;

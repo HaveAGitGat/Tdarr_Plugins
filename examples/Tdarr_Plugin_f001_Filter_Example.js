@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'Filter keywords ',
   Type: 'Video',
   Operation: 'Filter',
-  Description: 'This plugin prevents processing files which contain keywords \n\n',
+  Description:
+    'This plugin prevents processing files which contain keywords \n\n',
   Version: '1.00',
   Tags: '',
   Inputs: [],
@@ -22,9 +23,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const keywords = [
-    'Low quality',
-  ];
+  const keywords = ['Low quality'];
 
   for (let i = 0; i < keywords.length; i += 1) {
     if (file.file.includes(keywords[i])) {

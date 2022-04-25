@@ -4,8 +4,9 @@ const details = () => ({
   Name: 'Downmix & Dynamic range compression',
   Type: 'Audio',
   Operation: 'Transcode',
-  Description: 'Downmixes surround to AAC stereo AND applies dynamic range compression.'
-    + 'Files already in stereo or with multiple audio tracks will be skipped \n\n',
+  Description:
+    'Downmixes surround to AAC stereo AND applies dynamic range compression.' +
+    'Files already in stereo or with multiple audio tracks will be skipped \n\n',
   Version: '1.00',
   Tags: 'ffmpeg',
   Inputs: [],
@@ -38,7 +39,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       audioStreams += 1;
     }
 
-    if (stream.codec_type === 'audio' && stream.channels && stream.channels > 3) {
+    if (
+      stream.codec_type === 'audio' &&
+      stream.channels &&
+      stream.channels > 3
+    ) {
       surroundTrackFound = true;
     }
   }
@@ -54,10 +59,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (surroundTrackFound && audioStreams === 1) {
-    response.preset = '-sn <io> -vcodec copy -scodec copy -acodec aac -filter:a '
-    + '"dynaudnorm,pan=stereo|FL < 1.0*FL + 0.707*FC + 0.707*BL|FR < 1.0*FR + 0.707*FC + 0.707*BR"';
+    response.preset =
+      '-sn <io> -vcodec copy -scodec copy -acodec aac -filter:a ' +
+      '"dynaudnorm,pan=stereo|FL < 1.0*FL + 0.707*FC + 0.707*BL|FR < 1.0*FR + 0.707*FC + 0.707*BR"';
     response.processFile = true;
-    response.infoLog = 'File matches requirements for processing. Downmixing and applying DRC!';
+    response.infoLog =
+      'File matches requirements for processing. Downmixing and applying DRC!';
     return response;
   }
 

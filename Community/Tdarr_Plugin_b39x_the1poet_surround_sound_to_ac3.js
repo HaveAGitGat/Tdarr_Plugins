@@ -4,8 +4,9 @@ const details = () => ({
   Name: 'the1poet Video surround sound to ac3',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: '[Contains built-in filter]  If the file has surround sound tracks not in ac3,'
-    + ` they will be converted to ac3. \n\n
+  Description:
+    '[Contains built-in filter]  If the file has surround sound tracks not in ac3,' +
+    ` they will be converted to ac3. \n\n
 `,
   Version: '1.01',
   Tags: 'pre-processing,ffmpeg,audio only,',
@@ -16,13 +17,11 @@ const details = () => ({
       defaultValue: true,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
-      tooltip: 'Specify if you\'d like to overwrite the existing track or keep'
-        + 'it and have a new stream be created (default: true)',
+      tooltip:
+        "Specify if you'd like to overwrite the existing track or keep" +
+        'it and have a new stream be created (default: true)',
     },
   ],
 });
@@ -59,8 +58,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   let shouldTranscode = true;
   if (inputs.overwriteTracks === false) {
-    const hasAc3_6Stream = file.ffProbeData.streams.filter((row) => row.channels === 6
-      && row.codec_name === 'ac3');
+    const hasAc3_6Stream = file.ffProbeData.streams.filter(
+      (row) => row.channels === 6 && row.codec_name === 'ac3',
+    );
     if (hasAc3_6Stream.length > 0) {
       shouldTranscode = false;
     }
@@ -79,9 +79,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     try {
       if (
-        currStream.channels === 6
-        && currStream.codec_name !== 'ac3'
-        && currStream.codec_type.toLowerCase() === 'audio'
+        currStream.channels === 6 &&
+        currStream.codec_name !== 'ac3' &&
+        currStream.codec_type.toLowerCase() === 'audio'
       ) {
         if (inputs.overwriteTracks === true) {
           ffmpegCommandInsert += ` -c:a:${audioIdx} ac3 `;

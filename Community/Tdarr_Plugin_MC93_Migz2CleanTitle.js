@@ -4,21 +4,20 @@ const details = () => ({
   Name: 'Migz-Clean title metadata',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'This plugin removes title metadata from video/audio/subtitles.\n\n',
+  Description:
+    'This plugin removes title metadata from video/audio/subtitles.\n\n',
   Version: '1.9',
   Tags: 'pre-processing,ffmpeg,configurable',
-  Inputs: [{
-    name: 'clean_audio',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
-    },
-    tooltip: `
+  Inputs: [
+    {
+      name: 'clean_audio',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: ['false', 'true'],
+      },
+      tooltip: `
 Specify if audio titles should be checked & cleaned. 
 Optional. Only removes titles if they contain at least 3 '.' characters.
                \\nExample:\\n
@@ -26,19 +25,16 @@ Optional. Only removes titles if they contain at least 3 '.' characters.
 
                \\nExample:\\n
                false`,
-  },
-  {
-    name: 'clean_subtitles',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
     },
-    tooltip: `
+    {
+      name: 'clean_subtitles',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: ['false', 'true'],
+      },
+      tooltip: `
 Specify if subtitle titles should be checked & cleaned.
 Optional. Only removes titles if they contain at least 3 '.' characters.
                \\nExample:\\n
@@ -46,15 +42,15 @@ Optional. Only removes titles if they contain at least 3 '.' characters.
 
                \\nExample:\\n
                false`,
-  },
-  {
-    name: 'custom_title_matching',
-    type: 'string',
-    defaultValue: '',
-    inputUI: {
-      type: 'text',
     },
-    tooltip: `If you enable audio or subtitle cleaning the plugin only looks for titles with more then 3 full stops.
+    {
+      name: 'custom_title_matching',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `If you enable audio or subtitle cleaning the plugin only looks for titles with more then 3 full stops.
                   \\nThis is one way to identify junk metadata without removing real metadata that you might want.
                   \\nHere you can specify your own text for it to also search for to match and remove.
                   \\nComma separated. Optional.
@@ -63,7 +59,7 @@ Optional. Only removes titles if they contain at least 3 '.' characters.
 
                \\nExample:\\n
                MiNX - Small HD episodes,GalaxyTV - small excellence!`,
-  },
+    },
   ],
 });
 
@@ -93,7 +89,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.custom_title_matching has been configured. If it has then set variable
   if (inputs.custom_title_matching !== '') {
-    custom_title_matching = inputs.custom_title_matching.toLowerCase().split(',');
+    custom_title_matching = inputs.custom_title_matching
+      .toLowerCase()
+      .split(',');
   }
 
   // Check if file is a video. If it isn't then exit plugin.
@@ -108,9 +106,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Check if overall file metadata title is not empty, if it's not empty set to "".
   if (
     !(
-      typeof file.meta.Title === 'undefined'
-        || file.meta.Title === '""'
-        || file.meta.Title === ''
+      typeof file.meta.Title === 'undefined' ||
+      file.meta.Title === '""' ||
+      file.meta.Title === ''
     )
   ) {
     try {
@@ -129,9 +127,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         // Check if stream title is not empty, if it's not empty set to "".
         if (
           !(
-            typeof file.ffProbeData.streams[i].tags.title === 'undefined'
-            || file.ffProbeData.streams[i].tags.title === '""'
-            || file.ffProbeData.streams[i].tags.title === ''
+            typeof file.ffProbeData.streams[i].tags.title === 'undefined' ||
+            file.ffProbeData.streams[i].tags.title === '""' ||
+            file.ffProbeData.streams[i].tags.title === ''
           )
         ) {
           response.infoLog += `☒Video stream title is not empty. Removing title from stream ${i} \n`;
@@ -149,18 +147,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // If so then it's likely to be junk metadata so remove.
     // Then check if any audio streams match with user input custom_title_matching variable, if so then remove.
     if (
-      file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio'
-      && inputs.clean_audio === true
+      file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio' &&
+      inputs.clean_audio === true
     ) {
       try {
         if (
           !(
-            typeof file.ffProbeData.streams[i].tags.title === 'undefined'
-            || file.ffProbeData.streams[i].tags.title === '""'
-            || file.ffProbeData.streams[i].tags.title === ''
+            typeof file.ffProbeData.streams[i].tags.title === 'undefined' ||
+            file.ffProbeData.streams[i].tags.title === '""' ||
+            file.ffProbeData.streams[i].tags.title === ''
           )
         ) {
-          if (file.ffProbeData.streams[i].tags.title.split('.').length - 1 > 3) {
+          if (
+            file.ffProbeData.streams[i].tags.title.split('.').length - 1 >
+            3
+          ) {
             try {
               response.infoLog += `☒More then 3 full stops in audio title. Removing title from stream ${i} \n`;
               ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title= `;
@@ -171,7 +172,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           }
           if (typeof inputs.custom_title_matching !== 'undefined') {
             try {
-              if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
+              if (
+                custom_title_matching.indexOf(
+                  file.ffProbeData.streams[i].tags.title.toLowerCase(),
+                ) !== -1
+              ) {
                 response.infoLog += `☒Audio matched custom input. Removing title from stream ${i} \n`;
                 ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} title= `;
                 convert = true;
@@ -192,18 +197,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // If so then it's likely to be junk metadata so remove.
     // Then check if any streams match with user input custom_title_matching variable, if so then remove.
     if (
-      file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-      && inputs.clean_subtitles === true
+      file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle' &&
+      inputs.clean_subtitles === true
     ) {
       try {
         if (
           !(
-            typeof file.ffProbeData.streams[i].tags.title === 'undefined'
-            || file.ffProbeData.streams[i].tags.title === '""'
-            || file.ffProbeData.streams[i].tags.title === ''
+            typeof file.ffProbeData.streams[i].tags.title === 'undefined' ||
+            file.ffProbeData.streams[i].tags.title === '""' ||
+            file.ffProbeData.streams[i].tags.title === ''
           )
         ) {
-          if (file.ffProbeData.streams[i].tags.title.split('.').length - 1 > 3) {
+          if (
+            file.ffProbeData.streams[i].tags.title.split('.').length - 1 >
+            3
+          ) {
             try {
               response.infoLog += `☒More then 3 full stops in subtitle title. Removing title from stream ${i} \n`;
               ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title= `;
@@ -214,7 +222,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           }
           if (typeof inputs.custom_title_matching !== 'undefined') {
             try {
-              if (custom_title_matching.indexOf(file.ffProbeData.streams[i].tags.title.toLowerCase()) !== -1) {
+              if (
+                custom_title_matching.indexOf(
+                  file.ffProbeData.streams[i].tags.title.toLowerCase(),
+                ) !== -1
+              ) {
                 response.infoLog += `☒Subtitle matched custom input. Removing title from stream ${i} \n`;
                 ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} title= `;
                 convert = true;

@@ -15,8 +15,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter a comma separated list of resolutions to be processed.
+      tooltip: `Enter a comma separated list of resolutions to be processed.
          Leave blank if using resolutionsToNotProcess.
          480p,576p,720p,1080p,4KUHD,DCI4K,8KUHD,Other
          `,
@@ -29,8 +28,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter a comma separated list of resolutions to be not be processed.'
-        + ' Leave blank if using resolutionsToProcess',
+        'Enter a comma separated list of resolutions to be not be processed.' +
+        ' Leave blank if using resolutionsToProcess',
     },
   ],
 });
@@ -55,10 +54,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const resolutions = inputs.resolutionsToProcess.split(',');
     if (resolutions.includes(fileResolution)) {
       response.processFile = true;
-      response.infoLog += 'File is in resolutionsToProcess. Moving to next plugin.';
+      response.infoLog +=
+        'File is in resolutionsToProcess. Moving to next plugin.';
     } else {
       response.processFile = false;
-      response.infoLog += 'File is not in resolutionsToProcess. Breaking out of plugin stack.';
+      response.infoLog +=
+        'File is not in resolutionsToProcess. Breaking out of plugin stack.';
     }
   }
 
@@ -66,10 +67,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const resolutions = inputs.resolutionsToNotProcess.split(',');
     if (resolutions.includes(fileResolution)) {
       response.processFile = false;
-      response.infoLog += 'File is in resolutionsToNotProcess. Breaking out of plugin stack.';
+      response.infoLog +=
+        'File is in resolutionsToNotProcess. Breaking out of plugin stack.';
     } else {
       response.processFile = true;
-      response.infoLog += 'File is not in resolutionsToNotProcess. Moving to next plugin.';
+      response.infoLog +=
+        'File is not in resolutionsToNotProcess. Moving to next plugin.';
     }
   }
 

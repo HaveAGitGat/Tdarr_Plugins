@@ -7,9 +7,7 @@
 /* eslint no-param-reassign: 0 */ // --> OFF
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
-module.exports.dependencies = [
-  'import-fresh',
-];
+module.exports.dependencies = ['import-fresh'];
 
 const details = () => ({
   id: 'Tdarr_Plugin_pos1_Post_Proc_Example',
@@ -17,7 +15,8 @@ const details = () => ({
   Name: 'Post proc ',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'This plugin does some stuff after all plugins have been executed. \n\n',
+  Description:
+    'This plugin does some stuff after all plugins have been executed. \n\n',
   Version: '1.00',
   Tags: 'ffmpeg,h265', // Provide tags to categorise your plugin in the plugin browser.Tag options: h265,hevc,h264,nvenc h265,nvenc h264,video only,audio only,subtitle only,handbrake,ffmpeg,radarr,sonarr,pre-processing,post-processing,configurable
 

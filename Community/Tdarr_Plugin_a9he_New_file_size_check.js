@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'New file size check',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'Give an error if new file is not within the specified upper and lower bound limits \n\n',
+  Description:
+    'Give an error if new file is not within the specified upper and lower bound limits \n\n',
   Version: '1.00',
   Tags: '',
   Inputs: [
@@ -15,8 +16,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter the upper bound % size for the new file. For example, if '110' is entered, 
+      tooltip: `Enter the upper bound % size for the new file. For example, if '110' is entered, 
         then if the new file size is 11% larger than the original, an error will be given.`,
     },
     {
@@ -26,8 +26,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter the lower bound % size for the new file. For example, if '90' is entered, 
+      tooltip: `Enter the lower bound % size for the new file. For example, if '90' is entered, 
         then if the new file size is less than 90% of the original, an error will be given.`,
     },
   ],
@@ -52,18 +51,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const ratio = parseInt((newSize / oldSize) * 100, 10);
 
-  const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
-    + `of original file size:  ${oldSize.toFixed(3)} MB`;
+  const sizeText =
+    `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% ` +
+    `of original file size:  ${oldSize.toFixed(3)} MB`;
 
   const getBound = (bound) => (bound / 100) * oldSize;
 
   const errText = 'New file size not within limits.';
   if (newSize > getBound(inputs.upperBound)) {
     // Item will be errored in UI
-    throw new Error(`${errText} ${sizeText}. upperBound is ${inputs.upperBound}%`);
+    throw new Error(
+      `${errText} ${sizeText}. upperBound is ${inputs.upperBound}%`,
+    );
   } else if (newSize < getBound(inputs.lowerBound)) {
     // Item will be errored in UI
-    throw new Error(`${errText} ${sizeText}. lowerBound is ${inputs.lowerBound}%`);
+    throw new Error(
+      `${errText} ${sizeText}. lowerBound is ${inputs.lowerBound}%`,
+    );
   } else {
     response.infoLog += sizeText;
   }

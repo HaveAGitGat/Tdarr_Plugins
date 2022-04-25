@@ -104,10 +104,7 @@ const details = () => ({
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
       tooltip: `Input "true" if you want to skip SD (480p and 576p) files
         
@@ -120,10 +117,7 @@ const details = () => ({
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
       tooltip: `Input "true" if you want to skip 4k (UHD) files
         
@@ -136,10 +130,7 @@ const details = () => ({
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        options: ['false', 'true'],
       },
       tooltip: `Specify if output file should be forced to 10bit. Default is false (bit depth is same as source).
                     \\nExample:\\n
@@ -191,7 +182,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // check if the file contains a hevc track
   // it will not be transcoded if true and the plugin will exit
-  if (file.ffProbeData.streams.filter((x) => x.codec_name.toLowerCase() === 'hevc').length) {
+  if (
+    file.ffProbeData.streams.filter(
+      (x) => x.codec_name.toLowerCase() === 'hevc',
+    ).length
+  ) {
     response.infoLog += '☑File is already in hevc! \n';
     return response;
   }
@@ -216,16 +211,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       crf = inputs.uhdCRF;
       break;
     default:
-      response.infoLog += 'Could for some reason not detect resolution, plugin will not proceed. \n';
+      response.infoLog +=
+        'Could for some reason not detect resolution, plugin will not proceed. \n';
       return response;
   }
 
   const pixel10Bit = inputs.force10bit ? ' -pix_fmt p010le' : '';
 
   // encoding settings
-  response.preset += `<io> -map 0 -dn -c:v libx265 -preset ${inputs.ffmpegPreset}`
-    + ` -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
-    + ` ${pixel10Bit} -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
+  response.preset +=
+    `<io> -map 0 -dn -c:v libx265 -preset ${inputs.ffmpegPreset}` +
+    ` -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3` +
+    ` ${pixel10Bit} -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
 
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
   response.infoLog += 'File is being transcoded!\n';

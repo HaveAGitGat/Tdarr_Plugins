@@ -8,14 +8,15 @@ const details = () => ({
   Description: 'Files will be remuxed into either mkv or mp4. \n\n',
   Version: '1.1',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
-  Inputs: [{
-    name: 'container',
-    type: 'string',
-    defaultValue: 'mkv',
-    inputUI: {
-      type: 'text',
-    },
-    tooltip: `Specify output container of file
+  Inputs: [
+    {
+      name: 'container',
+      type: 'string',
+      defaultValue: 'mkv',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify output container of file
                \\nEnsure that all stream types you may have are supported by your chosen container.
                \\nmkv is recommended.
                \\nExample:\\n
@@ -23,19 +24,16 @@ const details = () => ({
 
                \\nExample:\\n
                mp4`,
-  },
-  {
-    name: 'force_conform',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
     },
-    tooltip: `Make the file conform to output containers requirements.
+    {
+      name: 'force_conform',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: ['false', 'true'],
+      },
+      tooltip: `Make the file conform to output containers requirements.
                 \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
                 \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                 \\n Default is false.
@@ -44,7 +42,7 @@ const details = () => ({
 
                \\nExample:\\n
                false`,
-  },
+    },
   ],
 });
 
@@ -64,8 +62,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.container has been configured. If it hasn't then exit plugin.
   if (inputs.container === '') {
-    response.infoLog
-      += '☒Container has not been configured, please configure required options. Skipping this plugin. \n';
+    response.infoLog +=
+      '☒Container has not been configured, please configure required options. Skipping this plugin. \n';
     response.processFile = false;
     return response;
   }
@@ -90,17 +88,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'mov_text'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'eia_608'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'mov_text' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
         } catch (err) {
-        // Error
+          // Error
         }
       }
     }
@@ -108,19 +105,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       for (let i = 0; i < file.ffProbeData.streams.length; i++) {
         try {
           if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'hdmv_pgs_subtitle'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'eia_608'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'subrip'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'timed_id3'
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'hdmv_pgs_subtitle' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() ===
+              'eia_608' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'subrip' ||
+            file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
           ) {
             extraArguments += `-map -0:${i} `;
           }
         } catch (err) {
-        // Error
+          // Error
         }
       }
     }

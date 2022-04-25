@@ -30,8 +30,7 @@ into the specified codec. Bitrate and channel count are kept the same.
           'truehd',
         ],
       },
-      tooltip:
-        'Enter the desired audio codec',
+      tooltip: 'Enter the desired audio codec',
     },
   ],
 });
@@ -51,10 +50,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const transcodeStandardiseAudioCodecs = lib.actions.transcodeStandardiseAudioCodecs(
-    file,
-    inputs.audioCodec,
-  );
+  const transcodeStandardiseAudioCodecs =
+    lib.actions.transcodeStandardiseAudioCodecs(file, inputs.audioCodec);
 
   response.preset = transcodeStandardiseAudioCodecs.preset;
   response.container = `.${file.container}`;

@@ -5,50 +5,49 @@ const details = () => ({
   Name: 'Migz-Clean subtitle streams',
   Type: 'Subtitle',
   Operation: 'Transcode',
-  Description: 'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',
+  Description:
+    'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',
   Version: '2.4',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
-  Inputs: [{
-    name: 'language',
-    type: 'string',
-    defaultValue: 'eng',
-    inputUI: {
-      type: 'text',
-    },
-    tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep.
+  Inputs: [
+    {
+      name: 'language',
+      type: 'string',
+      defaultValue: 'eng',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify language tag/s here for the subtitle tracks you'd like to keep.
                     \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                \\nExample:\\n
                eng
 
                \\nExample:\\n
                eng,jpn`,
-  },
-  {
-    name: 'commentary',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
     },
-    tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
+    {
+      name: 'commentary',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: ['false', 'true'],
+      },
+      tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
                \\nExample:\\n
                true
 
                \\nExample:\\n
                false`,
-  },
-  {
-    name: 'tag_language',
-    type: 'string',
-    defaultValue: '',
-    inputUI: {
-      type: 'text',
     },
-    tooltip: `Specify a single language for subtitle tracks with no language or unknown language to be tagged with.
+    {
+      name: 'tag_language',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify a single language for subtitle tracks with no language or unknown language to be tagged with.
                     \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
                     \\nLeave empty to disable.
                \\nExample:\\n
@@ -56,7 +55,7 @@ const details = () => ({
 
                \\nExample:\\n
                por`,
-  },
+    },
   ],
 });
 
@@ -86,9 +85,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if inputs.language has been configured. If it hasn't then exit plugin.
   if (inputs.language === '') {
-    response.infoLog
-      += '☒Language/s to keep have not been configured, '
-      + 'please configure required options. Skipping this plugin.  \n';
+    response.infoLog +=
+      '☒Language/s to keep have not been configured, ' +
+      'please configure required options. Skipping this plugin.  \n';
     response.processFile = false;
     return response;
   }
@@ -106,8 +105,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Check if stream is subtitle
       // AND checks if the tracks language code does not match any of the languages entered in inputs.language.
       if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-        && language.indexOf(
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle' &&
+        language.indexOf(
           file.ffProbeData.streams[i].tags.language.toLowerCase(),
         ) === -1
       ) {
@@ -128,15 +127,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // AND then checks for stream titles with the following "commentary, description, sdh".
       // Removing any streams that are applicable.
       if (
-        inputs.commentary === true
-        && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-        && (file.ffProbeData.streams[i].tags.title
+        inputs.commentary === true &&
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle' &&
+        (file.ffProbeData.streams[i].tags.title
           .toLowerCase()
-          .includes('commentary')
-          || file.ffProbeData.streams[i].tags.title
+          .includes('commentary') ||
+          file.ffProbeData.streams[i].tags.title
             .toLowerCase()
-            .includes('description')
-          || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))
+            .includes('description') ||
+          file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
         response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
@@ -150,8 +149,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // (Entered means user actually wants something to happen, empty would disable this)
     // AND checks that stream is subtitle.
     if (
-      inputs.tag_language !== ''
-      && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
+      inputs.tag_language !== '' &&
+      file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
     ) {
       // Catch error here incase the metadata is completely missing.
       try {
@@ -162,8 +161,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('und')
         ) {
           ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-          response.infoLog
-            += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
+          response.infoLog +=
+            `☒Subtitle stream 0:s:${subtitleIdx} has no language,` +
+            ` tagging as ${inputs.tag_language}. \n`;
           convert = true;
         }
       } catch (err) {
@@ -175,16 +175,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // No catch error here otherwise it would never detect the metadata as missing.
       if (typeof file.ffProbeData.streams[i].tags === 'undefined') {
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog
-          += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog +=
+          `☒Subtitle stream 0:s:${subtitleIdx} has no language,` +
+          ` tagging as ${inputs.tag_language}. \n`;
         convert = true;
-      } else if (typeof file.ffProbeData.streams[i].tags.language === 'undefined') {
-      // Checks if the tags.language metadata is completely missing.
-      // If so this would cause playback to show language as "undefined".
-      // No catch error here otherwise it would never detect the metadata as missing
+      } else if (
+        typeof file.ffProbeData.streams[i].tags.language === 'undefined'
+      ) {
+        // Checks if the tags.language metadata is completely missing.
+        // If so this would cause playback to show language as "undefined".
+        // No catch error here otherwise it would never detect the metadata as missing
         ffmpegCommandInsert += `-metadata:s:s:${subtitleIdx} language=${inputs.tag_language} `;
-        response.infoLog
-          += `☒Subtitle stream 0:s:${subtitleIdx} has no language, tagging as ${inputs.tag_language}. \n`;
+        response.infoLog +=
+          `☒Subtitle stream 0:s:${subtitleIdx} has no language,` +
+          ` tagging as ${inputs.tag_language}. \n`;
         convert = true;
       }
     }
@@ -203,7 +207,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.reQueueAfter = true;
   } else {
     response.processFile = false;
-    response.infoLog += "☑File doesn't contain subtitle tracks which are unwanted or that require tagging.\n";
+    response.infoLog +=
+      "☑File doesn't contain subtitle tracks which are unwanted or that require tagging.\n";
   }
   return response;
 };

@@ -5,8 +5,9 @@ const details = () => ({
   Name: 'Audio Transcode to MP3 using CPU and FFMPEG',
   Type: 'Audio',
   Operation: 'Transcode',
-  Description: '[Contains built-in filter] Convert an audio file to mp3, retaining ID3 tags, '
-      + 'and at original bitrate up to 320k - from type of: "flac,wav,ape,ogg,m4a,wma,opus" ',
+  Description:
+    '[Contains built-in filter] Convert an audio file to mp3, retaining ID3 tags, ' +
+    'and at original bitrate up to 320k - from type of: "flac,wav,ape,ogg,m4a,wma,opus" ',
   Version: '0.0.1',
   Tags: 'pre-processing,ffmpeg,audio only',
   Inputs: [
@@ -44,14 +45,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const { codecsToInclude } = inputs;
 
-  const filterByCodecInclude = lib.filters.filterByCodec(file, 'include', codecsToInclude);
-  const filterByCodecExclude = lib.filters.filterByCodec(file, 'exclude', 'mp3');
+  const filterByCodecInclude = lib.filters.filterByCodec(
+    file,
+    'include',
+    codecsToInclude,
+  );
+  const filterByCodecExclude = lib.filters.filterByCodec(
+    file,
+    'exclude',
+    'mp3',
+  );
 
   response.infoLog += `${filterByCodecInclude.note} ${filterByCodecExclude.note}`;
 
-  if ((filterByCodecInclude.outcome
-    && filterByCodecExclude.outcome)
-    || file.forceProcessing) {
+  if (
+    (filterByCodecInclude.outcome && filterByCodecExclude.outcome) ||
+    file.forceProcessing
+  ) {
     response.processFile = true;
     return response;
   }

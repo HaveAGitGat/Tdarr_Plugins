@@ -1,9 +1,6 @@
 function filterByBitrate(file, lowerBound, upperBound) {
   try {
-    if (
-      file.bit_rate >= lowerBound
-      && file.bit_rate <= upperBound
-    ) {
+    if (file.bit_rate >= lowerBound && file.bit_rate <= upperBound) {
       const response = {
         outcome: true,
         note: '☑File bitrate is within filter limits. \n',
