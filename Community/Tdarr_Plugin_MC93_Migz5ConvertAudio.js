@@ -166,7 +166,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if ((downmix && !downmixLanguageAware) || aacStereo) {
-    if (debug) response.infoLog += `[DEBUG] Channels: hasChannel2 ${has2Channel}; hasChannel6 ${has6Channel}; hasChannel8 ${has8Channel}. \n`;
+    if (debug && (downmix && !downmixLanguageAware)) response.infoLog += `[DEBUG] Channels: hasChannel2 ${has2Channel}; hasChannel6 ${has6Channel}; hasChannel8 ${has8Channel}. \n`;
     for (let i = 0; i < file.ffProbeData.streams.length; i++)
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (downmix && !downmixLanguageAware) {
