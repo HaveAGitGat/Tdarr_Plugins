@@ -199,14 +199,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (downmix && downmixLanguageAware) {
     for (let i = 0; i < languagesAudioStreams.length; i++) {
       if (debug) response.infoLog += `Language ${languagesAudioStreams[i].language}; hasChannel2 ${languagesAudioStreams[i].hasChannel2}; hasChannel6 ${languagesAudioStreams[i].hasChannel6}; hasChannel8 ${languagesAudioStreams[i].hasChannel8}. \n`;
-      
+
       if (languagesAudioStreams[i].hasChannel8 && !languagesAudioStreams[i].hasChannel6) {
         ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
         ++audioIdx;
         response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 channels audio track but no 6 channels. Creating 6 channels audio track. \n`;
         convert = true;
       }
-      
+
       if ((languagesAudioStreams[i].hasChannel6 || languagesAudioStreams[i].hasChannel8) && !languagesAudioStreams[i].hasChannel2) {
         ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
         ++audioIdx;
@@ -217,14 +217,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Convert file if convert variable is set to true.
-  if (convert) {
-    response.processFile = true;
+  response.processFile = convert;
+  if (response.processFile)
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
       + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
-  } else {
+  else
     response.infoLog += '☑File contains all required audio formats. \n';
-    response.processFile = false;
-  }
+
   return response;
 };
 module.exports.details = details;
