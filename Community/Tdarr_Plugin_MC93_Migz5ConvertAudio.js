@@ -10,10 +10,14 @@ const details = () => ({
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [{
     name: 'aac_stereo',
-    type: 'string',
-    defaultValue: '',
+    type: 'boolean',
+    defaultValue: true,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
                     \\nOptional.
@@ -25,10 +29,14 @@ const details = () => ({
   },
   {
     name: 'downmix',
-    type: 'string',
-    defaultValue: '',
+    type: 'boolean',
+    defaultValue: true,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Specify if downmix should be used to create extra audio tracks.
                     \\nI.e if you have an 8ch but no 2ch or 6ch, create the missing audio tracks from the 8 ch.
@@ -41,14 +49,36 @@ const details = () => ({
   },
   {
     name: 'downmix_language_aware',
-    type: 'string',
-    defaultValue: 'false',
+    type: 'boolean',
+    defaultValue: true,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Specify if downmix should be language aware. If downmix is not set to true, this will have no effect.
                     \\nI.e if false : audio track 6 channels in english + audio track 2 channels in french => does nothing.
                     \\nI.e if true : audio track 6 channels in english + audio track 2 channels in french => creates an audio track 2 channels in english.
+             \\nExample:\\n
+             true
+
+             \\nExample:\\n
+             false`,
+  },
+  {
+    name: 'debug',
+    type: 'boolean',
+    defaultValue: true,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `Specify if debug messages should added to the response info.
              \\nExample:\\n
              true
 
@@ -88,12 +118,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // Set up inputs
-  let debug = false;
-  let aacStereo = (inputs.aac_stereo?.toLowerCase() || 'false') === 'true';
-  let downmix = (inputs.downmix?.toLowerCase() || 'false') === 'true';
-  let downmixLanguageAware = (inputs.downmix_language_aware?.toLowerCase() || 'false') === 'true';
-  if (debug) response.infoLog += `aac_stereo ${aacStereo}; downmix ${downmix}; downmixLanguageAware ${downmixLanguageAware} \n`;
+  //Set up inputs
+  const aacStereo = inputs.aac_stereo;
+  const downmix = inputs.downmix;
+  const downmixLanguageAware = inputs.downmix_language_aware;
+  const debug = inputs.debug;
+  if (debug) response.infoLog += `aac_stereo ${aacStereo}; downmix ${downmix}; downmixLanguageAware ${downmixLanguageAware}; debug ${inputs.debug} \n`;
 
   // Set up required variables.
   let ffmpegCommandInsert = '';
@@ -106,41 +136,37 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    try {
-      // Go through all audio streams and check if 2,6 & 8 channel tracks exist or not.
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
-        let language = file.ffProbeData.streams[i].tags.language.toLowerCase();
-        if (debug) response.infoLog += `Audio track ${i}; language ${language}; channels ${file.ffProbeData.streams[i].channels}; codec ${file.ffProbeData.streams[i].codec_name}. \n`;
-        let languageAudioStreams = languagesAudioStreams.find(ls => ls.language === language);
-        if (!languageAudioStreams) {
-          languageAudioStreams = { language: language, hasChannel2: false, hasChannel6: false, hasChannel8: false }
-          languagesAudioStreams.push(languageAudioStreams);
-        }
-        switch (file.ffProbeData.streams[i].channels) {
-          case 8:
-            languageAudioStreams.channel8 = { index: i, codecName: file.ffProbeData.streams[i].codec_name };
-            languageAudioStreams.hasChannel8 = true;
-            has8Channel = true;
-            break;
-          case 6:
-            languageAudioStreams.channel6 = { index: i, codecName: file.ffProbeData.streams[i].codec_name };
-            languageAudioStreams.hasChannel6 = true;
-            has6Channel = true;
-            break;
-          case 2:
-          default:
-            languageAudioStreams.channel2 = { index: i, codecName: file.ffProbeData.streams[i].codec_name };
-            languageAudioStreams.hasChannel2 = true;
-            has2Channel = true;
-            break;
-        }
+    // Go through all audio streams and check if 2,6 & 8 channel tracks exist or not.
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
+      const language = file.ffProbeData.streams[i].tags.language.toLowerCase();
+      if (debug) response.infoLog += `Audio track ${i}; language ${language}; channels ${file.ffProbeData.streams[i].channels}; codec ${file.ffProbeData.streams[i].codec_name}. \n`;
+      let languageAudioStreams = languagesAudioStreams.find(ls => ls.language === language);
+      if (!languageAudioStreams) {
+        languageAudioStreams = { language: language, hasChannel2: false, hasChannel6: false, hasChannel8: false }
+        languagesAudioStreams.push(languageAudioStreams);
       }
-    } catch (err) {
-      // Error
+      switch (file.ffProbeData.streams[i].channels) {
+        case 8:
+          languageAudioStreams.channel8 = { index: i, codecName: file.ffProbeData.streams[i].codec_name };
+          languageAudioStreams.hasChannel8 = true;
+          has8Channel = true;
+          break;
+        case 6:
+          languageAudioStreams.channel6 = { index: i, codecName: file.ffProbeData.streams[i].codec_name };
+          languageAudioStreams.hasChannel6 = true;
+          has6Channel = true;
+          break;
+        case 2:
+        default:
+          languageAudioStreams.channel2 = { index: i, codecName: file.ffProbeData.streams[i].codec_name };
+          languageAudioStreams.hasChannel2 = true;
+          has2Channel = true;
+      }
     }
   }
 
-  if ((downmix && !downmixLanguageAware) || aacStereo)
+  if ((downmix && !downmixLanguageAware) || aacStereo) {
+    if (debug) response.infoLog += `hasChannel2 ${has2Channel}; hasChannel6 ${has6Channel}; hasChannel8 ${has8Channel}. \n`;
     for (let i = 0; i < file.ffProbeData.streams.length; i++)
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (downmix && !downmixLanguageAware) {
@@ -168,30 +194,30 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
         ++audioIdx;
       }
+  }
 
-  if (downmix && downmixLanguageAware)
+  if (downmix && downmixLanguageAware) {
     for (let i = 0; i < languagesAudioStreams.length; i++) {
       if (debug) response.infoLog += `Language ${languagesAudioStreams[i].language}; hasChannel2 ${languagesAudioStreams[i].hasChannel2}; hasChannel6 ${languagesAudioStreams[i].hasChannel6}; hasChannel8 ${languagesAudioStreams[i].hasChannel8}. \n`;
-      try {
-        if (languagesAudioStreams[i].hasChannel8 && !languagesAudioStreams[i].hasChannel6) {
-          ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
-          ++audioIdx;
-          response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 channels audio track but no 6 channels. Creating 6 channels audio track. \n`;
-          convert = true;
-        }
-        if ((languagesAudioStreams[i].hasChannel6 || languagesAudioStreams[i].hasChannel8) && !languagesAudioStreams[i].hasChannel2) {
-          ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
-          ++audioIdx;
-          response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 or 6 channels audio track but no 2 channels. Creating 2 channels audio track. \n`;
-          convert = true;
-        }
-      } catch (err) {
-        response.infoLog += `Downmixing err ${err} \n`;
+      
+      if (languagesAudioStreams[i].hasChannel8 && !languagesAudioStreams[i].hasChannel6) {
+        ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
+        ++audioIdx;
+        response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 channels audio track but no 6 channels. Creating 6 channels audio track. \n`;
+        convert = true;
+      }
+      
+      if ((languagesAudioStreams[i].hasChannel6 || languagesAudioStreams[i].hasChannel8) && !languagesAudioStreams[i].hasChannel2) {
+        ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
+        ++audioIdx;
+        response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 or 6 channels audio track but no 2 channels. Creating 2 channels audio track. \n`;
+        convert = true;
       }
     }
+  }
 
   // Convert file if convert variable is set to true.
-  if (convert === true) {
+  if (convert) {
     response.processFile = true;
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
       + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
