@@ -78,7 +78,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify if debug messages should added to the response info.
+    tooltip: `Specify if debug messages should be added to the response info.
              \\nExample:\\n
              true
 
