@@ -71,11 +71,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     let lang = '';
     let title = 'none';
 
-    if (subStream.tags) {
+    if (subStream && subStream.tags && subStream.tags.language) {
       lang = subStream.tags.language;
     }
 
-    if (subStream.tags.title) {
+    if (subStream && subStream.tags && subStream.tags.title) {
       title = subStream.tags.title;
     }
 
