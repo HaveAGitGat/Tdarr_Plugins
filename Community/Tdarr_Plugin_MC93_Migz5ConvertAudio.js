@@ -123,7 +123,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const downmix = inputs.downmix;
   const downmixLanguageAware = inputs.downmix_language_aware;
   const debug = inputs.debug;
-  if (debug) response.infoLog += `aac_stereo ${aacStereo}; downmix ${downmix}; downmixLanguageAware ${downmixLanguageAware}; debug ${inputs.debug} \n`;
+  if (debug) response.infoLog += `[DEBUG] Inputs: aac_stereo ${aacStereo}; downmix ${downmix}; downmixLanguageAware ${downmixLanguageAware}; debug ${inputs.debug} \n`;
 
   // Set up required variables.
   let ffmpegCommandInsert = '';
@@ -139,7 +139,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Go through all audio streams and check if 2,6 & 8 channel tracks exist or not.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
       const language = file.ffProbeData.streams[i].tags.language.toLowerCase();
-      if (debug) response.infoLog += `Audio track ${i}; language ${language}; channels ${file.ffProbeData.streams[i].channels}; codec ${file.ffProbeData.streams[i].codec_name}. \n`;
+      if (debug) response.infoLog += `[DEBUG] Audio track ${i}: language ${language}; channels ${file.ffProbeData.streams[i].channels}; codec ${file.ffProbeData.streams[i].codec_name}. \n`;
       let languageAudioStreams = languagesAudioStreams.find(ls => ls.language === language);
       if (!languageAudioStreams) {
         languageAudioStreams = { language: language, hasChannel2: false, hasChannel6: false, hasChannel8: false }
@@ -166,7 +166,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if ((downmix && !downmixLanguageAware) || aacStereo) {
-    if (debug) response.infoLog += `hasChannel2 ${has2Channel}; hasChannel6 ${has6Channel}; hasChannel8 ${has8Channel}. \n`;
+    if (debug) response.infoLog += `[DEBUG] Channels: hasChannel2 ${has2Channel}; hasChannel6 ${has6Channel}; hasChannel8 ${has8Channel}. \n`;
     for (let i = 0; i < file.ffProbeData.streams.length; i++)
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (downmix && !downmixLanguageAware) {
@@ -199,7 +199,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (downmix && downmixLanguageAware) {
     for (let i = 0; i < languagesAudioStreams.length; i++) {
       if (debug)
-        response.infoLog += `Language ${languagesAudioStreams[i].language};`
+        response.infoLog += `[DEBUG] Language ${languagesAudioStreams[i].language}:`
           + ` hasChannel2 ${languagesAudioStreams[i].hasChannel2}${languagesAudioStreams[i].hasChannel2 ? ` {audio track ${languagesAudioStreams[i].channel2.index}}` : ''};`
           + ` hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''};`
           + ` hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel8 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
