@@ -170,16 +170,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < file.ffProbeData.streams.length; i++)
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (downmix && !downmixLanguageAware) {
-          if (file.ffProbeData.streams[i].channels === 8 && !has6Channel) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
-            response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel from 8 channel. \n';
-            convert = true;
+          let setUpDownmixCmd = (currentChannels, targetedChannels, hasTargetedChannels, targetedChannelsLayout) => {
+            if (file.ffProbeData.streams[i].channels === currentChannels && !hasTargetedChannels) {
+              ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
+              response.infoLog += `☒Audio track is ${currentChannels} channel, no ${targetedChannels} channel exists. Creating ${targetedChannels} channel from ${currentChannels} channel. \n`;
+              convert = true;
+            }
           }
-          if (file.ffProbeData.streams[i].channels === 6 && !has2Channel) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
-            response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel from 6 channel. \n';
-            convert = true;
-          }
+          setUpDownmixCmd(8, 6, has6Channel, '5.1');
+          setUpDownmixCmd(6, 2, has2Channel, '2.0');
         }
 
         if (
@@ -204,27 +203,38 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           + ` hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''};`
           + ` hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel8 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
 
-      if (languagesAudioStreams[i].hasChannel8 && !languagesAudioStreams[i].hasChannel6) {
-        ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
-        ++audioIdx;
-        response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 channels audio track but no 6 channels. Creating 6 channels audio track. \n`;
-        convert = true;
+      let setUpDownmixCmd = (currentChannels, targetedChannels, hasCurrentChannels, hasTargetedChannels, currentIndex, targetedChannelsLayout) => {
+        if (hasCurrentChannels && !hasTargetedChannels) {
+          ffmpegCommandInsert += `-map 0:${currentIndex} -c:a:${audioIdx} ac3 -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
+          ++audioIdx;
+          response.infoLog += `☒Language ${languagesAudioStreams[i].language} has ${currentChannels} channels audio track but no ${targetedChannels} channels. Creating ${targetedChannels} channels audio track. \n`;
+          convert = true;
+        }
       }
-
-      if ((languagesAudioStreams[i].hasChannel6 || languagesAudioStreams[i].hasChannel8) && !languagesAudioStreams[i].hasChannel2) {
-        ffmpegCommandInsert += `-map 0:${languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8.index} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
-        ++audioIdx;
-        response.infoLog += `☒Language ${languagesAudioStreams[i].language} has 8 or 6 channels audio track but no 2 channels. Creating 2 channels audio track. \n`;
-        convert = true;
-      }
+      setUpDownmixCmd(
+        8,
+        6,
+        languagesAudioStreams[i].hasChannel8,
+        languagesAudioStreams[i].hasChannel6,
+        languagesAudioStreams[i].channel8?.index || {},
+        '5.1');
+      setUpDownmixCmd(
+        '8 or 6',
+        2,
+        languagesAudioStreams[i].hasChannel6 || languagesAudioStreams[i].hasChannel8,
+        languagesAudioStreams[i].hasChannel2,
+        languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8?.index || {},
+        '2.0');
     }
   }
 
   // Convert file if convert variable is set to true.
   response.processFile = convert;
-  if (response.processFile)
+  if (response.processFile) {
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
       + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
+      if (debug) response.infoLog += `[DEBUG] ffmpegCommand: ${response.preset} \n`;
+  }
   else
     response.infoLog += '☑File contains all required audio formats. \n';
 
