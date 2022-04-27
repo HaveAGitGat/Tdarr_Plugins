@@ -170,15 +170,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < file.ffProbeData.streams.length; i++)
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (downmix && !downmixLanguageAware) {
-          let setUpDownmixCmd = (currentChannels, targetedChannels, hasTargetedChannels, targetedChannelsLayout) => {
+          let setUpDownmixCmd = (currentChannels, targetedChannels, hasTargetedChannels, encoder, targetedChannelsLayout) => {
             if (file.ffProbeData.streams[i].channels === currentChannels && !hasTargetedChannels) {
-              ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
+              ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
               response.infoLog += `☒Audio track is ${currentChannels} channel, no ${targetedChannels} channel exists. Creating ${targetedChannels} channel from ${currentChannels} channel. \n`;
               convert = true;
             }
           }
-          setUpDownmixCmd(8, 6, has6Channel, '5.1');
-          setUpDownmixCmd(6, 2, has2Channel, '2.0');
+          setUpDownmixCmd(8, 6, has6Channel, 'ac3', '5.1');
+          setUpDownmixCmd(6, 2, has2Channel, 'aac', '2.0');
         }
 
         if (
@@ -203,9 +203,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           + ` hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''};`
           + ` hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel8 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
 
-      let setUpDownmixCmd = (currentChannels, targetedChannels, hasCurrentChannels, hasTargetedChannels, currentIndex, targetedChannelsLayout) => {
+      let setUpDownmixCmd = (currentChannels, targetedChannels, hasCurrentChannels, hasTargetedChannels, currentIndex, encoder, targetedChannelsLayout) => {
         if (hasCurrentChannels && !hasTargetedChannels) {
-          ffmpegCommandInsert += `-map 0:${currentIndex} -c:a:${audioIdx} ac3 -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
+          ffmpegCommandInsert += `-map 0:${currentIndex} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
           ++audioIdx;
           response.infoLog += `☒Language ${languagesAudioStreams[i].language} has ${currentChannels} channels audio track but no ${targetedChannels} channels. Creating ${targetedChannels} channels audio track. \n`;
           convert = true;
@@ -217,6 +217,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         languagesAudioStreams[i].hasChannel8,
         languagesAudioStreams[i].hasChannel6,
         languagesAudioStreams[i].channel8?.index || {},
+        'ac3',
         '5.1');
       setUpDownmixCmd(
         '8 or 6',
@@ -224,6 +225,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         languagesAudioStreams[i].hasChannel6 || languagesAudioStreams[i].hasChannel8,
         languagesAudioStreams[i].hasChannel2,
         languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8?.index || {},
+        'aac',
         '2.0');
     }
   }
