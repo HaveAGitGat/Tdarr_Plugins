@@ -67,8 +67,8 @@ const details = () => ({
     },
     {
       name: 'bframe',
-      type: 'string',
-      defaultValue: '8',
+      type: 'number',
+      defaultValue: 8,
       inputUI: {
         type: 'text',
       },
@@ -100,8 +100,8 @@ const details = () => ({
     },
     {
       name: 'sdDisabled',
-      type: 'string',
-      defaultValue: 'false',
+      type: 'boolean',
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -116,15 +116,37 @@ const details = () => ({
     },
     {
       name: 'uhdDisabled',
-      type: 'string',
-      defaultValue: 'false',
+      type: 'boolean',
+      defaultValue: false,
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
       tooltip: `Input "true" if you want to skip 4k (UHD) files
         
         \\nExample:\\n
         true`,
+    },
+    {
+      name: 'force10bit',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `Specify if output file should be forced to 10bit. Default is false (bit depth is same as source).
+                    \\nExample:\\n
+                    true
+
+                    \\nExample:\\n
+                    false`,
     },
   ],
 });
@@ -137,7 +159,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let crf;
   // default values that will be returned
   const response = {
-    processFile: true,
+    processFile: false,
     preset: '',
     container: '.mkv',
     handBrakeMode: false,
@@ -146,86 +168,68 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  // check if the file is a video, if not the function will be stopped immediately
+  // check if the file is a video, if not the plugin will exit
   if (file.fileMedium !== 'video') {
-    response.processFile = false;
     response.infoLog += '☒File is not a video! \n';
     return response;
   }
   response.infoLog += '☑File is a video! \n';
 
-  // check if the file is SD and sdDisable is enabled
+  // check if the file is SD and sdDisabled is true
   // skip this plugin if so
-  if (['480p', '576p'].includes(file.video_resolution) && inputs.sdDisabled === 'true') {
-    response.processFile = false;
-    response.infoLog += '☒File is SD, not processing\n';
+  if (inputs.sdDisabled && ['480p', '576p'].includes(file.video_resolution)) {
+    response.infoLog += '☒File is SD and disabled, not processing\n';
     return response;
   }
 
-  // check if the file is 4k and 4kDisable is enabled
+  // check if the file is 4k and uhdDisabled is true
   // skip this plugin if so
-  if (file.video_resolution === '4KUHD' && inputs.uhdDisabled) {
-    response.processFile = false;
-    response.infoLog += '☒File is 4k/UHD, not processing\n';
+  if (inputs.uhdDisabled && file.video_resolution === '4KUHD') {
+    response.infoLog += '☒File is 4k/UHD and disabled, not processing\n';
     return response;
   }
 
-  // check if the file is already hevc
-  // it will not be transcoded if true and the plugin will be stopped immediately
-  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    if (file.ffProbeData.streams[i].codec_name && file.ffProbeData.streams[i].codec_name.toLowerCase() === 'hevc') {
-      response.processFile = false;
-      response.infoLog += '☑File is already in hevc! \n';
-      return response;
-    }
+  // check if the file contains a hevc track
+  // it will not be transcoded if true and the plugin will exit
+  if (file.ffProbeData.streams.filter((x) => x.codec_name.toLowerCase() === 'hevc').length) {
+    response.infoLog += '☑File is already in hevc! \n';
+    return response;
   }
 
   // if we made it to this point it is safe to assume there is no hevc stream
   response.infoLog += '☒File is not hevc!\n';
-
-  // set sane input defaults if not configured
-  const sdCRF = inputs.sdCRF ? inputs.sdCRF : 20;
-  const hdCRF = inputs.hdCRF ? inputs.hdCRF : 22;
-  const fullhdCRF = inputs.fullhdCRF ? inputs.fullhdCRF : 24;
-  const uhdCRF = inputs.uhdCRF ? inputs.uhdCRF : 28;
-  const bframe = inputs.bframe ? inputs.bframe : 8;
-
-  // set preset to slow if not configured
-  let ffmpegPreset = 'slow';
-  if (!inputs.ffmpegPreset) {
-    response.infoLog += '☑Preset not set, defaulting to slow\n';
-  } else {
-    ffmpegPreset = `${inputs.ffmpegPreset}`;
-    response.infoLog += `☑Preset set as ${inputs.ffmpegPreset}\n`;
-  }
+  response.infoLog += `☑Preset set as ${inputs.ffmpegPreset}\n`;
 
   // set crf by resolution
   switch (file.video_resolution) {
     case '480p':
     case '576p':
-      crf = sdCRF;
+      crf = inputs.sdCRF;
       break;
     case '720p':
-      crf = hdCRF;
+      crf = inputs.hdCRF;
       break;
     case '1080p':
-      crf = fullhdCRF;
+      crf = inputs.fullhdCRF;
       break;
     case '4KUHD':
-      crf = uhdCRF;
+      crf = inputs.uhdCRF;
       break;
     default:
       response.infoLog += 'Could for some reason not detect resolution, plugin will not proceed. \n';
-      response.processFile = false;
       return response;
   }
 
+  const pixel10Bit = inputs.force10bit ? ' -pix_fmt p010le' : '';
+
   // encoding settings
-  response.preset += `,-map 0 -dn -c:v libx265 -preset ${ffmpegPreset}`
-  + ` -x265-params crf=${crf}:bframes=${bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
-  + ' -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999';
+  response.preset += `<io> -map 0 -dn -c:v libx265 -preset ${inputs.ffmpegPreset}`
+    + ` -x265-params crf=${crf}:bframes=${inputs.bframe}:rc-lookahead=32:ref=6:b-intra=1:aq-mode=3`
+    + ` ${pixel10Bit} -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
+
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
   response.infoLog += 'File is being transcoded!\n';
+  response.processFile = true;
 
   return response;
 };

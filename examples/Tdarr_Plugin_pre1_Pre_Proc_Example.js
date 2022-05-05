@@ -4,6 +4,7 @@
 /* eslint global-require: 0 */ // --> OFF
 /* eslint import/no-extraneous-dependencies: 0 */ // --> OFF
 /* eslint no-console: 0 */ // --> OFF
+/* eslint no-param-reassign: 0 */ // --> OFF
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
@@ -71,12 +72,13 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // load default plugin inputs
   inputs = lib.loadDefaultValues(inputs, details);
+
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
   const importFresh = require('import-fresh');
 
-  // Must return this object at some point in the function else plugin will fail.
+  // Must return following object at some point in the function else plugin will fail.
 
   const response = {
     processFile: false, // If set to false, the file will be skipped. Set to true to have the file transcoded.
@@ -114,7 +116,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // if so, remove it
 
     response.infoLog += ' File has title metadata';
-    response.preset = ',-map_metadata -1 -c:v copy -c:a copy';
+    response.preset = '<io> -map_metadata -1 -c:v copy -c:a copy';
     response.processFile = true;
     return response;
   }

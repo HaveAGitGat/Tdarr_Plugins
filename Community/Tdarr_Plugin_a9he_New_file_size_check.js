@@ -22,7 +22,7 @@ const details = () => ({
     {
       name: 'lowerBound',
       type: 'number',
-      defaultValue: 90,
+      defaultValue: 40,
       inputUI: {
         type: 'text',
       },

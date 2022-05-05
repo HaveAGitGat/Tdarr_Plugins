@@ -95,7 +95,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  let { streams } = file.ffProbeData;
+  let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
@@ -111,9 +111,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       const matchedStreams = [];
       for (let j = 0; j < streams.length; j += 1) {
         if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
-          matchedStreams.push(streams[j]);
-          streams.splice(j, 1);
-          j -= 1;
+          if (
+            streams[j].codec_long_name
+            && (
+              streams[j].codec_long_name.includes('image')
+              || streams[j].codec_name.includes('png')
+            )
+          ) {
+            // do nothing, ffmpeg bug, doesn't move image streams
+          } else {
+            matchedStreams.push(streams[j]);
+            streams.splice(j, 1);
+            j -= 1;
+          }
         }
       }
       streams = matchedStreams.concat(streams);
