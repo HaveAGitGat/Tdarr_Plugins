@@ -2,6 +2,8 @@
 // This Plugin is essentially just his NVENC/CPU plugin modified to work with QSV & with extra hevc logic.
 // Extra logic is mainly to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
 // NOTE - This does not use VAAPI, it is QSV only. So newer intel igpus only. 8th+ gen should work.
+// Extra Note - This was designed and tested on UNRAID via docker. There is logic to enable use on Windows & Mac
+// however it is untested...
 // White paper from intel regarding QSV performance on linux using FFMPEG here:
 // eslint-disable-next-line max-len
 // https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
@@ -34,7 +36,7 @@ const details = () => ({
       },
       tooltip: `Specifies the output container of the file.
       \\n Ensure that all stream types you may have are supported by your chosen container.
-      \\n MKV is recommended.
+      \\n Only MP4 & MKV are supported and MKV is recommended.
       \\nExample:\\n
       mkv
       \\nExample:\\n
@@ -53,8 +55,8 @@ const details = () => ({
       },
       tooltip: `Make the file conform to output containers requirements.
       Use if you need to ensure the encode works from mp4>mkv or mkv>mp4.
-      This will drop data of certain type so ensure you are happy with that,
-      or use another plugin to convert these data types first.
+      WARNING! This will remove data of certain types so ensure you are happy with that,
+      or use another plugin to convert these data types first!
                   \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
                   \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
                   \\n Default is false.
@@ -80,8 +82,9 @@ const details = () => ({
         ],
       },
       tooltip: `Specify the encoder speed/preset to use. 
-      Slower options mean slower encode but better quality and faster have quicker encodes but worse quality.
-      For more information see intel white paper on ffmpeg results using qsv: \\n`
+      Slower options mean a slower encode but better quality and faster options mean faster encodes but 
+      worse quality.
+      \\n For more information see intel white paper on ffmpeg results using qsv: \\n`
         // eslint-disable-next-line max-len
         + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
       \\n Default is "slow". 
@@ -89,6 +92,25 @@ const details = () => ({
       medium
       \\nExample:\\n
       slower`,
+    },
+    {
+      name: 'extra_qsv_options',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Add extra options to the ffmpeg QSV ENCODE cmd. There are extra qsv options that can be
+      forced on/off as desired. See here for some possible cmds - 
+      https://ffmpeg.org/ffmpeg-codecs.html#toc-HEVC-Options-1
+      \\n
+      WARNING! - Just because a cmd is mentioned doesn't mean your installed version of ffmpeg supports it... 
+      Be certain to verify the cmds work before adding to your workflow. \\n
+      Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands
+      \\n
+      \\n Default is empty but a suggested value is below. If unsure just leave empty.
+      \\nExample:\\n
+      -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
     },
     {
       name: 'enable_10bit',
@@ -102,9 +124,9 @@ const details = () => ({
         ],
       },
       tooltip: `Specify if we want to enable 10bit encoding. 
-      If this is enabled files will be processed and converted into 10bit 
+      \\n If this is enabled files will be processed and converted into 10bit 
       HEVC using main10 profile and with p010le pixel format. \n
-      If you just want to retain 10 bit already in files then this can be left as false, as 
+      If you just want to retain files that are already 10 bit then this can be left as false, as 
       10bit to 10bit in ffmpeg should be automatic.
       \\n Default is "false". 
       \\nExample:\\n
@@ -158,10 +180,10 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `Specify a minimum average video bitrate. When encoding we take the current total bitrate and halve 
-        it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
-        of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
-        of 1500).
-        \\nBitrate here is referring to video bitrate as we want to set the video bitrate on encode.
+      it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
+      of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
+      of 1500).
+      \\nBitrate here is referring to video bitrate as we want to set the video bitrate on encode.
       \\n Rate is in kbps.
       \\n Defaults to 0 which means this is disabled.
       \\n Enter a valid number to enable.
@@ -182,8 +204,9 @@ const details = () => ({
         ],
       },
       tooltip: `Specify if we want to reprocess HEVC, VP9 or AV1 files 
-      (i.e reduce bitrate of files already in those codecs). Since this uses the same logic as normal, halving the
-      current bitrate, this is NOT recommended unless you know what you are doing, so leave false if unsure. 
+      (i.e reduce bitrate of files already in those codecs). 
+      \\n Since this uses the same logic as normal, halving the current bitrate, this is NOT recommended 
+      unless you know what you are doing, so leave false if unsure. 
       NEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
       This is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
       bitrate and you'd like to reduce it.
@@ -229,7 +252,7 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-  const lib = require('../methods/lib')();
+  const lib = require('../methods/lib')(); const os = require('os');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
@@ -502,57 +525,78 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
   response.infoLog += `\nContainer for output selected as ${inputs.container}. \n`;
-  response.infoLog += `The current file bitrate = ${currentBitrate}k \n`;
-  response.infoLog += 'Bitrate settings: \n';
+  response.infoLog += 'Encode variable bitrate settings: \n';
   response.infoLog += `Target = ${targetBitrate}k \n`;
   response.infoLog += `Minimum = ${minimumBitrate}k \n`;
   response.infoLog += `Maximum = ${maximumBitrate}k \n`;
 
-  // Codec will be checked so it can be transcoded correctly
-  // (QSV doesn't support HW decode of all older codecs, h263 & mpeg1 are SW based currently)
-  // If source file is 10 bit then don't hardware decode at all as this can cause issues.
-  // Instead best just to cpu decode to ensure it works.
+  // START PRESET
+  // DECODE FLAGS
+  // -fflags +genpts should regenerate timestamps if they end up missing...
+  response.preset = '-fflags +genpts ';
+
+  // Attempt to enable HW Decoding...
+  // If source file is 10 bit then bail as this can cause issues.
   if (main10 === false) {
+    // Currently supported HW decode types
     switch (file.video_codec_name) {
-      case 'h263':
-        response.preset = '-hwaccel qsv -c:v h263';
+      case 'mpeg2':
+        response.preset += '-hwaccel qsv -c:v mpeg2_qsv';
         break;
       case 'h264':
-        response.preset = '-hwaccel qsv -c:v h264_qsv';
-        break;
-      case 'mjpeg':
-        response.preset = '-hwaccel qsv -c:v mjpeg_qsv';
-        break;
-      case 'hevc':
-        response.preset = '-hwaccel qsv -c:v hevc_qsv';
-        break;
-      case 'mpeg1':
-        response.preset = '-hwaccel qsv -c:v mpeg1';
-        break;
-      case 'mpeg2':
-        response.preset = '-hwaccel qsv -c:v mpeg2_qsv';
+        response.preset += '-hwaccel qsv -c:v h264_qsv';
         break;
       case 'vc1':
-        response.preset = '-hwaccel qsv -c:v vc1_qsv';
+        response.preset += '-hwaccel qsv -c:v vc1_qsv';
+        break;
+      case 'mjpeg':
+        response.preset += '-hwaccel qsv -c:v mjpeg_qsv';
         break;
       case 'vp8':
-        response.preset = '-hwaccel qsv -c:v vp8_qsv';
+        response.preset += '-hwaccel qsv -c:v vp8_qsv';
         break;
-      case 'av1':
-        response.preset = '-hwaccel qsv -c:v av1';
+      case 'hevc':
+        response.preset += '-hwaccel qsv -c:v hevc_qsv';
+        break;
+      case 'vp9': // Should be supported by 8th Gen +
+        response.preset += '-hwaccel qsv -c:v vp9_qsv';
         break;
       default:
-        response.preset = '';
+        response.preset += '-hwaccel qsv';
     }
+  } else {
+    response.preset += '-hwaccel qsv'; // Ensure we enable hwaccel regardless of 10bit
   }
 
-  response.preset += `<io> -map 0 -c:v hevc_qsv ${bitrateSettings} `
-    + `-preset ${inputs.encoder_speedpreset} -look_ahead 1 
+  // ADD ENCODE FLAGS TO PRESET
+  response.preset += '<io> -map 0 -c:v ';
+
+  // Account for different OS setup for QSV.
+  // FYI Darwin is Mac OS
+  switch (os.platform()) {
+    case 'darwin':
+      response.preset += 'hevc_qsv';
+      // Using default for now but is here in case it needs something specific.
+      // hevc_videotoolbox seems to be a Mac cmd to use but that doesn't seem to be included in Jellyfin ffmpeg...
+      break;
+    case 'linux':
+      response.preset += 'hevc_qsv';
+      break;
+    case 'win32':
+      response.preset += 'hevc_qsv -load_plugin hevc_hw';
+      // Windows seems to need the plugin cmd as well. Tested working on a Win 10 - i3-10105
+      break;
+    default:
+      response.preset += 'hevc_qsv';
+  }
+
+  response.preset += ` ${bitrateSettings} `
+    + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
      -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
-  // Other settings to consider.
-  // -b_strategy 1 -adaptive_b 1 -adaptive_i 1 -async_depth 1 -look_ahead 1 -look_ahead_depth 100
+
   response.processFile = true;
-  response.infoLog += 'File Transcoding. \n';
+  response.infoLog += 'File Transcoding... \n';
+
   return response;
 };
 module.exports.details = details;
