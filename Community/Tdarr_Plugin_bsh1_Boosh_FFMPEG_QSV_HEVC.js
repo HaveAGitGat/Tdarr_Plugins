@@ -1,7 +1,7 @@
 // All credit for original plugin logic goes to Migz.
 // This Plugin is essentially just his NVENC/CPU plugin modified to work with QSV & with extra hevc logic.
 // Extra logic is mainly to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
-// NOTE - This does not use VAAPI, it is QSV only. So newer intel igpus only. 8th+ gen should work.
+// NOTE - This does not use VAAPI, it is QSV only. So newer intel iGPUs only. 8th+ gen should work.
 // Extra Note - This was designed and tested on UNRAID via docker. There is logic to enable use on Windows & Mac
 // however it is untested...
 // White paper from intel regarding QSV performance on linux using FFMPEG here:
@@ -19,7 +19,8 @@ const details = () => ({
     via Intel GPU with ffmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
     the same amount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
     unless "reconvert_hevc" is marked as true. If it is then these will be reconverted again into HEVC if they 
-    exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.`,
+    exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.
+    NOTE - Created with Linux/UNRAID in mind so may not be fully compatible with Windows/Mac etc.`,
   Version: '1.0',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
   Inputs: [
