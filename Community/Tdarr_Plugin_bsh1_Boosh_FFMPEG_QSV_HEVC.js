@@ -537,7 +537,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset = '-fflags +genpts ';
 
   // Attempt to enable HW Decoding...
-  // If source file is 10 bit then bail as this can cause issues.
+  // If source file is 10 bit then bail as this can cause issues. Believe it's the -c:v option that breaks during 10bit
   if (main10 === false) {
     // Currently supported HW decode types
     switch (file.video_codec_name) {
@@ -566,7 +566,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.preset += '-hwaccel qsv';
     }
   } else {
-    response.preset += '-hwaccel qsv'; // Ensure we enable hwaccel regardless of 10bit
+    response.preset += '-hwaccel qsv';
+    // Enable basic hwaccel regardless. Seems to work...
   }
 
   // ADD ENCODE FLAGS TO PRESET
