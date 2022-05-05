@@ -1,9 +1,10 @@
 // All credit for original plugin logic goes to Migz.
 // This Plugin is essentially just his NVENC/CPU plugin modified to work with QSV & with extra hevc logic.
 // Extra logic is mainly to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
+//
 // NOTE - This does not use VAAPI, it is QSV only. So newer intel iGPUs only. 8th+ gen should work.
-// Extra Note - This was designed and tested on UNRAID via docker. There is logic to enable use on Windows & Mac
-// however it is untested...
+// Additionally this was designed and tested on UNRAID via docker though there is logic to support use on Windows & Mac
+//
 // White paper from intel regarding QSV performance on linux using FFMPEG here:
 // eslint-disable-next-line max-len
 // https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
@@ -537,7 +538,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset = '-fflags +genpts ';
 
   // Attempt to enable HW Decoding...
-  // If source file is 10 bit then bail as this can cause issues. Believe it's the -c:v option that breaks during 10bit
+  // If source file is 10 bit then bail as this can cause issues. Think it's the -c:v option that can break during 10bit
   if (main10 === false) {
     // Currently supported HW decode types
     switch (file.video_codec_name) {
@@ -577,21 +578,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // FYI Darwin is Mac OS
   switch (os.platform()) {
     case 'darwin':
-      response.preset += 'hevc_qsv';
-      // Using default for now but is here in case it needs something specific.
-      // hevc_videotoolbox seems to be a Mac cmd to use but that doesn't seem to be included in Jellyfin ffmpeg...
+      response.preset += 'hevc_videotoolbox';
+      // hevc_videotoolbox is for Mac but that doesn't seem to be included in Tdarr current Jellyfin ffmpeg
+      // Likely needs custom ffmpeg installed
       break;
     case 'linux':
       response.preset += 'hevc_qsv';
       break;
     case 'win32':
       response.preset += 'hevc_qsv -load_plugin hevc_hw';
-      // Windows seems to need the plugin cmd as well. Tested working on a Win 10 - i3-10105
+      // Windows needs the additional -load_plugin plugin. Tested working on a Win 10 - i5-10505
       break;
     default:
       response.preset += 'hevc_qsv';
   }
 
+  // Add the rest of the ffmpeg command
   response.preset += ` ${bitrateSettings} `
     + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
      -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
