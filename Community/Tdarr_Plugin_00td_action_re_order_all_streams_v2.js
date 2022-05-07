@@ -95,6 +95,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
+  if (!Array.isArray(file.ffProbeData.streams)) {
+    throw new Error('FFprobe was unable to extract any streams info on this file.'
+      + 'This may be due to a corrupt file or permissions issue when scanning the file.');
+  }
+
   let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
