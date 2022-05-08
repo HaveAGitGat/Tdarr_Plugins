@@ -1,4 +1,4 @@
-// All credit for original plugin logic goes to Migz.Note
+// All credit for original plugin logic goes to Migz.
 // This Plugin is essentially just his NVENC/CPU plugin modified to work with QSV & with extra hevc logic.
 // Extra logic is mainly to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
 
