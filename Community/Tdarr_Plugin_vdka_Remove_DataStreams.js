@@ -40,7 +40,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   } else {
     response.FFmpegMode = true;
-    response.container = "." + file.container;
+    response.container = ".mkv";
 
     var hasData = false;
 
