@@ -6,7 +6,7 @@ const details = () => {
     Name: "Remove Data Streams ",
     Type: "Video",
     Operation: "Transcode",
-    Description: `[Contains built-in filter] This plugin removes data streams if detected. The output container is the same as the original. Helps with issues like bin_data making files impossible to process. \n\n`,
+    Description: `[Contains built-in filter] This plugin removes data streams if detected. The output container is mkv. Helps with issues like bin_data making files impossible to process. \n\n`,
     Version: "1.00",
     Tags: "pre-processing,ffmpeg",
     Inputs:[],
