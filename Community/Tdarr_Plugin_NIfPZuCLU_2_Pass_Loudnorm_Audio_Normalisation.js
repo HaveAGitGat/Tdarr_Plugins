@@ -96,8 +96,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     logOutFile = currentfilename.substr(0, currentfilename.lastIndexOf(".")) + ".out"
     console.log("Log out file: " + logOutFile)
 
-    //get an updated version of the file for checking metadata
-    var probeData = JSON.parse(require("child_process").execSync(`ffprobe -v quiet -print_format json -show_format -show_streams "${currentfilename}"`).toString())
+    let probeData;
+    if (file && file.ffProbeData && file.ffProbeData.format) {
+        probeData = file.ffProbeData;
+    } else {
+        //get an updated version of the file for checking metadata
+        probeData = JSON.parse(require("child_process").execSync(`ffprobe -v quiet -print_format json -show_format -show_streams "${currentfilename}"`).toString())
+    }
 
     //setup required varibles
     var loudNorm_i = -23.0
