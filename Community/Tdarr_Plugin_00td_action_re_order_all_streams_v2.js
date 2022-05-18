@@ -21,6 +21,8 @@ const details = () => ({
       tooltip:
         `Specify the process order.
 For example, if 'languages' is first, the streams will be ordered based on that first.
+So put the most important properties last.
+The default order is suitable for most people.
 
         \\nExample:\\n
         codecs,channels,languages,streamTypes
