@@ -28,7 +28,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-Z "Very Fast 1080p30"',
+      preset: '-Z "Fast 1080p30"',
       container: '.mp4',
       handBrakeMode: true,
       FFmpegMode: false,

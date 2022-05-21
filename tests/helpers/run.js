@@ -11,9 +11,13 @@ const run = async (tests) => {
       // eslint-disable-next-line no-console
       console.log(`${scriptName}: test ${i}`);
       const test = tests[i];
+      let { file } = test.input;
+      if (typeof test.input.file === 'function') {
+        file = test.input.file();
+      }
       // eslint-disable-next-line no-await-in-loop
       const testOutput = await plugin(
-        test.input.file,
+        file,
         test.input.librarySettings,
         test.input.inputs,
         test.input.otherArguments,
