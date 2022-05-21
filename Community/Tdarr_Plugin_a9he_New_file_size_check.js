@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_a9he_New_file_size_check',
   Stage: 'Pre-processing',

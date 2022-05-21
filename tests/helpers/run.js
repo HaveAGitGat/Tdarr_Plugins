@@ -15,14 +15,32 @@ const run = async (tests) => {
       if (typeof test.input.file === 'function') {
         file = test.input.file();
       }
-      // eslint-disable-next-line no-await-in-loop
-      const testOutput = await plugin(
-        file,
-        test.input.librarySettings,
-        test.input.inputs,
-        test.input.otherArguments,
-      );
-      chai.assert.deepEqual(testOutput, test.output);
+
+      let testOutput;
+      let errorEncountered = false;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        testOutput = await plugin(
+          file,
+          test.input.librarySettings,
+          test.input.inputs,
+          test.input.otherArguments,
+        );
+      } catch (err1) {
+        // eslint-disable-next-line no-console
+        console.error(err1);
+        errorEncountered = err1;
+      }
+
+      if (test.error && test.error.shouldThrow) {
+        if (errorEncountered !== false) {
+          chai.assert.deepEqual(errorEncountered.message, test.output);
+        } else {
+          throw new Error('Expected plugin error but none was thrown!');
+        }
+      } else {
+        chai.assert.deepEqual(testOutput, test.output);
+      }
     }
   } catch (err) {
     // eslint-disable-next-line no-console
