@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => ({
     id: "Tdarr_Plugin_075a_Transcode_Customisable",
     Stage: "Pre-processing",
