@@ -17,7 +17,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: 'File is not in mkv \n',
-      handbrakeMode: false
+      handbrakeMode: false,
     },
   },
   {
@@ -25,7 +25,7 @@ const tests = [
       file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {
-        container: 'mkv'
+        container: 'mkv',
       },
       otherArguments: {},
     },
@@ -37,7 +37,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: 'File is not in mkv \n',
-      handbrakeMode: false
+      handbrakeMode: false,
     },
   },
   {
@@ -45,7 +45,7 @@ const tests = [
       file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {
-        container: 'mp4'
+        container: 'mp4',
       },
       otherArguments: {},
     },
@@ -57,7 +57,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: 'File is already in mp4 \n',
-      handbrakeMode: false
+      handbrakeMode: false,
     },
   },
 ];
