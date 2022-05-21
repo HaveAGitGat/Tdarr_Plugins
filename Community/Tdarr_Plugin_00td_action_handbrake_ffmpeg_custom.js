@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_handbrake_ffmpeg_custom',
   Stage: 'Pre-processing',
@@ -85,8 +84,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     processFile: false,
     preset: '',
     container: '',
-    handBrakeMode: false,
-    FFmpegMode: false,
+    handbrakeMode: false,
+    ffmpegMode: false,
     reQueueAfter: false,
     infoLog: '',
   };
