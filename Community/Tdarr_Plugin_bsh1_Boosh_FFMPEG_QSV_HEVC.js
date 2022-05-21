@@ -10,6 +10,7 @@
 // eslint-disable-next-line max-len
 // https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
 
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_bsh1_Boosh_FFMPEG_QSV_HEVC',
   Stage: 'Pre-processing',

@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_075a_FFMPEG_HEVC_Generic',
   Stage: 'Pre-processing',

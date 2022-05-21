@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_DOOM_NVENC_Tiered_MKV_CleanAll",

@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_a37x_Drawmonster_MP4_No_Title_Meta",

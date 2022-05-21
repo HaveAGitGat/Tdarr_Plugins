@@ -1,3 +1,4 @@
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
   Stage: 'Post-processing',

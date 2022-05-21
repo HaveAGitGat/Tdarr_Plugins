@@ -1,6 +1,7 @@
 /* eslint-disable */
 const vaapiPrefix = ` -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi `;
 
+// tdarrSkipTest
 const details = () => {
   return {
     id: `Tdarr_Plugin_Mthr_VaapiHEVCTranscode`,

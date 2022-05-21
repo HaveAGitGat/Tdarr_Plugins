@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_a8hc_HaveAGitGat_HandBrake_H264_VeryFast1080p30",

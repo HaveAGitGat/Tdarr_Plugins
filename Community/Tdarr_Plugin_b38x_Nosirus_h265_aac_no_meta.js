@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_b38x_Nosirus_h265_aac_no_meta",

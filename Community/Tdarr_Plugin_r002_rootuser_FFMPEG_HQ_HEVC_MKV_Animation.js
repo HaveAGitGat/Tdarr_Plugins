@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_r002_rootuser_FFMPEG_HQ_HEVC_MKV_Animation",

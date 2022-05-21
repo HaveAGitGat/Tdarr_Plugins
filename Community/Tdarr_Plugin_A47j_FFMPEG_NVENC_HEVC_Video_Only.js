@@ -1,6 +1,7 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 /* eslint-disable no-restricted-globals */
 
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_A47j_FFMPEG_NVENC_HEVC_Video_Only',
   Stage: 'Pre-processing',
