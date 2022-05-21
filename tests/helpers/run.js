@@ -22,7 +22,7 @@ const run = async (tests) => {
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.log(err);
+    console.error(err);
     process.exit(1);
   }
 };

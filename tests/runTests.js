@@ -1,6 +1,7 @@
 /* eslint no-console: 0 */ // --> OFF
 
 const fs = require('fs');
+const chalk = require('chalk');
 const childProcess = require('child_process');
 
 const filenames = fs.readdirSync(`${process.cwd()}/Community`);
@@ -13,15 +14,15 @@ const run = async () => {
 
     let shouldRunTest = true;
     if (!text.includes('// tdarrSkipTest') && !fs.existsSync(pluginTestpath)) {
-      console.log(`${filenames[i]} does not have a test but should do.`);
+      console.log(chalk.red(`${filenames[i]} does not have a test but should do.`));
       process.exit(1);
     } else if (!text.includes('// tdarrSkipTest') && fs.existsSync(pluginTestpath)) {
-      console.log(`${filenames[i]} running test`);
+      console.log(chalk.white(`${filenames[i]} running test`));
     } else if (text.includes('// tdarrSkipTest') && fs.existsSync(pluginTestpath)) {
-      console.log(`${filenames[i]} should have // tdarrSkipTest removed`);
+      console.log(chalk.red(`${filenames[i]} should have // tdarrSkipTest removed`));
       process.exit(1);
     } else if (text.includes('// tdarrSkipTest') && !fs.existsSync(pluginTestpath)) {
-      console.log(`${filenames[i]} skipping tests`);
+      console.log(chalk.yellow(`${filenames[i]} skipping tests`));
       shouldRunTest = false;
     }
 
@@ -33,7 +34,7 @@ const run = async () => {
             console.log(err);
           }
           console.log(stdout);
-          console.log(stderr);
+          console.log(chalk.red(stderr));
         }).on('exit', async (code) => {
           if (code !== 0) {
             await new Promise((resolve2) => setTimeout(resolve2, 1000));
