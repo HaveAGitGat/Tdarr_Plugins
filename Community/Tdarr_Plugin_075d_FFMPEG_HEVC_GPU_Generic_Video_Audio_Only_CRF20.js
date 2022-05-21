@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_075d_FFMPEG_HEVC_GPU_Generic_Video_Audio_Only_CRF20",
