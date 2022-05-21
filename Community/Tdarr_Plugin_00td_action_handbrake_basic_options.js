@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_handbrake_basic_options',
   Stage: 'Pre-processing',
