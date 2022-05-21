@@ -1,9 +1,11 @@
 {
   "name": "tdarr_plugins",
   "version": "1.0.0",
-  "description": "There are two types of plugin:",
-  "main": "Tdarr_Plugin_aaaa_Pre_Proc_Example.js",
-  "dependencies": {},
+  "description": "Tdar Plugins Repo",
+  "main": "",
+  "dependencies": {
+    "chalk": "^4.1.2"
+  },
   "devDependencies": {
     "chai": "^4.3.6",
     "eslint": "^7.14.0",
