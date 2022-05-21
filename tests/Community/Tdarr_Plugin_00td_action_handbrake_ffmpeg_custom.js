@@ -58,7 +58,7 @@ const tests = [
       handbrakeMode: false,
       ffmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'File is being transcoded using custom arguments \n'
+      infoLog: 'File is being transcoded using custom arguments \n',
     },
   },
 ];
