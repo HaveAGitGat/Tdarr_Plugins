@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_075b_FFMPEG_HEVC_Generic_Video_Audio_Only",
