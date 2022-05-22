@@ -4,7 +4,7 @@ const fs = require('fs');
 const chalk = require('chalk');
 const childProcess = require('child_process');
 
-const filenames = fs.readdirSync(`${process.cwd()}/Community`);
+const filenames = fs.readdirSync(`${process.cwd()}/Community`).reverse();
 
 const run = async () => {
   for (let i = 0; i < filenames.length; i += 1) {

@@ -1,10 +1,9 @@
 const path = require('path');
 const chai = require('chai');
 const _ = require('lodash');
+const importFresh = require('import-fresh');
 
 const scriptName = path.basename(process.mainModule.filename);
-// eslint-disable-next-line import/no-dynamic-require
-const { plugin } = require(`../../Community/${scriptName}`);
 
 const run = async (tests) => {
   try {
@@ -15,6 +14,9 @@ const run = async (tests) => {
 
       let testOutput;
       let errorEncountered = false;
+      // eslint-disable-next-line import/no-dynamic-require
+      const { plugin } = importFresh(`../../Community/${scriptName}`);
+
       try {
         // eslint-disable-next-line no-await-in-loop
         testOutput = await plugin(
@@ -24,13 +26,13 @@ const run = async (tests) => {
           _.cloneDeep(test.input.otherArguments),
         );
       } catch (err1) {
-        // eslint-disable-next-line no-console
-        console.error(err1);
         errorEncountered = err1;
       }
 
       if (test.error && test.error.shouldThrow) {
         if (errorEncountered !== false) {
+          // eslint-disable-next-line no-console
+          console.log(errorEncountered);
           chai.assert.deepEqual(errorEncountered.message, test.output);
         } else {
           throw new Error('Expected plugin error but none was thrown!');
