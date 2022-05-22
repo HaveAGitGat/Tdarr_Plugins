@@ -1,5 +1,4 @@
 module.exports.dependencies = ['import-fresh'];
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
   Stage: 'Pre-processing',
