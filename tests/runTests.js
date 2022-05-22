@@ -29,7 +29,7 @@ const run = async () => {
     if (shouldRunTest) {
       // eslint-disable-next-line no-await-in-loop
       await new Promise((resolve) => {
-        childProcess.exec(`node ${pluginTestpath}`, (err, stdout, stderr) => {
+        childProcess.exec(`node "${pluginTestpath}"`, (err, stdout, stderr) => {
           if (err) {
             console.log(err);
           }
