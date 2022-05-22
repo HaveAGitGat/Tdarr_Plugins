@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz2CleanTitle',
   Stage: 'Pre-processing',
