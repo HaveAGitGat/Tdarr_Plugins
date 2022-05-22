@@ -1,5 +1,4 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',
   Stage: 'Pre-processing',
