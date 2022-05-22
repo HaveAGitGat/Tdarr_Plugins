@@ -1,4 +1,5 @@
 /* eslint max-classes-per-file: ["error", 2] */
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
   Stage: 'Pre-processing',

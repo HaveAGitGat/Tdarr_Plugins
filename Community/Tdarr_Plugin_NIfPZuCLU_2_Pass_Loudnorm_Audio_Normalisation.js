@@ -14,6 +14,7 @@
 var secondPass = false;
 var logOutFile = '';
 
+// tdarrSkipTest
 const details = () => {
     return {
         id: "Tdarr_Plugin_NIfPZuCLU_2_Pass_Loudnorm_Audio_Normalisation",
