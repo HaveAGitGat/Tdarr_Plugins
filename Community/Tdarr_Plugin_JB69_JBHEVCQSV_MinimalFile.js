@@ -86,7 +86,6 @@ Audio:  (Only one audio stream is used!!)
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile',
   Stage: 'Pre-processing',

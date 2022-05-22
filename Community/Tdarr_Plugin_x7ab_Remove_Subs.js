@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_x7ab_Remove_Subs",

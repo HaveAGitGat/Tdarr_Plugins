@@ -1,22 +1,17 @@
 {
   "name": "tdarr_plugins",
   "version": "1.0.0",
-  "description": "Tdar Plugins Repo",
-  "main": "",
-  "dependencies": {
-    "chalk": "^4.1.2",
-    "import-fresh": "^3.3.0",
-    "lodash": "^4.17.21"
-  },
+  "description": "There are two types of plugin:",
+  "main": "Tdarr_Plugin_aaaa_Pre_Proc_Example.js",
+  "dependencies": {},
   "devDependencies": {
-    "chai": "^4.3.6",
     "eslint": "^7.14.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jsx-a11y": "^6.4.1"
   },
   "scripts": {
-    "test": "node ./tests/runTests.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint Community methods examples tests --ext js",
     "lint:fix": "eslint Community methods examples tests --ext js --fix",
     "checkPlugins": "node ./tests/checkPlugins.js"

@@ -62,7 +62,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-
   var response = {
     processFile: false,
     preset: "",
@@ -71,17 +70,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     FFmpegMode: false,
     reQueueAfter: false,
     infoLog: "",
-
+    addInfo(status, info) {
+      this.infoLog += (status ? "☑" : "☒") + " " + info + "\n";
+    },
   };
-
-  const addInfo = (status, info) => {
-    response.infoLog += (status ? "☑" : "☒") + " " + info + "\n";
-  }
 
   // Check the file is a video
   if (file.fileMedium !== "video") {
     console.log("File is not video");
-    addInfo(BAD, `File is not video`);
+    response.addInfo(BAD, `File is not video`);
     response.processFile = false;
     return response;
   }
@@ -90,7 +87,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let preset = getPreset(inputs.FFmpeg_preset);
 
   if (preset === null) {
-    addInfo(
+    response.addInfo(
       BAD,
       `Invalid Preset, \"${inputs.FFmpeg_preset}\" please select from (slow,medium,fast,veryfast)`
     );
@@ -128,10 +125,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (hasBadSubs)
-    addInfo(BAD, "File contains unsupported sub(s), dropping these!");
+    response.addInfo(BAD, "File contains unsupported sub(s), dropping these!");
 
   if (file.ffProbeData.streams[0].codec_name != "h264") {
-    addInfo(BAD, "File is not in h264!");
+    response.addInfo(BAD, "File is not in h264!");
     response.preset =
       ", -map_metadata -1 -map 0:V " +
       subMap +
@@ -142,11 +139,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.FFmpegMode = true;
     return response;
   } else {
-    addInfo(GOOD, "File is already in h264!");
+    response.addInfo(GOOD, "File is already in h264!");
   }
 
   if (file.meta.Title != undefined && !jsonString.includes("aac") && hasSubs) {
-    addInfo(BAD, "File has title metadata and no aac and subs");
+    response.addInfo(BAD, "File has title metadata and no aac and subs");
     response.preset =
       ", -map_metadata -1 -map 0:v " +
       subMap +
@@ -159,7 +156,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (!jsonString.includes("aac") && hasSubs) {
-    addInfo(BAD, "File has no aac track and has subs");
+    response.addInfo(BAD, "File has no aac track and has subs");
     response.preset =
       ", -map 0:v " +
       subMap +
@@ -172,7 +169,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (file.meta.Title != undefined && hasSubs) {
-    addInfo(BAD, "File has title and has subs");
+    response.addInfo(BAD, "File has title and has subs");
     response.preset =
       ", -map_metadata -1 -map 0:v " +
       subMap +
@@ -185,7 +182,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (file.meta.Title != undefined) {
-    addInfo(BAD, "File has title metadata");
+    response.addInfo(BAD, "File has title metadata");
     response.preset =
       ", -map_metadata -1 -map 0:v " +
       subMap +
@@ -196,11 +193,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.FFmpegMode = true;
     return response;
   } else {
-    addInfo(GOOD, "File has no title metadata");
+    response.addInfo(GOOD, "File has no title metadata");
   }
 
   if (!jsonString.includes("aac")) {
-    addInfo(BAD, "File has no aac track");
+    response.addInfo(BAD, "File has no aac track");
     response.preset =
       ", -map 0:v " +
       subMap +
@@ -211,14 +208,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.FFmpegMode = true;
     return response;
   } else {
-    addInfo(GOOD, "File has aac track");
+    response.addInfo(GOOD, "File has aac track");
   }
 
   if (hasSubs) {
     if (hasBadSubs) {
-      addInfo(BAD, "File has incompatible subs, dropping these...");
+      response.addInfo(BAD, "File has incompatible subs, dropping these...");
     } else {
-      addInfo(BAD, "File has compatible subs, copying...");
+      response.addInfo(BAD, "File has compatible subs, copying...");
     }
     response.preset =
       ", -map 0:v " + subMap + " -map 0:a -c:v copy -c:a copy " + subType;
@@ -226,10 +223,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.FFmpegMode = true;
     return response;
   } else {
-    addInfo(GOOD, "File has no/compatible subs");
+    response.addInfo(GOOD, "File has no/compatible subs");
   }
 
-  addInfo(GOOD, "File meets conditions!");
+  response.addInfo(GOOD, "File meets conditions!");
   return response;
 }
 

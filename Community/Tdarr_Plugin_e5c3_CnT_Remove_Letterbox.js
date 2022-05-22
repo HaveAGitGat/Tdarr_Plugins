@@ -1,6 +1,5 @@
 /* eslint-disable */
 
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Remove_Letterbox",

@@ -1,7 +1,6 @@
 /* eslint-disable */
 
 
-// tdarrSkipTest
 const details = () => {
     return {
         id: "Tdarr_Plugin_O8O0dCTlb_Set_File_Permissions_For_UnRaid",

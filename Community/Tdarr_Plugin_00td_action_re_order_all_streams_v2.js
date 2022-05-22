@@ -117,7 +117,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < items.length; i += 1) {
       const matchedStreams = [];
       for (let j = 0; j < streams.length; j += 1) {
-        if (String(sortType.getValue(streams[j])) === String(items[i])) {
+        if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
           if (
             streams[j].codec_long_name
             && (

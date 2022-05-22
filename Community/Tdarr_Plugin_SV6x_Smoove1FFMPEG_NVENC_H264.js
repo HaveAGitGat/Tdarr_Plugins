@@ -3,7 +3,6 @@
 // https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/Community/Tdarr_Plugin_MC93_Migz1FFMPEG.js
 // Seriously, all I did was make it work for converting things to h264 instead of hevc
 
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264',
   Stage: 'Pre-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed.

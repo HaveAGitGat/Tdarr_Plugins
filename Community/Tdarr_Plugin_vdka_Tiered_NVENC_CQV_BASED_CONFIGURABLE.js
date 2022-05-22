@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: 'Tdarr_Plugin_vdka_Tiered_NVENC_CQV_BASED_CONFIGURABLE',

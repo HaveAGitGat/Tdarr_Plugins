@@ -4,14 +4,14 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_drdd_standardise_all_in_one",
     Stage: "Pre-processing",
-    Name: "DrDD H265 MKV AC3 audio subtitles [VAAPI & NVENC]",
+    Name: "DrDD H265 MKV AC3 audio subtitles [QSV & NVENC]",
     Stage: "Pre-processing",
     Type: "Video",
     Operation: "Transcode",
     Description:
       "In a single pass ensures all files are in MKV containers and where possible encoded in h265 (settings dependant on file bitrate), converts all multi channel audio to AC3, removes audio commentary and removes subtitles that are not in the configured language or marked as commentary. This plugin is opinionated based on how I like my library to be configured and based on the work done by Migz with his plugins (Thanks!).",
     Version: "1.0",
-    Tags: "pre-processing,ffmpeg,vaapi,h265, nvenc h265",
+    Tags: "pre-processing,ffmpeg,qsv h265, nvenc h265",
     Inputs: [
       {
         name: "nvenc",
@@ -346,7 +346,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 
         configuration.RemoveOutputSetting("-c:v copy");
         configuration.AddOutputSetting(`-c:v hevc_vaapi ${bitrateSettings}`);
-        logger.AddError("Transcoding to HEVC using VAAPI");
+        logger.AddError("Transcoding to HEVC using QSV");
       }
 
       /**

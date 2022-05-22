@@ -4,7 +4,6 @@ module.exports.dependencies = [
 ];
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_TD01_TOAD_Autoscan',
   Stage: 'Post-processing',

@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_sdd3_Remove_Commentary_Tracks",
