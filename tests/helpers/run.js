@@ -29,6 +29,10 @@ const run = async (tests) => {
         errorEncountered = err1;
       }
 
+      if (test.outputModify) {
+        testOutput = test.outputModify(test.output);
+      }
+
       if (test.error && test.error.shouldThrow) {
         if (errorEncountered !== false) {
           // eslint-disable-next-line no-console
