@@ -13,7 +13,7 @@ const tests = [
     output: {
       container: '.mkv',
       processFile: true,
-      preset: ', -sn -map 0:v -c:v hevc_qsv -load_plugin hevc_hw  -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k  -map 0:a -c:a copy  ',
+      preset: ', -sn -map 0:v -c:v copy  -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k  -map 0:a -c:a copy  ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -72,7 +72,7 @@ const tests = [
     output: {
       container: '.mkv',
       processFile: true,
-      preset: ', -sn -map 0:v -c:v hevc_qsv -load_plugin hevc_hw  -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k  -map 0:a -c:a copy  ',
+      preset: ', -sn -map 0:v -c:v copy  -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k  -map 0:a -c:a copy  ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
