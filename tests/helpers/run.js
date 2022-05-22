@@ -1,5 +1,6 @@
 const path = require('path');
 const chai = require('chai');
+const _ = require('lodash');
 
 const scriptName = path.basename(process.mainModule.filename);
 // eslint-disable-next-line import/no-dynamic-require
@@ -11,20 +12,16 @@ const run = async (tests) => {
       // eslint-disable-next-line no-console
       console.log(`${scriptName}: test ${i}`);
       const test = tests[i];
-      let { file } = test.input;
-      if (typeof test.input.file === 'function') {
-        file = test.input.file();
-      }
 
       let testOutput;
       let errorEncountered = false;
       try {
         // eslint-disable-next-line no-await-in-loop
         testOutput = await plugin(
-          file,
-          test.input.librarySettings,
-          test.input.inputs,
-          test.input.otherArguments,
+          _.cloneDeep(test.input.file),
+          _.cloneDeep(test.input.librarySettings),
+          _.cloneDeep(test.input.inputs),
+          _.cloneDeep(test.input.otherArguments),
         );
       } catch (err1) {
         // eslint-disable-next-line no-console

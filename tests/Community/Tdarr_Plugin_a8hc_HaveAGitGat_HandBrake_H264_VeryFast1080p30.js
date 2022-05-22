@@ -1,10 +1,11 @@
 /* eslint max-len: 0 */
+const _ = require('lodash');
 const run = require('../helpers/run');
 
 const tests = [
   {
     input: {
-      file: require('../sampleData/media/sampleH264_1.json'),
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
       librarySettings: {},
       inputs: {},
       otherArguments: {},
@@ -21,7 +22,7 @@ const tests = [
   },
   {
     input: {
-      file: require('../sampleData/media/sampleH265_1.json'),
+      file: _.cloneDeep(require('../sampleData/media/sampleH265_1.json')),
       librarySettings: {},
       inputs: {},
       otherArguments: {},
@@ -38,11 +39,11 @@ const tests = [
   },
   {
     input: {
-      file: () => {
-        const file = require('../sampleData/media/sampleH264_1.json');
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         file.meta.Title = undefined;
         return file;
-      },
+      })(),
       librarySettings: {},
       inputs: {},
       otherArguments: {},

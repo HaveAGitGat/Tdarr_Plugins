@@ -1,4 +1,5 @@
 /* eslint max-len: 0 */
+const _ = require('lodash');
 const run = require('../helpers/run');
 
 const tests = [
@@ -30,7 +31,7 @@ const tests = [
       },
       otherArguments: {
         originalLibraryFile: (() => {
-          const file = JSON.parse(JSON.stringify(require('../sampleData/media/sampleH264_1.json')));
+          const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
           file.file_size = 3;
           return file;
         })(),
@@ -51,7 +52,7 @@ const tests = [
       },
       otherArguments: {
         originalLibraryFile: (() => {
-          const file = JSON.parse(JSON.stringify(require('../sampleData/media/sampleH264_1.json')));
+          const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
           file.file_size = 0.1;
           return file;
         })(),
