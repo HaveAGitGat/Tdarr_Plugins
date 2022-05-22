@@ -1,3 +1,4 @@
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_x7ac_Remove_Closed_Captions',
   Stage: 'Pre-processing',

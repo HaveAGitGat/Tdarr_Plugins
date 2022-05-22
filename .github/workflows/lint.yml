@@ -20,4 +20,4 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm i    
-    - run: npm run checkPlugins && npm run lint
+    - run: npm run checkPlugins && npm run lint && npm run test
