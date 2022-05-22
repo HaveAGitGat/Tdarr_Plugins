@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC',
   Stage: 'Pre-processing',
@@ -24,9 +23,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     FFmpegMode: true,
     reQueueAfter: true,
     infoLog: '',
-    file,
-    removeFromDB: false,
-    updateDB: false,
     container: `.${file.container}`,
   };
 
