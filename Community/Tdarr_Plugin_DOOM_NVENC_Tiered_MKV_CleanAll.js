@@ -440,15 +440,10 @@ function buildVideoConfiguration(inputs, file, logger) {
       /*  Determine tiered bitrate variables */
       var tier = tiered[file.video_resolution];
 
-      console.log(file.video_resolution);
-      console.log(tier);
-
       bitratecheck = parseInt(tier["bitrate"]);
       if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
-        console.log('here1')
         bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
       } else {
-        console.log('here2')
         bitratetarget = parseInt(tier["bitrate"] / 1000);
       }
       bitratemax = bitratetarget + tier["max_increase"];
