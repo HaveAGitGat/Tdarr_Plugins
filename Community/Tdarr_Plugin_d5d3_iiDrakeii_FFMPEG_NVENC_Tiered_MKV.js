@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV",
