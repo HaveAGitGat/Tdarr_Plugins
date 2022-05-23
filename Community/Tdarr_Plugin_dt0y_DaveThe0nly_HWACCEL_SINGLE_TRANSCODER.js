@@ -1,4 +1,3 @@
-// tdarrSkipTest
 
 const supportedResolutions = ['320p', '480p', '576p', '720p', '1080p', '4KUHD', '8KUHD'];
 
