@@ -14,7 +14,7 @@ const run = async (tests) => {
       const test = tests[i];
 
       let expectedOutput;
-      if (test.output[os.platform()]) {
+      if (test.output[os.platform()] !== undefined) {
         expectedOutput = test.output[os.platform()];
       } else {
         expectedOutput = test.output;
