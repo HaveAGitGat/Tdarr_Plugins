@@ -24,7 +24,7 @@ const tests = [
           + '6 channels - und  aac  \n'
           + '8 channels -    ',
       },
-      linux: undefined,
+      linux: false,
     },
   },
   {
@@ -86,7 +86,7 @@ const tests = [
           + '6 channels -     \n'
           + '8 channels -    ',
       },
-      linux: undefined,
+      linux: false,
     },
   },
   {

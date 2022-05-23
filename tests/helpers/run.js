@@ -20,7 +20,7 @@ const run = async (tests) => {
         expectedOutput = test.output;
       }
 
-      if (expectedOutput === undefined) {
+      if (expectedOutput === false) {
         // skip test due to OS
         // eslint-disable-next-line no-console
         console.log(`Test not meant to run on ${os.platform()}, skipping`);
