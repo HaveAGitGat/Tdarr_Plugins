@@ -238,9 +238,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     handBrakeMode: false,
     FFmpegMode: true,
     infoLog: '',
-    file,
-    removeFromDB: false,
-    updateDB: false,
     reQueueAfter: false,
   };
 
