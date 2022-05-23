@@ -10,7 +10,7 @@ const run = async (tests) => {
   try {
     for (let i = 0; i < tests.length; i += 1) {
       // eslint-disable-next-line no-console
-      console.log(`${scriptName}: test ${i}`);
+      console.log(`[${os.platform()}] ${scriptName}: test ${i}`);
       const test = tests[i];
 
       let expectedOutput;
