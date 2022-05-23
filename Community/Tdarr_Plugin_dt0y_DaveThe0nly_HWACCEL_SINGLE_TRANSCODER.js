@@ -164,8 +164,7 @@ const details = () => ({
 
     {
       name: 'keepCommentaryAudioTracks',
-      type: 'string',
-      tooltip: 'Keeps or removes all commentary audio tracks (This is based on track title)',
+      type: 'boolean',
       defaultValue: false,
       inputUI: {
         type: 'dropdown',
@@ -174,6 +173,7 @@ const details = () => ({
           'true',
         ],
       },
+      tooltip: 'Keeps or removes all commentary audio tracks (This is based on track title)',
     },
     {
       name: 'outputContainer',
