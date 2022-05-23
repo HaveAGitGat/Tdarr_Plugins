@@ -52,6 +52,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const ratio = parseInt((newSize / oldSize) * 100, 10);
 
+  console.log(newSize, oldSize);
   const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
     + `of original file size:  ${oldSize.toFixed(3)} MB`;
 

@@ -1,6 +1,5 @@
 // eslint-disable-next-line import/no-unresolved
 
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_a9hf_New_file_duration_check',
   Stage: 'Pre-processing',
