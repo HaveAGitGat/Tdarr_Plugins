@@ -44,6 +44,7 @@ const run = async () => {
       }
       output.stdout = stdout;
       output.stderr = stderr;
+      // eslint-disable-next-line no-loop-func
     }).on('exit', async (code) => {
       if (code !== 0) {
         await new Promise((resolve2) => setTimeout(resolve2, 1000));
@@ -52,6 +53,7 @@ const run = async () => {
           ...output,
         });
       }
+
       pluginsFinished += 1;
 
       if (pluginsFinished === pluginsToRun.length) {
