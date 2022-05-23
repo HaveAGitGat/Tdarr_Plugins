@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_z2ab_TheRealShadoh_FFmpeg_Subs_H264_Slow',
   Stage: 'Pre-processing',
