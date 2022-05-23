@@ -45,8 +45,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     var jsonString = JSON.stringify(file);
     response.container = ".mkv";
 
-    console.log(file.ffProbeData.streams[0].codec_name);
-    console.log(file.video_resolution);
     if (
       file.ffProbeData.streams[0].codec_name == "hevc" ||
       file.video_resolution !== "4KUHD"
