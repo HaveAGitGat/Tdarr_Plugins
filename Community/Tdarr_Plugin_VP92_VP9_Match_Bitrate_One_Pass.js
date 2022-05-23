@@ -1,5 +1,4 @@
 /* eslint max-classes-per-file: ["error", 2] */
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_VP92_VP9_Match_Bitrate_One_Pass',
   Stage: 'Pre-processing',
@@ -256,6 +255,7 @@ class Configurator {
 function loopOverStreamsOfType(file, type, method) {
   let id = 0;
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    console.log(file.ffProbeData.streams[i].codec_type);
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
       method(file.ffProbeData.streams[i], id);
       id += 1;
@@ -329,6 +329,7 @@ function buildAudioConfiguration(inputs, file, logger) {
     if ('tags' in stream) {
       // Remove unwanted languages
       if ('language' in stream.tags) {
+        console.log(stream.tags.language.toLowerCase());
         if (languages.indexOf(stream.tags.language.toLowerCase()) === -1) {
           configuration.AddOutputSetting(`-map -0:a:${id}`);
           streams_removing += 1;
@@ -340,6 +341,7 @@ function buildAudioConfiguration(inputs, file, logger) {
     }
   });
 
+  console.log(stream_count, streams_removing);
   if (stream_count === streams_removing) {
     logger.AddError(
       '*** All audio tracks would have been removed, removing all delete entries',
