@@ -6,45 +6,71 @@ const childProcess = require('child_process');
 
 const filenames = fs.readdirSync(`${process.cwd()}/Community`).reverse();
 
+const errorsEncountered = [];
 const run = async () => {
+  const pluginsToRun = [];
   for (let i = 0; i < filenames.length; i += 1) {
-    const pluginPath = `${process.cwd()}/Community/${filenames[i]}`;
+    const filename = filenames[i];
+    const pluginPath = `${process.cwd()}/Community/${filename}`;
     const text = fs.readFileSync(pluginPath);
-    const pluginTestpath = `${__dirname}/Community/${filenames[i]}`;
+    const pluginTestpath = `${__dirname}/Community/${filename}`;
 
-    let shouldRunTest = true;
     if (!text.includes('// tdarrSkipTest') && !fs.existsSync(pluginTestpath)) {
-      console.log(chalk.red(`${filenames[i]} does not have a test but should do.`));
+      console.log(chalk.red(`${filename} does not have a test but should do.`));
       process.exit(1);
     } else if (!text.includes('// tdarrSkipTest') && fs.existsSync(pluginTestpath)) {
-      console.log(chalk.white(`${filenames[i]} running test`));
+      pluginsToRun.push({
+        filename,
+        pluginTestpath,
+      });
     } else if (text.includes('// tdarrSkipTest') && fs.existsSync(pluginTestpath)) {
-      console.log(chalk.red(`${filenames[i]} should have // tdarrSkipTest removed`));
+      console.log(chalk.red(`${filename} should have // tdarrSkipTest removed`));
       process.exit(1);
     } else if (text.includes('// tdarrSkipTest') && !fs.existsSync(pluginTestpath)) {
-      console.log(chalk.yellow(`${filenames[i]} skipping tests`));
-      shouldRunTest = false;
+      console.log(chalk.yellow(`${filename} skipping tests`));
     }
+  }
 
-    if (shouldRunTest) {
-      // eslint-disable-next-line no-await-in-loop
-      await new Promise((resolve) => {
-        childProcess.exec(`node "${pluginTestpath}"`, (err, stdout, stderr) => {
-          if (err) {
-            console.log(err);
-          }
-          console.log(stdout);
-          console.log(chalk.red(stderr));
-        }).on('exit', async (code) => {
-          if (code !== 0) {
-            await new Promise((resolve2) => setTimeout(resolve2, 1000));
-            process.exit(1);
-          } else {
-            resolve();
-          }
+  let pluginsFinished = 0;
+  for (let i = 0; i < pluginsToRun.length; i += 1) {
+    const { filename } = pluginsToRun[i];
+    const { pluginTestpath } = pluginsToRun[i];
+    console.log(chalk.white(`${filename} running test`));
+
+    const output = {};
+    childProcess.exec(`node "${pluginTestpath}"`, (err, stdout, stderr) => {
+      if (err) {
+        output.err = err;
+      }
+      output.stdout = stdout;
+      output.stderr = stderr;
+      // eslint-disable-next-line no-loop-func
+    }).on('exit', async (code) => {
+      if (code !== 0) {
+        await new Promise((resolve2) => setTimeout(resolve2, 1000));
+        errorsEncountered.push({
+          id: filenames[i],
+          ...output,
         });
-      });
-    }
+      }
+
+      pluginsFinished += 1;
+
+      if (pluginsFinished === pluginsToRun.length) {
+        if (errorsEncountered.length > 0) {
+          errorsEncountered.forEach((plugin) => {
+            console.log(plugin.id);
+            console.log(chalk.red(plugin.err));
+            console.log(plugin.stdout);
+            console.log(chalk.red(plugin.stderr));
+          });
+          process.exit(1);
+        } else {
+          console.log(chalk.green('No errors encountered!'));
+          process.exit(0);
+        }
+      }
+    });
   }
 };
 

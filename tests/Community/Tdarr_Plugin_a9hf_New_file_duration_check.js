@@ -18,7 +18,7 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'New file has size 1.008 MB which is 100% of original file size:  1.008 MB',
+      infoLog: 'New file has duration 5.312 s which is 100.000% of original file duration:  5.312 s',
     },
   },
   {
@@ -32,12 +32,12 @@ const tests = [
       otherArguments: {
         originalLibraryFile: (() => {
           const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
-          file.file_size = 3;
+          file.mediaInfo.track.filter((row) => row['@type'] === 'General')[0].Duration = 20;
           return file;
         })(),
       },
     },
-    output: 'New file size not within limits. New file has size 1.008 MB which is 33% of original file size:  3.000 MB. lowerBound is 35%',
+    output: 'New file duration not within limits. New file has duration 5.312 s which is 26.560% of original file duration:  20 s. lowerBound is 35%',
     error: {
       shouldThrow: true,
     },
@@ -47,18 +47,18 @@ const tests = [
       file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
       librarySettings: {},
       inputs: {
-        upperBound: '120',
+        upperBound: '110',
         lowerBound: '35',
       },
       otherArguments: {
         originalLibraryFile: (() => {
           const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
-          file.file_size = 0.1;
+          file.mediaInfo.track.filter((row) => row['@type'] === 'General')[0].Duration = 1;
           return file;
         })(),
       },
     },
-    output: 'New file size not within limits. New file has size 1.008 MB which is 1007% of original file size:  0.100 MB. upperBound is 120%',
+    output: 'New file duration not within limits. New file has duration 5.312 s which is 531.200% of original file duration:  1 s. upperBound is 110%',
     error: {
       shouldThrow: true,
     },

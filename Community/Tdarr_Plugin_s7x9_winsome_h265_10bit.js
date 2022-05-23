@@ -1,5 +1,4 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_s7x9_winsome_h265_10bit",

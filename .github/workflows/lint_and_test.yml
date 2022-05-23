@@ -1,0 +1,34 @@
+name: Node.js CI
+
+on:
+  pull_request:
+    branches: ['**']
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os:
+          [
+            ["ubuntu-20.04"],
+            ["windows-2019"],
+            ["macos-11.0"],
+          ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Set git to use LF
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm i    
+    - run: npm run checkPlugins
+    - run: npm run lint
+    - run: npm run test
