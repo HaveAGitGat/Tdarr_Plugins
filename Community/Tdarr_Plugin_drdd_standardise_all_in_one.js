@@ -9,7 +9,7 @@ const details = () => {
     Type: "Video",
     Operation: "Transcode",
     Description:
-      "In a single pass ensures all files are in MKV containers and where possible encoded in h265 (settings dependant on file bitrate), converts all multi channel audio to AC3, removes audio commentary and removes subtitles that are not in the configured language or marked as commentary. This plugin is opinionated based on how I like my library to be configured and based on the work done by Migz with his plugins (Thanks!).",
+      "[Non-Windows] In a single pass ensures all files are in MKV containers and where possible encoded in h265 (settings dependant on file bitrate), converts all multi channel audio to AC3, removes audio commentary and removes subtitles that are not in the configured language or marked as commentary. This plugin is opinionated based on how I like my library to be configured and based on the work done by Migz with his plugins (Thanks!).",
     Version: "1.0",
     Tags: "pre-processing,ffmpeg,vaapi,h265, nvenc h265",
     Inputs: [
