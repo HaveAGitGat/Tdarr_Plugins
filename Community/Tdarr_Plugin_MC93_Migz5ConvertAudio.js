@@ -102,13 +102,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  //  Check if both inputs.aac_stereo AND inputs.downmix have been left empty. If they have then exit plugin.
-  if (inputs && inputs.aac_stereo === '' && inputs.downmix === '') {
-    response.infoLog += '☒Plugin has not been configured, please configure required options. Skipping this plugin. \n';
-    response.processFile = false;
-    return response;
-  }
-
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
     // eslint-disable-next-line no-console

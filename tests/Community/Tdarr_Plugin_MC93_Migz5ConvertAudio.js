@@ -16,7 +16,7 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☒Plugin has not been configured, please configure required options. Skipping this plugin. \n',
+      infoLog: '☑File contains all required audio formats. \n',
     },
   },
 
