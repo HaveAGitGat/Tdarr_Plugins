@@ -1,5 +1,6 @@
 /* eslint-disable */
 
+// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_z18s_rename_files_based_on_codec",

@@ -1,3 +1,4 @@
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_goof1_URL_Plex_Refresh',
   Stage: 'Post-processing',
