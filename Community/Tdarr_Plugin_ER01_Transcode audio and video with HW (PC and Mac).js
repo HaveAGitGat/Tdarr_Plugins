@@ -203,6 +203,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (inputs.bitrate_cutoff !== '') {
     // Checks if currentBitrate is below inputs.bitrate_cutoff
     // If so then don't convert video.
+    console.log(currentBitrate)
     if (currentBitrate <= inputs.bitrate_cutoff) {
       convertVideo = false;
     }

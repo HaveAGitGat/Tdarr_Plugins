@@ -23,9 +23,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     FFmpegMode: true,
     reQueueAfter: true,
     infoLog: '',
-    file,
-    removeFromDB: false,
-    updateDB: false,
     container: `.${file.container}`,
   };
 

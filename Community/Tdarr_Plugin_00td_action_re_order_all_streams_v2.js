@@ -21,6 +21,8 @@ const details = () => ({
       tooltip:
         `Specify the process order.
 For example, if 'languages' is first, the streams will be ordered based on that first.
+So put the most important properties last.
+The default order is suitable for most people.
 
         \\nExample:\\n
         codecs,channels,languages,streamTypes
@@ -95,6 +97,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
+  if (!Array.isArray(file.ffProbeData.streams)) {
+    throw new Error('FFprobe was unable to extract any streams info on this file.'
+      + 'This may be due to a corrupt file or permissions issue when scanning the file.');
+  }
+
   let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
@@ -110,7 +117,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < items.length; i += 1) {
       const matchedStreams = [];
       for (let j = 0; j < streams.length; j += 1) {
-        if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
+        if (String(sortType.getValue(streams[j])) === String(items[i])) {
           if (
             streams[j].codec_long_name
             && (

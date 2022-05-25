@@ -84,8 +84,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     processFile: false,
     preset: '',
     container: '',
-    handBrakeMode: false,
-    FFmpegMode: false,
+    handbrakeMode: false,
+    ffmpegMode: false,
     reQueueAfter: false,
     infoLog: '',
   };
