@@ -102,6 +102,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       + 'This may be due to a corrupt file or permissions issue when scanning the file.');
   }
 
+  if (file.container === 'mp4' && file.ffProbeData.streams[0].codec_type === 'video') {
+    response.infoLog += 'File is mp4 and already has the video stream in the correct order!'
+    + ' Due to FFmpeg issues when reordering streams in mp4 files, other stream ordering will be skipped';
+    return response;
+  }
+
   let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
