@@ -1,4 +1,4 @@
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+/* eslint-disable max-len */
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',
   Stage: 'Pre-processing',
@@ -84,8 +84,8 @@ const details = () => ({
 
              \\nExample:\\n
              false`,
-  }
-  ]
+  },
+  ],
 });
 
 // eslint-disable-next-line no-unused-vars
@@ -111,11 +111,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  //Set up inputs
+  // Set up inputs
   const aacStereo = inputs.aac_stereo;
-  const downmix = inputs.downmix;
+  const { downmix } = inputs;
   const downmixLanguageAware = inputs.downmix_language_aware;
-  const debug = inputs.debug;
+  const { debug } = inputs;
   if (debug) response.infoLog += `[DEBUG] Inputs: aac_stereo ${aacStereo}; downmix ${downmix}; downmixLanguageAware ${downmixLanguageAware}; debug ${inputs.debug} \n`;
 
   // Set up required variables.
@@ -127,17 +127,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let has8Channel = false;
   let has6ChannelsAudioTrackToCreate = false;
   let has2ChannelsAudioTrackToCreate = false;
-  let languagesAudioStreams = [];
+  const languagesAudioStreams = [];
 
   // Go through each stream in the file.
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     // Go through all audio streams and check if 2,6 & 8 channel tracks exist or not.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
       const language = file.ffProbeData.streams[i].tags.language.toLowerCase();
       if (debug) response.infoLog += `[DEBUG] Audio track ${i}: language ${language}; channels ${file.ffProbeData.streams[i].channels}; codec ${file.ffProbeData.streams[i].codec_name}. \n`;
-      let languageAudioStreams = languagesAudioStreams.find(ls => ls.language === language);
+      let languageAudioStreams = languagesAudioStreams.find((ls) => ls.language === language);
       if (!languageAudioStreams) {
-        languageAudioStreams = { language: language, hasChannel2: false, hasChannel6: false, hasChannel8: false }
+        languageAudioStreams = {
+          language, hasChannel2: false, hasChannel6: false, hasChannel8: false,
+        };
         languagesAudioStreams.push(languageAudioStreams);
       }
       switch (file.ffProbeData.streams[i].channels) {
@@ -162,10 +164,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   if ((downmix && !downmixLanguageAware) || aacStereo) {
     if (debug && downmix && !downmixLanguageAware) response.infoLog += `[DEBUG] Channels: hasChannel2 ${has2Channel}; hasChannel6 ${has6Channel}; hasChannel8 ${has8Channel}. \n`;
-    for (let i = 0; i < file.ffProbeData.streams.length; i++)
+    for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (downmix && !downmixLanguageAware) {
-          let setUpDownmixCmd = (currentChannels, targetedChannels, hasTargetedChannels, encoder, targetedChannelsLayout) => {
+          // eslint-disable-next-line no-loop-func
+          const setUpDownmixCmd = (currentChannels, targetedChannels, hasTargetedChannels, encoder, targetedChannelsLayout) => {
             let hasToTranscode = false;
             if (file.ffProbeData.streams[i].channels === currentChannels && !hasTargetedChannels) {
               ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
@@ -174,11 +177,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               hasToTranscode = true;
             }
             return hasToTranscode;
-          }
-          if (!has2ChannelsAudioTrackToCreate)
-            has6ChannelsAudioTrackToCreate = setUpDownmixCmd(8, 6, has6Channel, 'ac3', '5.1') || has6ChannelsAudioTrackToCreate;
-          if (!has6ChannelsAudioTrackToCreate)
-            has2ChannelsAudioTrackToCreate = setUpDownmixCmd(6, 2, has2Channel, 'aac', '2.0') || has2ChannelsAudioTrackToCreate;
+          };
+          if (!has2ChannelsAudioTrackToCreate) has6ChannelsAudioTrackToCreate = setUpDownmixCmd(8, 6, has6Channel, 'ac3', '5.1') || has6ChannelsAudioTrackToCreate;
+          if (!has6ChannelsAudioTrackToCreate) has2ChannelsAudioTrackToCreate = setUpDownmixCmd(6, 2, has2Channel, 'aac', '2.0') || has2ChannelsAudioTrackToCreate;
         }
 
         if (
@@ -191,30 +192,33 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           convert = true;
         }
 
-        ++audioIdx;
+        audioIdx += 1;
       }
+    }
   }
 
   if (downmix && downmixLanguageAware) {
-    for (let i = 0; i < languagesAudioStreams.length; i++) {
-      if (debug)
+    for (let i = 0; i < languagesAudioStreams.length; i += 1) {
+      if (debug) {
         response.infoLog += `[DEBUG] Language ${languagesAudioStreams[i].language}:`
           + ` hasChannel2 ${languagesAudioStreams[i].hasChannel2}${languagesAudioStreams[i].hasChannel2 ? ` {audio track ${languagesAudioStreams[i].channel2.index}}` : ''};`
           + ` hasChannel6 ${languagesAudioStreams[i].hasChannel6}${languagesAudioStreams[i].hasChannel6 ? ` {audio track ${languagesAudioStreams[i].channel6.index}}` : ''};`
           + ` hasChannel8 ${languagesAudioStreams[i].hasChannel8}${languagesAudioStreams[i].hasChannel8 ? ` {audio track ${languagesAudioStreams[i].channel8.index}}` : ''}. \n`;
+      }
 
-      let setUpDownmixCmd = (currentChannels, targetedChannels, hasCurrentChannels, hasTargetedChannels, currentIndex, encoder, targetedChannelsLayout) => {
+      // eslint-disable-next-line no-loop-func
+      const setUpDownmixCmd = (currentChannels, targetedChannels, hasCurrentChannels, hasTargetedChannels, currentIndex, encoder, targetedChannelsLayout) => {
         let hasToTranscode = false;
         if (hasCurrentChannels && !hasTargetedChannels) {
           ffmpegCommandInsert += `-map 0:${currentIndex} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title="${targetedChannelsLayout}" `;
-          ++audioIdx;
+          audioIdx += 1;
           response.infoLog += `☒Language ${languagesAudioStreams[i].language} has ${currentChannels} channels audio track but no ${targetedChannels} channels. Creating ${targetedChannels} channels audio track. \n`;
           convert = true;
           hasToTranscode = true;
         }
         return hasToTranscode;
-      }
-      if (!has2ChannelsAudioTrackToCreate)
+      };
+      if (!has2ChannelsAudioTrackToCreate) {
         has6ChannelsAudioTrackToCreate = setUpDownmixCmd(
           8,
           6,
@@ -222,9 +226,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           languagesAudioStreams[i].hasChannel6,
           languagesAudioStreams[i].channel8?.index || {},
           'ac3',
-          '5.1')
+          '5.1',
+        )
           || has6ChannelsAudioTrackToCreate;
-      if (!has6ChannelsAudioTrackToCreate)
+      }
+      if (!has6ChannelsAudioTrackToCreate) {
         has2ChannelsAudioTrackToCreate = setUpDownmixCmd(
           '8 or 6',
           2,
@@ -232,8 +238,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           languagesAudioStreams[i].hasChannel2,
           languagesAudioStreams[i].channel6?.index || languagesAudioStreams[i].channel8?.index || {},
           'aac',
-          '2.0')
+          '2.0',
+        )
           || has2ChannelsAudioTrackToCreate;
+      }
     }
   }
 
@@ -243,9 +251,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
       + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
     if (debug) response.infoLog += `[DEBUG] ffmpegCommand: ${response.preset} \n`;
-  }
-  else
-    response.infoLog += '☑File contains all required audio formats. \n';
+  } else response.infoLog += '☑File contains all required audio formats. \n';
 
   return response;
 };
