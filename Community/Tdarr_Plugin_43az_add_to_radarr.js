@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => {
   return {
     id: 'Tdarr_Plugin_43az_add_to_radarr',

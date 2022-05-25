@@ -1,5 +1,6 @@
 /* eslint-disable no-await-in-loop */
-module.exports.dependencies = ['axios', '@cospired/i18n-iso-languages', 'path'];
+module.exports.dependencies = ['axios', '@cospired/i18n-iso-languages'];
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng',
   Stage: 'Pre-processing',
@@ -11,7 +12,7 @@ const details = () => ({
     'Native' languages are the ones that are listed on imdb. It does an API call to 
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
     falls back to the IMDB id in the filename.`,
-  Version: '1.00',
+  Version: '1.01',
   Tags: 'pre-processing,configurable',
   Inputs: [
     {
@@ -206,11 +207,13 @@ const parseArrResponse = async (body, filePath, arr) => {
       break;
     case 'sonarr':
       // filePath = directory the file is in
-      // eslint-disable-next-line import/no-unresolved
-      const path = require('path');
       for (let i = 0; i < body.length; i += 1) {
         if (body[i].path) {
-          if (path.basename(body[i].path) === path.basename(path.dirname(filePath))) {
+          const sonarrTemp = body[i].path.replace(/\\/g, '/').split('/');
+          const sonarrFolder = sonarrTemp[sonarrTemp.length - 1];
+          const tdarrTemp = filePath.split('/');
+          const tdarrFolder = tdarrTemp[tdarrTemp.length - 2];
+          if (sonarrFolder === tdarrFolder) {
             return body[i];
           }
         }
@@ -254,7 +257,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
             imdbId = radarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Radarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Radarr/Sonarr, grabbing it from file name \n';
+            response.infoLog += 'Couldn\'t grab ID from Radarr \n';
             imdbId = file.meta.FileName;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
@@ -273,7 +276,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
             imdbId = sonarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Sonarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Radarr/Sonarr, grabbing it from file name \n';
+            response.infoLog += 'Couldn\'t grab ID from Sonarr \n';
             imdbId = file.meta.FileName;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);

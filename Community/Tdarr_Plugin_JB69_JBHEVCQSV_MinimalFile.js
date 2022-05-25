@@ -7,7 +7,7 @@
 /*
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 Author: JarBinks, Zachg99, Jeff47
-Date: 01/20/2022
+Date: 03/22/2022
 This is my attempt to create an all in one routine that will maintain my library in optimal format
 !!!!FOR MY REQUIREMENTS!!!! Chances are very good you will need to make some changes to this routine
 and it's partner in order to make it work for you.
@@ -61,10 +61,6 @@ Audio:  (Only one audio stream is used!!)
          Transcode the stream to aac using 100% of the original streams bitrate
              It could probably be less but if the source is of low bitrate but, we don�t want
              to compromise too much on the transcode
-Subtitles:
-    All are removed?? (TODO: ensure this is correct and mention the flag to keep them if desired)
-    All are copied (They usually take up little space so I keep them)
-    Any that are in mov_text will be converted to srt
  Chapters:
      If chapters are found the script keeps them unless...
         Any chapter start time is a negative number (Yes I have seen it)
@@ -86,71 +82,11 @@ Subtitles:
     Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile (JB - H265, AAC, MKV, bitrate optimized)
     Tdarr_Plugin_JB69_JBHEVCQSZ_PostFix (JB - MKV Stats, Chapters, Audio Language)
  I am running the docker image provided for Tdarr
- ****To get the proper video bitrate you need to run this in the docker container:
-    apt install mkvtoolnix
- If those tools are added that no longer needs to be run.
- Here is my docker config (I am running compose so yours might be a little different)
-   tdarr_server:
-     container_name: tdarr_server
-     image: haveagitgat/tdarr:latest
-     privileged: true
-     restart: unless-stopped
-     environment:
-       - PUID=${PUID} # default user id, defined in .env
-       - PGID=${PGID} # default group id, defined in .env
-       - TZ=${TZ} # timezone, defined in .env
-       - serverIP=tdarr_server #using internal docker networking. This should at least work when the nodes are on
-                               #the same docker compose as the server
-       - serverPort=8266
-       - webUIPort=8265
-     volumes:
-       - ${ROOT}/tdarr/server:/app/server/Tdarr # Tdarr server files
-       - ${ROOT}/tdarr/configs:/app/configs # config files - can be same as NODE (unless separate server)
-       - ${ROOT}/tdarr/logs:/app/logs # Tdarr log files
-       - ${ROOT}/tdarr/cache:/temp # Cache folder, Should be same path mapped on NODE
-       - ${ROOT}/tdarr/testmedia:/home/Tdarr/testmedia # Should be same path mapped on NODE if using a test folder
-       - ${ROOT}/tdarr/scripts:/home/Tdarr/scripts # my random way of saving script files
-       - /volume1/video:/media # video library Should be same path mapped on NODE
-     ports:
-       - 8265:8265 #Exposed to access webui externally
-       - 8266:8266 #Exposed to allow external nodes to reach the server
-     logging:
-       options:
-         max-size: "2m"
-         max-file: "3"
-   tdarr_node:
-     container_name: tdarr_node
-     image: haveagitgat/tdarr_node:latest
-     privileged: true
-     restart: unless-stopped
-     devices:
-       - /dev/dri:/dev/dri
-     environment:
-       - PUID=${PUID} # default user id, defined in .env
-       - PGID=${PGID} # default group id, defined in .env
-       - TZ=${TZ} # timezone, defined in .env
-       - serverIP=192.168.x.x #container name of the server, should be modified if server is on another machine
-       - serverPort=8266
-       - nodeID=TDARRNODE_1
-       - nodeIP=192.168.x.x #container name of the node
-       - nodePort=9267 #not exposed via a "ports: " setting as the server/node communication is done on the internal
-                       #docker network and can communicate on all ports
-     volumes:
-       - ${ROOT}/tdarr/configs:/app/configs # config files - can be same as server (unless separate server)
-       - ${ROOT}/tdarr/logs:/app/logs # config files - can be same as server (unless separate server)
-       - ${ROOT}/tdarr/testmedia:/home/Tdarr/testmedia # Should be same path mapped on server if using a test folder
-       - ${ROOT}/tdarr/scripts:/home/Tdarr/scripts # my random way of saving script files
-       - ${ROOT}/tdarr/cache:/temp # Cache folder, Should be same path mapped on server
-       - /mnt/video:/media # video library Should be same path mapped on server
-     ports:
-       - 9267:9267
-     logging:
-       options:
-         max-size: "2m"
-         max-file: "3"
+
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile',
   Stage: 'Pre-processing',
@@ -159,7 +95,7 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `***You should not use this*** until you read the comments at the top of the code and understand
 how it works **this does a lot** and is 1 of 2 routines you should to run **Part 1** \n`,
-  Version: '2.2',
+  Version: '2.4',
   Tags: 'pre-processing,ffmpeg,video,audio,qsv,h265,aac',
   Inputs: [{
     name: 'Stats_Days',
@@ -348,21 +284,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const targetAudioBitratePerChannel = inputs.Target_Audio_Bitrate_Per_Channel;
   const targetAudioChannels = inputs.Target_Audio_Channels;
 
-  // Subtitles
-  // const bolIncludeSubs = true; //not currently used, it's possible to remove subs but not setup now
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   const proc = require('child_process');
   let bolStatsAreCurrent = false;
 
-  // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
     response.processFile = false;
     response.infoLog += 'File is not a video. Exiting \n';
     return response;
   }
 
-  // If the file has already been processed we dont need to do more
   if (file.container === 'mkv' && (
     file.mediaInfo.track[0].extra !== undefined
     && file.mediaInfo.track[0].extra.JBDONEVERSION !== undefined
@@ -409,10 +341,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       } catch (err) {
         response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
       }
-      response.infoLog += 'Getting Stats Objects, again!\n';
-      // objMedInfo = JSON.parse(proc.execSync('mediainfo "' + currentFileName + '" --output=JSON').toString());
-      // objFFProbeInfo = JSON.parse(proc.execSync('ffprobe -v error -print_format json' +
-      // ' -show_format -show_streams -show_chapters "' + currentFileName + '"').toString());
     }
   }
 
@@ -440,7 +368,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const bolDoChapters = true;
 
-  // Set up required variables
   let videoIdx = -1;
   let videoIdxFirst = -1;
   let audioIdx = -1;
@@ -449,14 +376,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let strStreamType = '';
   let MILoc = -1;
 
-  // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
 
     // Looking For Video
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
     if (strStreamType === 'video') {
-      // First we need to check if it is included in the MediaInfo struture, it might not be (mjpeg??, others??)
       MILoc = findMediaInfoItem(file, i);
 
       response.infoLog += `Index ${i} MediaInfo stream: ${MILoc} \n`;
@@ -484,9 +409,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           videoIdx = i;
         } else {
           const MILocC = findMediaInfoItem(file, videoIdx);
-          // const curstreamheight = file.ffProbeData.streams[videoIdx].height * 1; //Not needed
           const curStreamWidth = file.ffProbeData.streams[videoIdx].width * 1;
-          // const curstreamFPS = file.mediaInfo.track[MILocC].FrameRate * 1; //Not needed
           let curStreamBR = file.mediaInfo.track[MILocC].BitRate * 1;
 
           if (isNaN(curStreamBR)) {
@@ -505,12 +428,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Looking For Audio
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
     if (strStreamType === 'audio') {
-      // response.processFile = false;
-      // response.infoLog += i + ":" + objFFProbeInfo.streams[i].tags.language + " \n";
-      // audioIdxFirst = i;
-
-      // response.infoLog += JSON.stringify(objFFProbeInfo.streams[i]) + " \n";
-
       audioChannels = file.ffProbeData.streams[i].channels * 1;
       audioBitrate = file.mediaInfo.track[findMediaInfoItem(file, i)].BitRate * 1;
 
@@ -564,7 +481,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Looking For Subtitles -- These are causing problems let's just exclude for now
+    // Looking For Subtitles
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
     if (!bolForceNoSubs && !bolDoSubs && (strStreamType === 'text' || strStreamType === 'subtitle')) {
       // A sub has an S_TEXT/WEBVTT codec, ffmpeg will fail with it
@@ -581,32 +498,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         bolForceNoSubs = true;
       }
     }
-    // bolDoSubs = true;
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////
   }
-
-  // return response;
-
-  // Go through chapters in the file looking for badness
-  /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  // Not processing chapters - fileobject doesn't seem to have the chapters section
-  /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  // for (var i = 0; i < objFFProbeInfo.chapters.length; i+=1) {
-
-  // Bad start times
-  //    if (objFFProbeInfo.chapters[i].start_time < 0) {
-  //        bolDoChapters = false;
-  //        break;   //Dont need to continue because we know they are bad
-  //    }
-
-  // Duplicate start times
-  //    for (var x = 0; i < objFFProbeInfo.chapters.length; i+=1) {
-  //        if (i != x && objFFProbeInfo.chapters[i].start_time == objFFProbeInfo.chapters[x].start_time) {
-  //            bolDoChapters = false;
-  //            break;   //Dont need to continue because we know they are bad
-  //        }
-  //    }
-  // }
 
   // Video Decision section
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -638,11 +531,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Source is Variable Frame rate but we will transcode to fixed
   if (file.mediaInfo.track[MILoc].FrameRate_Mode === 'VFR') videoFPS = 9999;
 
-  if (videoFPS > targetFrameRate) {
+  if (videoFPS > targetFrameRate && file.container !== 'ts') {
     bolChangeFrameRateVideo = true; // Need to fix this it does not work :-(
   }
 
-  // Lets see if we need to scal down the video size
+  // Lets see if we need to scale down the video size
   if (videoHeight > maxVideoHeight) {
     bolScaleVideo = true;
     videoNewWidth = Math.floor((maxVideoHeight / videoHeight) * videoWidth);
@@ -723,7 +616,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   } else {
     // We already know the existing bitrate has enough meat for a decent transcode
-    // bolTranscodeVideo = true;
     response.infoLog += `Video existing Bitrate, ${videoBR}, is higher than target,`
     + ` ${optimalVideoBitrate}, transcoding \n`;
   }
@@ -759,12 +651,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     audioNewChannels = file.ffProbeData.streams[audioIdx].channels;
   }
 
-  let optimalaudiobitrate = audioNewChannels * targetAudioBitratePerChannel;
+  let optimalAudioBitrate = audioNewChannels * targetAudioBitratePerChannel;
 
   // Now what are we going todo with the audio part
-  if (audioBR > (optimalaudiobitrate * 1.1)) {
+  if (audioBR > (optimalAudioBitrate * 1.1)) {
     bolTranscodeAudio = true;
-    response.infoLog += `Audio existing Bitrate, ${audioBR}, is higher than target, ${optimalaudiobitrate} \n`;
+    response.infoLog += `Audio existing Bitrate, ${audioBR}, is higher than target, ${optimalAudioBitrate} \n`;
   }
 
   // If the audio codec is not what we want then we should transcode
@@ -776,10 +668,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // If the source bitrate is less than out target bitrate we should not ever go up
-  if (audioBR < optimalaudiobitrate) {
+  if (audioBR < optimalAudioBitrate) {
     response.infoLog += `Audio existing Bitrate, ${audioBR}, is lower than target,`
-    + ` ${optimalaudiobitrate}, using existing `;
-    optimalaudiobitrate = audioBR;
+    + ` ${optimalAudioBitrate}, using existing `;
+    optimalAudioBitrate = audioBR;
     if (file.ffProbeData.streams[audioIdx].codec_name !== targetAudioCodec) {
       response.infoLog += 'rate';
     } else {
@@ -791,57 +683,35 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // lets assemble our ffmpeg command
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-  const strTranCodeBaseHW = ' -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi ';
-  const strTranCodeBaseSW = ' -vaapi_device /dev/dri/renderD128 ';
-  const strTranscodeVideoMapping = ' <io> -max_muxing_queue_size 8000 -map 0:{0} ';
-  const strTranscodeVideoCopy = ' -c:v:0 copy ';
-  const strTranscodeVideoTranscoding = ' -c:v:0 hevc_vaapi ';
-  // Used to make the output 10bit, I think the quotes need to be this way for ffmpeg
-  const strTranscodeVideoOptions = ' -vf "{0}" ';
-  const strTranscodeVideoScaling = 'w=-1:h=1080'; // Used when video is above our target of 1080
-  const strTransCodeFrameRate = 'fps={0}'; // Used to change the framerate to the target framerate
-  const strTranscodeVideoFormatHW = 'scale_vaapi='; // Used to make the output 10bit
-  const strTranscodeVideoFormat = 'format={0}'; // Used to add filters to the hardware transcode
-  const strTranscodeVideo10bit = 'p010'; // Used to make the output 10bit
-  const strTranscodeVideo8bit = 'p008'; // Used to make the output 8bit
-  const strTranscodeVideoSWDecode = 'hwupload'; // Used to make it use software decode if necessary
-  // Used to make it sure the software decode is in the proper pixel format
-  const strTranscodeVideoSWDecode10bit = 'nv12|vaapi';
-  const strTranscodeVideoBitrate = ' -b:v {0} '; // Used when video is above our target of 1080
-  const strTranscodeAudioMapping = ' -map 0:{0} ';
-  const strTranscodeAudioCopy = ' -c:a:0 copy ';
-  const strTranscodeAudioTranscoding = ' -c:a:0 ${targetAudioCodec} -b:a {0} ';
-  const strTranscodeAudioDownMixing = ' -ac {0} ';
-  const strTranscodeSubs = ' -map 0:s -scodec copy ';
-  const strTranscodeSubsConvert = ' -map 0:s -c:s srt ';
-  const strTranscodeSubsNone = ' -map -0:s ';
-  const strTranscodeMetadata = ' -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE={0} ';
-  const strTranscodeChapters = ' -map_chapters {0} ';
 
   const strTranscodeFileOptions = ' ';
 
   let strFFcmd = '';
   if (bolTranscodeVideo) {
     if (bolTranscodeSoftwareDecode) {
-      strFFcmd += strTranCodeBaseSW;
+      strFFcmd += ' -vaapi_device /dev/dri/renderD128 ';
     } else {
-      strFFcmd += strTranCodeBaseHW;
+      strFFcmd += ' -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi ';
     }
   }
-  strFFcmd += strTranscodeVideoMapping.replace('{0}', videoIdx);
+
+  strFFcmd += ` <io> -max_muxing_queue_size 8000 -map 0:${videoIdx} `;
   if (bolTranscodeVideo) {
-    strFFcmd += strTranscodeVideoTranscoding;
+    // Used to make the output 10bit, I think the quotes need to be this way for ffmpeg
+    strFFcmd += ' -c:v:0 hevc_vaapi ';
 
     if (bolScaleVideo || bolUse10bit || bolTranscodeSoftwareDecode || bolChangeFrameRateVideo) {
       let strOptions = '';
       let strFormat = '';
       if (bolScaleVideo) {
-        strOptions += strTranscodeVideoScaling;
+        // Used when video is above our target
+        strOptions += `w=-1:h=${maxVideoHeight}`;
       }
 
       let strChangeVideoRateString = '';
       if (bolChangeFrameRateVideo) {
-        strChangeVideoRateString = `${strTransCodeFrameRate.replace('{0}', targetFrameRate)},`;
+        // Used to change the framerate to the target framerate
+        strChangeVideoRateString = `fps=${targetFrameRate},`;
       }
 
       if (strFormat.length > 0) {
@@ -849,11 +719,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
 
       if (bolUse10bit && !bolSource10bit) {
-        strFormat += strTranscodeVideo10bit;
+        // Used to make the output 10bit
+        strFormat += 'p010';
       }
 
       if (!bolUse10bit && bolSource10bit) {
-        strFormat += strTranscodeVideo8bit;
+        // Used to make the output 8bit
+        strFormat += 'p008';
       }
 
       if (bolTranscodeSoftwareDecode) {
@@ -861,65 +733,63 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           if (strFormat.length > 0) {
             strFormat += ',';
           }
-          strFormat += strTranscodeVideoSWDecode10bit;
+          // Used to make it sure the software decode is in the proper pixel format
+          strFormat += 'nv12|vaapi';
         }
         if (strFormat.length > 0) {
           strFormat += ',';
         }
-        strFormat += strTranscodeVideoSWDecode;
+        // Used to make it use software decode if necessary
+        strFormat += 'hwupload';
       }
 
       if (strFormat.length > 0) {
         if (strOptions.length > 0) {
           strOptions += ',';
         }
-        strOptions += strTranscodeVideoFormat.replace('{0}', strFormat);
+        strOptions += `format=${strFormat}`;
       }
 
       if (bolTranscodeSoftwareDecode) {
-        strFFcmd += strTranscodeVideoOptions.replace('{0}', strChangeVideoRateString + strOptions);
+        strFFcmd += ` -vf "${strChangeVideoRateString} ${strOptions}" `;
       } else {
-        strFFcmd += strTranscodeVideoOptions
-          .replace('{0}', strChangeVideoRateString + strTranscodeVideoFormatHW + strOptions);
+        strFFcmd += ` -vf "${strChangeVideoRateString} scale_vaapi=${strOptions}" `;
       }
     }
-    strFFcmd += strTranscodeVideoBitrate.replace('{0}', optimalVideoBitrate);
+    // Used when video is above our target
+    strFFcmd += ` -b:v ${optimalVideoBitrate} `;
   } else {
-    strFFcmd += strTranscodeVideoCopy;
+    strFFcmd += ' -c:v:0 copy ';
   }
 
-  strFFcmd += strTranscodeAudioMapping.replace('{0}', audioIdx);
+  strFFcmd += ` -map 0:${audioIdx} `;
   if (bolTranscodeAudio) {
-    strFFcmd += strTranscodeAudioTranscoding
-      .replace('{0}', optimalaudiobitrate)
-      .replace('${targetAudioCodec}', targetAudioCodec);
+    strFFcmd += ` -c:a:0 ${targetAudioCodec} -b:a ${optimalAudioBitrate} `;
   } else {
-    strFFcmd += strTranscodeAudioCopy;
+    strFFcmd += ' -c:a:0 copy ';
   }
   if (bolDownMixAudio) {
-    strFFcmd += strTranscodeAudioDownMixing.replace('{0}', audioNewChannels);
+    strFFcmd += ` -ac ${audioNewChannels} `;
   }
   if (bolForceNoSubs) {
-    strFFcmd += strTranscodeSubsNone;
+    strFFcmd += ' -map -0:s ';
   } else if (bolDoSubs) {
     if (bolDoSubsConvert) {
-      strFFcmd += strTranscodeSubsConvert;
+      strFFcmd += ' -map 0:s -c:s srt ';
     } else {
-      strFFcmd += strTranscodeSubs;
+      strFFcmd += ' -map 0:s -scodec copy ';
     }
   }
 
-  strFFcmd += strTranscodeMetadata.replace('{0}', new Date().toISOString());
+  strFFcmd += ` -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE=${new Date().toISOString()} `;
   if (bolDoChapters) {
-    strFFcmd += strTranscodeChapters.replace('{0}', '0');
+    strFFcmd += ' -map_chapters 0 ';
   } else {
-    strFFcmd += strTranscodeChapters.replace('{0}', '-1');
+    strFFcmd += ' -map_chapters -1 ';
   }
 
   strFFcmd += strTranscodeFileOptions;
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // response.infoLog += strFFcmd + "\n";
 
   response.preset += strFFcmd;
   response.processFile = true;

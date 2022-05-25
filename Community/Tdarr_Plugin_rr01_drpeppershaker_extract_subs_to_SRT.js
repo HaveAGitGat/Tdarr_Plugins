@@ -1,3 +1,4 @@
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT',
   Stage: 'Pre-processing',
@@ -71,11 +72,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     let lang = '';
     let title = 'none';
 
-    if (subStream.tags) {
+    if (subStream && subStream.tags && subStream.tags.language) {
       lang = subStream.tags.language;
     }
 
-    if (subStream.tags.title) {
+    if (subStream && subStream.tags && subStream.tags.title) {
       title = subStream.tags.title;
     }
 
@@ -98,7 +99,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const { index } = subStream;
     if (fs.existsSync(`${subsFile}`)) {
       response.infoLog += `${lang}.srt already exists. Skipping!\n`;
-    } else if (title.toLowerCase().includes('commentary') || title.toLowerCase().includes('description')) {
+    } else if (typeof title === 'string'
+    && (title.toLowerCase().includes('commentary')
+    || title.toLowerCase().includes('description'))) {
       response.infoLog += `Stream ${i} ${lang}.srt is a ${title} track. Skipping!\n`;
     } else {
       response.infoLog += `Extracting ${lang}.srt\n`;

@@ -21,6 +21,8 @@ const details = () => ({
       tooltip:
         `Specify the process order.
 For example, if 'languages' is first, the streams will be ordered based on that first.
+So put the most important properties last.
+The default order is suitable for most people.
 
         \\nExample:\\n
         codecs,channels,languages,streamTypes
@@ -95,7 +97,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  let { streams } = file.ffProbeData;
+  if (!Array.isArray(file.ffProbeData.streams)) {
+    throw new Error('FFprobe was unable to extract any streams info on this file.'
+      + 'This may be due to a corrupt file or permissions issue when scanning the file.');
+  }
+
+  let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
@@ -110,10 +117,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < items.length; i += 1) {
       const matchedStreams = [];
       for (let j = 0; j < streams.length; j += 1) {
-        if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
-          matchedStreams.push(streams[j]);
-          streams.splice(j, 1);
-          j -= 1;
+        if (String(sortType.getValue(streams[j])) === String(items[i])) {
+          if (
+            streams[j].codec_long_name
+            && (
+              streams[j].codec_long_name.includes('image')
+              || streams[j].codec_name.includes('png')
+            )
+          ) {
+            // do nothing, ffmpeg bug, doesn't move image streams
+          } else {
+            matchedStreams.push(streams[j]);
+            streams.splice(j, 1);
+            j -= 1;
+          }
         }
       }
       streams = matchedStreams.concat(streams);

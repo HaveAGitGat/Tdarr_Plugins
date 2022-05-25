@@ -125,7 +125,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     try {
       // Check if inputs.commentary is set to true
       // AND if stream is subtitle
-      // AND then checks for stream titles with the following "commentary or description".
+      // AND then checks for stream titles with the following "commentary, description, sdh".
       // Removing any streams that are applicable.
       if (
         inputs.commentary === true
@@ -135,7 +135,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           .includes('commentary')
           || file.ffProbeData.streams[i].tags.title
             .toLowerCase()
-            .includes('description'))
+            .includes('description')
+          || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))
       ) {
         ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
         response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
