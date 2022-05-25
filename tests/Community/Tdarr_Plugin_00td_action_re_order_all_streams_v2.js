@@ -73,7 +73,9 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
         const s4 = file.ffProbeData.streams[4];
-        file.ffProbeData.streams[4] = file.ffProbeData.streams[4];
+
+        // eslint-disable-next-line prefer-destructuring
+        file.ffProbeData.streams[4] = file.ffProbeData.streams[5];
         file.ffProbeData.streams[5] = s4;
         return file;
       })(),
