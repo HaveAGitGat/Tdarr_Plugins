@@ -148,11 +148,11 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '<io> -c copy -map 0:1 -map 0:4 -map 0:2 -map 0:0 -map 0:3 -map 0:5 -map 0:6',
+      preset: ',-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: true,
-      infoLog: 'Streams are not in the correct order!',
+      infoLog: 'File is mp4 and contains video but video is not first stream, remuxing',
     },
   },
 ];

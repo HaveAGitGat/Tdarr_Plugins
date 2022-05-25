@@ -102,9 +102,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       + 'This may be due to a corrupt file or permissions issue when scanning the file.');
   }
 
-  if (file.container === 'mp4' && file.ffProbeData.streams[0].codec_type === 'video') {
-    response.infoLog += 'File is mp4 and already has the video stream in the correct order!'
-    + ' Due to FFmpeg issues when reordering streams in mp4 files, other stream ordering will be skipped';
+  if (file.container === 'mp4' && file.fileMedium === 'video') {
+    if (file.ffProbeData.streams[0].codec_type === 'video') {
+      response.infoLog += 'File is mp4 and already has the video stream in the correct order!'
+        + ' Due to FFmpeg issues when reordering streams in mp4 files, other stream ordering will be skipped';
+      return response;
+    }
+    response.processFile = true;
+    response.infoLog += 'File is mp4 and contains video but video is not first stream, remuxing';
+    response.preset = ',-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy';
     return response;
   }
 
