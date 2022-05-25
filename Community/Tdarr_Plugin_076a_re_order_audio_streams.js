@@ -100,9 +100,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   var ffmpegCommand = ", -c copy";
 
-  if (file.ffProbeData.streams[0].codec_type.toLowerCase() == "video") {
-    ffmpegCommand += ` -map 0:v `;
-  }
+  ffmpegCommand += ` -map 0:v? `;
 
   var allAudioTracks = file.ffProbeData.streams.filter(
     (stream) => stream.codec_type.toLowerCase() == "audio"
