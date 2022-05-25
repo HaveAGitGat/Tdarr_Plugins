@@ -71,6 +71,8 @@ const tests = [
       inputs: {
         aac_stereo: 'false',
         downmix: 'true',
+        downmix_language_aware: 'true',
+        debug: 'false',
       },
       otherArguments: {},
     },
@@ -82,6 +84,24 @@ const tests = [
       reQueueAfter: true,
       infoLog: '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel from 8 channel. \n',
       preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="5.1"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+    },
+  },
+
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        aac_stereo: 'false',
+        downmix: 'true',
+      },
+      otherArguments: {},
+    },
+    output: {
+      // TODO: Add tests for new inputs
     },
   },
 
