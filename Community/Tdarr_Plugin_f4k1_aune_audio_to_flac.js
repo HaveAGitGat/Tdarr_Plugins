@@ -1,5 +1,5 @@
 const details = () => ({
-  id: 'Tdarr_Plugin_fu69_aune_audio_to_flac',
+  id: 'Tdarr_Plugin_f4k1_aune_audio_to_flac',
   Stage: 'Pre-processing',
   Name: 'Aune - Audio to FLAC',
   Type: 'Audio',
