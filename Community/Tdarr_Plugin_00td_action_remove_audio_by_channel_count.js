@@ -6,6 +6,9 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `
   This plugin removes audio streams based on channel count. The output container is the same as the original.
+  If the file only has one audio stream, the plugin will be skipped. If the number of audio streams to remove
+  equals the total number of audio streams, the plugin will be skipped. This ensures there is always at least
+  one audio stream in the file.
   `,
   Version: '1.00',
   Tags: 'action',
