@@ -21,7 +21,11 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter the the channel counts to remove',
+        `Enter the the channel counts to remove.
+        
+        \\nExample:\\n
+        8,6
+        `,
     },
   ],
 });
