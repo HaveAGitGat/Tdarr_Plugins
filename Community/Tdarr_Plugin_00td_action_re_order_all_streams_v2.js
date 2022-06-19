@@ -21,6 +21,8 @@ const details = () => ({
       tooltip:
         `Specify the process order.
 For example, if 'languages' is first, the streams will be ordered based on that first.
+So put the most important properties last.
+The default order is suitable for most people.
 
         \\nExample:\\n
         codecs,channels,languages,streamTypes
@@ -100,6 +102,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       + 'This may be due to a corrupt file or permissions issue when scanning the file.');
   }
 
+  if (file.container === 'mp4' && file.fileMedium === 'video') {
+    if (file.ffProbeData.streams[0].codec_type === 'video') {
+      response.infoLog += 'File is mp4 and already has the video stream in the correct order!'
+        + ' Due to FFmpeg issues when reordering streams in mp4 files, other stream ordering will be skipped';
+      return response;
+    }
+    response.processFile = true;
+    response.infoLog += 'File is mp4 and contains video but video is not first stream, remuxing';
+    response.preset = ',-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy';
+    return response;
+  }
+
   let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
 
   streams.forEach((stream, index) => {
@@ -115,7 +129,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < items.length; i += 1) {
       const matchedStreams = [];
       for (let j = 0; j < streams.length; j += 1) {
-        if (String(sortType.getValue(streams[j])).includes(String(items[i]))) {
+        if (String(sortType.getValue(streams[j])) === String(items[i])) {
           if (
             streams[j].codec_long_name
             && (
