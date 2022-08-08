@@ -249,7 +249,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
-    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
+    let codec_type = '';
+    try {
+      codec_type = file.ffProbeData.streams[i].codec_type.toLowerCase();
+    } catch (err) {
+      // err
+    }
+    if (codec_type === 'video') {
       // Check if codec of stream is mjpeg/png, if so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
