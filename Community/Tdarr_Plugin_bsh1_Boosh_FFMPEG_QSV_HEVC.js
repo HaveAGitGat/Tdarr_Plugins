@@ -18,12 +18,12 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `This is a QSV specific plugin. 8th+ gen INTEL QSV enabled CPUs are required. VAAPI is NOT used. 
     Files not in H265/HEVC will be transcoded into H265/HEVC using Quick Sync Video (QSV) 
-    via Intel GPU using FFmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
+    via Intel GPU using ffmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
     the same amount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
     unless "reconvert_hevc" is marked as true. If it is then these will be reconverted again into HEVC if they 
     exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.
     NOTE - Created for use with UNRAID Docker and while it should support Windows/Mac etc, it may require 
-    a custom version of FFmpeg to work properly.`,
+    a custom version of ffmpeg to work properly.`,
   Version: '1.0',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
   Inputs: [
@@ -99,9 +99,9 @@ const details = () => ({
       \\n Specify the encoder speed/preset to use. 
       Slower options mean a slower encode but better quality and faster options mean faster encodes but 
       worse quality.
-      \\n For more information see intel white paper on FFmpeg results using QSV: \\n`
-      // eslint-disable-next-line max-len
-      + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
+      \\n For more information see intel white paper on ffmpeg results using QSV: \\n`
+        // eslint-disable-next-line max-len
+        + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
       \\n
       ==INFO==
       \\n Default is "slow". 
@@ -119,21 +119,21 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Here you can add extra options to the FFmpeg QSV ENCODE cmd. 
-      This does not override the FFmpeg cmd, it just allows additions to it.
+      \\n Here you can add extra options to the ffmpeg QSV ENCODE cmd. 
+      This does not override the ffmpeg cmd, it just allows additions to it.
       \\n
       There are extra QSV options that can be
       forced on/off as desired. See here for some possible cmds - 
       https://ffmpeg.org/ffmpeg-codecs.html#toc-HEVC-Options-1
       \\n
       ==WARNING== \\n
-      Just because a cmd is mentioned doesn't mean your installed version of FFmpeg supports it... 
+      Just because a cmd is mentioned doesn't mean your installed version of ffmpeg supports it... 
       Be certain to verify the cmds work before adding to your workflow. \\n
-      Check Tdarr Help Tab. Enter FFmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands.
+      Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands.
       \\n
       ==INFO==
       \\n Default is empty but a suggested value is below. If unsure just leave empty.
-      \\n Ensure to only use cmds valid to encoding QSV as the script handles other FFmpeg cmds relating to 
+      \\n Ensure to only use cmds valid to encoding QSV as the script handles other ffmpeg cmds relating to 
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nExample:\\n
       -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
@@ -155,7 +155,7 @@ const details = () => ({
       \\n If this is enabled files will be processed and converted into 10bit 
       HEVC using main10 profile and with p010le pixel format. \n
       If you just want to retain files that are already 10 bit then this can be left as false, as 
-      10bit to 10bit in FFmpeg should be automatic.
+      10bit to 10bit in ffmpeg should be automatic.
       \\n
       ==INFO==
       \\n Default is "false". 
@@ -486,7 +486,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
 
       // Check for HDR in files. If so exit plugin. We assume HDR files have bt2020 color spaces. HDR can be complicated
-      // and some aspects are still unsupported in FFmpeg I believe. Likely we don't want to re-encode anything HDR.
+      // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
       if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
         && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
         && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
@@ -585,9 +585,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // -fflags +genpts should regenerate timestamps if they end up missing...
   response.preset = '-fflags +genpts ';
 
-  // Attempt to enable HW Decoding...
+  // Attempt to enable HW Decoding... Bunch of OS conditions as well
   // If source file is 10 bit then bail as this can cause issues. Think it's the -c:v option that can break during 10bit
-  if (main10 === false) {
+  if (os.platform() === 'darwin') {
+    response.preset += '-hwaccel videotoolbox';
+    // Mac OS - Enable videotoolbox
+  } else if (main10 === false) { // Only if main10 isn't being used
     // Currently supported HW decode types
     switch (file.video_codec_name) {
       case 'mpeg2':
@@ -627,8 +630,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   switch (os.platform()) {
     case 'darwin':
       response.preset += 'hevc_videotoolbox';
-      // hevc_videotoolbox is for Mac but that doesn't seem to be included in Tdarr current Jellyfin FFmpeg
-      // Likely needs custom FFmpeg installed
+      // hevc_videotoolbox is for Mac but that doesn't seem to be included in Tdarr current Jellyfin ffmpeg
+      // Likely needs custom ffmpeg installed
       break;
     case 'linux':
       response.preset += 'hevc_qsv';
@@ -641,10 +644,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.preset += 'hevc_qsv';
   }
 
-  // Add the rest of the FFmpeg command
-  response.preset += ` ${bitrateSettings} `
-    + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
+  // Add the rest of the ffmpeg command
+  if (os.platform() === 'darwin') {
+    // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
+    response.preset += ` ${bitrateSettings} `
+      + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  } else {
+    // Normal behavior
+    response.preset += ` ${bitrateSettings} `
+      + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
      -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  }
 
   response.processFile = true;
   response.infoLog += 'File Transcoding... \n';
