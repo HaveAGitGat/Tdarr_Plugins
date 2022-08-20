@@ -634,72 +634,75 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset = '-fflags +genpts ';
 
   // DECODE FLAGS
-  // If source file is 10 bit then bail as this can cause issues. Think it's the -c:v option that can break during 10bit
-  if (os.platform() === 'darwin') {
-    response.preset += '-hwaccel videotoolbox';
-    // Mac OS - Enable videotoolbox instead of QSV
-  } else if (main10 === false) { // Only if main10 isn't being used
-    // Attempt to enable HW Decoding with currently supported HW decode types
-    switch (file.video_codec_name) {
-      case 'mpeg2':
-        response.preset += '-hwaccel qsv -c:v mpeg2_qsv';
-        break;
-      case 'h264':
-        response.preset += '-hwaccel qsv -c:v h264_qsv';
-        break;
-      case 'vc1':
-        response.preset += '-hwaccel qsv -c:v vc1_qsv';
-        break;
-      case 'mjpeg':
-        response.preset += '-hwaccel qsv -c:v mjpeg_qsv';
-        break;
-      case 'vp8':
-        response.preset += '-hwaccel qsv -c:v vp8_qsv';
-        break;
-      case 'hevc':
-        response.preset += '-hwaccel qsv -c:v hevc_qsv';
-        break;
-      case 'vp9': // Should be supported by 8th Gen +
-        response.preset += '-hwaccel qsv -c:v vp9_qsv';
-        break;
-      default:
-        response.preset += '-hwaccel qsv';
-    }
-  } else {
-    response.preset += '-hwaccel qsv';
-    // Enable basic hwaccel regardless. Seems to work...
+  // Account for different OS
+  switch (os.platform()) {
+    case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
+      response.preset += '-hwaccel videotoolbox';
+      break;
+    default:
+      if (main10 === false) { // Don't enable if 10bit is on - seems to have issue with -c:v commands
+        switch (file.video_codec_name) {
+          case 'mpeg2':
+            response.preset += '-hwaccel qsv -c:v mpeg2_qsv';
+            break;
+          case 'h264':
+            response.preset += '-hwaccel qsv -c:v h264_qsv';
+            break;
+          case 'vc1':
+            response.preset += '-hwaccel qsv -c:v vc1_qsv';
+            break;
+          case 'mjpeg':
+            response.preset += '-hwaccel qsv -c:v mjpeg_qsv';
+            break;
+          case 'vp8':
+            response.preset += '-hwaccel qsv -c:v vp8_qsv';
+            break;
+          case 'hevc':
+            response.preset += '-hwaccel qsv -c:v hevc_qsv';
+            break;
+          case 'vp9': // Should be supported by 8th Gen +
+            response.preset += '-hwaccel qsv -c:v vp9_qsv';
+            break;
+          default:
+            response.preset += '-hwaccel qsv';
+        }
+      } else {
+        response.preset += '-hwaccel qsv'; // Enable basic hwaccel regardless.
+      }
   }
 
-  // ADD ENCODE FLAGS TO PRESET
+  // ENCODE FLAGS
   response.preset += '<io> -map 0 -c:v ';
 
-  // Account for different OS setup for QSV.
+  // Account for different OS setup for QSV HEVC encode.
   switch (os.platform()) {
     case 'darwin':
       response.preset += 'hevc_videotoolbox';
-      // Darwin is Mac OS & uses hevc_videotoolbox not QSV - Only shows up on Mac installs
+      // Mac OS & uses hevc_videotoolbox not QSV - Only shows up on Mac installs
       break;
     case 'linux':
       response.preset += 'hevc_qsv';
       break;
     case 'win32':
       response.preset += 'hevc_qsv -load_plugin hevc_hw';
-      // Windows needs the additional -load_plugin plugin. Tested working on a Win 10 - i5-10505
+      // Windows needs the additional -load_plugin. Tested working on a Win 10 - i5-10505
       break;
     default:
       response.preset += 'hevc_qsv'; // Default to QSV
   }
 
   // Add the rest of the ffmpeg command
-  if (os.platform() === 'darwin') {
-    // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
-    response.preset += ` ${bitrateSettings} `
-      + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
-  } else {
-    // Normal behavior
-    response.preset += ` ${bitrateSettings} `
-      + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
-     -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  switch (os.platform()) {
+    case 'darwin':
+      // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
+      response.preset += ` ${bitrateSettings} `
+        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+      break;
+    default:
+      // Normal behavior
+      response.preset += ` ${bitrateSettings} `
+        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
+        -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   }
 
   response.processFile = true;
