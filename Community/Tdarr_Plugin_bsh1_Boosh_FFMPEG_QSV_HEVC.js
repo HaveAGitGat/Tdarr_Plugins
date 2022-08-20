@@ -4,7 +4,7 @@
 
 // NOTE - This does not use VAAPI, it is QSV only. So newer intel iGPUs only. 8th+ gen should work.
 // Additionally this was designed and tested on UNRAID via docker though there is logic to support use on
-// Windows, Linux & Mac
+// Windows, Linux & Mac - All platforms have now been confirmed working, however there is no way to test all use cases
 
 // White paper from intel regarding QSV performance on linux using FFMPEG here:
 // eslint-disable-next-line max-len
@@ -17,13 +17,12 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: `This is a QSV specific plugin. 8th+ gen INTEL QSV enabled CPUs are required. VAAPI is NOT used. 
-    Files not in H265/HEVC will be transcoded into H265/HEVC using Quick Sync Video (QSV) 
-    via Intel GPU using ffmpeg. Settings are dependant on file bitrate working by the logic that H265 can support 
-    the same amount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 
-    unless "reconvert_hevc" is marked as true. If it is then these will be reconverted again into HEVC if they 
-    exceed the bitrate specified in "hevc_max_bitrate". Reminder! An INTEL QSV enabled CPU is required.
-    NOTE - Created for use with UNRAID Docker and while it should support Windows/Mac etc, it may require 
-    a custom version of ffmpeg to work properly.`,
+    Non H265/HEVC files will be transcoded into H265/HEVC using Quick Sync Video (QSV) via Intel GPU using ffmpeg. 
+    Settings are dependant on file bitrate working by the logic that H265 can support the same amount of data at half 
+    the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 unless "reconvert_hevc" is marked as 
+    true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate". 
+    Reminder! An INTEL QSV enabled CPU is required. NOTE - This plugin should support Linux, Windows & Mac. 
+    Linux & Windows will leverage QSV & Mac will use 'VideoToolBox' - Set your node settings accordingly`,
   Version: '1.0',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
   Inputs: [
@@ -129,14 +128,15 @@ const details = () => ({
       ==WARNING== \\n
       Just because a cmd is mentioned doesn't mean your installed version of ffmpeg supports it... 
       Be certain to verify the cmds work before adding to your workflow. \\n
-      Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands.
+      Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands. \\n
+      MAC SPECIFIC - This option is ignored on Mac because videotoolbox is used rather than qsv.
       \\n
       ==INFO==
       \\n Default is empty but a suggested value is below. If unsure just leave empty.
       \\n Ensure to only use cmds valid to encoding QSV as the script handles other ffmpeg cmds relating to 
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nExample:\\n
-      -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
+      -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
     },
     {
       name: 'enable_10bit',
@@ -173,9 +173,7 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify bitrate cutoff, files with a total bitrate lower then this will not be processed. \n
-      Since getting the bitrate of the video from files is unreliable, bitrate here refers to the total 
-      bitrate of the file and not just the video steam.
+      \\n Specify bitrate cutoff, files with a video bitrate lower then this will not be processed. \n
       \\n
       ==INFO==
       \\n Rate is in kbps.
@@ -195,7 +193,7 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify a maximum average video bitrate. When encoding we take the current total bitrate and halve it 
+      \\n Specify a maximum average video bitrate. When encoding we take the current video bitrate and halve it 
       to get an average target. This option sets a upper limit to that average 
       (i.e if you have a video bitrate of 10000, half is 5000, if your maximum desired average bitrate is 4000
       then we use that as the target instead of 5000).
@@ -219,7 +217,7 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify a minimum average video bitrate. When encoding we take the current total bitrate and halve 
+      \\n Specify a minimum average video bitrate. When encoding we take the current video bitrate and halve 
       it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
       of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
       of 1500).
@@ -278,15 +276,13 @@ const details = () => ({
       tooltip: `\\n
       ==DESCRIPTION==
       \\n Has no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
-      allowed average bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
+      allowed average video bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
       specifically for HEVC files. It should be set HIGHER then your standard cutoff for safety.
       \\n Also, it's highly suggested you use the min & max average bitrate options in combination with this. You
       will want those to control the bitrate otherwise you may end up repeatedly reprocessing HEVC files.
       i.e your file might have a bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
       multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful
       this is why it is NOT recommended!
-      \\n As with the cutoff, getting the bitrate of the video from files is unreliable, so bitrate
-      here refers to the total bitrate of the file and not just the video steam.
       \\n
       ==INFO==
       \\n Rate is in kbps.
@@ -300,9 +296,46 @@ const details = () => ({
   ],
 });
 
+// Set up required variables.
+let currentBitrate = 0;
+let targetBitrate = 0;
+let minimumBitrate = 0;
+let maximumBitrate = 0;
+let duration = 0;
+let videoIdx = 0;
+let extraArguments = '';
+let bitrateSettings = '';
+let inflatedCutoff = 0;
+let main10 = false;
+
+// Media info setup
+const MediaInfo = {
+  videoBR: '',
+  overallBR: '',
+}; // var MediaInfo
+
+// Finds the first video stream and get video bitrate
+function getMediaInfo(file) {
+  videoIdx = -1;
+
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
+
+    // Looking For Video
+    // Check if stream is a video.
+    if (videoIdx === -1 && strstreamType === 'video') {
+      videoIdx = i;
+
+      MediaInfo.videoBR = Number(file.mediaInfo.track[i + 1].BitRate);
+    }
+  }
+  MediaInfo.overallBR = file.mediaInfo.track[0].OverallBitRate;
+} // end  getMediaInfo()
+
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-  const lib = require('../methods/lib')(); const os = require('os');
+  const lib = require('../methods/lib')();
+  const os = require('os');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
@@ -315,19 +348,30 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: `.${inputs.container}`,
   };
 
-  // Set up required variables.
-  let duration = 0;
-  let videoIdx = 0;
-  let extraArguments = '';
-  let bitrateSettings = '';
-  let inflatedCutoff = 0;
-  let main10 = false;
+  const currentFileName = file._id; // For running mkvpropedit
 
-  // Check if file is a video. If it isn't then exit plugin.
+  const proc = require('child_process');
+
   if (file.fileMedium !== 'video') {
-    response.infoLog += 'File is not a video. \n';
+    response.processFile = false;
+    response.infoLog += '☒ File is not a video. Exiting \n';
     return response;
   }
+
+  // If the existing container is mkv there is a possibility the stats were not updated during any previous transcode,
+  // lets make sure
+  if (file.container === 'mkv') {
+    response.infoLog += '☑ File is MKV so updating file statistics to ensure we have all the right info! \n';
+
+    try {
+      proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+    } catch (err) {
+      response.infoLog += '☒ Error updating statistice. Probably a bad file. Exiting\n';
+      return response;
+    }
+  }
+
+  getMediaInfo(file);
 
   // Check if duration info is filled, if so times it by 0.0166667 to get time in minutes.
   // If not filled then get duration of stream 0 and do the same.
@@ -337,17 +381,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     duration = file.ffProbeData.streams[0].duration * 0.0166667;
   }
 
-  // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
-  // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
-  const currentBitrate = Math.round(file.file_size / (duration * 0.0075));
-  // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
-  // Logic of h265 can be half the bitrate as h264 without losing quality.
-  let targetBitrate = Math.round((file.file_size / (duration * 0.0075)) / 2);
+  if (Number.isNaN(MediaInfo.videoBR)) { // If invalid we fall back on old calc for Current bitrate
+    // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
+    currentBitrate = Math.round(file.file_size / (duration * 0.0075));
+    response.infoLog += `==WARNING== failed to get an accurate video bitrate, 
+    falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps.
+    Bitrate calculations for encode will likely be inaccurate \n`;
+  } else {
+    currentBitrate = Math.round(MediaInfo.videoBR / 1000);
+    response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps. \n`;
+  }
+  // Halve current bitrate for Target bitrate, in theory h265 can be half the bitrate as h264 without losing quality.
+  targetBitrate = Math.round(currentBitrate / 2);
   // Allow some leeway under and over the targetBitrate.
-  let minimumBitrate = Math.round(targetBitrate * 0.75);
-  let maximumBitrate = Math.round(targetBitrate * 1.25);
-
-  response.infoLog += `☑ It looks like the current bitrate is ${currentBitrate}k. \n`;
+  minimumBitrate = Math.round(targetBitrate * 0.75);
+  maximumBitrate = Math.round(targetBitrate * 1.25);
 
   // If targetBitrate or currentBitrate comes out as 0 then something
   // has gone wrong and bitrates could not be calculated.
@@ -361,7 +409,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // has gone wrong as that is not what we want.
   // Cancel plugin completely.
   if (targetBitrate >= currentBitrate) {
-    response.infoLog += `☒ Target bitrate has been calculated as ${targetBitrate}k. This is equal or greater
+    response.infoLog += `☒ Target bitrate has been calculated as ${targetBitrate}kbps. This is equal or greater
     than the current bitrate... Something has gone wrong and this shouldn't happen! Skipping this plugin. \n`;
     return response;
   }
@@ -382,7 +430,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Checks if currentBitrate is below inputs.bitrate_cutoff.
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
-      response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}k. Cancelling plugin. \n`;
+      response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}kbps. 
+      Cancelling plugin. \n`;
       return response;
     }
     // If above cutoff then carry on
@@ -395,8 +444,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Checks if targetBitrate is above inputs.max_average_bitrate.
     // If so then clamp target bitrate
     if (targetBitrate > inputs.max_average_bitrate) {
-      response.infoLog += `Our target bitrate is above the max_average_bitrate so 
-      target average bitrate clamped at max of ${inputs.max_average_bitrate}k. \n`;
+      response.infoLog += `Our target bitrate is above the max_average_bitrate
+       so clamping at max of ${inputs.max_average_bitrate}kbps. \n`;
       targetBitrate = Math.round(inputs.max_average_bitrate);
       minimumBitrate = Math.round(targetBitrate * 0.75);
       maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -409,13 +458,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Exit the plugin is the cutoff is less than the min average bitrate. Most likely user error
     if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
       response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff}k is less than the set minimum 
-      average bitrate set of ${inputs.min_average_bitrate}k. We don't want this. Cancelling plugin. \n`;
+      average bitrate set of ${inputs.min_average_bitrate}kbps. We don't want this. Cancelling plugin. \n`;
       return response;
     }
     // Checks if inputs.bitrate_cutoff is below inputs.min_average_bitrate.
     // If so then set currentBitrate to the minimum allowed.)
     if (targetBitrate < inputs.min_average_bitrate) {
-      response.infoLog += `Target average bitrate clamped at min of ${inputs.min_average_bitrate}k. \n`;
+      response.infoLog += `Target average bitrate clamped at min of ${inputs.min_average_bitrate}kbps. \n`;
       targetBitrate = Math.round(inputs.min_average_bitrate);
       minimumBitrate = Math.round(targetBitrate * 0.75);
       maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -528,13 +577,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           if (currentBitrate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
             response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
-            Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}k. \n
-            ☒ The file is still above this new cutoff! Reconverting. \n\n`;
+          Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n
+          The file is still above this new cutoff! Reconverting. \\n`;
           } else {
             // Otherwise we're now below the hevc cutoff and we can exit
             response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
-            Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}k. \n
-            ☑ The file is NOT above this new cutoff. Exiting plugin. \n\n`;
+          Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n
+          The file is NOT above this new cutoff. Exiting plugin. \\n`;
             return response;
           }
 
@@ -543,14 +592,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
-          HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
-          Cutoff now temporarily ${inflatedCutoff}k. \n The file is still above this new cutoff! Reconverting. \n\n`;
+        HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
+        Cutoff now temporarily ${inflatedCutoff}kbps. \n The file is still above this new cutoff! Reconverting. \\n`;
         } else {
           // File is below cutoff so we can exit
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
           response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1 
-          so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}k. \n
-          The file is NOT above this new cutoff. Exiting plugin. \n\n`;
+        so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}kbps. \n
+        The file is NOT above this new cutoff. Exiting plugin. \\n`;
           return response;
         }
       }
@@ -561,7 +610,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.ffProbeData.streams[i].profile === 'Main 10'
         || file.ffProbeData.streams[i].bits_per_raw_sample === '10') {
         main10 = true;
-        response.infoLog += 'Input file is 10bit. Disabling hardware decoding to avoid problems. \n\n';
+        response.infoLog += '\\nInput file is 10bit. Disabling hardware decoding to avoid problems. \\n';
       }
 
       // Increment video index. Needed to keep track of video id in case there is more than one video track.
@@ -574,24 +623,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
     + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
-  response.infoLog += `\nContainer for output selected as ${inputs.container}. \n`;
+  response.infoLog += `\\nContainer for output selected as ${inputs.container}. \\n`;
   response.infoLog += 'Encode variable bitrate settings: \n';
   response.infoLog += `Target = ${targetBitrate}k \n`;
   response.infoLog += `Minimum = ${minimumBitrate}k \n`;
   response.infoLog += `Maximum = ${maximumBitrate}k \n`;
 
   // START PRESET
-  // DECODE FLAGS
   // -fflags +genpts should regenerate timestamps if they end up missing...
   response.preset = '-fflags +genpts ';
 
-  // Attempt to enable HW Decoding... Bunch of OS conditions as well
+  // DECODE FLAGS
   // If source file is 10 bit then bail as this can cause issues. Think it's the -c:v option that can break during 10bit
   if (os.platform() === 'darwin') {
     response.preset += '-hwaccel videotoolbox';
-    // Mac OS - Enable videotoolbox
+    // Mac OS - Enable videotoolbox instead of QSV
   } else if (main10 === false) { // Only if main10 isn't being used
-    // Currently supported HW decode types
+    // Attempt to enable HW Decoding with currently supported HW decode types
     switch (file.video_codec_name) {
       case 'mpeg2':
         response.preset += '-hwaccel qsv -c:v mpeg2_qsv';
@@ -626,12 +674,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += '<io> -map 0 -c:v ';
 
   // Account for different OS setup for QSV.
-  // FYI Darwin is Mac OS
   switch (os.platform()) {
     case 'darwin':
       response.preset += 'hevc_videotoolbox';
-      // hevc_videotoolbox is for Mac but that doesn't seem to be included in Tdarr current Jellyfin ffmpeg
-      // Likely needs custom ffmpeg installed
+      // Darwin is Mac OS & uses hevc_videotoolbox not QSV - Only shows up on Mac installs
       break;
     case 'linux':
       response.preset += 'hevc_qsv';
@@ -641,7 +687,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Windows needs the additional -load_plugin plugin. Tested working on a Win 10 - i5-10505
       break;
     default:
-      response.preset += 'hevc_qsv';
+      response.preset += 'hevc_qsv'; // Default to QSV
   }
 
   // Add the rest of the ffmpeg command
