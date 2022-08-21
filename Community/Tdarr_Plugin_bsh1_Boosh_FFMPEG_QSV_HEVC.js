@@ -245,21 +245,23 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify if we want to reprocess HEVC, VP9 or AV1 files 
-      (i.e reduce bitrate of files already in those codecs). 
+      \\n Set to reprocess HEVC, VP9 or AV1 files (i.e reduce bitrate of files already in those codecs). 
       \\n Since this uses the same logic as normal, halving the current bitrate, this is NOT recommended 
-      unless you know what you are doing, so leave false if unsure. 
-      NEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
-      This is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
+      unless you know what you are doing, so please leave FALSE if unsure! 
+      \\n NEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
+      \\n This is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
       bitrate and you'd like to reduce it.
-      \\n Bare in mind that you can convert a file to HEVC and still be above your cutoff meaning it would 
-      be converted again if this is set to true (since it's now HEVC). So if you use this be sure to set
-      "hevc_max_bitrate" & "max_average_bitrate" to prevent the plugin looping. Also it is highly suggested 
-      that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
-      \\n Again if you are unsure, please leave this as false!
       \\n
       ==WARNING== \\n
-      IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION.
+      IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION. \\n
+      \\n This option has the potential to LOOP your encodes! You can encode a file to HEVC and still 
+      be above your cutoff and it would be converted again & again if this is set to true (since it's now HEVC). 
+      So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping. 
+      Also it is highly suggested that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
+      \\n Please be certain you want this enabled before setting it otherwise leave this as FALSE!
+      We can not reliably get the video bitrate when reprocessing HEVC files - Especially when converting from H264 to 
+      HEVC & then checking the HEVC file again on a 2nd pass. Please bare this in mind when using the HEVC reprocess 
+      option.
       \\n
       \\nExample:\\n
       true
@@ -276,13 +278,18 @@ const details = () => ({
       tooltip: `\\n
       ==DESCRIPTION==
       \\n Has no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
-      allowed average video bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
+      allowed average OVERALL bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
       specifically for HEVC files. It should be set HIGHER then your standard cutoff for safety.
       \\n Also, it's highly suggested you use the min & max average bitrate options in combination with this. You
-      will want those to control the bitrate otherwise you may end up repeatedly reprocessing HEVC files.
-      i.e your file might have a bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
-      multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful
-      this is why it is NOT recommended!
+      will want those to control the encoded video bitrate, otherwise you may end up repeatedly reprocessing HEVC files.
+      i.e your file might have a overall bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
+      multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful this is why it is NOT 
+      recommended!
+      \\n
+      ==WARNING== \\n
+      We can not reliably get the video bitrate when reprocessing HEVC files - Especially when converting from H264 to 
+      HEVC & then checking the HEVC file again on a 2nd pass. Please bare this in mind when using the HEVC reprocess 
+      option.
       \\n
       ==INFO==
       \\n Rate is in kbps.
@@ -298,6 +305,7 @@ const details = () => ({
 
 // Set up required variables.
 let currentBitrate = 0;
+let overallBitRate = 0;
 let targetBitrate = 0;
 let minimumBitrate = 0;
 let maximumBitrate = 0;
@@ -348,27 +356,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: `.${inputs.container}`,
   };
 
-  const currentFileName = file._id; // For running mkvpropedit
-
-  const proc = require('child_process');
-
   if (file.fileMedium !== 'video') {
     response.processFile = false;
     response.infoLog += '☒ File is not a video. Exiting \n';
     return response;
-  }
-
-  // If the existing container is mkv there is a possibility the stats were not updated during any previous transcode,
-  // lets make sure
-  if (file.container === 'mkv') {
-    response.infoLog += '☑ File is MKV so updating file statistics to ensure we have all the right info! \n';
-
-    try {
-      proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
-    } catch (err) {
-      response.infoLog += '☒ Error updating statistice. Probably a bad file. Exiting\n';
-      return response;
-    }
   }
 
   getMediaInfo(file);
@@ -381,16 +372,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     duration = file.ffProbeData.streams[0].duration * 0.0166667;
   }
 
-  if (Number.isNaN(MediaInfo.videoBR)) { // If invalid we fall back on old calc for Current bitrate
+  // If invalid or suspiciously low we fall back on old calc for Current bitrate
+  if (Number.isNaN(MediaInfo.videoBR) || MediaInfo.videoBR < 250) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
     response.infoLog += `==WARNING== failed to get an accurate video bitrate, 
     falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps.
-    Bitrate calculations for encode will likely be inaccurate \n`;
+    Bitrate calculations for encode will likely be inaccurate... \n`;
   } else {
     currentBitrate = Math.round(MediaInfo.videoBR / 1000);
     response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps. \n`;
   }
+  // Get overall bitrate for use with HEVC reprocessing
+  overallBitRate = Math.round(file.file_size / (duration * 0.0075));
   // Halve current bitrate for Target bitrate, in theory h265 can be half the bitrate as h264 without losing quality.
   targetBitrate = Math.round(currentBitrate / 2);
   // Allow some leeway under and over the targetBitrate.
@@ -574,32 +568,38 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         // If we're using the hevc max bitrate then update the cutoff to use it
 
         if (inputs.hevc_max_bitrate > 0) {
-          if (currentBitrate > inputs.hevc_max_bitrate) {
+          if (overallBitRate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
             response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
           Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n
-          The file is still above this new cutoff! Reconverting. \\n`;
+          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
+          The file is still above this new cutoff! Reconverting. \n`;
           } else {
             // Otherwise we're now below the hevc cutoff and we can exit
             response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
           Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n
-          The file is NOT above this new cutoff. Exiting plugin. \\n`;
+          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
+          The file is NOT above this new cutoff. Exiting plugin. \n`;
             return response;
           }
 
           // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
           // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
-        } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
+        } else if (overallBitRate > (inputs.bitrate_cutoff * 2)) {
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-          response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
-        HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
-        Cutoff now temporarily ${inflatedCutoff}kbps. \n The file is still above this new cutoff! Reconverting. \\n`;
+          response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. \n
+          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
+          HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
+          Cutoff now temporarily ${inflatedCutoff}kbps. \n
+          The file is still above this new cutoff! Reconverting. \n`;
         } else {
           // File is below cutoff so we can exit
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-          response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1 
-        so bitrate_cutoff is multiplied by 2! Cutoff now temporarily ${inflatedCutoff}kbps. \n
-        The file is NOT above this new cutoff. Exiting plugin. \\n`;
+          response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1 \n
+          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
+          HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
+          Cutoff now temporarily ${inflatedCutoff}kbps. \n
+          The file is NOT above this new cutoff. Exiting plugin. \n`;
           return response;
         }
       }
@@ -610,7 +610,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.ffProbeData.streams[i].profile === 'Main 10'
         || file.ffProbeData.streams[i].bits_per_raw_sample === '10') {
         main10 = true;
-        response.infoLog += '\\nInput file is 10bit. Disabling hardware decoding to avoid problems. \\n';
+        response.infoLog += 'Input file is 10bit. Disabling hardware decoding to avoid problems. \n';
       }
 
       // Increment video index. Needed to keep track of video id in case there is more than one video track.
@@ -623,7 +623,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   bitrateSettings = `-b:v ${targetBitrate}k -minrate ${minimumBitrate}k `
     + `-maxrate ${maximumBitrate}k -bufsize ${currentBitrate}k`;
   // Print to infoLog information around file & bitrate settings.
-  response.infoLog += `\\nContainer for output selected as ${inputs.container}. \\n`;
+  response.infoLog += `Container for output selected as ${inputs.container}. \n`;
   response.infoLog += 'Encode variable bitrate settings: \n';
   response.infoLog += `Target = ${targetBitrate}k \n`;
   response.infoLog += `Minimum = ${minimumBitrate}k \n`;
