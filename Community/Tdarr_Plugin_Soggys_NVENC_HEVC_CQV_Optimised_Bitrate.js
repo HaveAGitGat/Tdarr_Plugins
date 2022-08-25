@@ -91,7 +91,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   var subcli = `-c:s copy`
   var maxmux = ''
   var map = '-map 0'
-  var cqvinuse = ''
   //default values that will be returned
   var response = {
     processFile: false,
@@ -206,7 +205,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     } catch (err) {}
   }
 
-  cqvinuse = `${inputs.sdCQV}`
   response.preset += `,${map} -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux} -pix_fmt p010le`
 
   response.processFile = true
