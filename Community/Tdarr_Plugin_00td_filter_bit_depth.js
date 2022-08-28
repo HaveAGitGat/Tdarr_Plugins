@@ -60,6 +60,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
+  // process8BitVideo
+  // process10BitVideo
+  // process12BitVideo
+
   const bitDepths = {
     8: 'Main',
     10: 'Main 10',
