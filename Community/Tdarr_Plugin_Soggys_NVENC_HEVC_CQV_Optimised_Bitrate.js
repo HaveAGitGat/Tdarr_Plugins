@@ -57,10 +57,14 @@ const details = () => ({
     },
     {
       name: 'ten_bit',
-      type: 'string',
-      defaultValue: 'true',
+      type: 'boolean',
+      defaultValue: true,
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options:[
+          'true',
+          'false'
+        ]
       },
       tooltip: `Set to true to convert to 10-bit. false to disable
 
@@ -193,7 +197,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += `-hwaccel cuda ,${map} -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv}`
     + ` -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`;
 
-  if (inputs.ten_bit === 'true') {
+  if (inputs.ten_bit === true) {
     response.preset += ' -pix_fmt p010le';
   }
 
