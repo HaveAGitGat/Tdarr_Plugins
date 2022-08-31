@@ -1,3 +1,4 @@
+/* eslint max-len: 0 */
 const _ = require('lodash');
 const run = require('../helpers/run');
 
@@ -16,11 +17,11 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑File is a video! \n' +
-      'Optimal Bitrate = 2.7648\n' +
-      'Stream Bitrate = 1.591143\n' +
-      '☑Preset set as medium\n' +
-      'File is being transcoded!\n',
+      infoLog: '☑File is a video! \n'
+      + 'Optimal Bitrate = 2.7648\n'
+      + 'Stream Bitrate = 1.591143\n'
+      + '☑Preset set as medium\n'
+      + 'File is being transcoded!\n',
     },
   },
   {
@@ -37,11 +38,11 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑File is a video! \n' +
-      'Optimal Bitrate = 6.21432\n' +
-      'Stream Bitrate = 8.248746\n' +
-      '☑Preset set as medium\n' +
-      'File is being transcoded!\n',
+      infoLog: '☑File is a video! \n'
+      + 'Optimal Bitrate = 6.21432\n'
+      + 'Stream Bitrate = 8.248746\n'
+      + '☑Preset set as medium\n'
+      + 'File is being transcoded!\n',
     },
   },
   {
@@ -53,7 +54,7 @@ const tests = [
         cqv: 29,
         bframe: 1,
         ten_bit: true,
-        ffmpeg_preset: 'fast'
+        ffmpeg_preset: 'fast',
       },
       otherArguments: {},
     },
@@ -64,11 +65,11 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑File is a video! \n' +
-        'Optimal Bitrate = 2.9952\n' +
-        'Stream Bitrate = 1.591143\n' +
-        '☑Preset set as fast\n' +
-        'File is being transcoded!\n'
+      infoLog: '☑File is a video! \n'
+        + 'Optimal Bitrate = 2.9952\n'
+        + 'Stream Bitrate = 1.591143\n'
+        + '☑Preset set as fast\n'
+        + 'File is being transcoded!\n',
     },
   },
 
@@ -81,7 +82,7 @@ const tests = [
         cqv: 20,
         bframe: 5,
         ten_bit: false,
-        ffmpeg_preset: 'slow'
+        ffmpeg_preset: 'slow',
       },
       otherArguments: {},
     },
@@ -92,11 +93,11 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑File is a video! \n' +
-        'Optimal Bitrate = 2.5344\n' +
-        'Stream Bitrate = 1.591143\n' +
-        '☑Preset set as slow\n' +
-        'File is being transcoded!\n'
+      infoLog: '☑File is a video! \n'
+        + 'Optimal Bitrate = 2.5344\n'
+        + 'Stream Bitrate = 1.591143\n'
+        + '☑Preset set as slow\n'
+        + 'File is being transcoded!\n',
     },
   },
   {
@@ -113,10 +114,10 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: false,
       reQueueAfter: true,
-      infoLog: '☑File is a video! \n' +
-      'Optimal Bitrate = 6.2208\n' +
-      'Stream Bitrate = 3.207441\n' +
-      '☑File is already in hevc and is below optimal bitrate!\n',
+      infoLog: '☑File is a video! \n'
+      + 'Optimal Bitrate = 6.2208\n'
+      + 'Stream Bitrate = 3.207441\n'
+      + '☑File is already in hevc and is below optimal bitrate!\n',
     },
   },
 ];

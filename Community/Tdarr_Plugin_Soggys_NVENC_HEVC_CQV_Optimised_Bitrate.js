@@ -61,10 +61,10 @@ const details = () => ({
       defaultValue: true,
       inputUI: {
         type: 'dropdown',
-        options:[
+        options: [
           'true',
-          'false'
-        ]
+          'false',
+        ],
       },
       tooltip: `Set to true to convert to 10-bit. false to disable
 
