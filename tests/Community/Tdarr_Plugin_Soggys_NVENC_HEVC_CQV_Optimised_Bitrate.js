@@ -11,7 +11,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-hwaccel cuda ,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 28 -rc-lookahead 32 -bf 0 -a53cc 0 -c:a copy -c:s copy -pix_fmt p010le',
+      preset: '-hwaccel cuda <io> -map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 28 -rc-lookahead 32 -bf 0 -a53cc 0 -c:a copy -c:s copy -pix_fmt p010le',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -32,7 +32,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-hwaccel cuda ,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 28 -rc-lookahead 32 -bf 0 -a53cc 0 -c:a copy -c:s copy -pix_fmt p010le',
+      preset: '-hwaccel cuda <io> -map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 28 -rc-lookahead 32 -bf 0 -a53cc 0 -c:a copy -c:s copy -pix_fmt p010le',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -59,7 +59,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-hwaccel cuda ,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset fast -cq 29 -rc-lookahead 32 -bf 1 -a53cc 0 -c:a copy -c:s copy -pix_fmt p010le',
+      preset: '-hwaccel cuda <io> -map 0 -dn -c:v hevc_nvenc -b:v 0 -preset fast -cq 29 -rc-lookahead 32 -bf 1 -a53cc 0 -c:a copy -c:s copy -pix_fmt p010le',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -87,7 +87,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-hwaccel cuda ,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset slow -cq 20 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda <io> -map 0 -dn -c:v hevc_nvenc -b:v 0 -preset slow -cq 20 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
