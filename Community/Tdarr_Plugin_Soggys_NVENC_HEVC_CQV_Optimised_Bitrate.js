@@ -1,4 +1,3 @@
-/* eslint-disable */
 const details = () => {
   return {
     id: 'Tdarr_Plugin_Soggys_NVENC_HEVC_CQV_Optimised_Bitrate',
@@ -34,8 +33,8 @@ const details = () => {
       },
       {
         name: 'cqv',
-        type: 'string',
-        defaultValue: '28',
+        type: 'number',
+        defaultValue: 28,
         inputUI: {
           type: 'text',
         },
@@ -46,15 +45,27 @@ const details = () => {
       },
       {
         name: 'bframe',
-        type: 'string',
-        defaultValue: '0',
+        type: 'number',
+        defaultValue: 0,
         inputUI: {
           type: 'text',
         },
-        tooltip: `Specify amount of b-frames to use, 0-5. Use 0 to disable. (GPU must support this, turing and newer supports this, except for the 1650)
+        tooltip: `Specify amount of b-frames to use, 0-5. Use 0 to disable. (GPU must support this)
 
       \\nExample:\\n
       3`
+      },
+      {
+        name: 'ten_bit',
+        type: 'string',
+        defaultValue: 'true',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Set to true to convert to 10-bit. false to disable
+
+      \\nExample:\\n
+      true`
       },
       {
         name: 'ffmpeg_preset',
@@ -113,7 +124,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += '☒File is not a video! \n'
     return response
   } else {
-    // bitrateprobe = file.ffProbeData.streams[0].bit_rate;
     response.infoLog += '☑File is a video! \n'
   }
 
@@ -122,51 +132,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += 'Stream Bitrate = ' + (streamBR / 1000000).toString() + '\n'
   if (file.ffProbeData.streams[0].codec_name == 'hevc'
   && (isNaN(optimalVideoBitrate) || isNaN(streamBR) || streamBR < optimalVideoBitrate)) {
-    response.processFile = false
     response.infoLog += '☑File is already in hevc and is below optimal bitrate!\n'
     return response
   }
   else if (file.ffProbeData.streams[0].codec_name == 'hevc'
   && (file.video_resolution === '480p' || file.video_resolution === '576p' || file.video_resolution === '720p')) {
-    response.processFile = false
     response.infoLog += '☑File is low res, wont transcode!\n'
     return response
   }
 
   // Check if preset is configured, default to slow if not
   var ffmpeg_preset
-  if (inputs.ffmpeg_preset === undefined) {
+  if (!inputs.ffmpeg_preset) {
     ffmpeg_preset = `slow`
     response.infoLog += '☑Preset not set, defaulting to slow\n'
   } else {
-    ffmpeg_preset = `${inputs.ffmpeg_preset}`
+    ffmpeg_preset = inputs.ffmpeg_preset
     response.infoLog += `☑Preset set as ${inputs.ffmpeg_preset}\n`
-  }
-
-  //codec will be checked so it can be transcoded correctly
-  if (file.video_codec_name == 'h263') {
-    response.preset = `-c:v h263_cuvid`
-  } else if (file.video_codec_name == 'h264') {
-    if (file.ffProbeData.streams[0].profile != 'High 10') {
-      //Remove HW Decoding for High 10 Profile
-      response.preset = `-c:v h264_cuvid`
-    }
-  } else if (file.video_codec_name == 'mjpeg') {
-    response.preset = `-c:v mjpeg_cuvid`
-  } else if (file.video_codec_name == 'mpeg1') {
-    response.preset = `-c:v mpeg1_cuvid`
-  } else if (file.video_codec_name == 'mpeg2') {
-    response.preset = `-c:v mpeg2_cuvid`
-  } else if (file.video_codec_name == 'vc1') {
-    response.preset = `-c:v vc1_cuvid`
-  } else if (file.video_codec_name == 'vp8') {
-    response.preset = `-c:v vp8_cuvid`
-  } else if (file.video_codec_name == 'vp9') {
-    response.preset = `-c:v vp9_cuvid`
-  } else if (file.video_codec_name == 'hevc') {
-    if (file.ffProbeData.streams[0].profile != 'High 10') {
-      response.preset = `-c:v hevc_cuvid`
-    }
   }
 
   //Set Subtitle Var before adding encode cli
@@ -176,7 +158,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         file.ffProbeData.streams[i].codec_name.toLowerCase() == 'mov_text' &&
         file.ffProbeData.streams[i].codec_type.toLowerCase() == 'subtitle'
       ) {
-        subcli = `-c:s srt`
+        subcli = '-c:s srt'
       }
     } catch (err) {}
     //mitigate TrueHD audio causing Too many packets error
@@ -189,7 +171,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           file.ffProbeData.streams[i].sample_rate.toLowerCase() == '44100' &&
           file.ffProbeData.streams[i].codec_type.toLowerCase() == 'audio')
       ) {
-        maxmux = ` -max_muxing_queue_size 9999`
+        maxmux = ' -max_muxing_queue_size 9999'
       }
     } catch (err) {}
     //mitigate errors due to embeded pictures
@@ -200,17 +182,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           file.ffProbeData.streams[i].codec_name.toLowerCase() == 'mjpeg') &&
         file.ffProbeData.streams[i].codec_type.toLowerCase() == 'video'
       ) {
-        map = `-map 0:v:0 -map 0:a -map 0:s?`
+        map = '-map 0:v:0 -map 0:a -map 0:s?'
       }
     } catch (err) {}
   }
 
-  response.preset += `,${map} -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux} -pix_fmt p010le`
+  response.preset += `,${map} -hwaccel cuda -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv} -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`
+
+  if (inputs.ten_bit === 'true'){
+    response.preset += '-pix_fmt p010le'
+  }
 
   response.processFile = true
   response.FFmpegMode = true
   response.reQueueAfter = true
-  response.infoLog += `File is being transcoded!\n`
+  response.infoLog += 'File is being transcoded!\n'
 
   return response
 }
