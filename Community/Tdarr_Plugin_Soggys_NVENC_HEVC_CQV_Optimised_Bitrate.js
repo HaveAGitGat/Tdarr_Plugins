@@ -190,11 +190,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  response.preset += `,${map} -hwaccel cuda -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv}`
+  response.preset += `-hwaccel cuda ,${map} -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv}`
     + ` -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`;
 
   if (inputs.ten_bit === 'true') {
-    response.preset += '-pix_fmt p010le';
+    response.preset += ' -pix_fmt p010le';
   }
 
   response.processFile = true;
