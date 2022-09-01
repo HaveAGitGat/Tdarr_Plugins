@@ -137,7 +137,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
   if (file.ffProbeData.streams[0].codec_name === 'hevc'
-  && (file.video_resolution === '480p' || file.video_resolution === '576p' || file.video_resolution === '720p')) {
+  && ['480p', '576p', '720p'].includes(file.video_resolution)) {
     response.infoLog += '☑File is low res, wont transcode!\n';
     return response;
   }
@@ -197,7 +197,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += `-hwaccel cuda <io> ${map} -dn -c:v hevc_nvenc -b:v 0 -preset ${ffmpeg_preset} -cq ${inputs.cqv}`
     + ` -rc-lookahead 32 -bf ${inputs.bframe} -a53cc 0 -c:a copy ${subcli}${maxmux}`;
 
-  if (inputs.ten_bit === true) {
+  if (inputs.ten_bit) {
     response.preset += ' -pix_fmt p010le';
   }
 
