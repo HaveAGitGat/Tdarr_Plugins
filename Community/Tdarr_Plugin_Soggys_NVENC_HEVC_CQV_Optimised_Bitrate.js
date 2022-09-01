@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'Soggys NVENC HEVC CQ:V Optimised Bitrate',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `[Contains built-in filter] This plugin used nvenc and transcodes based on specificed CQ:V value.
+  Description: `[Contains built-in filter] MEDIAINFO HAS TO BE ENABLED IN YOUR LIBRARY.
+     This plugin used nvenc and transcodes based on specificed CQ:V value.
      Will transcode if bitrate is greater than "optimized bitrate". Optimal bitrate accounts for fps and resolution.
      Optimized bitrate can be configured using targetCodecCompression. Smaller values target lower bitrates.
      FFmpeg Preset can be configured, uses slow by default.
