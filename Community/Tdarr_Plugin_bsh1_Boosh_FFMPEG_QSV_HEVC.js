@@ -41,7 +41,6 @@ const details = () => ({
       ==DESCRIPTION==
       \\n Specifies the output container of the file.
       \\n Ensure that all stream types you may have are supported by your chosen container.
-      \\n
       ==INFO==
       \\n Only MP4 & MKV are supported and MKV is recommended.
       \\nExample:\\n
@@ -259,9 +258,9 @@ const details = () => ({
       So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping. 
       Also it is highly suggested that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
       \\n Please be certain you want this enabled before setting it otherwise leave this as FALSE!
-      We can not reliably get the video bitrate when reprocessing HEVC files - Especially when converting from H264 to 
-      HEVC & then checking the HEVC file again on a 2nd pass. Please bare this in mind when using the HEVC reprocess 
-      option.
+      We can not reliably get the video bitrate when reprocessing HEVC files - Especially when converting from other 
+      formats into to HEVC & then checking the HEVC file again on a 2nd pass. Please bare this in mind when using the 
+      HEVC reprocess option.
       \\n
       \\nExample:\\n
       true
@@ -320,7 +319,7 @@ let main10 = false;
 const MediaInfo = {
   videoBR: '',
   overallBR: '',
-}; // var MediaInfo
+};
 
 // Finds the first video stream and get video bitrate
 function getMediaInfo(file) {
@@ -344,6 +343,7 @@ function getMediaInfo(file) {
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
   const os = require('os');
+  const proc = require('child_process');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
@@ -358,8 +358,79 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   if (file.fileMedium !== 'video') {
     response.processFile = false;
-    response.infoLog += '☒ File is not a video. Exiting \n';
+    response.infoLog += `☒ File seems to be ${file.fileMedium} & not video. Exiting \n`;
     return response;
+  }
+
+  // MKVPROPEDIT - Refresh video stats
+  const intStatsDays = 7; // Use 1 week threshold for new stats
+  let statsUptoDate = false;
+  const currentFileName = file._id;
+  let statsError = false;
+  let metadataEncode = '';
+
+  // Only process MKV files
+  if (file.container === 'mkv') {
+    let datStats = Date.parse(new Date(70, 1).toISOString()); // Placeholder date
+    metadataEncode = `-map_metadata:g -1 -metadata JBDONEDATE=${datStats}`;
+    if (file.mediaInfo.track[0].extra !== undefined && file.mediaInfo.track[0].extra.JBDONEDATE !== undefined) {
+      datStats = Date.parse(file.mediaInfo.track[0].extra.JBDONEDATE);
+    } else {
+      try {
+        if (
+          file.mediaInfo.track[0].extra !== undefined
+          && file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng'] !== undefined
+        ) {
+          // Set stats date to match info inside file
+          datStats = Date.parse(`${file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng']} GMT`);
+        }
+      } catch (err) {
+        // Catch error - Ignore & carry on - If check can bomb out if the tag doesn't exist...
+      }
+    }
+
+    // Threshold for stats date
+    const statsThres = Date.parse(new Date(new Date().setDate(new Date().getDate() - intStatsDays)).toISOString());
+
+    // Strings for easy to read dates in info log
+    let statsThresString = new Date(statsThres);
+    statsThresString = statsThresString.toUTCString();
+    let datStatsString = new Date(datStats);
+    datStatsString = datStatsString.toUTCString();
+    response.infoLog += `Checking file stats - If stats are older than ${intStatsDays} days we'll grab new stats.\n
+    Stats threshold: ${statsThresString}\n
+    Current stats date: ${datStatsString}\n`;
+
+    // Are the stats out of date?
+    if (datStats >= statsThres) {
+      statsUptoDate = true;
+      response.infoLog += '☑ File stats are upto date! - Continuing...\n';
+    } else {
+      response.infoLog += '☒ File stats are out of date! - Will attempt to use mkvpropedit to refresh stats\n';
+      try {
+        if (otherArguments.mkvpropeditPath !== '') { // Try to use mkvpropedit path if it is set
+          proc.execSync(`"${otherArguments.mkvpropeditPath}" --add-track-statistics-tags "${currentFileName}"`);
+        } else { // Otherwise just use standard mkvpropedit cmd
+          proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+        }
+      } catch (err) {
+        response.infoLog += '☒ Error updating file stats - Possible mkvpropedit failure or file issue - '
+          + ' Ensure mkvpropedit is set correctly in the node settings & check the filename for unusual characters.\n'
+          + ' Continuing but file stats will likely be inaccurate...\n';
+        statsError = true;
+      }
+      if (statsError !== true) {
+        // File now updated with new stats
+        response.infoLog += 'Remuxing file to write in updated file stats! \n';
+        response.preset += `-fflags +genpts <io> -map 0 -c copy -max_muxing_queue_size 9999 -map_metadata:g -1 
+            -metadata JBDONEDATE=${new Date().toISOString()}`;
+        response.processFile = true;
+        return response;
+      }
+    }
+  } else {
+    response.infoLog += 'Input file is not MKV so cannot use mkvpropedit to get new file stats. '
+      + 'Continuing but file stats will likely be inaccurate...\n';
   }
 
   getMediaInfo(file);
@@ -376,9 +447,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (Number.isNaN(MediaInfo.videoBR) || MediaInfo.videoBR < 250) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
-    response.infoLog += `==WARNING== failed to get an accurate video bitrate, 
-    falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps.
-    Bitrate calculations for encode will likely be inaccurate... \n`;
+    response.infoLog += '==WARNING== failed to get an accurate video bitrate, ';
+    response.infoLog += `falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps.`;
+    response.infoLog += 'Bitrate calculations for encode will likely be inaccurate... \n';
   } else {
     currentBitrate = Math.round(MediaInfo.videoBR / 1000);
     response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps. \n`;
@@ -403,18 +474,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // has gone wrong as that is not what we want.
   // Cancel plugin completely.
   if (targetBitrate >= currentBitrate) {
-    response.infoLog += `☒ Target bitrate has been calculated as ${targetBitrate}kbps. This is equal or greater
-    than the current bitrate... Something has gone wrong and this shouldn't happen! Skipping this plugin. \n`;
+    response.infoLog += `☒ Target bitrate has been calculated as ${targetBitrate}kbps. This is equal or greater `;
+    response.infoLog += "than the current bitrate... Something has gone wrong and this shouldn't happen! "
+      + 'Skipping this plugin. \n';
     return response;
   }
 
   // Ensure that bitrate_cutoff is set if reconvert_hevc is true since we need some protection against a loop
   // Cancel the plugin
   if (inputs.reconvert_hevc === true && inputs.bitrate_cutoff <= 0 && inputs.hevc_max_bitrate <= 0) {
-    response.infoLog += `☒ Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff 
-    or HEVC specific cutoff set so we have no way to know when to stop processing this file. 
-    Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. 
-    Skipping this plugin. \n`;
+    response.infoLog += `Reconvert HEVC is ${inputs.reconvert_hevc}, however there is no bitrate cutoff `;
+    response.infoLog += 'or HEVC specific cutoff set so we have no way to know when to stop processing this file. \n'
+      + 'Either set reconvert_HEVC to false or set a bitrate cutoff and set a hevc_max_bitrate cutoff. \n'
+      + '☒ Skipping this plugin. \n';
     return response;
   }
 
@@ -438,8 +510,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Checks if targetBitrate is above inputs.max_average_bitrate.
     // If so then clamp target bitrate
     if (targetBitrate > inputs.max_average_bitrate) {
-      response.infoLog += `Our target bitrate is above the max_average_bitrate
-       so clamping at max of ${inputs.max_average_bitrate}kbps. \n`;
+      response.infoLog += 'Our target bitrate is above the max_average_bitrate ';
+      response.infoLog += `so clamping at max of ${inputs.max_average_bitrate}kbps. \n`;
       targetBitrate = Math.round(inputs.max_average_bitrate);
       minimumBitrate = Math.round(targetBitrate * 0.75);
       maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -533,8 +605,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
         && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
         && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
-        response.infoLog += `☒ This looks to be a HDR file. HDR files are unfortunately
-        not supported by this plugin. Exiting plugin. \n\n`;
+        response.infoLog += '☒ This looks to be a HDR file. HDR files are unfortunately '
+          + 'not supported by this plugin. Exiting plugin. \n\n';
         return response;
       }
 
@@ -560,46 +632,51 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           return response;
         }
 
-        // New logic for reprocessing HEVC. Mainly done for my own use. Since we're reprocessing we're checking
-        // bitrate again and since this can be inaccurate (It calculates overall bitrate not video specific)
-        // we have to inflate the current bitrate so we don't keep looping this logic.
+        // New logic for reprocessing HEVC. Mainly done for my own use.
+        // We attempt to get accurate stats earlier - If we can't we fall back onto overall bitrate
+        // which can be inaccurate. We may inflate the current bitrate check so we don't keep looping this logic.
       } else if (inputs.reconvert_hevc === true && (file.ffProbeData.streams[i].codec_name === 'hevc'
         || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
-        // If we're using the hevc max bitrate then update the cutoff to use it
+        if (statsUptoDate !== true) {
+          currentBitrate = overallBitRate; // User overall bitrate if we don't have upto date stats
+          response.infoLog += `☒ Unable to get accurate stats for HEVC so falling back to Overall file Bitrate. 
+          Remux to MKV to allow generation of accurate video bitrate statistics. 
+          File overall bitrate is ${overallBitRate}kbps.\n`;
+        }
 
         if (inputs.hevc_max_bitrate > 0) {
-          if (overallBitRate > inputs.hevc_max_bitrate) {
+          if (currentBitrate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
-            response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
-          Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n
-          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
-          The file is still above this new cutoff! Reconverting. \n`;
+            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `
+              + `VP9 or AV1. Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n`;
+            response.infoLog += '☒ The file is still above this new cutoff! Reconverting. \n';
           } else {
             // Otherwise we're now below the hevc cutoff and we can exit
-            response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. 
-          Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n
-          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
-          The file is NOT above this new cutoff. Exiting plugin. \n`;
+            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `
+              + `VP9 or AV1. Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n`;
+            response.infoLog += '☑ The file is NOT above this new cutoff. Exiting plugin. \n';
             return response;
           }
 
           // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
           // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
-        } else if (overallBitRate > (inputs.bitrate_cutoff * 2)) {
+        } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-          response.infoLog += `☒ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. \n
-          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
-          HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
-          Cutoff now temporarily ${inflatedCutoff}kbps. \n
-          The file is still above this new cutoff! Reconverting. \n`;
+          response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `;
+          response.infoLog += 'VP9 or AV1. Will use Overall file Bitrate for HEVC files as safety, ';
+          response.infoLog += `bitrate is ${overallBitRate}kbps. \n`;
+          response.infoLog += 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! \n';
+          response.infoLog += `Cutoff now temporarily ${inflatedCutoff}kbps. \n`;
+          response.infoLog += '☒ The file is still above this new cutoff! Reconverting. \n';
         } else {
           // File is below cutoff so we can exit
           inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-          response.infoLog += `☑ Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1 \n
-          Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate} \n
-          HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! 
-          Cutoff now temporarily ${inflatedCutoff}kbps. \n
-          The file is NOT above this new cutoff. Exiting plugin. \n`;
+          response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `;
+          response.infoLog += 'VP9 or AV1. Will use Overall file Bitrate for HEVC files as safety, ';
+          response.infoLog += `bitrate is ${overallBitRate}kbps. \n`;
+          response.infoLog += 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! \n';
+          response.infoLog += `Cutoff now temporarily ${inflatedCutoff}kbps. \n`;
+          response.infoLog += '☑The file is NOT above this new cutoff. Exiting plugin. \n';
           return response;
         }
       }
@@ -697,12 +774,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
       response.preset += ` ${bitrateSettings} `
         + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+      response.infoLog += '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
+        + 'cmds set in extra_qsv_options will be IGNORED!\n';
       break;
     default:
       // Normal behavior
       response.preset += ` ${bitrateSettings} `
         + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
-        -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+        -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments} ${metadataEncode}`;
   }
 
   response.processFile = true;
