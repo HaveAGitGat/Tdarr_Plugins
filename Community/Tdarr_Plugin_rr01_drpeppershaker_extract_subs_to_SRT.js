@@ -50,6 +50,28 @@ const details = () => ({
                 dvd_subtitle,hdmv_pgs_subtitle`,
         },
         {
+            name: 'overwrite_existing_file_subs',
+            type: 'boolean',
+            defaultValue: false,
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'false',
+                    'true',
+                ],
+            },
+            tooltip: `If a subtitle file with the same name is already present, do you want the extracted sub to be written over it ? If set to 'false' the extraction while be skipped.
+        
+        \\nExample:\\n
+        
+        true
+        
+        \\nExample:\\n
+        
+        false
+        `
+        },
+        {
             name: 'rename_264_to_265',
             type: 'boolean',
             defaultValue: false,
@@ -124,6 +146,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     const removeSubs = inputs.remove_subs;
     const ignoredSubtitleCodecs = getStringInput(inputs.ignored_subtitle_codecs).split(",");
+    const overwriteExistingFileSubs = inputs.overwrite_existing_file_subs;
     const rename264To265 = inputs.rename_264_to_265;
     const debug = inputs.debug;
     if (debug)
@@ -164,11 +187,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         subsFile[subsFile.length - 1] = 'srt';
         subsFile = subsFile.join('.');
 
-        if (fs.existsSync(`${subsFile}`))
+        if (fs.existsSync(`${subsFile}`) && !overwriteExistingFileSubs)
             response.infoLog += `${lang}.srt already exists. Skipping!\n`;
         else if (isDescriptiveSubtitleStream(subStream))
             response.infoLog += `Stream ${i} is a ${title} track. Skipping!\n`;
         else {
+            if (fs.existsSync(`${subsFile}`) && overwriteExistingFileSubs) {
+                if (debug) response.infoLog += `[DEBUG] ${lang}.srt already exists. Deleting! \n`;
+                fs.unlinkSync(`${subsFile}`);
+            }
             response.infoLog += `Extracting ${lang}.srt\n`;
             command += ` -map 0:${subStream.index} "${subsFile}"`;
         }
