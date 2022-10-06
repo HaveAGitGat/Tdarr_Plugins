@@ -242,7 +242,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     response.processFile = true;
     response.FFmpegMode = true;
-    response.preset = `, -i "${otherArguments.originalLibraryFile.file}" -map 0:a? -map 0:s? -map 1:v -map_metadata 0 -map_chapters 0 -c:v copy -c:a copy -c:s copy -max_muxing_queue_size 9999 -metadata ADVOVTRANSCODEDISCARDED=true `;
+    response.preset = `<io> -i \"${otherArguments.originalLibraryFile.file}\" -map 1:v -map 0:a? -map 0:s?  -map_metadata 0 -map_chapters 0 -c:v copy -c:a copy -c:s copy -max_muxing_queue_size 9999 -metadata ADVOVTRANSCODEDISCARDED=true `;
     return response;
   }
 
