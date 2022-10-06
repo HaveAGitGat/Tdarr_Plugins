@@ -268,11 +268,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // find video media info track
-  for (let i = 0; i < file.mediaInfo.track.length; i += 1) {
+  for (let i = 1; i < file.mediaInfo.track.length; i += 1) {
     const currTrack = file.mediaInfo.track[i];
 
     try {
-      if (currTrack.StreamOrder !== undefined && currTrack.StreamOrder === videoTrackIdx) {
+      if (currTrack.StreamOrder !== undefined && parseInt(currTrack.StreamOrder, 10) === videoTrackIdx) {
         videoTrack = currTrack;
       }
     } catch (err) {
@@ -397,7 +397,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       return response;
     }
 
-    if (videoTrack.BitDepth > 8) {
+    if (parseInt(videoTrack.BitDepth, 10) > 8) {
       // Remove HW Decoding for 10 bit
     } else {
       response.preset = '-c:v h264_cuvid';
