@@ -191,7 +191,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // check if the file contains a hevc track
   // it will not be transcoded if true and the plugin will exit
-  if (file.ffProbeData.streams.filter((x) => x.codec_name.toLowerCase() === 'hevc').length) {
+  if (file.ffProbeData.streams.some((x) => x.codec_name?.toLowerCase() === 'hevc')) {
     response.infoLog += '☑File is already in hevc! \n';
     return response;
   }
