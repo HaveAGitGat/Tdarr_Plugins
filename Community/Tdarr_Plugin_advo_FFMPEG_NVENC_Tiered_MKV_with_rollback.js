@@ -36,7 +36,7 @@ const details = () => ({
     {
       name: 'hevcBitrateCutoff',
       type: 'string',
-      defaultValue: '2000',
+      defaultValue: '6000',
       inputUI: {
         type: 'text',
       },
@@ -48,7 +48,7 @@ const details = () => ({
     {
       name: 'h264BitrateCutoff',
       type: 'string',
-      defaultValue: '1000',
+      defaultValue: '4000',
       inputUI: {
         type: 'text',
       },

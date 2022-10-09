@@ -30,15 +30,15 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑ BitRate: 1205959 \n' +
-      '☑File is a video! \n' +
-      '☑ Codec: h264 \n' +
-      '☒File is 720p!\n' +
-      '☒File is not hevc!\n' +
-      '☒File bitrate is 1177kb!\n' +
-      'File bitrate is HIGHER than the Default Target Bitrate!\n' +
-      '☒Target Bitrate set to 0kb!\n' +
-      'File is being transcoded!\n',
+      infoLog: '☑ BitRate: 1205959 \n'
+      + '☑File is a video! \n'
+      + '☑ Codec: h264 \n'
+      + '☒File is 720p!\n'
+      + '☒File is not hevc!\n'
+      + '☒File bitrate is 1177kb!\n'
+      + 'File bitrate is HIGHER than the Default Target Bitrate!\n'
+      + '☒Target Bitrate set to 0kb!\n'
+      + 'File is being transcoded!\n',
       maxmux: false,
     },
   },
@@ -69,18 +69,18 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑ BitRate: undefined \n' +
-        '☑ OverallBitRate: undefined \n' +
-        '☑ BitRate_Maximum: undefined \n' +
-        '☑ bit_rate: 3207441 \n' +
-        '☑File is a video! \n' +
-        '☑ Codec: hevc \n' +
-        '☒File is 1080p!\n' +
-        '☒File is hevc, but above cutoff!\n' +
-        '☒File bitrate is 3132kb!\n' +
-        'File bitrate is HIGHER than the Default Target Bitrate!\n' +
-        '☒Target Bitrate set to 0kb!\n' +
-        'File is being transcoded!\n',
+      infoLog: '☑ BitRate: undefined \n'
+        + '☑ OverallBitRate: undefined \n'
+        + '☑ BitRate_Maximum: undefined \n'
+        + '☑ bit_rate: 3207441 \n'
+        + '☑File is a video! \n'
+        + '☑ Codec: hevc \n'
+        + '☒File is 1080p!\n'
+        + '☒File is hevc, but above cutoff!\n'
+        + '☒File bitrate is 3132kb!\n'
+        + 'File bitrate is HIGHER than the Default Target Bitrate!\n'
+        + '☒Target Bitrate set to 0kb!\n'
+        + 'File is being transcoded!\n',
       maxmux: false,
     },
   },
