@@ -9,9 +9,11 @@ const details = () => ({
                   Settings are dependant on file bitrate
                   Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
                   NVDEC & NVENC compatable GPU required.
-                  This plugin will skip any files that are in the VP9 codec.`,
-  Version: '3.1',
-  Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
+                  This plugin will skip any files that are in the VP9 codec.
+                  This Plugin makes use of "nvidia-smi" if it is accessible from the node.
+                  Measures GPU memory usage from nvidia-smi and assigns task to GPU with least memory usage.`,
+  Version: '3.2',
+  Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable,NVIDIA,GPU,multiple GPUs',
   Inputs: [{
     name: 'container',
     type: 'string',
@@ -259,7 +261,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Check if codec of stream is mjpeg/png, if so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
-        extraArguments += `-map -v:${videoIdx} `;
+        extraArguments += `-map -0:v:${videoIdx} `;
       }
       // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container.
       // If so nothing for plugin to do.
@@ -335,8 +337,38 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
-  + `-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  //determine if GPU is present and which gpu to use based on memory used by each GPU
+  response.infoLog += `Running nvidia-smi to see if a GPU is available and selecting the GPU with less memory usage\n`;
+  var execSync = require('child_process').execSync;
+  let gpu_num = -1;
+  let gpu_mem_used = 100000;
+  let result_mem = 0;
+  let gpu_count = parseInt(execSync('nvidia-smi --query-gpu=name --format=csv,noheader | wc -l'), 10);
+  
+  if (!isNaN(gpu_count)) {
+    for (let gpui = 0; gpui < gpu_count; gpui++) {
+      result_mem = parseInt(execSync('nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i ' + gpui), 10);
+      if (!isNaN(result_mem)) { // != "No devices were found") {
+        response.infoLog += `GPU ${gpui} : Memory Used ${result_mem} MiB\n`;
+        if (result_mem < gpu_mem_used) {
+          gpu_num = gpui;
+          gpu_mem_used = result_mem;
+        }
+      } else {
+        result_mem = execSync('nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i ' + gpui);
+        response.infoLog += `Error in reading GPU ${gpui} Memory\nError: ${result_mem}\n`;
+      }
+    }
+  }
+  
+  let gpu_string_arg = '';
+  if (gpu_num >= 0) {
+    gpu_string_arg = ` -gpu ${gpu_num}`;
+    response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_mem_used} MiB Memory Used (lowest)\n`;
+  }
+  
+  response.preset += ` ${gpu_string_arg} ${genpts}, -map 0 -c:V hevc_nvenc ${gpu_string_arg} -cq:V 19 ${bitrateSettings} `;
+  response.preset += `-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;
