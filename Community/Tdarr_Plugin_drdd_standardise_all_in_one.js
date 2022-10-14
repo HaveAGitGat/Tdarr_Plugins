@@ -46,7 +46,7 @@ const details = () => {
       {
         name: "wanted_subtitle_languages",
         type: 'string',
-        defaultValue: 'eng,fre',
+        defaultValue: '',
         inputUI: {
           type: 'text',
         },
