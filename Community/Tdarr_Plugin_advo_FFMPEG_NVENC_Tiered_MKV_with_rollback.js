@@ -36,7 +36,7 @@ const details = () => ({
     {
       name: 'hevcBitrateCutoff',
       type: 'string',
-      defaultValue: '6000',
+      defaultValue: '5000',
       inputUI: {
         type: 'text',
       },
@@ -48,7 +48,7 @@ const details = () => ({
     {
       name: 'h264BitrateCutoff',
       type: 'string',
-      defaultValue: '4000',
+      defaultValue: '2000',
       inputUI: {
         type: 'text',
       },
@@ -60,7 +60,7 @@ const details = () => ({
     {
       name: 'sdCQV',
       type: 'string',
-      defaultValue: '21',
+      defaultValue: '24',
       inputUI: {
         type: 'text',
       },
@@ -85,7 +85,7 @@ const details = () => ({
     {
       name: 'hdCQV',
       type: 'string',
-      defaultValue: '23',
+      defaultValue: '26',
       inputUI: {
         type: 'text',
       },
@@ -110,7 +110,7 @@ const details = () => ({
     {
       name: 'fullhdCQV',
       type: 'string',
-      defaultValue: '25',
+      defaultValue: '28',
       inputUI: {
         type: 'text',
       },
@@ -135,7 +135,7 @@ const details = () => ({
     {
       name: 'uhdCQV',
       type: 'string',
-      defaultValue: '27',
+      defaultValue: '30',
       inputUI: {
         type: 'text',
       },
@@ -192,7 +192,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let subcli = '';
   let maxmux = '';
 
-  let hdrCmd = '-pix_fmt p010le ';
+  let filterCommand = '';
   let map = '-map 0 -c copy ';
 
   let duration = '';
@@ -509,15 +509,23 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     && (videoStream.color_transfer.toLowerCase() === 'smpte2084'
     || videoStream.color_transfer.toLowerCase() === 'arib-std-b67')) {
     isHDR = true;
-    response.preset = '';
-    hdrCmd = '-pix_fmt p010le -vf "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,'
-      + 'tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=p010le" ';
+    if (filterCommand !== '') {
+      filterCommand += ',';
+    }
+    filterCommand += 'zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,'
+      + 'tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=p010le';
   }
 
   // check if the file is eligible for transcoding
   // if true the neccessary response values will be changed
   if (transcode === 1) {
-    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq ${hdrCmd} -rc:v vbr `
+    if (filterCommand !== '') {
+      response.preset = ''; // hardware decoding doesn't seem to work with the HDR tonemapping filter. Not sure why
+      filterCommand = `-vf "${filterCommand}"`;
+    }
+
+    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq -pix_fmt p010le `
+      + `${filterCommand} -rc:v vbr `
       + `-multipass 2 -bufsize 600M -b:v 0 -maxrate:v ${maxBitrate} -qmin 0 -qmax ${cqv} -cq:v ${cqv} `
       + `-rc-lookahead 32 -nonref_p 1 -a53cc 0 -threads 0 ${extraOptions} ${subcli} ${maxmux} `
       + '-metadata ADVOVTRANSCODEDONE=true';
