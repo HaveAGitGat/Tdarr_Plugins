@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-module.exports.dependencies = ['axios', '@cospired/i18n-iso-languages'];
+module.exports.dependencies = ['axios@0.27.2', '@cospired/i18n-iso-languages'];
 // tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng',
