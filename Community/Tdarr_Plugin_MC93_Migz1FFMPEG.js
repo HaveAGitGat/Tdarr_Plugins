@@ -343,9 +343,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let gpu_num = -1;
   let gpu_mem_used = 100000;
   let result_mem = 0;
-  let gpu_count = parseInt(execSync('nvidia-smi --query-gpu=name --format=csv,noheader | wc -l'), 10);
-  
-  if (!isNaN(gpu_count)) {
+  var gpu_count = '';
+  try {
+    var gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
+    gpu_res = gpu_res.trim();
+    gpu_res = gpu_res.split(/\r?\n/);
+    if (!isNaN(parseInt(gpu_res[0], 10))) {
+      gpu_count = split_res.lenght;
+    } else {
+      gpu_count = -1;
+    }
+  } catch (error) {
+    response.infoLog += `Error in reading nvidia-smi output!\n`;
+    gpu_count = -1;
+  }
+  if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
       result_mem = parseInt(execSync('nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i ' + gpui), 10);
       if (!isNaN(result_mem)) { // != "No devices were found") {
