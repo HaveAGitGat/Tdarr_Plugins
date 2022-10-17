@@ -349,7 +349,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     gpu_res = gpu_res.trim();
     gpu_res = gpu_res.split(/\r?\n/);
     if (!isNaN(parseInt(gpu_res[0], 10))) {
-      gpu_count = split_res.lenght;
+      gpu_count = gpu_res.lenght;
     } else {
       gpu_count = -1;
     }
