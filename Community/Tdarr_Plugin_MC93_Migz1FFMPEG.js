@@ -348,7 +348,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     var gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
     gpu_res = gpu_res.trim();
     gpu_res = gpu_res.split(/\r?\n/);
-    if (!isNaN(parseInt(gpu_res[0], 10))) {
+    /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
+      Example: Linux: nvidia-smi: command not found
+               Windows: 'nvidia-smi' is not recognized as an internal or external command, operable program or batch file.*/
+    if (!gpu_res[0].includes('nvidia-smi')) {
       gpu_count = gpu_res.lenght;
     } else {
       gpu_count = -1;
