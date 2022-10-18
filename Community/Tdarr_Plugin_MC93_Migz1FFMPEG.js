@@ -249,6 +249,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Go through each stream in the file.
+  var vf_scale_args = '';
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
     let codec_type = '';
@@ -262,7 +263,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
         extraArguments += `-map -0:v:${videoIdx} `;
+        response.infoLog += `File has an image in it as stream: ${i}, removing it! \n`;
+      } else { // if not an image stream then read it's height and width
+        try {
+          vf_scale_args = `-vf 'scale_cuda=w=${file.ffProbeData.streams[i].width}:h=${file.ffProbeData.streams[i].height}'`
+          response.infoLog += `Video Dimensions read as Width: ${file.ffProbeData.streams[i].width} Height: ${file.ffProbeData.streams[i].height} \n`;
+        } catch (error) {
+          response.infoLog += `Error while reading video height and width for stream: ${i}\n`;
+          response.infoLog += `Error: ${error}`;
+        }
       }
+			
       // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container.
       // If so nothing for plugin to do.
       if (
@@ -382,9 +393,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (gpu_num >= 0) {
     gpu_string_arg = ` -gpu ${gpu_num}`;
     response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_util}% utilization (lowest)\n`;
+    response.preset = `-hwaccel cuvid -hwaccel_device ${gpu_num} -hwaccel_output_format cuda  ${genpts}, `
+    response.preset += ` -map 0 ${vf_scale_args} -c:V hevc_nvenc -gpu ${gpu_num} -cq:V 19 ${bitrateSettings} `;
+  } else {
+    response.preset += ` ${genpts}, -map 0 -c:V hevc_nvenc -cq:V 19 ${bitrateSettings} `;
   }
   
-  response.preset += ` ${gpu_string_arg} ${genpts}, -map 0 -c:V hevc_nvenc ${gpu_string_arg} -cq:V 19 ${bitrateSettings} `;
   response.preset += `-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
