@@ -11,7 +11,7 @@ const details = () => ({
                   NVDEC & NVENC compatable GPU required.
                   This plugin will skip any files that are in the VP9 codec.
                   This Plugin makes use of "nvidia-smi" if it is accessible from the node.
-                  Measures GPU memory usage from nvidia-smi and assigns task to GPU with least memory usage.`,
+                  Measures GPU utilization from nvidia-smi and assigns task to GPU with least GPU utilization.`,
   Version: '3.2',
   Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable,NVIDIA,GPU,multiple GPUs',
   Inputs: [{
@@ -337,41 +337,43 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  //determine if GPU is present and which gpu to use based on memory used by each GPU
-  response.infoLog += `Running nvidia-smi to see if a GPU is available and selecting the GPU with less memory usage\n`;
+  //determine if GPU is present and which gpu to use based on utilization of each GPU
+  response.infoLog += `Running nvidia-smi to see if a GPU is available and selecting the GPU with less utilization\n`;
   var execSync = require('child_process').execSync;
   let gpu_num = -1;
-  let gpu_mem_used = 100000;
-  let result_mem = 0;
+  let gpu_util = 100000;
+  let result_util = 0;
   var gpu_count = '';
   try {
     var gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
-    gpu_res = gpu_res.trim();
+    gpu_res = gpu_res.toString().trim();
     gpu_res = gpu_res.split(/\r?\n/);
+    
     /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
       Example: Linux: nvidia-smi: command not found
                Windows: 'nvidia-smi' is not recognized as an internal or external command, operable program or batch file.*/
     if (!gpu_res[0].includes('nvidia-smi')) {
-      gpu_count = gpu_res.lenght;
+      gpu_count = gpu_res.length;
     } else {
       gpu_count = -1;
     }
   } catch (error) {
     response.infoLog += `Error in reading nvidia-smi output!\n`;
+    response.infoLog += error.message;
     gpu_count = -1;
   }
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
-      result_mem = parseInt(execSync('nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i ' + gpui), 10);
-      if (!isNaN(result_mem)) { // != "No devices were found") {
-        response.infoLog += `GPU ${gpui} : Memory Used ${result_mem} MiB\n`;
-        if (result_mem < gpu_mem_used) {
+      result_util = parseInt(execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ' + gpui), 10);
+      if (!isNaN(result_util)) { // != "No devices were found") {
+        response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
+        if (result_util < gpu_util) {
           gpu_num = gpui;
-          gpu_mem_used = result_mem;
+          gpu_util = result_util;
         }
       } else {
-        result_mem = execSync('nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i ' + gpui);
-        response.infoLog += `Error in reading GPU ${gpui} Memory\nError: ${result_mem}\n`;
+        result_util = execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ' + gpui);
+        response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${result_util}\n`;
       }
     }
   }
@@ -379,7 +381,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let gpu_string_arg = '';
   if (gpu_num >= 0) {
     gpu_string_arg = ` -gpu ${gpu_num}`;
-    response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_mem_used} MiB Memory Used (lowest)\n`;
+    response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_util}% utilization (lowest)\n`;
   }
   
   response.preset += ` ${gpu_string_arg} ${genpts}, -map 0 -c:V hevc_nvenc ${gpu_string_arg} -cq:V 19 ${bitrateSettings} `;
