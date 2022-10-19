@@ -37,14 +37,17 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: `Specify the names of any GPUs that needs to be excluded from assigning transcoding tasks.
+    tooltip: `Specify the id(s) of any GPUs that needs to be excluded from assigning transcoding tasks.
                \\n Seperate with a comma (,). Leave empty to disable.
-               \\n Limitation: '3070' will exclude both 3070 and 3070 Ti
+               \\n Get GPU numbers in the node by running 'nvidia-smi'
                     \\nExample:\\n
-                    M2000,P1000,1030
+                    0,1,3,8
 
                     \\nExample:\\n
-                    1030`,
+                    3
+
+                    \\nExample:\\n
+                    0`,
   },
   {
     name: 'bitrate_cutoff',
@@ -367,45 +370,33 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Determine if GPU is present and which gpu to use based on utilization of each GPU
-  // response.infoLog += 'Running nvidia-smi to see if a GPU is available and selecting GPU with less utilization\n';
+  response.infoLog += 'Running nvidia-smi to see if a GPU is available and selecting GPU with less utilization\n';
   let gpu_num = -1;
   let gpu_util = 100000;
   let result_util = 0;
   let gpu_count = -1;
-  let gpu_res = '';
-  const gpus_to_exclude = inputs.exclude_gpus.toLowerCase().split(',');
+  let gpu_names = '';
+  const gpus_to_exclude = inputs.exclude_gpus === '' ? [] : inputs.exclude_gpus.split(',').map(Number);
   try {
-    gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
-    gpu_res = gpu_res.toString().trim();
-    gpu_res = gpu_res.split(/\r?\n/);
+    gpu_names = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
+    gpu_names = gpu_names.toString().trim();
+    gpu_names = gpu_names.split(/\r?\n/);
     /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
       Example: Linux: nvidia-smi: command not found
                Windows: 'nvidia-smi' is not recognized as an internal or external command,
                    operable program or batch file. */
-    if (!gpu_res[0].includes('nvidia-smi')) {
-      gpu_count = gpu_res.length;
+    if (!gpu_names[0].includes('nvidia-smi')) {
+      gpu_count = gpu_names.length;
     }
   } catch (error) {
-    gpu_count = -1;
-    // response.infoLog += 'Error in reading nvidia-smi output!\n';
+    response.infoLog += 'Error in reading nvidia-smi output! \n';
     // response.infoLog += error.message;
   }
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
-      // Check if GPU name is in GPUs to exclude
-      const is_gpu_excluded = gpus_to_exclude.filter((gpu_name) => {
-        try {
-          if (gpu_res[gpui].toLowerCase().includes(gpu_name.toLowerCase())) {
-            return true;
-          }
-        } catch (error) {
-          response.infoLog += `Error evaluating GPU ${gpui} with exclusion lis`;
-          response.infoLog += error;
-        }
-        return false;
-      });
-      if (is_gpu_excluded.length >= 1) {
-        response.infoLog += `GPU ${gpui}: ${gpu_res[gpui]} is in exclusion list, will not be used!\n`;
+      // Check if GPU # is in GPUs to exclude
+      if (gpus_to_exclude.includes(gpui)) {
+        response.infoLog += `GPU ${gpui}: ${gpu_names[gpui]} is in exclusion list, will not be used!\n`;
       } else {
         try {
           const cmd_gpu = `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`;
