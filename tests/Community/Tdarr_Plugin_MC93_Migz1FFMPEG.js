@@ -16,12 +16,15 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'Container for output selected as mkv. \n'
+      infoLog: 'Video Dimensions read as Width: 1280 Height: 720 \n'
+        + 'Container for output selected as mkv. \n'
         + 'Current bitrate = 1517 \n'
         + 'Bitrate settings: \n'
         + 'Target = 758 \n'
         + 'Minimum = 530 \n'
         + 'Maximum = 985 \n'
+        + 'Running nvidia-smi to see if a GPU is available and selecting GPU with less utilization\n'
+        + 'Error in reading nvidia-smi output! \n'
         + 'File is not hevc or vp9. Transcoding. \n',
       container: '.mkv',
     },
@@ -39,7 +42,8 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'File is already hevc or vp9 & in mkv. \n',
+      infoLog: 'Video Dimensions read as Width: 1280 Height: 720 \n'
+        + 'File is already hevc or vp9 & in mkv. \n',
       container: '.mkv',
     },
   },
@@ -60,12 +64,15 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'Container for output selected as mp4. \n'
+      infoLog: 'Video Dimensions read as Width: 1280 Height: 720 \n'
+        + 'Container for output selected as mp4. \n'
         + 'Current bitrate = 1517 \n'
         + 'Bitrate settings: \n'
         + 'Target = 758 \n'
         + 'Minimum = 530 \n'
         + 'Maximum = 985 \n'
+        + 'Running nvidia-smi to see if a GPU is available and selecting GPU with less utilization\n'
+        + 'Error in reading nvidia-smi output! \n'
         + 'File is not hevc or vp9. Transcoding. \n',
       container: '.mp4',
     },
@@ -110,12 +117,15 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'Container for output selected as mp4. \n'
+      infoLog: 'Video Dimensions read as Width: 1280 Height: 720 \n'
+        + 'Container for output selected as mp4. \n'
         + 'Current bitrate = 1517 \n'
         + 'Bitrate settings: \n'
         + 'Target = 758 \n'
         + 'Minimum = 530 \n'
         + 'Maximum = 985 \n'
+        + 'Running nvidia-smi to see if a GPU is available and selecting GPU with less utilization\n'
+        + 'Error in reading nvidia-smi output! \n'
         + 'File is not hevc or vp9. Transcoding. \n',
       container: '.mp4',
     },
@@ -136,7 +146,8 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'File is hevc or vp9 but is not in mp4 container. Remuxing. \n',
+      infoLog: 'Video Dimensions read as Width: 1280 Height: 720 \n'
+        + 'File is hevc or vp9 but is not in mp4 container. Remuxing. \n',
       container: '.mp4',
     },
   },
