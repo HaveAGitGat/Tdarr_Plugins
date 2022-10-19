@@ -39,7 +39,7 @@ const details = () => ({
     },
     tooltip: `Specify the names of any GPUs that needs to be excluded from assigning transcoding tasks.
                \\n Seperate with a comma (,). Leave empty to disable.
-	       \\n Limitation: '3070' will exclude both 3070 and 3070 Ti
+               \\n Limitation: '3070' will exclude both 3070 and 3070 Ti
                     \\nExample:\\n
                     M2000,P1000,1030
 
@@ -127,7 +127,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  const execSync = require('child_process').execSync;
+  const { execSync } = require('child_process');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
@@ -380,7 +380,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     gpu_res = gpu_res.split(/\r?\n/);
     /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
       Example: Linux: nvidia-smi: command not found
-               Windows: 'nvidia-smi' is not recognized as an internal or external command, 
+               Windows: 'nvidia-smi' is not recognized as an internal or external command,
                    operable program or batch file. */
     if (!gpu_res[0].includes('nvidia-smi')) {
       gpu_count = gpu_res.length;
@@ -395,7 +395,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
       // Check if GPU name is in GPUs to exclude
-      const is_gpu_excluded = gpus_to_exclude.filter(gpu_name => {
+      const is_gpu_excluded = gpus_to_exclude.filter((gpu_name) => {
         try {
           if (gpu_res[gpui].toLowerCase().includes(gpu_name.toLowerCase())) {
             return true;
@@ -405,13 +405,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           response.infoLog += error;
         }
         return false;
-      }
-      );
+      });
       if (is_gpu_excluded.length >= 1) {
         response.infoLog += `GPU ${gpui} is in exclusion list, will not be used!\n`;
       } else {
-        result_util = parseInt(execSync(
-          `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`), 10);
+        const cmd_gpu = `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`;
+        result_util = parseInt(execSync(cmd_gpu), 10);
         if (!Number.isNaN(result_util)) { // != "No devices were found") {
           response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
           if (result_util < gpu_util) {
@@ -433,7 +432,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   } else {
     response.preset += ` ${genpts}, -map 0 -c:V hevc_nvenc -cq:V 19 ${bitrateSettings} `;
   }
-  response.preset += `-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy `;
+  response.preset += '-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy ';
   response.preset += `-max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
