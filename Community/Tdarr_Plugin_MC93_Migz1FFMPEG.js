@@ -266,7 +266,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Go through each stream in the file.
-  var vf_scale_args = '';
+  let vf_scale_args = '';
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
     let codec_type = '';
@@ -283,14 +283,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.infoLog += `File has an image in it as stream: ${i}, removing it! \n`;
       } else { // if not an image stream then read it's height and width
         try {
-          vf_scale_args = `-vf 'scale_cuda=w=${file.ffProbeData.streams[i].width}:h=${file.ffProbeData.streams[i].height}'`
-          response.infoLog += `Video Dimensions read as Width: ${file.ffProbeData.streams[i].width} Height: ${file.ffProbeData.streams[i].height} \n`;
+          const v_width = file.ffProbeData.streams[i].width;
+          const v_height = file.ffProbeData.streams[i].height;
+          vf_scale_args = `-vf 'scale_cuda=w=${v_width}:h=${v_height}'`;
+          response.infoLog += `Video Dimensions read as Width: ${v_width} Height: ${v_height} \n`;
         } catch (error) {
           response.infoLog += `Error while reading video height and width for stream: ${i}\n`;
           response.infoLog += `Error: ${error}`;
         }
       }
-      
       // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container.
       // If so nothing for plugin to do.
       if (
@@ -372,7 +373,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let result_util = 0;
   let gpu_count = '';
   let gpu_res = '';
-  let gpus_to_exclude = inputs.exclude_gpus.toLowerCase().split(",");
+  const gpus_to_exclude = inputs.exclude_gpus.toLowerCase().split(',');
   try {
     gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
     gpu_res = gpu_res.toString().trim();
@@ -404,7 +405,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           response.infoLog += error;
         }
         return false;
-      });
+      }
+      );
       if (is_gpu_excluded.length >= 1) {
         response.infoLog += `GPU ${gpui} is in exclusion list, will not be used!\n`;
       } else {
@@ -423,13 +425,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
     }
   }
-  let gpu_string_arg = '';
   if (gpu_num >= 0) {
-    gpu_string_arg = ` -gpu ${gpu_num}`;
     response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_util}% utilization (lowest)\n`;
     response.preset = `-hwaccel cuvid -hwaccel_device ${gpu_num} -hwaccel_output_format cuda `;
     response.preset += `${genpts}, -map 0 ${vf_scale_args} `;
-    response.preset += ` -c:V hevc_nvenc -gpu ${gpu_num} -cq:V 19 ${bitrateSettings} `;
+    response.preset += `-c:V hevc_nvenc -gpu ${gpu_num} -cq:V 19 ${bitrateSettings} `;
   } else {
     response.preset += ` ${genpts}, -map 0 -c:V hevc_nvenc -cq:V 19 ${bitrateSettings} `;
   }
