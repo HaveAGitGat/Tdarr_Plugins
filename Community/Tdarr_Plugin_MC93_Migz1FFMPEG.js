@@ -367,7 +367,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Determine if GPU is present and which gpu to use based on utilization of each GPU
-  //response.infoLog += 'Running nvidia-smi to see if a GPU is available and selecting the GPU with less utilization\n';
+  // response.infoLog += 'Running nvidia-smi to see if a GPU is available and selecting GPU with less utilization\n';
   let gpu_num = -1;
   let gpu_util = 100000;
   let result_util = 0;
