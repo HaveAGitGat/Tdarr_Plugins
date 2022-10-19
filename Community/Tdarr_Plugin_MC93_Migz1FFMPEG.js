@@ -31,6 +31,22 @@ const details = () => ({
                     mp4`,
   },
   {
+    name: 'exclude_gpus',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Specify the names of any GPUs that needs to be excluded from assigning transcoding tasks.
+               \\n Rate is in kbps.
+               \\n Leave empty to disable.
+                    \\nExample:\\n
+                    6000
+
+                    \\nExample:\\n
+                    4000`,
+  },
+  {
     name: 'bitrate_cutoff',
     type: 'string',
     defaultValue: '',
@@ -111,6 +127,7 @@ const details = () => ({
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
+  const execSync = require('child_process').execSync;
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
@@ -249,6 +266,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Go through each stream in the file.
+  var vf_scale_args = '';
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
     let codec_type = '';
@@ -262,7 +280,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
         extraArguments += `-map -0:v:${videoIdx} `;
+        response.infoLog += `File has an image in it as stream: ${i}, removing it! \n`;
+      } else { // if not an image stream then read it's height and width
+        try {
+          vf_scale_args = `-vf 'scale_cuda=w=${file.ffProbeData.streams[i].width}:h=${file.ffProbeData.streams[i].height}'`
+          response.infoLog += `Video Dimensions read as Width: ${file.ffProbeData.streams[i].width} Height: ${file.ffProbeData.streams[i].height} \n`;
+        } catch (error) {
+          response.infoLog += `Error while reading video height and width for stream: ${i}\n`;
+          response.infoLog += `Error: ${error}`;
+        }
       }
+      
       // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container.
       // If so nothing for plugin to do.
       if (
@@ -337,55 +365,58 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  //determine if GPU is present and which gpu to use based on utilization of each GPU
-  response.infoLog += `Running nvidia-smi to see if a GPU is available and selecting the GPU with less utilization\n`;
-  var execSync = require('child_process').execSync;
+  // Determine if GPU is present and which gpu to use based on utilization of each GPU
+  response.infoLog += 'Running nvidia-smi to see if a GPU is available and selecting the GPU with less utilization\n';
   let gpu_num = -1;
   let gpu_util = 100000;
   let result_util = 0;
-  var gpu_count = '';
+  let gpu_count = '';
   try {
-    var gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
+    let gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
     gpu_res = gpu_res.toString().trim();
     gpu_res = gpu_res.split(/\r?\n/);
-    
     /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
       Example: Linux: nvidia-smi: command not found
-               Windows: 'nvidia-smi' is not recognized as an internal or external command, operable program or batch file.*/
+               Windows: 'nvidia-smi' is not recognized as an internal or external command, 
+                   operable program or batch file. */
     if (!gpu_res[0].includes('nvidia-smi')) {
       gpu_count = gpu_res.length;
     } else {
       gpu_count = -1;
     }
   } catch (error) {
-    response.infoLog += `Error in reading nvidia-smi output!\n`;
+    response.infoLog += 'Error in reading nvidia-smi output!\n';
     response.infoLog += error.message;
     gpu_count = -1;
   }
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
-      result_util = parseInt(execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ' + gpui), 10);
-      if (!isNaN(result_util)) { // != "No devices were found") {
+      result_util = parseInt(execSync(
+        `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`), 10);
+      if (!Number.isNaN(result_util)) { // != "No devices were found") {
         response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
         if (result_util < gpu_util) {
           gpu_num = gpui;
           gpu_util = result_util;
         }
       } else {
-        result_util = execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ' + gpui);
+        result_util = execSync(`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`);
         response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${result_util}\n`;
       }
     }
   }
-  
   let gpu_string_arg = '';
   if (gpu_num >= 0) {
     gpu_string_arg = ` -gpu ${gpu_num}`;
     response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_util}% utilization (lowest)\n`;
+    response.preset = `-hwaccel cuvid -hwaccel_device ${gpu_num} -hwaccel_output_format cuda `;
+    response.preset += `${genpts}, -map 0 ${vf_scale_args} `;
+    response.preset += ` -c:V hevc_nvenc -gpu ${gpu_num} -cq:V 19 ${bitrateSettings} `;
+  } else {
+    response.preset += ` ${genpts}, -map 0 -c:V hevc_nvenc -cq:V 19 ${bitrateSettings} `;
   }
-  
-  response.preset += ` ${gpu_string_arg} ${genpts}, -map 0 -c:V hevc_nvenc ${gpu_string_arg} -cq:V 19 ${bitrateSettings} `;
-  response.preset += `-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  response.preset += `-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy `;
+  response.preset += `-max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;
