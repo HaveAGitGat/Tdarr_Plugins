@@ -391,31 +391,31 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
-			// Check if GPU name is in GPUs to exclude
-			const is_gpu_excluded = gpus_to_exclude.filter(gpu_name => {
-				try {
-					if (gpu_count[i].toLowerCase().includes(gpu_name.toLowerCase())) {
-						return true;
-					}
-				} catch (error) {}
-				return false;
-			});
-      if (is_gpu_excluded) {
-				response.infoLog += `GPU ${gpui} is in exclusion list, will not be used!\n`;
-			} else {
-				result_util = parseInt(execSync(
-				  `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`), 10);
-				if (!Number.isNaN(result_util)) { // != "No devices were found") {
-					response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
-					if (result_util < gpu_util) {
-						gpu_num = gpui;
-						gpu_util = result_util;
-					}
-				} else {
-					result_util = execSync(`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`);
-					response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${result_util}\n`;
-				}
-			}
+      // Check if GPU name is in GPUs to exclude
+      const is_gpu_excluded = gpus_to_exclude.filter(gpu_name => {
+        try {
+          if (gpu_count[i].toLowerCase().includes(gpu_name.toLowerCase())) {
+            return true;
+          }
+        } catch (error) {}
+        return false;
+      });
+      if (is_gpu_excluded.length >= 1) {
+        response.infoLog += `GPU ${gpui} is in exclusion list, will not be used!\n`;
+      } else {
+        result_util = parseInt(execSync(
+          `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`), 10);
+        if (!Number.isNaN(result_util)) { // != "No devices were found") {
+          response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
+          if (result_util < gpu_util) {
+            gpu_num = gpui;
+            gpu_util = result_util;
+          }
+        } else {
+          result_util = execSync(`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`);
+          response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${result_util}\n`;
+        }
+      }
     }
   }
   let gpu_string_arg = '';
