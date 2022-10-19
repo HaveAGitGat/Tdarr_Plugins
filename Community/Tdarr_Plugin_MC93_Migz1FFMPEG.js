@@ -39,6 +39,7 @@ const details = () => ({
     },
     tooltip: `Specify the names of any GPUs that needs to be excluded from assigning transcoding tasks.
                \\n Seperate with a comma (,). Leave empty to disable.
+	       \\n Limitation: '3070' will exclude both 3070 and 3070 Ti
                     \\nExample:\\n
                     M2000,P1000,1030
 
@@ -370,9 +371,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let gpu_util = 100000;
   let result_util = 0;
   let gpu_count = '';
-	let gpus_to_exclude = inputs.exclude_gpus.toLowerCase().split(",");
+  let gpu_res = '';
+  let gpus_to_exclude = inputs.exclude_gpus.toLowerCase().split(",");
   try {
-    let gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
+    gpu_res = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
     gpu_res = gpu_res.toString().trim();
     gpu_res = gpu_res.split(/\r?\n/);
     /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
@@ -394,10 +396,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Check if GPU name is in GPUs to exclude
       const is_gpu_excluded = gpus_to_exclude.filter(gpu_name => {
         try {
-          if (gpu_count[i].toLowerCase().includes(gpu_name.toLowerCase())) {
+          if (gpu_res[gpui].toLowerCase().includes(gpu_name.toLowerCase())) {
             return true;
           }
-        } catch (error) {}
+        } catch (error) {
+          response.infoLog += `Error evaluating GPU ${gpui} with exclusion lis`;
+          response.infoLog += error;
+        }
         return false;
       });
       if (is_gpu_excluded.length >= 1) {
