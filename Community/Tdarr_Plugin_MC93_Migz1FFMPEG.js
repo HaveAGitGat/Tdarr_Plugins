@@ -13,7 +13,7 @@ const details = () => ({
                   This Plugin makes use of "nvidia-smi" if it is accessible from the node.
                   Measures GPU utilization from nvidia-smi and assigns task to GPU with least GPU utilization.`,
   Version: '3.2',
-  Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable,NVIDIA,GPU,multiple GPUs',
+  Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
   Inputs: [{
     name: 'container',
     type: 'string',
@@ -279,7 +279,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Check if codec of stream is mjpeg/png, if so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
-        extraArguments += `-map -0:v:${videoIdx} `;
+        extraArguments += `-map -v:${videoIdx} `;
         response.infoLog += `File has an image in it as stream: ${i}, removing it! \n`;
       } else { // if not an image stream then read it's height and width
         try {
@@ -371,7 +371,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let gpu_num = -1;
   let gpu_util = 100000;
   let result_util = 0;
-  let gpu_count = '';
+  let gpu_count = -1;
   let gpu_res = '';
   const gpus_to_exclude = inputs.exclude_gpus.toLowerCase().split(',');
   try {
@@ -384,13 +384,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
                    operable program or batch file. */
     if (!gpu_res[0].includes('nvidia-smi')) {
       gpu_count = gpu_res.length;
-    } else {
-      gpu_count = -1;
     }
   } catch (error) {
     response.infoLog += 'Error in reading nvidia-smi output!\n';
     response.infoLog += error.message;
-    gpu_count = -1;
   }
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
@@ -407,19 +404,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         return false;
       });
       if (is_gpu_excluded.length >= 1) {
-        response.infoLog += `GPU ${gpui} is in exclusion list, will not be used!\n`;
+        response.infoLog += `GPU ${gpui}: ${gpu_res[gpui]} is in exclusion list, will not be used!\n`;
       } else {
-        const cmd_gpu = `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`;
-        result_util = parseInt(execSync(cmd_gpu), 10);
-        if (!Number.isNaN(result_util)) { // != "No devices were found") {
-          response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
-          if (result_util < gpu_util) {
-            gpu_num = gpui;
-            gpu_util = result_util;
+        try {
+          const cmd_gpu = `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`;
+          result_util = parseInt(execSync(cmd_gpu), 10);
+          if (!Number.isNaN(result_util)) { // != "No devices were found") {
+            response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
+            if (result_util < gpu_util) {
+              gpu_num = gpui;
+              gpu_util = result_util;
+            }
           }
-        } else {
-          result_util = execSync(`nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`);
-          response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${result_util}\n`;
+        } catch (error) {
+          response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${error}\n`;
         }
       }
     }
