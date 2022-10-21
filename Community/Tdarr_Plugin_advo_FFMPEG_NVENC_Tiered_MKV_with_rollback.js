@@ -6,7 +6,7 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `
     - REQUIRES FFMPEG 5 or higher. Ideally just use the latest if possible. 
-    Will not work right with the version of ffmpeg included with tdar.\n
+    Will not work right with the version of ffmpeg included with tdarr.\n
     - Requires MediaInfo to be enabled for the library.\n
     - Post transcode size filter, but instead of cancelling stack, 
     will rollback to original video to allow other audio/subtitle plugins to execute.
@@ -35,8 +35,8 @@ const details = () => ({
     },
     {
       name: 'hevcBitrateCutoff',
-      type: 'string',
-      defaultValue: '5000',
+      type: 'number',
+      defaultValue: 5000,
       inputUI: {
         type: 'text',
       },
@@ -47,8 +47,8 @@ const details = () => ({
     },
     {
       name: 'h264BitrateCutoff',
-      type: 'string',
-      defaultValue: '2000',
+      type: 'number',
+      defaultValue: 2000,
       inputUI: {
         type: 'text',
       },
@@ -59,8 +59,8 @@ const details = () => ({
     },
     {
       name: 'sdCQV',
-      type: 'string',
-      defaultValue: '24',
+      type: 'number',
+      defaultValue: 24,
       inputUI: {
         type: 'text',
       },
@@ -71,8 +71,8 @@ const details = () => ({
     },
     {
       name: 'sdMaxBitrate',
-      type: 'string',
-      defaultValue: '0',
+      type: 'number',
+      defaultValue: 0,
       inputUI: {
         type: 'text',
       },
@@ -84,8 +84,8 @@ const details = () => ({
     },
     {
       name: 'hdCQV',
-      type: 'string',
-      defaultValue: '26',
+      type: 'number',
+      defaultValue: 26,
       inputUI: {
         type: 'text',
       },
@@ -96,8 +96,8 @@ const details = () => ({
     },
     {
       name: 'hdMaxBitrate',
-      type: 'string',
-      defaultValue: '0',
+      type: 'number',
+      defaultValue: 0,
       inputUI: {
         type: 'text',
       },
@@ -109,8 +109,8 @@ const details = () => ({
     },
     {
       name: 'fullhdCQV',
-      type: 'string',
-      defaultValue: '28',
+      type: 'number',
+      defaultValue: 28,
       inputUI: {
         type: 'text',
       },
@@ -121,8 +121,8 @@ const details = () => ({
     },
     {
       name: 'fullhdMaxBitrate',
-      type: 'string',
-      defaultValue: '0',
+      type: 'number',
+      defaultValue: 0,
       inputUI: {
         type: 'text',
       },
@@ -134,8 +134,8 @@ const details = () => ({
     },
     {
       name: 'uhdCQV',
-      type: 'string',
-      defaultValue: '30',
+      type: 'number',
+      defaultValue: 30,
       inputUI: {
         type: 'text',
       },
@@ -146,8 +146,8 @@ const details = () => ({
     },
     {
       name: 'uhdMaxBitrate',
-      type: 'string',
-      defaultValue: '0',
+      type: 'number',
+      defaultValue: 0,
       inputUI: {
         type: 'text',
       },
@@ -159,8 +159,8 @@ const details = () => ({
     },
     {
       name: 'bframe',
-      type: 'string',
-      defaultValue: '5',
+      type: 'number',
+      defaultValue: 5,
       inputUI: {
         type: 'text',
       },
@@ -169,6 +169,28 @@ const details = () => ({
       
       \\nExample:\\n
       5`,
+    },
+    {
+      name: 'encodingPreset',
+      type: 'string',
+      defaultValue: 'p5',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'p1',
+          'p2',
+          'p3',
+          'p4',
+          'p5',
+          'p6',
+          'p7',
+        ],
+      },
+      tooltip: `Specify the encoding preset to use.
+      p1 is fastest encode/largest filesize, p7 is slowest/smallest.
+
+      \\nExample:\\n
+      p5`,
     },
   ],
 });
@@ -219,30 +241,35 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     maxmux: false,
   };
 
-  if (newSize > getBound(inputs.upperBound)
-      && file.mediaInfo.track[0].extra !== undefined
-      && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE !== undefined
-      && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE === 'true'
-      && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDISCARDED === undefined) {
-    if (otherArguments.originalLibraryFile.mediaInfo.track[0].extra !== undefined
-      && otherArguments.originalLibraryFile.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE !== undefined
-      && otherArguments.originalLibraryFile.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE === 'true') {
-      response.processFile = false;
-      response.infoLog += '☑File has already been transcoded! \n';
+  if (file.mediaInfo.track[0].extra !== undefined
+    && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE !== undefined
+    && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE === 'true') {
+    if (newSize > getBound(inputs.upperBound)
+        && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDISCARDED === undefined) {
+      if (otherArguments.originalLibraryFile.mediaInfo.track[0].extra !== undefined
+        && otherArguments.originalLibraryFile.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE !== undefined
+        && otherArguments.originalLibraryFile.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE === 'true') {
+        response.processFile = false;
+        response.infoLog += '☑File has already been transcoded! \n';
+        return response;
+      }
+
+      const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
+        + `of original file size:  ${oldSize.toFixed(3)} MB`;
+
+      response.infoLog += `${sizeText}. upperBound is ${inputs.upperBound}%. 
+      Discarding transcoded video and using original.`;
+
+      response.processFile = true;
+      response.FFmpegMode = true;
+      response.preset = `<io> -i "${otherArguments.originalLibraryFile.file}" -map 1:v -map 0:a? -map 0:s? `
+        + '-map_metadata 0 -map_chapters 0 -c:v copy -c:a copy -c:s copy -max_muxing_queue_size 9999 '
+        + '-metadata ADVOVTRANSCODEDISCARDED=true ';
       return response;
     }
 
-    const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
-      + `of original file size:  ${oldSize.toFixed(3)} MB`;
-
-    response.infoLog += `${sizeText}. upperBound is ${inputs.upperBound}%. 
-    Discarding transcoded video and using original.`;
-
-    response.processFile = true;
-    response.FFmpegMode = true;
-    response.preset = `<io> -i "${otherArguments.originalLibraryFile.file}" -map 1:v -map 0:a? -map 0:s? `
-      + '-map_metadata 0 -map_chapters 0 -c:v copy -c:a copy -c:s copy -max_muxing_queue_size 9999 '
-      + '-metadata ADVOVTRANSCODEDISCARDED=true ';
+    response.processFile = false;
+    response.infoLog += '☑File has already been transcoded! \n';
     return response;
   }
 
@@ -262,8 +289,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         }
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      response.infoLog += `☒${err}`;
     }
   }
 
@@ -276,8 +302,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         videoTrack = currTrack;
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      response.infoLog += `☒${err}`;
     }
   }
 
@@ -324,14 +349,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   response.infoLog += '☑File is a video! \n';
 
-  if (file.mediaInfo.track[0].extra !== undefined
-    && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE !== undefined
-    && file.mediaInfo.track[0].extra.ADVOVTRANSCODEDONE === 'true') {
-    response.processFile = false;
-    response.infoLog += '☑File has already been transcoded! \n';
-    return response;
-  }
-
   response.infoLog += `☑ Codec: ${videoStream.codec_name} \n`;
 
   // codec will be checked so it can be transcoded correctly
@@ -340,30 +357,30 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
     if (bitrateprobe == null || bitrateprobe < 100000) {
       response.processFile = false;
-      response.infoLog += '☑File is already in hevc! \n';
+      response.infoLog += '☑Bitrate is below 100k! \n';
       return response;
     }
 
     if ((file.video_resolution === '480p' || file.video_resolution === '576p')
       && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff * 0.5) {
       response.processFile = false;
-      response.infoLog += '☑File is already in hevc! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 0.5}! \n`;
       return response;
     }
     if (file.video_resolution === '720p' && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff * 0.75) {
       response.processFile = false;
-      response.infoLog += '☑File is already in hevc! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 0.75}! \n`;
       return response;
     }
 
     if (file.video_resolution === '1080p' && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff) {
       response.processFile = false;
-      response.infoLog += '☑File is already in hevc! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff}! \n`;
       return response;
     }
     if (file.video_resolution === '4KUHD' && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff * 1.5) {
       response.processFile = false;
-      response.infoLog += '☑File is already in hevc! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 1.5}! \n`;
       return response;
     }
 
@@ -371,29 +388,29 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } else if (file.video_codec_name.toLowerCase() === 'h264') {
     if (bitrateprobe == null || bitrateprobe < 100000) {
       response.processFile = false;
-      response.infoLog += '☑File is below cutoff already! \n';
+      response.infoLog += '☑Bitrate is below 100k! \n';
       return response;
     }
     if ((file.video_resolution === '480p' || file.video_resolution === '576p')
       && (bitrateprobe / 1024) < inputs.h264BitrateCutoff * 0.5) {
       response.processFile = false;
-      response.infoLog += '☑File is below cutoff already! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 0.5}! \n`;
       return response;
     }
     if (file.video_resolution === '720p' && (bitrateprobe / 1024) < inputs.h264BitrateCutoff * 0.75) {
       response.processFile = false;
-      response.infoLog += '☑File is below cutoff already! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 0.75}! \n`;
       return response;
     }
 
     if (file.video_resolution === '1080p' && (bitrateprobe / 1024) < inputs.h264BitrateCutoff) {
       response.processFile = false;
-      response.infoLog += '☑File is below cutoff already! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff}! \n`;
       return response;
     }
     if (file.video_resolution === '4KUHD' && (bitrateprobe / 1024) < inputs.h264BitrateCutoff * 1.5) {
       response.processFile = false;
-      response.infoLog += '☑File is below cutoff already! \n';
+      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 1.5}! \n`;
       return response;
     }
 
@@ -402,8 +419,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     } else {
       response.preset = '-c:v h264_cuvid';
     }
-  } else if (file.video_codec_name.toLowerCase() === 'mjpeg') {
-    response.preset = 'c:v mjpeg_cuvid';
   } else if (file.video_codec_name.toLowerCase() === 'mpeg1') {
     response.preset = '-c:v mpeg1_cuvid';
   } else if (file.video_codec_name.toLowerCase() === 'mpeg2') {
@@ -433,8 +448,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         map += ` -map -0:${i} `;
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      response.infoLog += `☒${err}`;
     }
 
     // convert mp4 subs that mkv doesn't support
@@ -444,8 +458,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         subcli += ` -c:${i} srt `;
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      response.infoLog += `☒${err}`;
     }
 
     // mitigate TrueHD audio causing Too many packets error
@@ -461,8 +474,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         maxmux = ' -max_muxing_queue_size 9999';
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      response.infoLog += `☒${err}`;
     }
 
     // mitigate errors due to embeded pictures
@@ -475,8 +487,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         map += ` -map -0:${i} `;
       }
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.log(err);
+      response.infoLog += `☒${err}`;
     }
   }
 
@@ -505,9 +516,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // need to find a reliable test for HDR content
-  if (videoStream.color_transfer !== undefined
-    && (videoStream.color_transfer.toLowerCase() === 'smpte2084'
-    || videoStream.color_transfer.toLowerCase() === 'arib-std-b67')) {
+  if (videoTrack.HDR_Format !== undefined) {
     isHDR = true;
     if (filterCommand !== '') {
       filterCommand += ',';
@@ -524,11 +533,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       filterCommand = `-vf "${filterCommand}"`;
     }
 
-    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq -pix_fmt p010le `
-      + `${filterCommand} -rc:v vbr `
-      + `-multipass 2 -bufsize 600M -b:v 0 -maxrate:v ${maxBitrate} -qmin 0 -qmax ${cqv} -cq:v ${cqv} `
-      + `-rc-lookahead 32 -nonref_p 1 -a53cc 0 -threads 0 ${extraOptions} ${subcli} ${maxmux} `
-      + '-metadata ADVOVTRANSCODEDONE=true';
+    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 `
+      + `-preset ${inputs.encodingPreset} -tune hq -pix_fmt p010le ${filterCommand} -rc:v vbr -multipass 2 `
+      + `-bufsize 600M -b:v 0 -maxrate:v ${maxBitrate} -qmin 0 -qmax ${cqv} -cq:v ${cqv} -rc-lookahead 32 `
+      + `-nonref_p 1 -a53cc 0 -threads 0 ${extraOptions} ${subcli} ${maxmux} -metadata ADVOVTRANSCODEDONE=true`;
 
     response.processFile = true;
     response.FFmpegMode = true;
