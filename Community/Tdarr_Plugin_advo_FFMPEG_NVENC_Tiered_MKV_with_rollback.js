@@ -383,8 +383,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 1.5}! \n`;
       return response;
     }
-
-    response.preset = '-c:v hevc_cuvid';
   } else if (file.video_codec_name.toLowerCase() === 'h264') {
     if (bitrateprobe == null || bitrateprobe < 100000) {
       response.processFile = false;
@@ -413,28 +411,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 1.5}! \n`;
       return response;
     }
-
-    if (parseInt(videoTrack.BitDepth, 10) > 8) {
-      // Remove HW Decoding for 10 bit
-    } else {
-      response.preset = '-c:v h264_cuvid';
-    }
-  } else if (file.video_codec_name.toLowerCase() === 'mpeg1') {
-    response.preset = '-c:v mpeg1_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'mpeg2') {
-    response.preset = '-c:v mpeg2_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'mpeg4') {
-    response.preset = '-c:v mpeg4_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'vc1') {
-    response.preset = '-c:v vc1_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'vp8') {
-    response.preset = '-c:v vp8_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'vp9') {
-    response.preset = '-c:v vp9_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'av1') {
-    response.preset = '-c:v av1_cuvid';
-  } else if (file.video_codec_name.toLowerCase() === 'vc1') {
-    response.preset = '-c:v vc1_cuvid';
   }
 
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
@@ -528,6 +504,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // check if the file is eligible for transcoding
   // if true the neccessary response values will be changed
   if (transcode === 1) {
+    response.preset = '-hwaccel cuda ';
+
     if (filterCommand !== '') {
       response.preset = ''; // hardware decoding doesn't seem to work with the HDR tonemapping filter. Not sure why
       filterCommand = `-vf "${filterCommand}"`;

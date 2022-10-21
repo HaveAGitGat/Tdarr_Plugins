@@ -26,7 +26,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid<io> -map 0 -c copy  -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq -pix_fmt p010le  -rc:v vbr -multipass 2 -bufsize 600M -b:v 0 -maxrate:v 0 -qmin 0 -qmax 26 -cq:v 26 -rc-lookahead 32 -nonref_p 1 -a53cc 0 -threads 0  -bf 5 -b_ref_mode 1 -temporal_aq:v 1 -aq-strength:v 8    -metadata ADVOVTRANSCODEDONE=true',
+      preset: '-hwaccel cuda <io> -map 0 -c copy  -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq -pix_fmt p010le  -rc:v vbr -multipass 2 -bufsize 600M -b:v 0 -maxrate:v 0 -qmin 0 -qmax 26 -cq:v 26 -rc-lookahead 32 -nonref_p 1 -a53cc 0 -threads 0  -bf 5 -b_ref_mode 1 -temporal_aq:v 1 -aq-strength:v 8    -metadata ADVOVTRANSCODEDONE=true',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -66,7 +66,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v hevc_cuvid<io> -map 0 -c copy  -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq -pix_fmt p010le  -rc:v vbr -multipass 2 -bufsize 600M -b:v 0 -maxrate:v 0 -qmin 0 -qmax 28 -cq:v 28 -rc-lookahead 32 -nonref_p 1 -a53cc 0 -threads 0  -bf 5 -b_ref_mode 1 -temporal_aq:v 1 -aq-strength:v 8    -metadata ADVOVTRANSCODEDONE=true',
+      preset: '-hwaccel cuda <io> -map 0 -c copy  -dn -c:v hevc_nvenc -profile:v main10 -preset p5 -tune hq -pix_fmt p010le  -rc:v vbr -multipass 2 -bufsize 600M -b:v 0 -maxrate:v 0 -qmin 0 -qmax 28 -cq:v 28 -rc-lookahead 32 -nonref_p 1 -a53cc 0 -threads 0  -bf 5 -b_ref_mode 1 -temporal_aq:v 1 -aq-strength:v 8    -metadata ADVOVTRANSCODEDONE=true',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
