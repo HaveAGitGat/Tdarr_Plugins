@@ -233,7 +233,24 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let radarrResult = null;
   let sonarrResult = null;
   let tmdbResult = null;
+  let langs = [];
 
+  // Check for number of unique languages
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const currStream = file.ffProbeData.streams[i];
+    if (currStream.codec_type.toLowerCase() === 'audio') {
+      langs.push(currStream.tags.language);
+    }
+  }
+  // Get unique language count from langs array
+  const langUnique = new Set (langs).size;
+  // End plugin if only a single language is found
+  if (langUnique === 1) {
+    response.infoLog
+      += `☑File only has a Single Audio Language.\n`;
+    return response;
+  }
+  
   if (inputs.priority) {
     if (inputs.priority === 'sonarr') {
       prio = ['sonarr', 'radarr'];
