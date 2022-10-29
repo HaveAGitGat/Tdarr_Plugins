@@ -242,7 +242,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += '☑File only has a single audio language or all are missing.\n';
     return response;
   }
-  
+
   if (inputs.priority) {
     if (inputs.priority === 'sonarr') {
       prio = ['sonarr', 'radarr'];
@@ -259,7 +259,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           radarrResult = await parseArrResponse(
             await axios.get(`http://${inputs.radarr_url}/api/v3/movie?apiKey=${inputs.radarr_api_key}`)
               .then((resp) => resp.data),
-            file.meta.FileName, 'radarr',
+            file.meta.FileName,
+            'radarr',
           );
 
           if (radarrResult) {
@@ -278,7 +279,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           sonarrResult = await parseArrResponse(
             await axios.get(`http://${inputs.sonarr_url}/api/series?apikey=${inputs.sonarr_api_key}`)
               .then((resp) => resp.data),
-            file.meta.Directory, 'sonarr',
+            file.meta.Directory,
+            'sonarr',
           );
 
           if (sonarrResult) {
