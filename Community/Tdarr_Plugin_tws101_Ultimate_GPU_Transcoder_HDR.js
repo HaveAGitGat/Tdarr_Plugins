@@ -82,7 +82,7 @@ const details = () => {
 	  {
       name: 'hevc_480p_576p_filter_bitrate',
       type: 'string',
-      defaultValue: 1700000,
+      defaultValue: '1700000',
       inputUI: {
         type: 'text',
       },
@@ -104,7 +104,7 @@ const details = () => {
 	  {
       name: 'hevc_720p_filter_bitrate',
       type: 'string',
-      defaultValue: 2250000,
+      defaultValue: '2250000',
       inputUI: {
         type: 'text',
       },
@@ -126,7 +126,7 @@ const details = () => {
 	  {
       name: 'hevc_1080p_filter_bitrate',
       type: 'string',
-      defaultValue: 3400000,
+      defaultValue: '3400000',
       inputUI: {
         type: 'text',
       },
@@ -148,7 +148,7 @@ const details = () => {
 	  {
       name: 'hevc_filter_bitrate_4KUHD',
       type: 'string',
-      defaultValue: 7100000,
+      defaultValue: '7100000',
       inputUI: {
         type: 'text',
       },
