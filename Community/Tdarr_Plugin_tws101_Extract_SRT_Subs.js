@@ -1,6 +1,6 @@
 // tdarrSkipTest
 const details = () => ({
-  id: 'Tdarr_Plugin_Extract_SRT_Subs',
+  id: 'Tdarr_Plugin_tws101_Extract_SRT_Subs',
   Stage: 'Pre-processing',
   Name: 'tws101_SRT_Subtitle_Extractor',
   Type: 'Video',
@@ -11,7 +11,7 @@ const details = () => ({
   // Updated by tws101 as drpeppershaker no longer maintains his
   // Based on drpeppershaker with help from reddit user /u/jakejones48, lots of
   // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
-  Version: '1.04',
+  Version: '1.00',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
