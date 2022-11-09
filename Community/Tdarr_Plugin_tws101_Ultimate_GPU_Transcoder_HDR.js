@@ -18,7 +18,7 @@ const details = () => {
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
 //    Release version
-    Version: "2.0",
+    Version: "1.0",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
