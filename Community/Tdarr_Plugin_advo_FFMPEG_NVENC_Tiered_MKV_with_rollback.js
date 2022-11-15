@@ -332,8 +332,12 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `☑ bit_rate: ${file.bit_rate} \n`;
   response.infoLog += `☑ estimated bit rate: ${bitratecalc} \n`;
 
-  bitrateprobe = videoTrack.BitRate;
+  bitrateprobe = 999999999;
 
+  if (videoTrack.BitRate !== null && videoTrack.BitRate > 100000
+    && videoTrack.BitRate < bitrateprobe) {
+    bitrateprobe = videoTrack.BitRate;
+  }
   if (videoTrack.OverallBitRate !== null && videoTrack.OverallBitRate > 100000
     && videoTrack.OverallBitRate < bitrateprobe) {
     bitrateprobe = videoTrack.OverallBitRate;
@@ -349,6 +353,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   if (bitratecalc !== null && bitratecalc > 100000
     && bitratecalc < bitrateprobe) {
     bitrateprobe = bitratecalc;
+  }
+
+  if (bitrateprobe === 999999999) {
+    throw new Error('☒$Couldn\'t find a valid bitrate');
   }
 
   response.infoLog += `☑ Chosen bit rate: ${bitrateprobe} \n`;
