@@ -262,8 +262,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
       response.processFile = true;
       response.FFmpegMode = true;
-      response.preset = `<io> -i "${otherArguments.originalLibraryFile.file}" -map 1:v -map 0:a? -map 0:s? `
-        + '-map_metadata 0 -map_chapters 0 -c:v copy -c:a copy -c:s copy -max_muxing_queue_size 9999 '
+      response.preset = `<io> -i "${otherArguments.originalLibraryFile.file}" -map 1:v -map 0 -map -0:v `
+        + '-map_metadata 0 -map_chapters 0 -c copy -max_muxing_queue_size 9999 '
         + '-metadata ADVOVTRANSCODEDISCARDED=true ';
       return response;
     }
@@ -324,28 +324,34 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  const bitratecalc = (file.file_size / (duration * 0.0075)) * 1024;
+
+  response.infoLog += `☑ BitRate: ${videoTrack.BitRate} \n`;
+  response.infoLog += `☑ OverallBitRate: ${videoTrack.OverallBitRate} \n`;
+  response.infoLog += `☑ BitRate_Maximum: ${videoTrack.BitRate_Maximum} \n`;
+  response.infoLog += `☑ bit_rate: ${file.bit_rate} \n`;
+  response.infoLog += `☑ estimated bit rate: ${bitratecalc} \n`;
+
   bitrateprobe = videoTrack.BitRate;
-  response.infoLog += `☑ BitRate: ${bitrateprobe} \n`;
 
-  if (bitrateprobe == null || bitrateprobe < 100000) {
+  if (videoTrack.OverallBitRate !== null && videoTrack.OverallBitRate > 100000
+    && videoTrack.OverallBitRate < bitrateprobe) {
     bitrateprobe = videoTrack.OverallBitRate;
-    response.infoLog += `☑ OverallBitRate: ${bitrateprobe} \n`;
-
-    if (bitrateprobe == null || bitrateprobe < 100000) {
-      bitrateprobe = videoTrack.BitRate_Maximum;
-      response.infoLog += `☑ BitRate_Maximum: ${bitrateprobe} \n`;
-
-      if (bitrateprobe == null || bitrateprobe < 100000) {
-        bitrateprobe = file.bit_rate;
-        response.infoLog += `☑ bit_rate: ${bitrateprobe} \n`;
-
-        if (bitrateprobe == null || bitrateprobe < 100000) {
-          bitrateprobe = (file.file_size / (duration * 0.0075)) * 1024;
-          response.infoLog += `☑ estimated bit rate: ${bitrateprobe} \n`;
-        }
-      }
-    }
   }
+  if (videoTrack.BitRate_Maximum !== null && videoTrack.BitRate_Maximum > 100000
+    && videoTrack.BitRate_Maximum < bitrateprobe) {
+    bitrateprobe = videoTrack.BitRate_Maximum;
+  }
+  if (file.bit_rate !== null && file.bit_rate > 100000
+    && file.bit_rate < bitrateprobe) {
+    bitrateprobe = file.bit_rate;
+  }
+  if (bitratecalc !== null && bitratecalc > 100000
+    && bitratecalc < bitrateprobe) {
+    bitrateprobe = bitratecalc;
+  }
+
+  response.infoLog += `☑ Chosen bit rate: ${bitrateprobe} \n`;
 
   response.infoLog += '☑File is a video! \n';
 
@@ -511,7 +517,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       filterCommand = `-vf "${filterCommand}"`;
     }
 
-    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 `
+    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 -aq-mode 3 `
       + `-preset ${inputs.encodingPreset} -tune hq -pix_fmt p010le ${filterCommand} -rc:v vbr -multipass 2 `
       + `-bufsize 600M -b:v 0 -maxrate:v ${maxBitrate} -qmin 0 -qmax ${cqv} -cq:v ${cqv} -rc-lookahead 32 `
       + `-nonref_p 1 -a53cc 0 -threads 0 ${extraOptions} ${subcli} ${maxmux} -metadata ADVOVTRANSCODEDONE=true`;
