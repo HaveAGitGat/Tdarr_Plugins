@@ -214,13 +214,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         bolCopyStream = false;
         bolExtractStream = false;
       }
+	  if (!bolExtract) {
+        bolExtractStream = false;
+      }
     } else if (bolRemoveUnwanted) {
       bolCopyStream = false;
     }
-    if (!bolExtract && !bolExtractAll) {
+	if ((processLanguage.indexOf(lang) === -1) && !bolExtractAll) {
       bolExtractStream = false;
     }
-
+	
     // Determine subtitle stream type
     if (subStream.codec_name === ('subrip' || 'mov_text')) {
       bolTextSubs = true;
