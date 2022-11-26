@@ -1,111 +1,112 @@
 // jshint esversion: 6
 // tdarrSkipTest
 
-// Created by tehNiemer with thanks to drpeppershaker for the plugin Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT which served as the base for this.
+// Created by tehNiemer with thanks to drpeppershaker for the plugin 
+// Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT which served as the base for this.
 const details = () => ({
-    id: 'Tdarr_Plugin_TN10_SUBS',
-    Stage: 'Pre-processing',
-    Name: 'tehNiemer - Extract/Copy/Remove embedded subtitles',
-    Type: 'Subtitle',
-    Operation: 'Transcode',
-    Description: 'This plugin will extract/copy/remove embedded text and image based subtitles ' +
-      'according to user defined preferences in one pass inside Tdarr, ' +
-      'S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.\n\n ',
-    Version: '1.00',
-    Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
-    Inputs: [{
-        name: 'language',
-        type: 'string',
-        defaultValue: '',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.' +
-          '\\nEnter "all" without quotes to copy/extract all subtitle tracks.' +
-          '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.' +
-          '\\nExample: \\neng\\nExample: \\neng,jpn,fre'
+  id: 'Tdarr_Plugin_TN10_SUBS',
+  Stage: 'Pre-processing',
+  Name: 'tehNiemer - Extract/Copy/Remove embedded subtitles',
+  Type: 'Subtitle',
+  Operation: 'Transcode',
+  Description: 'This plugin will extract/copy/remove embedded text and image based subtitles '
+    + 'according to user defined preferences in one pass inside Tdarr, '
+    + 'S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.\n\n ',
+  Version: '1.00',
+  Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
+  Inputs: [{
+      name: 'language',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'extract',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: 'Extract defined language subtitle stream(s) to disk.'
+      tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
+        + '\\nEnter "all" without quotes to copy/extract all subtitle tracks.'
+        + '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.'
+        + '\\nExample: \\neng\\nExample: \\neng,jpn,fre'
+    },
+    {
+      name: 'extract',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'overwrite',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: 'Overwrite existing subtitle files on disk if they exist.'
+      tooltip: 'Extract defined language subtitle stream(s) to disk.'
+    },
+    {
+      name: 'overwrite',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'rm_extra_lang',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: 'Remove extra language subtitle streams from file. ' +
-          '\\nLanguage(s) defined above will not be removed.'
+      tooltip: 'Overwrite existing subtitle files on disk if they exist.'
+    },
+    {
+      name: 'rm_extra_lang',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'rm_commentary',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: 'Remove commentary streams from file.'
+      tooltip: 'Remove extra language subtitle streams from file. '
+        + '\\nLanguage(s) defined above will not be removed.'
+    },
+    {
+      name: 'rm_commentary',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'rm_cc_sdh',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: 'Remove CC/SDH streams from file.'
+      tooltip: 'Remove commentary streams from file.'
+    },
+    {
+      name: 'rm_cc_sdh',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'rm_all',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: 'Remove all subtitle streams from file.'
+      tooltip: 'Remove CC/SDH streams from file.'
+    },
+    {
+      name: 'rm_all',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-    ],
-  });
+      tooltip: 'Remove all subtitle streams from file.'
+    },
+  ],
+})
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -135,7 +136,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Make sure file has subtitles.
   let hasSubs = false;
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    let strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
+    const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     if (strStreamType === 'text' || strStreamType === 'subtitle') {
       hasSubs = true;
     }
@@ -152,13 +153,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Set global variables.
   let cmdRemove = '';
   let cmdExtract = '';
-  let processLanguage = inputs.language.toLowerCase().split(',');
-  let bolExtract = inputs.extract;
-  let bolRemoveCommentary = inputs.rm_commentary;
-  let bolRemoveCC_SDH = inputs.rm_cc_sdh;
+  const processLanguage = inputs.language.toLowerCase().split(',');
+  const bolExtract = inputs.extract;
+  const bolRemoveCommentary = inputs.rm_commentary;
+  const bolRemoveCC_SDH = inputs.rm_cc_sdh;
   let bolRemoveUnwanted = inputs.rm_extra_lang;
-  let bolRemoveAll = inputs.rm_all;
-  let bolOverwright = inputs.overwrite;
+  const bolRemoveAll = inputs.rm_all;
+  const bolOverwright = inputs.overwrite;
 
   const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === ('subtitle'));
 
@@ -204,8 +205,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     } else if (subStream.disposition.cc || (title.toLowerCase().includes('cc'))) {
       strDisposition = '.cc';
       bolCC_SDH = true;
-    } else if (subStream.disposition.commentary || subStream.disposition.description ||
-      (title.toLowerCase().includes('commentary')) || (title.toLowerCase().includes('description'))) {
+    } else if (subStream.disposition.commentary || subStream.disposition.description
+	  || (title.toLowerCase().includes('commentary')) || (title.toLowerCase().includes('description'))) {
       strDisposition = '.commentary';
       bolCommentary = true;
     }
