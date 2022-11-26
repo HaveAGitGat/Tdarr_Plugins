@@ -2,8 +2,7 @@
 // tdarrSkipTest
 
 // Created by tehNiemer with thanks to drpeppershaker for the plugin Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT which served as the base for this.
-function details() {
-  return {
+const details = () => ({
     id: 'Tdarr_Plugin_TN10_SUBS',
     Stage: 'Pre-processing',
     Name: 'tehNiemer - Extract/Copy/Remove embedded subtitles',
@@ -13,7 +12,6 @@ function details() {
       'according to user defined preferences in one pass inside Tdarr, ' +
       'S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.\n\n ',
     Version: '1.00',
-    Link: '',
     Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
     Inputs: [{
         name: 'language',
@@ -107,8 +105,7 @@ function details() {
         tooltip: 'Remove all subtitle streams from file.'
       },
     ],
-  };
-}
+  });
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
