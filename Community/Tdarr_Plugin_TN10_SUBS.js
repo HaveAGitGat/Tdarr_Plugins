@@ -106,7 +106,7 @@ const details = () => ({
       tooltip: 'Remove all subtitle streams from file.'
     },
   ],
-});
+})
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
