@@ -12,7 +12,6 @@ const details = () => ({
       'according to user defined preferences in one pass inside Tdarr, ' +
       'S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.\n\n ',
     Version: '1.00',
-    Link: '',
     Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
     Inputs: [{
         name: 'language',
