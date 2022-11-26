@@ -15,96 +15,97 @@ const details = () => ({
   Version: '1.00',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [{
-    name: 'language',
-    type: 'string',
-    defaultValue: '',
-    inputUI: {
-      type: 'text',
+      name: 'language',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
+        + '\\nEnter "all" without quotes to copy/extract all subtitle tracks.'
+        + '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.'
+        + '\\nExample: \\neng\\nExample: \\neng,jpn,fre'
     },
-    tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
-      + '\\nEnter "all" without quotes to copy/extract all subtitle tracks.'
-      + '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.'
-      + '\\nExample: \\neng\\nExample: \\neng,jpn,fre'
-  },
-  {
-    name: 'extract',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
+    {
+      name: 'extract',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Extract defined language subtitle stream(s) to disk.'
     },
-    tooltip: 'Extract defined language subtitle stream(s) to disk.'
-  },
-  {
-    name: 'overwrite',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
+    {
+      name: 'overwrite',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Overwrite existing subtitle files on disk if they exist.'
     },
-    tooltip: 'Overwrite existing subtitle files on disk if they exist.'
-  },
-  {
-    name: 'rm_extra_lang',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
+    {
+      name: 'rm_extra_lang',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Remove extra language subtitle streams from file. '
+        + '\\nLanguage(s) defined above will not be removed.'
     },
-    tooltip: 'Remove extra language subtitle streams from file. '
-      + '\\nLanguage(s) defined above will not be removed.'
-  },
-  {
-    name: 'rm_commentary',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
+    {
+      name: 'rm_commentary',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Remove commentary streams from file.'
     },
-    tooltip: 'Remove commentary streams from file.'
-  },
-  {
-    name: 'rm_cc_sdh',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
+    {
+      name: 'rm_cc_sdh',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Remove CC/SDH streams from file.'
     },
-    tooltip: 'Remove CC/SDH streams from file.'
-  },
-  {
-    name: 'rm_all',
-    type: 'boolean',
-    defaultValue: false,
-    inputUI: {
-      type: 'dropdown',
-      options: [
-        'false',
-        'true',
-      ],
+    {
+      name: 'rm_all',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Remove all subtitle streams from file.'
     },
-    tooltip: 'Remove all subtitle streams from file.'
-  }, ],
+  ],
 });
 
 // eslint-disable-next-line no-unused-vars
