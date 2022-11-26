@@ -105,7 +105,7 @@ const details = () => ({
     },
     tooltip: 'Remove all subtitle streams from file.',
   },
-],
+  ],
 });
 
 // eslint-disable-next-line no-unused-vars
@@ -173,10 +173,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   for (let i = 0; i < subsArr.length; i += 1) {
-
     // Set per-stream variables
     const subStream = subsArr[i];
-    const {originalLibraryFile} = otherArguments;
+    const { originalLibraryFile } = otherArguments;
     let subsFile = '';
     let lang = '';
     let title = '';
@@ -241,7 +240,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     subsFile = subsFile.join('.');
 
     if (subsArr.length !== 0) {
-      const {index} = subStream;
+      const { index } = subStream;
       response.infoLog += `stream ${index}: ${lang}${strDisposition}. `;
       if (!bolRemoveAll) {
         // Copy subtitle stream
