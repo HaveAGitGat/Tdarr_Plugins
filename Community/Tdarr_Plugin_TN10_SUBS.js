@@ -161,13 +161,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let bolRemoveAll = inputs.rm_all;
   let bolOverwright = inputs.overwrite;
 
-  // Make sure there is something to do.
-  //  if (!bolExtract && !bolRemoveCommentary && !bolRemoveUnwanted && !bolRemoveAll) {
-  //    response.infoLog += 'No inputs set, nothing to do, skipping!\n';
-  //    response.processFile = false;
-  //    return response;
-  //  }
-
   const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === ('subtitle'));
 
   let bolExtractAll = false;
