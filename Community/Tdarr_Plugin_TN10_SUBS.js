@@ -1,7 +1,7 @@
 // jshint esversion: 6
 // tdarrSkipTest
 
-// Created by tehNiemer with thanks to drpeppershaker for the plugin 
+// Created by tehNiemer with thanks to drpeppershaker for the plugin
 // Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT which served as the base for this.
 const details = () => ({
   id: 'Tdarr_Plugin_TN10_SUBS',
@@ -106,7 +106,7 @@ const details = () => ({
       tooltip: 'Remove all subtitle streams from file.'
     },
   ],
-})
+});
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -206,7 +206,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       strDisposition = '.cc';
       bolCC_SDH = true;
     } else if (subStream.disposition.commentary || subStream.disposition.description
-	  || (title.toLowerCase().includes('commentary')) || (title.toLowerCase().includes('description'))) {
+      || (title.toLowerCase().includes('commentary')) || (title.toLowerCase().includes('description'))) {
       strDisposition = '.commentary';
       bolCommentary = true;
     }
