@@ -137,7 +137,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let hasSubs = false;
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
-    if (strStreamType === 'text' || strStreamType === 'subtitle') {
+    if (strStreamType === ('subtitle' || 'text')) {
       hasSubs = true;
     }
   }
@@ -161,7 +161,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const bolRemoveAll = inputs.rm_all;
   const bolOverwright = inputs.overwrite;
 
-  const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === ('subtitle'));
+  const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === ('subtitle' || 'text'));
 
   let bolExtractAll = false;
   if (bolExtract && processLanguage === 'all') {
