@@ -2,7 +2,7 @@
 // tdarrSkipTest
 
 // Created by tehNiemer with thanks to drpeppershaker for the plugin
-// Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT which served as the base for this.
+// Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT which served as the building blocks.
 const details = () => ({
   id: 'Tdarr_Plugin_TN10_SUBS',
   Stage: 'Pre-processing',
@@ -23,6 +23,7 @@ const details = () => ({
     },
     tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
       + '\\nEnter "all" without quotes to copy/extract all subtitle tracks.'
+      + '\\nLeave blank and enable "rm_all" to remove all subtitles from file.'
       + '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.'
       + '\\nExample: \\neng\\nExample: \\neng,jpn,fre',
   },
@@ -114,9 +115,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const fs = require('fs');
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  // Must return this object at some point in the function else plugin will fail.
+
   const response = {
     processFile: true,
+    error: false,
     preset: '',
     container: `.${file.container}`,
     handBrakeMode: false,
@@ -125,11 +127,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
+  // Check if all inputs have been configured. If they haven't then exit plugin.
+  if (inputs.language === '' && (inputs.extract === true || inputs.rm_extra_lang === true
+  || inputs.rm_commentary === true || inputs.rm_cc_sdh === true)) {
+    response.processFile = false;
+    response.error = true;
+    response.infoLog += 'Please configure language. Skipping this plugin. \n';
+    return response;
+  }
+
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
     // eslint-disable-next-line no-console
-    response.infoLog += 'File is not video \n';
     response.processFile = false;
+    response.error = true;
+    response.infoLog += 'File is not video \n';
     return response;
   }
 
@@ -145,8 +157,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (hasSubs === true) {
     response.infoLog += 'Found subs!\n';
   } else {
-    response.infoLog += 'No subs in file, skipping!\n';
     response.processFile = false;
+    response.infoLog += 'No subs in file, skipping!\n';
     return response;
   }
 
@@ -272,8 +284,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (cmdRemove === '' && cmdExtract === '' && !bolRemoveAll) {
-    response.infoLog += 'Nothing to do, skipping!\n';
     response.processFile = false;
+    response.infoLog += 'Nothing to do, skipping!\n';
     return response;
   }
 
