@@ -86,7 +86,7 @@ const details = () => ({
       type: 'text',
     },
     tooltip: 'Maximum number of audio channels, anything more than this will be reduced.'
-      + '\\nExample: 2.1 = 3, 5.1 = 6, 7.1 = 8\\n',
+      + '\\nExample: \\n2.1 = 3, 5.1 = 6, 7.1 = 8',
   },
   {
     name: 'audioLanguage',
@@ -161,7 +161,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: 'Remove commentary streams from file.',
+    tooltip: 'Remove commentary subtitle streams from file.',
   },
   {
     name: 'subRmCC_SDH',
@@ -174,7 +174,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: 'Remove CC/SDH streams from file.',
+    tooltip: 'Remove CC/SDH subtitle streams from file.',
   },
   {
     name: 'subRmAll',
@@ -199,7 +199,7 @@ function findMediaInfoItem(file, index) {
   for (let i = 0; i < file.mediaInfo.track.length; i += 1) {
     if (file.mediaInfo.track[i].StreamOrder) {
       currMIOrder = file.mediaInfo.track[i].StreamOrder;
-    } else if (strStreamType === ('subtitle' || 'text')) {
+    } else if (strStreamType === 'subtitle' || strStreamType === 'text') {
       currMIOrder = file.mediaInfo.track[i].ID - 1;
     } else {
       currMIOrder = -1;
@@ -272,9 +272,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const targetAudioChannels = inputs.audioChannels; // Any thing above this number of channels will be reduced to it
 
   // Subtitle
-  let cmdRemove = '';
-  let cmdExtract = '';
-  const processLanguage = inputs.subLanguage.toLowerCase().split(',');
+  let cmdRemoveSubs = '';
+  let cmdExtractSubs = '';
+  const targetSubLanguage = inputs.subLanguage.toLowerCase().replace(/\s+/g, '').split(',');
   const bolExtract = inputs.subExtract;
   let bolRemoveUnwanted = inputs.subRmExtraLang;
   const bolRemoveCommentary = inputs.subRmCommentary;
@@ -370,7 +370,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let bolDoSubs = false;
   let bolConvertSubs = false;
   let bolExtractAll = false;
-  if (bolExtract && processLanguage === 'all') {
+  if (bolExtract && targetSubLanguage === 'all') {
     bolExtractAll = true;
   }
   if (bolRemoveAll) {
@@ -502,7 +502,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Looking For Subtitles
     /// ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    if (!bolDoSubs && (strStreamType === ('subtitle' || 'text'))) {
+    if (!bolDoSubs && (strStreamType === 'subtitle' || strStreamType === 'text')) {
       bolDoSubs = true;
       response.infoLog += 'Subtitles Found \n';
     }
@@ -692,7 +692,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   if (bolDoSubs) {
-    const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === ('subtitle' || 'text'));
+    const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === 'subtitle' ||
+      row.codec_type.toLowerCase() === 'text');
     for (let i = 0; i < subsArr.length; i += 1) {
       // Set per-stream variables
       const subStream = subsArr[i];
@@ -700,6 +701,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       let subsFile = '';
       let lang = '';
       let title = '';
+      let codec = '';
       let strDisposition = '';
       let bolCommentary = false;
       let bolCC_SDH = false;
@@ -707,30 +709,34 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       let bolExtractStream = true;
       let bolTextSubs = false;
 
-      if (subStream && subStream.tags && subStream.tags.language) {
-        lang = subStream.tags.language;
+      if (subStream.tags !== undefined) {
+        if (subStream.tags.language !== undefined) {
+          lang = subStream.tags.language.toLowerCase();
+        }
+        if (subStream.tags.title !== undefined) {
+          title = subStream.tags.title.toLowerCase();
+        }
+      }
+      if (subStream.codec_name !== undefined) {
+        codec = subStream.codec_name.toLowerCase();
       }
 
-      if (subStream && subStream.tags && subStream.tags.title) {
-        title = subStream.tags.title;
-      }
-
-      if (subStream.disposition.forced || (title.toLowerCase().includes('forced'))) {
+      if (subStream.disposition.forced || (title.includes('forced'))) {
         strDisposition = '.forced';
-      } else if (subStream.disposition.sdh || (title.toLowerCase().includes('sdh'))) {
+      } else if (subStream.disposition.sdh || (title.includes('sdh'))) {
         strDisposition = '.sdh';
         bolCC_SDH = true;
-      } else if (subStream.disposition.cc || (title.toLowerCase().includes('cc'))) {
+      } else if (subStream.disposition.cc || (title.includes('cc'))) {
         strDisposition = '.cc';
         bolCC_SDH = true;
-      } else if (subStream.disposition.commentary || subStream.disposition.description
-        || (title.toLowerCase().includes('commentary')) || (title.toLowerCase().includes('description'))) {
+      } else if (subStream.disposition.commentary || subStream.disposition.description ||
+        (title.includes('commentary')) || (title.includes('description'))) {
         strDisposition = '.commentary';
         bolCommentary = true;
       }
 
       // Determine if subtitle should be extracted/copied/removed
-      if (processLanguage.indexOf(lang) !== -1) {
+      if (targetSubLanguage.indexOf(lang) !== -1) {
         if ((bolCommentary && bolRemoveCommentary) || (bolCC_SDH && bolRemoveCC_SDH)) {
           bolCopyStream = false;
           bolExtractStream = false;
@@ -741,19 +747,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       } else if (bolRemoveUnwanted) {
         bolCopyStream = false;
       }
-      if ((processLanguage.indexOf(lang) === -1) && !bolExtractAll) {
+      if ((targetSubLanguage.indexOf(lang) === -1) && !bolExtractAll) {
         bolExtractStream = false;
       }
 
       // Determine subtitle stream type
-      if (subStream.codec_name === ('subrip' || 'mov_text')) {
+      if (codec === 'subrip' || codec === 'mov_text') {
         bolTextSubs = true;
         response.infoLog += 'Text ';
-        if (subStream.codec_name === 'mov_text') {
+        if (codec === 'mov_text') {
           bolConvertSubs = true;
-          response.infoLog += '\nSubtitles Found (mov_text), will convert ';
+          response.infoLog += '(mov_text), will convert ';
         }
-      } else if (subStream.codec_name === ('S_TEXT/WEBVTT')) {
+      } else if (codec === 's_text/webvtt') {
         bolCopyStream = false;
         response.infoLog += 'S_TEXT/WEBVTT ';
       } else {
@@ -777,7 +783,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             // Skip/Remove undesired subtitle streams.
           } else {
             response.infoLog += 'Stream is unwanted, removing. ';
-            cmdRemove += ` -map -0:${index}`;
+            cmdRemoveSubs += ` -map -0:${index}`;
           }
         }
         // Verify subtitle track is a format that can be extracted.
@@ -789,7 +795,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             response.infoLog += 'External subtitle already exists, will not extract. ';
           } else {
             response.infoLog += 'Stream will be extracted to file. ';
-            cmdExtract += ` -map 0:${index} "${subsFile}"`;
+            cmdExtractSubs += ` -map 0:${index} "${subsFile}"`;
           }
         }
         response.infoLog += '\n';
@@ -817,7 +823,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   strFFcmd += ' -y <io>';
-  strFFcmd += cmdExtract;
+  strFFcmd += cmdExtractSubs;
   strFFcmd += ` -max_muxing_queue_size 8000 -map 0:${videoIdx} `;
   if (bolTranscodeVideo) {
     // Used to make the output 10bit, I think the quotes need to be this way for ffmpeg
@@ -907,7 +913,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     strFFcmd += ' -map_chapters -1 ';
   }
 
-  strFFcmd += cmdRemove;
+  strFFcmd += cmdRemoveSubs;
   strFFcmd += strTranscodeFileOptions;
   /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   response.preset += strFFcmd;

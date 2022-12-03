@@ -149,7 +149,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let hasSubs = false;
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
-    if (strStreamType === ('subtitle' || 'text')) {
+    if (strStreamType === 'subtitle' || strStreamType === 'text') {
       hasSubs = true;
     }
   }
@@ -165,7 +165,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Set global variables.
   let cmdRemove = '';
   let cmdExtract = '';
-  const processLanguage = inputs.language.toLowerCase().split(',');
+  const processLanguage = inputs.language.toLowerCase().replace(/\s+/g, '').split(',');
   const bolExtract = inputs.extract;
   const bolRemoveCommentary = inputs.rm_commentary;
   const bolRemoveCC_SDH = inputs.rm_cc_sdh;
@@ -173,7 +173,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const bolRemoveAll = inputs.rm_all;
   const bolOverwright = inputs.overwrite;
 
-  const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === ('subtitle' || 'text'));
+  const subsArr = file.ffProbeData.streams.filter((row) => row.codec_type.toLowerCase() === 'subtitle' ||
+    row.codec_type.toLowerCase() === 'text');
 
   let bolExtractAll = false;
   if (bolExtract && processLanguage === 'all') {
@@ -191,6 +192,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     let subsFile = '';
     let lang = '';
     let title = '';
+    let codec = '';
     let strDisposition = '';
     let bolCommentary = false;
     let bolCC_SDH = false;
@@ -198,24 +200,28 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     let bolExtractStream = true;
     let bolTextSubs = false;
 
-    if (subStream && subStream.tags && subStream.tags.language) {
-      lang = subStream.tags.language;
+    if (subStream.tags !== undefined) {
+      if (subStream.tags.language !== undefined) {
+        lang = subStream.tags.language.toLowerCase();
+      }
+      if (subStream.tags.title !== undefined) {
+        title = subStream.tags.title.toLowerCase();
+      }
+    }
+    if (subStream.codec_name !== undefined) {
+      codec = subStream.codec_name.toLowerCase()
     }
 
-    if (subStream && subStream.tags && subStream.tags.title) {
-      title = subStream.tags.title;
-    }
-
-    if (subStream.disposition.forced || (title.toLowerCase().includes('forced'))) {
+    if (subStream.disposition.forced || (title.includes('forced'))) {
       strDisposition = '.forced';
-    } else if (subStream.disposition.sdh || (title.toLowerCase().includes('sdh'))) {
+    } else if (subStream.disposition.sdh || (title.includes('sdh'))) {
       strDisposition = '.sdh';
       bolCC_SDH = true;
-    } else if (subStream.disposition.cc || (title.toLowerCase().includes('cc'))) {
+    } else if (subStream.disposition.cc || (title.includes('cc'))) {
       strDisposition = '.cc';
       bolCC_SDH = true;
     } else if (subStream.disposition.commentary || subStream.disposition.description
-      || (title.toLowerCase().includes('commentary')) || (title.toLowerCase().includes('description'))) {
+      || (title.includes('commentary')) || (title.includes('description'))) {
       strDisposition = '.commentary';
       bolCommentary = true;
     }
@@ -237,10 +243,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
 
     // Determine subtitle stream type
-    if (subStream.codec_name === ('subrip' || 'mov_text')) {
+    if (codec === 'subrip' || codec === 'mov_text') {
       bolTextSubs = true;
       response.infoLog += 'Text ';
-    } else if (subStream.codec_name === ('S_TEXT/WEBVTT')) {
+    } else if (codec === 's_text/webvtt') {
       bolCopyStream = false;
       response.infoLog += 'S_TEXT/WEBVTT ';
     } else {
