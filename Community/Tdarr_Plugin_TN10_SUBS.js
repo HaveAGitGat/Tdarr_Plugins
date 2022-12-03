@@ -1,4 +1,6 @@
 // jshint esversion: 6
+/* eslint operator-linebreak: ["error", "after"] */
+/* eslint eqeqeq: 1 */
 // tdarrSkipTest
 
 // Created by tehNiemer with thanks to drpeppershaker for the plugin
@@ -9,9 +11,9 @@ const details = () => ({
   Name: 'tehNiemer - Extract/Copy/Remove embedded subtitles',
   Type: 'Subtitle',
   Operation: 'Transcode',
-  Description: 'This plugin will extract/copy/remove embedded text and image based subtitles '
-    + 'according to user defined preferences in one pass inside Tdarr, '
-    + 'S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.\n\n ',
+  Description: 'This plugin will extract/copy/remove embedded text and image based subtitles ' +
+    'according to user defined preferences in one pass inside Tdarr, ' +
+    'S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.\n\n ',
   Version: '1.00',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [{
@@ -21,11 +23,11 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
-      + '\\nEnter "all" without quotes to copy/extract all subtitle tracks.'
-      + '\\nLeave blank and enable "rm_all" to remove all subtitles from file.'
-      + '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.'
-      + '\\nExample: \\neng\\nExample: \\neng,jpn,fre',
+    tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract. ' +
+      'Enter "all" without quotes to copy/extract all subtitle tracks. ' +
+      'Leave blank and enable "rm_all" to remove all subtitles from file.' +
+      '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.' +
+      '\\nExample: \\neng\\nExample: \\neng,jpn,fre',
   },
   {
     name: 'extract',
@@ -64,8 +66,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: 'Remove extra language subtitle streams from file. '
-      + '\\nLanguage(s) defined above will not be removed.',
+    tooltip: 'Remove unwanted language subtitle streams from file. Defined language(s) will not be removed.',
   },
   {
     name: 'rm_commentary',
@@ -78,7 +79,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: 'Remove commentary streams from file.',
+    tooltip: 'Remove commentary subtitle streams from file.',
   },
   {
     name: 'rm_cc_sdh',
@@ -91,7 +92,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: 'Remove CC/SDH streams from file.',
+    tooltip: 'Remove CC/SDH subtitle streams from file.',
   },
   {
     name: 'rm_all',
@@ -128,8 +129,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   // Check if all inputs have been configured. If they haven't then exit plugin.
-  if (inputs.language === '' && (inputs.extract === true || inputs.rm_extra_lang === true
-  || inputs.rm_commentary === true || inputs.rm_cc_sdh === true)) {
+  if (inputs.language === '' && (inputs.extract === true || inputs.rm_extra_lang === true ||
+    inputs.rm_commentary === true || inputs.rm_cc_sdh === true)) {
     response.processFile = false;
     response.error = true;
     response.infoLog += 'Please configure language. Skipping this plugin. \n';
@@ -209,7 +210,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
     }
     if (subStream.codec_name !== undefined) {
-      codec = subStream.codec_name.toLowerCase()
+      codec = subStream.codec_name.toLowerCase();
     }
 
     if (subStream.disposition.forced || (title.includes('forced'))) {
@@ -220,8 +221,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     } else if (subStream.disposition.cc || (title.includes('cc'))) {
       strDisposition = '.cc';
       bolCC_SDH = true;
-    } else if (subStream.disposition.commentary || subStream.disposition.description
-      || (title.includes('commentary')) || (title.includes('description'))) {
+    } else if (subStream.disposition.commentary || subStream.disposition.description ||
+      (title.includes('commentary')) || (title.includes('description'))) {
       strDisposition = '.commentary';
       bolCommentary = true;
     }
