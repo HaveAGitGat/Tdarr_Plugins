@@ -58,6 +58,30 @@ const details = () => ({
       1000`,
     },
     {
+      name: 'av1BitrateCutoff',
+      type: 'number',
+      defaultValue: 2000,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Enter the bitrate cutoff for av1 reencoding in kilobytes. 
+       \\nExample:\\n 
+      
+      1000`,
+    },
+    {
+      name: 'otherCodecBitrateCutoff',
+      type: 'number',
+      defaultValue: 0,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Enter the bitrate cutoff for other codec reencoding in kilobytes. 
+       \\nExample:\\n 
+      
+      1000`,
+    },
+    {
       name: 'sdCQV',
       type: 'number',
       defaultValue: 24,
@@ -192,6 +216,19 @@ const details = () => ({
       \\nExample:\\n
       p5`,
     },
+    {
+      name: 'additionalFFMPEG',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify additional commands to pass to ffmpeg.
+      Advanced users only, don't touch if you don't understand.
+
+      \\nExample:\\n
+      -filmgrain 0`,
+    },
   ],
 });
 
@@ -207,6 +244,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let extraOptions = '';
   let transcode = 0; // if this var changes to 1 the file will be transcoded
   let bitrateprobe = 0; // bitrate from ffprobe
+  let decodeParameters = '';
   const bitratetarget = 0;
   const bitratecheck = 0;
   let isHevc = false;
@@ -361,120 +399,115 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   response.infoLog += `☑ Chosen bit rate: ${bitrateprobe} \n`;
 
+  if (bitrateprobe == null || bitrateprobe < 100000) {
+    response.processFile = false;
+    response.infoLog += '☑Bitrate is below 100k! \n';
+    return response;
+  }
+
   response.infoLog += '☑File is a video! \n';
 
   response.infoLog += `☑ Codec: ${videoStream.codec_name} \n`;
 
-  // codec will be checked so it can be transcoded correctly
+  let cutoffToUse = inputs.otherCodecBitrateCutoff;
+
   if (videoStream.codec_name.toLowerCase() === 'hevc') {
     isHevc = true;
-
-    if (bitrateprobe == null || bitrateprobe < 100000) {
-      response.processFile = false;
-      response.infoLog += '☑Bitrate is below 100k! \n';
-      return response;
-    }
-
-    if ((file.video_resolution === '480p' || file.video_resolution === '576p')
-      && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff * 0.5) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 0.5}! \n`;
-      return response;
-    }
-    if (file.video_resolution === '720p' && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff * 0.75) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 0.75}! \n`;
-      return response;
-    }
-
-    if (file.video_resolution === '1080p' && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff}! \n`;
-      return response;
-    }
-    if (file.video_resolution === '4KUHD' && (bitrateprobe / 1024) < inputs.hevcBitrateCutoff * 1.5) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.hevcBitrateCutoff * 1.5}! \n`;
-      return response;
-    }
+    cutoffToUse = inputs.hevcBitrateCutoff;
   } else if (file.video_codec_name.toLowerCase() === 'h264') {
-    if (bitrateprobe == null || bitrateprobe < 100000) {
-      response.processFile = false;
-      response.infoLog += '☑Bitrate is below 100k! \n';
-      return response;
-    }
-    if ((file.video_resolution === '480p' || file.video_resolution === '576p')
-      && (bitrateprobe / 1024) < inputs.h264BitrateCutoff * 0.5) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 0.5}! \n`;
-      return response;
-    }
-    if (file.video_resolution === '720p' && (bitrateprobe / 1024) < inputs.h264BitrateCutoff * 0.75) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 0.75}! \n`;
-      return response;
-    }
+    cutoffToUse = inputs.h264BitrateCutoff;
+  } else if (file.video_codec_name.toLowerCase() === 'av1') {
+    cutoffToUse = inputs.av1BitrateCutoff;
+  }
 
-    if (file.video_resolution === '1080p' && (bitrateprobe / 1024) < inputs.h264BitrateCutoff) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff}! \n`;
-      return response;
-    }
-    if (file.video_resolution === '4KUHD' && (bitrateprobe / 1024) < inputs.h264BitrateCutoff * 1.5) {
-      response.processFile = false;
-      response.infoLog += `☑Bitrate is below cutoff of ${inputs.h264BitrateCutoff * 1.5}! \n`;
-      return response;
-    }
+  if ((file.video_resolution === '480p' || file.video_resolution === '576p')
+      && (bitrateprobe / 1024) < cutoffToUse * 0.5) {
+    response.processFile = false;
+    response.infoLog += `☑Bitrate is below cutoff of ${cutoffToUse * 0.5}! \n`;
+    return response;
+  }
+  if (file.video_resolution === '720p' && (bitrateprobe / 1024) < cutoffToUse * 0.75) {
+    response.processFile = false;
+    response.infoLog += `☑Bitrate is below cutoff of ${cutoffToUse * 0.75}! \n`;
+    return response;
+  }
+
+  if (file.video_resolution === '1080p' && (bitrateprobe / 1024) < cutoffToUse) {
+    response.processFile = false;
+    response.infoLog += `☑Bitrate is below cutoff of ${cutoffToUse}! \n`;
+    return response;
+  }
+  if (file.video_resolution === '4KUHD' && (bitrateprobe / 1024) < cutoffToUse * 1.5) {
+    response.processFile = false;
+    response.infoLog += `☑Bitrate is below cutoff of ${cutoffToUse * 1.5}! \n`;
+    return response;
   }
 
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    // strip streams not supported by mkv
-    try {
-      if (
-        file.ffProbeData.streams[i].codec_name.toLowerCase() === 'eia_608'
-        || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
-        // || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'dvd_subtitle'
-      ) {
-        map += ` -map -0:${i} `;
+    if (file.ffProbeData.streams[i].codec_name !== undefined && file.ffProbeData.streams[i].codec_type !== undefined) {
+      // strip streams not supported by mkv
+      try {
+        if (
+          file.ffProbeData.streams[i].codec_name.toLowerCase() === 'eia_608'
+          || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'timed_id3'
+          // || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'dvd_subtitle'
+        ) {
+          map += ` -map -0:${i} `;
+        }
+      } catch (err) {
+        response.infoLog += `☒${err}`;
       }
-    } catch (err) {
-      response.infoLog += `☒${err}`;
-    }
 
-    // convert mp4 subs that mkv doesn't support
-    try {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-          && file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mov_text') {
-        subcli += ` -c:${i} srt `;
+      // convert mp4 subs that mkv doesn't support
+      try {
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
+            && file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mov_text') {
+          subcli += ` -c:${i} srt `;
+        }
+      } catch (err) {
+        response.infoLog += `☒${err}`;
       }
-    } catch (err) {
-      response.infoLog += `☒${err}`;
-    }
 
-    // mitigate TrueHD audio causing Too many packets error
-    try {
-      if (
-        file.ffProbeData.streams[i].codec_name.toLowerCase() === 'truehd'
-        || (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'dts'
-          && file.ffProbeData.streams[i].profile.toLowerCase() === 'dts-hd ma')
-        || (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'aac'
-          && file.ffProbeData.streams[i].sample_rate.toLowerCase() === '44100'
-          && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio')
-      ) {
-        maxmux = ' -max_muxing_queue_size 9999';
+      // mitigate TrueHD audio causing Too many packets error
+      try {
+        if (
+          file.ffProbeData.streams[i].codec_name.toLowerCase() === 'truehd'
+          || (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'dts'
+            && file.ffProbeData.streams[i].profile.toLowerCase() === 'dts-hd ma')
+          || (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'aac'
+            && file.ffProbeData.streams[i].sample_rate.toLowerCase() === '44100'
+            && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio')
+        ) {
+          maxmux = ' -max_muxing_queue_size 9999';
+        }
+      } catch (err) {
+        response.infoLog += `☒${err}`;
       }
-    } catch (err) {
-      response.infoLog += `☒${err}`;
-    }
 
-    // mitigate errors due to embeded pictures
+      // mitigate errors due to embeded pictures
+      try {
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video'
+          && (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png'
+            || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'bmp'
+            || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg')
+        ) {
+          map += ` -map -0:${i} `;
+        }
+      } catch (err) {
+        response.infoLog += `☒${err}`;
+      }
+    }
+  }
+
+  for (let i = 1; i < file.mediaInfo.track.length; i += 1) {
+    // ffmpeg has a bug that doesn't properly auto-detect WEBVTT subs.
+    // Set decoder manually and convert to SRT
     try {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video'
-        && (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'png'
-          || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'bmp'
-          || file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mjpeg')
+      if (file.mediaInfo.track[i].CodecID !== undefined
+        && file.mediaInfo.track[i].CodecID.toLowerCase() === 's_text/webvtt'
       ) {
-        map += ` -map -0:${i} `;
+        decodeParameters += ` -c:${file.mediaInfo.track[i].StreamOrder} webvtt `;
+        subcli += ` -c:${file.mediaInfo.track[i].StreamOrder} srt `;
       }
     } catch (err) {
       response.infoLog += `☒${err}`;
@@ -525,10 +558,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       filterCommand = `-vf "${filterCommand}"`;
     }
 
-    response.preset += `<io> ${map} -dn -c:v hevc_nvenc -profile:v main10 -aq-mode 3 `
+    response.preset += ` ${decodeParameters} <io> ${map} -dn -c:v hevc_nvenc -profile:v main10 -aq-mode 3 `
       + `-preset ${inputs.encodingPreset} -tune hq -pix_fmt p010le ${filterCommand} -rc:v vbr -multipass 2 `
       + `-bufsize 600M -b:v 0 -maxrate:v ${maxBitrate} -qmin 0 -qmax ${cqv} -cq:v ${cqv} -rc-lookahead 32 `
-      + `-nonref_p 1 -a53cc 0 -threads 0 ${extraOptions} ${subcli} ${maxmux} -metadata ADVOVTRANSCODEDONE=true`;
+      + `-nonref_p 1 -a53cc 0 -threads 0 ${extraOptions} ${subcli} ${maxmux} ${inputs.additionalFFMPEG} `
+      + '-metadata ADVOVTRANSCODEDONE=true';
 
     response.processFile = true;
     response.FFmpegMode = true;
