@@ -98,7 +98,6 @@ const details = () => ({
       type: 'text',
     },
     tooltip: 'Specify language tag(s) here for the audio tracks you would like to keep.' +
-      'Enter "all" without quotes to keep all audio tracks.' +
       '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.' +
       '\\nExample: \\neng\\nExample: \\neng,jpn,fre',
   },
@@ -267,7 +266,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   if (inputs.minBitrate4K <= 4000 || inputs.minBitrate1080p <= 1000 || inputs.minBitrate720p <= 450 ||
     inputs.minBitrate480p <= 150 || inputs.audioBitrate <= 15 || inputs.audioChannels <= 0 ||
     inputs.audioLanguage === '' || (inputs.subLanguage === '' && (inputs.subExtract || inputs.subRmExtraLang ||
-      inputs.subRmCommentary || inputs.subRmCC_SDH)) || (inputs.keepOrigLang && inputs.tmdbAPI === '')) {
+    inputs.subRmCommentary || inputs.subRmCC_SDH)) || (inputs.keepOrigLang && inputs.tmdbAPI === '')) {
     response.processFile = false;
     response.error = true;
     response.infoLog += 'Please configure all options with reasonable values. Skipping this plugin. \n';
@@ -768,9 +767,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       }
 
       if (bolTranscodeAudio) {
-        cmdAudioMap += ` -c:a:0 ${targetAudioCodec} -b:a ${optimalAudioBitrate} `;
+        cmdAudioMap += ` -c:a:${i} ${targetAudioCodec} -b:a ${optimalAudioBitrate} `;
       } else {
-        cmdAudioMap += ' -c:a:0 copy ';
+        cmdAudioMap += ` -c:a:${i} copy `;
       }
       if (bolDownMixAudio) {
         cmdAudioMap += ` -ac ${audioNewChannels} `;
