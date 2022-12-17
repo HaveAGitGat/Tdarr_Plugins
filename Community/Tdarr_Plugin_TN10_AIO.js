@@ -513,7 +513,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         let streamBR = file.mediaInfo.track[MILoc].BitRate * 1;
 
         // eslint-disable-next-line no-restricted-globals
-        if (isNaN(streamBR) || streamBR === 0 || streamBR === null || || streamBR === undefined) {
+        if (isNaN(streamBR) || streamBR === 0 || streamBR === null || streamBR === undefined) {
           streamBR = findStreamInfo(file, i, 'bitrate');
         }
 
@@ -532,7 +532,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           let curStreamBR = file.mediaInfo.track[MILocC].BitRate * 1;
 
           // eslint-disable-next-line no-restricted-globals
-          if (isNaN(curStreamBR) || curStreamBR === 0 || curStreamBR === null || || curStreamBR === undefined) {
+          if (isNaN(curStreamBR) || curStreamBR === 0 || curStreamBR === null || curStreamBR === undefined) {
             curStreamBR = findStreamInfo(file, i, 'bitrate');
           }
 
@@ -551,7 +551,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       audioBitrate = file.mediaInfo.track[MILoc].BitRate * 1;
 
       // eslint-disable-next-line no-restricted-globals
-      if (isNaN(audioBitrate) || audioBitrate === 0 || audioBitrate === null || || audioBitrate === undefined) {
+      if (isNaN(audioBitrate) || audioBitrate === 0 || audioBitrate === null || audioBitrate === undefined) {
         audioBitrate = findStreamInfo(file, i, 'bitrate');
       }
 
@@ -643,7 +643,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let qualityAdder = null;
 
   // eslint-disable-next-line no-restricted-globals
-  if (isNaN(videoBR) || videoBR === 0 || videoBR === null || || videoBR === undefined) {
+  if (isNaN(videoBR) || videoBR === 0 || videoBR === null || videoBR === undefined) {
     videoBR = findStreamInfo(file, videoIdx, 'bitrate');
   }
 
@@ -683,7 +683,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Determine how much to increase quality over desired minimum
   // eslint-disable-next-line no-restricted-globals
-  if (isNaN(videoFPS) || videoFPS === 0 || videoFPS === null || || videoFPS === undefined) {
+  if (isNaN(videoFPS) || videoFPS === 0 || videoFPS === null || videoFPS === undefined) {
     qualityAdder = 0.05;
   } else {
     qualityAdder = (videoFPS / targetFrameRate) / 20;
@@ -717,7 +717,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Optimal bitrate calculated to be: ${Math.round(optimalVideoBitrate / 1000)}kbps. \n`;
 
   // eslint-disable-next-line no-restricted-globals
-  if (isNaN(videoBR) || videoBR === 0 || videoBR === null || || videoBR === undefined) {
+  if (isNaN(videoBR) || videoBR === 0 || videoBR === null || videoBR === undefined) {
     // Cannot determine source bitrate
     response.infoLog +=
       'Cannot determine source bitrate, using minimum acceptable bitrate.\n';
@@ -777,7 +777,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       let audioBR = file.mediaInfo.track[findMediaInfoItem(file, streamIdx)].BitRate * 1;
 
       // eslint-disable-next-line no-restricted-globals
-      if (isNaN(audioBR) || audioBR === 0 || audioBR === null || || audioBR === undefined) {
+      if (isNaN(audioBR) || audioBR === 0 || audioBR === null || audioBR === undefined) {
         audioBR = findStreamInfo(file, streamIdx, 'bitrate');
       }
 
@@ -794,7 +794,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       optimalAudioBitrate = audioNewChannels * targetAudioBitratePerChannel;
 
       // eslint-disable-next-line no-restricted-globals
-      if (isNaN(audioBR) || audioBR === 0 || audioBR === null || || audioBR === undefined) {
+      if (isNaN(audioBR) || audioBR === 0 || audioBR === null || audioBR === undefined) {
         // Cannot determine source bitrate
         optimalAudioBitrate = audioNewChannels * 32000;
         bolModifyStream = true;
