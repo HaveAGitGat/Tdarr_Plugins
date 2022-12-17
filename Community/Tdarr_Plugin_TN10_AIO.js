@@ -631,10 +631,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   MILoc = findMediaInfoItem(file, videoIdx);
 
+  const videoFPS = file.mediaInfo.track[MILoc].FrameRate * 1;
   let videoHeight = file.ffProbeData.streams[videoIdx].height * 1;
   let videoWidth = file.ffProbeData.streams[videoIdx].width * 1;
-  const videoFPS = file.mediaInfo.track[MILoc].FrameRate * 1;
   let videoBR = file.mediaInfo.track[MILoc].BitRate * 1;
+  let qualityAdder = null;
 
   // eslint-disable-next-line no-restricted-globals
   if (isNaN(videoBR)) videoBR = findStreamInfo(file, videoIdx, 'bitrate');
@@ -674,7 +675,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Determine how much to increase quality over desired minimum
-  const qualityAdder = (videoFPS / targetFrameRate) / 20;
+  if (isNaN(videoFPS) || videoFPS === 0 || videoFPS === null) {
+    qualityAdder = 0.05;
+  } else {
+    qualityAdder = (videoFPS / targetFrameRate) / 20;
+  }
 
   // We need to set the minimum bitrate and calculate the target codec compression
   if ((videoHeight * videoWidth) > minVideoPixels4K) {
@@ -954,11 +959,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         if (bolSource10bit) {
           if (strFormat.length > 0) strFormat += ',';
           // Used to make it sure the software decode is in the proper pixel format
-          strFormat += 'nv12|vaapi,hwupload';
+          strFormat += 'nv12|vaapi';
         }
         if (strFormat.length > 0) strFormat += ',';
         // Used to make it use software decode if necessary
-        strFormat += 'nv12,hwupload';
+        strFormat += 'hwupload';
       }
 
       if (strFormat.length > 0) {
