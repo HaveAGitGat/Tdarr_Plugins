@@ -1,4 +1,4 @@
-// jshint esversion: 6
+// jshint esversion: 8
 /* eslint operator-linebreak: ["error", "after"] */
 /* eslint eqeqeq: 1 */
 /* eslint no-await-in-loop: 0 */
@@ -26,7 +26,7 @@ const details = () => ({
     'as-filmed, language if enabled. At least one audio stream wil be kept regardless of settings, all others ' +
     'will be removed. Extract/copy/remove embedded text and image based subtitles. ' +
     'S_TEXT/WEBVTT subtitles will be removed.\n\n',
-  Version: '1.01',
+  Version: '1.02',
   Tags: 'pre-processing,ffmpeg,video,audio,subtitle,qsv,vaapi,h265,aac,configurable',
   Inputs: [{
     name: 'reProcess',
@@ -339,7 +339,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Settings
   /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Pre-Processing
   const bolReProcess = inputs.reProcess;
+  const proc = require('child_process');
+  let bolStatsAreCurrent = false;
 
   // Video
   const targetVideoCodec = 'hevc'; // Desired Video Codec, if you change this it might require code changes
@@ -384,31 +387,60 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // Check if mediaInfo exisits, if not, remux to fix.
-  if (file.scannerReads.mediaInfoRead !== 'success') {
-    response.infoLog += 'Cannot read mediaInfo, a remux will likely fix.\n' +
+  // Check that all necessary information exists, if not, add it.
+  if (file.scannerReads.mediaInfoRead !== 'success' ||
+    (file.container === 'mkv' && (file.ffProbeData.streams[0].tags === undefined ||
+    file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng'] === undefined))) {
+    response.infoLog += 'File is missing required information, a remux will likely fix.\n' +
       'Make sure MediaInfo is turned on in library settings.\n';
+    if (file.container === 'mkv') {
+      try {
+        proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+      } catch (err) {
+        response.infoLog += '- Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
+      }
+    }
     response.preset += ' <io> -map 0 -c copy ';
     response.container = `.${file.container}`;
     response.processFile = true;
     return response;
   }
 
-  // Check if file was processed by this plugin.
+  // Check if file was processed by this plugin and update stats if necessary.
   if (file.container === 'mkv') {
+    const statsDate = Date.parse(`${file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng']} GMT`);
+    const statsDateISO = new Date(statsDate).toISOString().split('.')[0];
+    response.infoLog += `Date file statistics were updated: ${statsDateISO}\n`;
+
     if (file.mediaInfo.track[0].extra !== undefined && file.mediaInfo.track[0].extra.TNDATE !== undefined) {
       const TNDate = Date.parse(file.mediaInfo.track[0].extra.TNDATE);
       const TNDateISO = new Date(TNDate).toISOString().split('.')[0];
-      response.infoLog += `Date last processed by this plugin: ${TNDateISO} `;
-
+      response.infoLog += `Date last processed by this plugin: ${TNDateISO}\n`;
+      if (statsDate >= TNDate) {
+        bolStatsAreCurrent = true;
+      } else {
+        response.infoLog += 'Stats need to be updated!\n';
+        try {
+          proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+        } catch (err) {
+          response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
+        }
+      }
       // If the file was just processed we dont need to do it again.
       const processTimeout = 6 * 60 * 60 * 1000;
       const processLast = Date.now() - TNDate;
       const reProcessIn = Math.round(((TNDate + processTimeout) - Date.now()) / (1000 * 60));
       if (bolReProcess && (processLast > processTimeout)) {
-        response.infoLog += '- Re-Processing!\n';
+        response.infoLog += 'Re-Processing!\n';
+        if (!bolStatsAreCurrent) {
+          response.infoLog += 'Need to remux to get updated stats\n';
+          response.preset += ' <io> -map 0 -c copy ';
+          response.container = `.${file.container}`;
+          response.processFile = true;
+          return response;
+        }
       } else {
-        response.infoLog += '- Skipping!\n';
+        response.infoLog += 'Skipping!\n';
         if (bolReProcess) response.infoLog += `Eligible for re-processing in ${reProcessIn} minutes.\n`;
         return response;
       }
