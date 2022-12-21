@@ -42,6 +42,15 @@ const details = () => ({
     tooltip: 'Allow previously processed file to be processed again with different parameters.',
   },
   {
+    name: 'statsDays',
+    type: 'number',
+    defaultValue: 21,
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: 'If the stats date on mkv files are older than this they will be updated.',
+  },
+  {
     name: 'minBitrate4K',
     type: 'number',
     defaultValue: 20000,
@@ -267,7 +276,7 @@ const findStreamInfo = (file, index, info) => {
   let disposition = '';
   let language = '???';
   let title = '';
-  let bitrate = null;
+  let bitrate;
   if (file.ffProbeData.streams[index].tags !== undefined) {
     if (file.ffProbeData.streams[index].tags.language !== undefined) {
       language = file.ffProbeData.streams[index].tags.language.toLowerCase();
@@ -335,14 +344,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  const currentFileName = file._id; // .replace(/'/g, "'\"'\"'");
-
   // Settings
   /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Pre-Processing
-  const bolReProcess = inputs.reProcess;
-  const proc = require('child_process');
-  let bolStatsAreCurrent = false;
 
   // Video
   const targetVideoCodec = 'hevc'; // Desired Video Codec, if you change this it might require code changes
@@ -380,6 +383,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   /// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Pre-Process Checks
+  const intStatsDays = inputs.statsDays;
+  const bolReProcess = inputs.reProcess;
+  const proc = require('child_process');
+  let bolStatsAreCurrent = false;
+
   // Check if file is a video, if it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
     response.infoLog += 'File is not a video. Exiting \n';
@@ -387,64 +395,66 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // Check that all necessary information exists, if not, add it.
-  if (file.scannerReads.mediaInfoRead !== 'success' ||
-    (file.container === 'mkv' && (file.ffProbeData.streams[0].tags === undefined ||
-    file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng'] === undefined))) {
-    response.infoLog += 'File is missing required information, a remux will likely fix.\n' +
-      'Make sure MediaInfo is turned on in library settings.\n';
-    if (file.container === 'mkv') {
-      try {
-        proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
-      } catch (err) {
-        response.infoLog += '- Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
-      }
-    }
-    response.preset += ' <io> -map 0 -c copy ';
-    response.container = `.${file.container}`;
-    response.processFile = true;
-    return response;
-  }
-
-  // Check if file was processed by this plugin and update stats if necessary.
+  // Check file statistics.
   if (file.container === 'mkv') {
-    const statsDate = Date.parse(`${file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng']} GMT`);
-    const statsDateISO = new Date(statsDate).toISOString().split('.')[0];
-    response.infoLog += `Date file statistics were updated: ${statsDateISO}\n`;
+    let TNDate;
+    let statsDate = Date.parse(new Date(70, 1).toISOString());
+    if (file.ffProbeData.streams[0].tags !== undefined &&
+      file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng'] !== undefined) {
+      statsDate = Date.parse(`${file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng']} GMT`);
+      const statsDateISO = new Date(statsDate).toISOString().split('.')[0];
+      response.infoLog += `Date file statistics were updated: ${statsDateISO}\n`;
+    }
 
-    if (file.mediaInfo.track[0].extra !== undefined && file.mediaInfo.track[0].extra.TNDATE !== undefined) {
-      const TNDate = Date.parse(file.mediaInfo.track[0].extra.TNDATE);
+    if (file.scannerReads.mediaInfoRead === 'success' &&
+      (file.mediaInfo.track[0].extra !== undefined && file.mediaInfo.track[0].extra.TNDATE !== undefined)) {
+      TNDate = Date.parse(file.mediaInfo.track[0].extra.TNDATE);
       const TNDateISO = new Date(TNDate).toISOString().split('.')[0];
       response.infoLog += `Date last processed by this plugin: ${TNDateISO}\n`;
       if (statsDate >= TNDate) {
         bolStatsAreCurrent = true;
-      } else {
-        response.infoLog += 'Stats need to be updated!\n';
-        try {
-          proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
-        } catch (err) {
-          response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
-        }
       }
-      // If the file was just processed we dont need to do it again.
+    } else {
+      const statsThres = Date.parse(new Date(new Date().setDate(new Date().getDate() - intStatsDays)).toISOString());
+      if (statsDate >= statsThres) {
+        bolStatsAreCurrent = true;
+      }
+    }
+
+    if (!bolStatsAreCurrent) {
+      response.infoLog += 'Stats need to be updated!\n';
+      try {
+        proc.execSync(`mkvpropedit --add-track-statistics-tags "${file.file}"`);
+      } catch (err) {
+        response.infoLog += '- Error updating stats, will continue anyways.\n';
+      }
+    }
+
+    // If the file was just processed we dont need to do it again.
+    if (TNDate) {
       const processTimeout = 6 * 60 * 60 * 1000;
       const processLast = Date.now() - TNDate;
       const reProcessIn = Math.round(((TNDate + processTimeout) - Date.now()) / (1000 * 60));
       if (bolReProcess && (processLast > processTimeout)) {
         response.infoLog += 'Re-Processing!\n';
-        if (!bolStatsAreCurrent) {
-          response.infoLog += 'Need to remux to get updated stats\n';
-          response.preset += ' <io> -map 0 -c copy ';
-          response.container = `.${file.container}`;
-          response.processFile = true;
-          return response;
-        }
       } else {
-        response.infoLog += 'Skipping!\n';
+        response.infoLog += 'Will not re-process!\n';
         if (bolReProcess) response.infoLog += `Eligible for re-processing in ${reProcessIn} minutes.\n`;
         return response;
       }
     }
+  }
+
+  // Check that all necessary information exists, if not, add it.
+  if (file.scannerReads.mediaInfoRead !== 'success' || (file.container === 'mkv' && !bolStatsAreCurrent)) {
+    if (file.scannerReads.mediaInfoRead !== 'success') {
+      response.infoLog += 'MediaInfo is missing, make sure switch is enabled in library settings.\n';
+    }
+    response.infoLog += 'File needs work before this plugin can continue, remuxing!\n';
+    response.preset += ' <io> -map 0 -c copy ';
+    response.container = `.${file.container}`;
+    response.processFile = true;
+    return response;
   }
 
   // Logic Controls
@@ -478,7 +488,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     let imdbID;
     let original3Language;
     const idRegex = /(tt\d{7,8})/;
-    const idMatch = currentFileName.match(idRegex);
+    const idMatch = otherArguments.originalLibraryFile.file.match(idRegex);
     // eslint-disable-next-line prefer-destructuring
     if (idMatch) imdbID = idMatch[1];
     if (imdbID && (imdbID.length === 9 || imdbID.length === 10)) {
@@ -672,7 +682,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let videoHeight = file.ffProbeData.streams[videoIdx].height * 1;
   let videoWidth = file.ffProbeData.streams[videoIdx].width * 1;
   let videoBR = file.mediaInfo.track[MILoc].BitRate * 1;
-  let qualityAdder = null;
+  let qualityAdder;
 
   // eslint-disable-next-line no-restricted-globals
   if (isNaN(videoBR) || videoBR === 0 || videoBR === null || videoBR === undefined) {
