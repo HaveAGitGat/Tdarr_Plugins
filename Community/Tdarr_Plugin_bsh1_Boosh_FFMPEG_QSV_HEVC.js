@@ -48,11 +48,11 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specifies the output container of the file.
-      \\n Ensure that all stream types you may have are supported by your chosen container.
+      \\nSpecifies the output container of the file.
+      \\nEnsure that all stream types you may have are supported by your chosen container.
       \\n
       ==INFO==
-      \\n Only MP4 & MKV are supported and MKV is recommended.
+      \\nOnly MP4 & MKV are supported and MKV is recommended.
       \\nExample:\\n
       mkv
       \\nExample:\\n
@@ -71,16 +71,16 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Make the file conform to output containers requirements.
+      \\nMake the file conform to output containers requirements.
       Use if you need to ensure the encode works from mp4>mkv or mkv>mp4. \\n
       ==WARNING== \\n
       This will remove data of certain types so ensure you are happy with that,
       or use another plugin to convert these data types first!
       \\n
       ==INFO==
-      \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
-      \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
-      \\n Default is false.
+      \\nDrop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
+      \\nDrop data streams/mov_text/eia_608/timed_id3 for MKV.
+      \\nDefault is false.
       \\nExample:\\n
       true
       \\nExample:\\n
@@ -99,14 +99,14 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify if we want to enable 10bit encoding. 
-      \\n If this is enabled files will be processed and converted into 10bit 
+      \\nSpecify if we want to enable 10bit encoding. 
+      \\nIf this is enabled files will be processed and converted into 10bit 
       HEVC using main10 profile and with p010le pixel format. \n
       If you just want to retain files that are already 10 bit then this can be left as false, as 
       10bit to 10bit in ffmpeg should be automatic.
       \\n
       ==INFO==
-      \\n Default is "false". 
+      \\nDefault is "false". 
       \\nExample:\\n
       true
       \\nExample:\\n
@@ -130,15 +130,15 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify the encoder speed/preset to use. 
+      \\nSpecify the encoder speed/preset to use. 
       Slower options mean a slower encode but better quality and faster options mean faster encodes but 
       worse quality.
-      \\n For more information see intel white paper on ffmpeg results using QSV: \\n`
+      \\nFor more information see intel white paper on ffmpeg results using QSV: \\n`
         // eslint-disable-next-line max-len
         + `https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/cloud-computing-quicksync-video-ffmpeg-white-paper.pdf
       \\n
       ==INFO==
-      \\n Default is "slow". 
+      \\nDefault is "slow". 
       \\nExample:\\n
       medium
       \\nExample:\\n
@@ -153,7 +153,7 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Here you can add extra options to the ffmpeg QSV ENCODE cmd. 
+      \\nHere you can add extra options to the ffmpeg QSV ENCODE cmd. 
       This does not override the ffmpeg cmd, it just allows additions to it.
       \\n
       There are extra QSV options that can be
@@ -167,8 +167,8 @@ const details = () => ({
       MAC SPECIFIC - This option is ignored on Mac because videotoolbox is used rather than qsv.
       \\n
       ==INFO==
-      \\n Default is empty but a suggested value is below. If unsure just leave empty.
-      \\n Ensure to only use cmds valid to encoding QSV as the script handles other ffmpeg cmds relating to 
+      \\nDefault is empty but a suggested value is below. If unsure just leave empty.
+      \\nEnsure to only use cmds valid to encoding QSV as the script handles other ffmpeg cmds relating to 
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nExample:\\n
       -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
@@ -182,12 +182,12 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify bitrate cutoff, files with a video bitrate lower then this will not be processed. \n
+      \\nSpecify bitrate cutoff, files with a video bitrate lower then this will not be processed. \n
       \\n
       ==INFO==
-      \\n Rate is in kbps.
-      \\n Defaults to 0 which means this is disabled.
-      \\n Enter a valid number to enable.
+      \\nRate is in kbps.
+      \\nDefaults to 0 which means this is disabled.
+      \\nEnter a valid number to enable.
       \\nExample:\\n
       2500
       \\nExample:\\n
@@ -202,16 +202,16 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify a maximum average video bitrate. When encoding we take the current video bitrate and halve it 
+      \\nSpecify a maximum average video bitrate. When encoding we take the current video bitrate and halve it 
       to get an average target. This option sets a upper limit to that average 
       (i.e if you have a video bitrate of 10000, half is 5000, if your maximum desired average bitrate is 4000
       then we use that as the target instead of 5000).
       \\n
       ==INFO==
-      \\n Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
-      \\n Rate is in kbps.
-      \\n Defaults to 0 which means this is disabled.
-      \\n Enter a valid number to enable.
+      \\nBitrate here is referring to video bitrate as we want to set the video bitrate on encode.
+      \\nRate is in kbps.
+      \\nDefaults to 0 which means this is disabled.
+      \\nEnter a valid number to enable.
       \\nExample:\\n
       4000
       \\nExample:\\n
@@ -226,16 +226,16 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Specify a minimum average video bitrate. When encoding we take the current video bitrate and halve 
+      \\nSpecify a minimum average video bitrate. When encoding we take the current video bitrate and halve 
       it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
       of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
       of 1500).
       \\n
       ==INFO==
-      \\n Bitrate here is referring to video bitrate as we want to set the video bitrate on encode.
-      \\n Rate is in kbps.
-      \\n Defaults to 0 which means this is disabled.
-      \\n Enter a valid number to enable.
+      \\nBitrate here is referring to video bitrate as we want to set the video bitrate on encode.
+      \\nRate is in kbps.
+      \\nDefaults to 0 which means this is disabled.
+      \\nEnter a valid number to enable.
       \\nExample:\\n
       2000
       \\nExample:\\n
@@ -254,20 +254,20 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Set to reprocess HEVC, VP9 or AV1 files (i.e reduce bitrate of files already in those codecs). 
-      \\n Since this uses the same logic as normal, halving the current bitrate, this is NOT recommended 
+      \\nSet to reprocess HEVC, VP9 or AV1 files (i.e reduce bitrate of files already in those codecs). 
+      \\nSince this uses the same logic as normal, halving the current bitrate, this is NOT recommended 
       unless you know what you are doing, so please leave FALSE if unsure! 
-      \\n NEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
-      \\n This is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
+      \\nNEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
+      \\nThis is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
       bitrate and you'd like to reduce it.
       \\n
       ==WARNING== \\n
       IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION. \\n
-      \\n This option has the potential to LOOP your encodes! You can encode a file to HEVC and still 
+      \\nThis option has the potential to LOOP your encodes! You can encode a file to HEVC and still 
       be above your cutoff and it would be converted again & again if this is set to true (since it's now HEVC). 
       So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping. 
       Also it is highly suggested that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
-      \\n Please be certain you want this enabled before setting it otherwise leave this as FALSE!
+      \\nPlease be certain you want this enabled before setting it otherwise leave this as FALSE!
       While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
       and will be forced to fall back onto estimates. Please bare this in mind when using the HEVC reprocess option.
       \\n
@@ -285,10 +285,10 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\n Has no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
+      \\nHas no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
       allowed average OVERALL bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
       specifically for HEVC files. It should be set HIGHER then your standard cutoff for safety.
-      \\n Also, it's highly suggested you use the min & max average bitrate options in combination with this. You
+      \\nAlso, it's highly suggested you use the min & max average bitrate options in combination with this. You
       will want those to control the encoded video bitrate, otherwise you may end up repeatedly reprocessing HEVC files.
       i.e your file might have a overall bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
       multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful this is why it is NOT 
@@ -299,9 +299,9 @@ const details = () => ({
       and will be forced to fall back onto estimates. Please bare this in mind when using the HEVC reprocess option.
       \\n
       ==INFO==
-      \\n Rate is in kbps.
-      \\n Defaults to 0 which means this is disabled.
-      \\n Enter a valid number to enable, otherwise we use "bitrate_cutoff" and multiply x2 for a safe limit.
+      \\nRate is in kbps.
+      \\nDefaults to 0 which means this is disabled.
+      \\nEnter a valid number to enable, otherwise we use "bitrate_cutoff" and multiply x2 for a safe limit.
       \\nExample:\\n
       4000
       \\nExample:\\n
