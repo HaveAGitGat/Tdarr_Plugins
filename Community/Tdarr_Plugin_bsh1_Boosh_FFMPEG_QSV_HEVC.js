@@ -26,14 +26,14 @@ const details = () => ({
     Settings are dependant on file bitrate working by the logic that H265 can support the same amount of data at half 
     the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 unless "reconvert_hevc" is marked as 
     true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate".
-    This plugin will also attempt to use MediaInfo to generate accurate bitrate metadata in MKV files.
-    It's not required to enable MediaInfo but highly recommended to ensure accurate bitrates are used when 
+    This plugin will also attempt to use mkvpropedit to generate accurate bitrate metadata in MKV files.
+    It's not required to enable mkvpropedit but highly recommended to ensure accurate bitrates are used when 
     encoding your media. 
     \n\n==NOTE== Intel ARC cards are reportedly working successfully with this plugin, however please bare in mind that 
     I've not officially tested with them yet and your results might vary. Don't just assume it will work and if it does
     ensure you properly test your files & workflow!`,
   Version: '1.0',
-  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mediainfo,configurable',
+  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mkvpropedit,configurable',
   Inputs: [
     {
       name: 'container',
