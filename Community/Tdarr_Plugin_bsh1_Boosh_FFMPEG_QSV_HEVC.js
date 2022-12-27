@@ -3,8 +3,10 @@
 // Extra logic is mainly to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
 
 // NOTE - This does not use VAAPI, it is QSV only. So newer intel iGPUs only. 8th+ gen should work.
-// Additionally this was designed and tested on UNRAID via docker though there is logic to support use on
-// Windows, Linux & Mac - All platforms have now been confirmed working, however there is no way to test all use cases
+// Additionally this was designed and tested on UNRAID via docker, though there is logic to support use on
+// Windows & Linux - Both platforms have now been confirmed working, however there is no way to test all use cases
+// Mac is supported, however it does not use QSV. This is because ffmpeg on Mac does not actually leverage QSV and
+// instead uses "VideoToolbox" which is more a general video encode accelerator.
 
 // White paper from intel regarding QSV performance on linux using FFMPEG here:
 // eslint-disable-next-line max-len
@@ -16,15 +18,22 @@ const details = () => ({
   Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `This is a QSV specific plugin. 8th+ gen INTEL QSV enabled CPUs are required. VAAPI is NOT used. 
-    Non H265/HEVC files will be transcoded into H265/HEVC using Quick Sync Video (QSV) via Intel GPU using ffmpeg. 
+  Description: `==DETAILS== This is a QSV plugin. 8th+ gen INTEL QSV enabled CPUs are recommended. VAAPI is NOT used. 
+    \n\n==OS SUPPORT== This plugin supports Linux & Windows using QSV. Mac is supported though cannot use QSV and 
+    relies on 'VideoToolBox' - Expect to see different encode speed & quality on Mac compared to other platforms. 
+    Ensure you set your node settings accordingly!
+    \n\n==LOGIC== Files will be transcoded into H265/HEVC using Quick Sync Video (QSV) via Intel GPU using ffmpeg. 
     Settings are dependant on file bitrate working by the logic that H265 can support the same amount of data at half 
     the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 unless "reconvert_hevc" is marked as 
-    true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate". 
-    Reminder! An INTEL QSV enabled CPU is required. NOTE - This plugin should support Linux, Windows & Mac. 
-    Linux & Windows will leverage QSV & Mac will use 'VideoToolBox' - Set your node settings accordingly`,
+    true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate".
+    This plugin will also attempt to use MediaInfo to generate accurate bitrate metadata in MKV files.
+    It's not required to enable MediaInfo but highly recommended to ensure accurate bitrates are used when 
+    encoding your media. 
+    \n\n==NOTE== Intel ARC cards are reportedly working successfully with this plugin, however please bare in mind that 
+    I've not officially tested with them yet and your results might vary. Don't just assume it will work and if it does
+    ensure you properly test your files & workflow!`,
   Version: '1.0',
-  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
+  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mediainfo,configurable',
   Inputs: [
     {
       name: 'container',
@@ -41,6 +50,7 @@ const details = () => ({
       ==DESCRIPTION==
       \\n Specifies the output container of the file.
       \\n Ensure that all stream types you may have are supported by your chosen container.
+      \\n
       ==INFO==
       \\n Only MP4 & MKV are supported and MKV is recommended.
       \\nExample:\\n
@@ -71,6 +81,32 @@ const details = () => ({
       \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
       \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
       \\n Default is false.
+      \\nExample:\\n
+      true
+      \\nExample:\\n
+      false`,
+    },
+    {
+      name: 'enable_10bit',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `\\n
+      ==DESCRIPTION==
+      \\n Specify if we want to enable 10bit encoding. 
+      \\n If this is enabled files will be processed and converted into 10bit 
+      HEVC using main10 profile and with p010le pixel format. \n
+      If you just want to retain files that are already 10 bit then this can be left as false, as 
+      10bit to 10bit in ffmpeg should be automatic.
+      \\n
+      ==INFO==
+      \\n Default is "false". 
       \\nExample:\\n
       true
       \\nExample:\\n
@@ -136,32 +172,6 @@ const details = () => ({
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nExample:\\n
       -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
-    },
-    {
-      name: 'enable_10bit',
-      type: 'boolean',
-      defaultValue: false,
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
-      },
-      tooltip: `\\n
-      ==DESCRIPTION==
-      \\n Specify if we want to enable 10bit encoding. 
-      \\n If this is enabled files will be processed and converted into 10bit 
-      HEVC using main10 profile and with p010le pixel format. \n
-      If you just want to retain files that are already 10 bit then this can be left as false, as 
-      10bit to 10bit in ffmpeg should be automatic.
-      \\n
-      ==INFO==
-      \\n Default is "false". 
-      \\nExample:\\n
-      true
-      \\nExample:\\n
-      false`,
     },
     {
       name: 'bitrate_cutoff',
@@ -258,9 +268,8 @@ const details = () => ({
       So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping. 
       Also it is highly suggested that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
       \\n Please be certain you want this enabled before setting it otherwise leave this as FALSE!
-      We can not reliably get the video bitrate when reprocessing HEVC files - Especially when converting from other 
-      formats into to HEVC & then checking the HEVC file again on a 2nd pass. Please bare this in mind when using the 
-      HEVC reprocess option.
+      While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
+      and will be forced to fall back onto estimates. Please bare this in mind when using the HEVC reprocess option.
       \\n
       \\nExample:\\n
       true
@@ -286,9 +295,8 @@ const details = () => ({
       recommended!
       \\n
       ==WARNING== \\n
-      We can not reliably get the video bitrate when reprocessing HEVC files - Especially when converting from H264 to 
-      HEVC & then checking the HEVC file again on a 2nd pass. Please bare this in mind when using the HEVC reprocess 
-      option.
+      While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
+      and will be forced to fall back onto estimates. Please bare this in mind when using the HEVC reprocess option.
       \\n
       ==INFO==
       \\n Rate is in kbps.
