@@ -788,8 +788,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     default:
       // Normal behavior
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} 
-        -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments} ${metadataEncode}`;
+        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} `
+        + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments} ${metadataEncode}`;
   }
 
   response.processFile = true;
