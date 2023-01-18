@@ -728,31 +728,31 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (main10 === false) { // Don't enable if 10bit is on - seems to have issue with -c:v commands
         switch (file.video_codec_name) {
           case 'mpeg2':
-            response.preset += '-hwaccel qsv -c:v mpeg2_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v mpeg2_qsv';
             break;
           case 'h264':
-            response.preset += '-hwaccel qsv -c:v h264_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v h264_qsv';
             break;
           case 'vc1':
-            response.preset += '-hwaccel qsv -c:v vc1_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v vc1_qsv';
             break;
           case 'mjpeg':
-            response.preset += '-hwaccel qsv -c:v mjpeg_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v mjpeg_qsv';
             break;
           case 'vp8':
-            response.preset += '-hwaccel qsv -c:v vp8_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v vp8_qsv';
             break;
           case 'hevc':
-            response.preset += '-hwaccel qsv -c:v hevc_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v hevc_qsv';
             break;
           case 'vp9': // Should be supported by 8th Gen +
-            response.preset += '-hwaccel qsv -c:v vp9_qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v vp9_qsv';
             break;
           default:
-            response.preset += '-hwaccel qsv';
+            response.preset += '-hwaccel qsv -hwaccel_output_format qsv';
         }
       } else {
-        response.preset += '-hwaccel qsv'; // Enable basic hwaccel regardless.
+        response.preset += '-hwaccel qsv -hwaccel_output_format qsv'; // Enable basic hwaccel regardless.
       }
   }
 
