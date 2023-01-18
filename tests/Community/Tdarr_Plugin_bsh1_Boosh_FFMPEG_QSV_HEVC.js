@@ -45,7 +45,7 @@ const tests = [
       },
       darwin: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999  ',
+        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow -c:a copy -c:s copy -max_muxing_queue_size 9999  ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -56,6 +56,8 @@ const tests = [
           + 'Target = 603k \n'
           + 'Minimum = 452k \n'
           + 'Maximum = 754k \n'
+          + '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
+          + 'cmds set in extra_qsv_options will be IGNORED!\n'
           + 'File Transcoding... \n',
         container: '.mkv',
       },
@@ -109,7 +111,7 @@ const tests = [
       },
       darwin: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -profile:v main10 -pix_fmt p010le  ',
+        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 9999 -profile:v main10 -pix_fmt p010le  ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -121,6 +123,8 @@ const tests = [
           + 'Target = 603k \n'
           + 'Minimum = 452k \n'
           + 'Maximum = 754k \n'
+          + '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
+          + 'cmds set in extra_qsv_options will be IGNORED!\n'
           + 'File Transcoding... \n',
         container: '.mp4',
       },
