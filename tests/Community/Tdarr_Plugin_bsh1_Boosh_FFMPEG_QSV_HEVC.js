@@ -144,8 +144,10 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☑ It looks like the current bitrate is 1517k. \n'
-        + '☑ Current bitrate is below set cutoff of 2000k. Cancelling plugin. \n',
+      infoLog: 'Input file is not MKV so cannot use mkvpropedit to get new file stats. Continuing but file stats will likely be inaccurate...\n'
+        + '☑ It looks like the current video bitrate is 1206kbps. \n'
+        + '☑ Current bitrate is below set cutoff of 2000kbps. \n'
+        + 'Cancelling plugin. \n',
       container: '.mp4',
     },
   },

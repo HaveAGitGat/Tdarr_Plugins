@@ -504,8 +504,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Checks if currentBitrate is below inputs.bitrate_cutoff.
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
-      response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}kbps. 
-      Cancelling plugin. \n`;
+      response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}kbps. \n`
+      + 'Cancelling plugin. \n';
       return response;
     }
     // If above cutoff then carry on
