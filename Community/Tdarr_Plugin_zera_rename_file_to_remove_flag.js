@@ -8,7 +8,7 @@ const details = () => {
     Name: "Rename file to remove Flag",
     Type: "Video",
     Operation: "Transcode",
-    Description: `If the file name contains a provided flag, it will remove said flag (Put after transcoding operations) \n\n`,
+    Description: `If the file name contains a provided flag, it will remove said flag (Put after transcoding operations)\n\n Based on the Community Plugin "Tdarr_Plugin_z18s_rename_files_based_on_codec" \n\n`,
     Version: "1.00",
     Tags: "post-processing",
     Inputs:[
@@ -20,7 +20,7 @@ const details = () => {
           type: 'text',
         },
         tooltip:
-          `Enter the text you want to be removed from your file names. This is designed for people who want to use Sonarr/Radarr to download files but only have Plex/Emby/Jellyfin recognise them AFTER transcoding has been done. Based on the Community Plugin "Tdarr_Plugin_z18s_rename_files_based_on_codec"`,
+          `Enter the text you want to be removed from your file names. This is designed for people who want to use Sonarr/Radarr to download files but only have Plex/Emby/Jellyfin recognise them AFTER transcoding has been done.`,
       }
     ]
   };
