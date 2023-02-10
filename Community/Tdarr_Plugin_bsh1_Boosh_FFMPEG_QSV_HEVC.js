@@ -32,7 +32,7 @@ const details = () => ({
     \n\n==NOTE== Intel ARC cards are reportedly working successfully with this plugin, however please bare in mind that 
     I've not officially tested with them yet and your results might vary. Don't just assume it will work and if it does
     ensure you properly test your files & workflow!`,
-  Version: '1.0',
+  Version: '1.2',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mkvpropedit,configurable',
   Inputs: [
     {
@@ -167,11 +167,18 @@ const details = () => ({
       MAC SPECIFIC - This option is ignored on Mac because videotoolbox is used rather than qsv.
       \\n
       ==INFO==
-      \\nDefault is empty but a suggested value is below. If unsure just leave empty.
+      \\nDefault is empty but the first example below has a suggested value. If unsure just leave empty.
       \\nEnsure to only use cmds valid to encoding QSV as the script handles other ffmpeg cmds relating to 
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nExample:\\n
-      -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1`,
+      -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1
+      \\n Above enables look ahead, extended bitrate control, b-frames, etc.\\n
+      \\nExample:\\n
+      -vf scale_qsv=w=1280:h=720
+      \\nScale video resolution Method 1\\n
+      \\nExample:\\n
+      -vf scale_qsv=1280:-1
+      \\nScale video resolution Method 2\\n`,
     },
     {
       name: 'bitrate_cutoff',
