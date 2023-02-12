@@ -174,7 +174,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // If not filled then get duration of stream 0 and do the same.
   if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
     duration = parseFloat(file.ffProbeData?.format?.duration) * 0.0166667;
-  } if (typeof file.meta.Duration !== 'undefined') {
+  } else if (typeof file.meta.Duration !== 'undefined') {
     duration = file.meta.Duration * 0.0166667;
   } else {
     duration = file.ffProbeData.streams[0].duration * 0.0166667;
