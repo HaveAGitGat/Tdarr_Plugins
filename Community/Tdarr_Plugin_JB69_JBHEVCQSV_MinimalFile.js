@@ -396,8 +396,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           streamBR = file.mediaInfo.track[MILoc].extra.FromStats_BitRate * 1;
         }
 
+        let duration = 0;
+        if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+          duration = parseFloat(file.ffProbeData?.format?.duration);
+        } else {
+          duration = file.meta.Duration;
+        }
+
         response.infoLog
-          += `Video stream ${i}:${Math.floor(file.meta.Duration / 60)}:`
+          += `Video stream ${i}:${Math.floor(duration / 60)}:`
           + `${file.ffProbeData.streams[i].codec_name}${(bolSource10bit) ? '(10)' : ''}`;
         response.infoLog += `:${streamWidth}x${streamHeight}x${streamFPS}:${streamBR}bps \n`;
 

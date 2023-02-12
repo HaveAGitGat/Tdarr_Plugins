@@ -142,6 +142,10 @@ class Configurator {
  * Returns the duration of the file in minutes.
  */
 function getFileDurationInMinutes(file) {
+  if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+    return parseFloat(file.ffProbeData?.format?.duration) * 0.0166667;
+  }
+
   return typeof file.meta.Duration != undefined
     ? file.meta.Duration * 0.0166667
     : file.ffProbeData.streams[0].duration * 0.0166667;
@@ -409,8 +413,8 @@ function buildVideoConfiguration(inputs, file, logger) {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-    
-    const lib = require('../methods/lib')();
+
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   var response = {
