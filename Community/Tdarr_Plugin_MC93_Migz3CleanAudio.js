@@ -171,10 +171,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Error
     }
 
-    if (removeTrack){
-        audioStreamsRemoved += 1;
-        ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
-        convert = true;
+    if (removeTrack) {
+      audioStreamsRemoved += 1;
+      ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
+      convert = true;
     }
     // Check if inputs.tag_language has something entered
     // (Entered means user actually wants something to happen, empty would disable this)
