@@ -78,7 +78,7 @@ const details = () => ({
            \\nDo NOT use this with mp4, as mp4 does not support title tags.
     \\nExample:\\n
     true
-
+    
     \\nExample:\\n
     false`,
   },
@@ -127,6 +127,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   ).length;
 
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+    let removeTrack = false;
     // Catch error here incase the language metadata is completely missing.
     try {
       // Check if stream is audio
@@ -137,12 +138,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           file.ffProbeData.streams[i].tags.language.toLowerCase(),
         ) === -1
       ) {
-        audioStreamsRemoved += 1;
-        ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
         response.infoLog += `☒Audio stream 0:a:${audioIdx} has unwanted language tag ${file.ffProbeData.streams[
           i
         ].tags.language.toLowerCase()}, removing. \n`;
-        convert = true;
+        removeTrack = true;
       }
     } catch (err) {
       // Error
@@ -165,15 +164,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             .includes('description')
           || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))
       ) {
-        audioStreamsRemoved += 1;
-        ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
+        removeTrack = true;
         response.infoLog += `☒Audio stream 0:a:${audioIdx} detected as being descriptive, removing. \n`;
-        convert = true;
       }
     } catch (err) {
       // Error
     }
 
+    if (removeTrack) {
+      audioStreamsRemoved += 1;
+      ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
+      convert = true;
+    }
     // Check if inputs.tag_language has something entered
     // (Entered means user actually wants something to happen, empty would disable this)
     // AND checks that stream is audio.
