@@ -12,9 +12,9 @@ const details = () => ({
     {
       name: 'minModifiedDaysOld',
       type: 'number',
-      defaultValue: '30',
+      defaultValue: 30,
       inputUI: {
-        type: 'number',
+        type: 'text',
       },
       tooltip: `Enter minimum number of days since modified since now file must be.  
       
@@ -43,12 +43,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // response.infoLog += ` Age ${age} Require Min Age: ${reqage}`;
   if (reqage < age) 
   {
-     // response.infoLog += " Old enough, lets do this!";     
+     response.infoLog += "File modified date old enough. Moving to next plugin.";     
      response.processFile = true;
   }
   else
   {
-     response.infoLog += " Skipping, file modified date not old enough";
+     response.infoLog += "Skipping, file modified date not old enough";
      response.processFile = false;
   }
 
