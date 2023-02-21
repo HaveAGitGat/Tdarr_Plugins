@@ -323,36 +323,15 @@ let overallBitRate = 0;
 let targetBitrate = 0;
 let minimumBitrate = 0;
 let maximumBitrate = 0;
-let duration = 0;
+let duration = '';
 let videoIdx = 0;
 let extraArguments = '';
 let bitrateSettings = '';
 let inflatedCutoff = 0;
 let main10 = false;
-
-// Media info setup
-const MediaInfo = {
-  videoBR: '',
-  overallBR: '',
-};
+let videoBR = 0;
 
 // Finds the first video stream and get video bitrate
-function getMediaInfo(file) {
-  videoIdx = -1;
-
-  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
-
-    // Looking For Video
-    // Check if stream is a video.
-    if (videoIdx === -1 && strstreamType === 'video') {
-      videoIdx = i;
-
-      MediaInfo.videoBR = Number(file.mediaInfo.track[i + 1].BitRate);
-    }
-  }
-  MediaInfo.overallBR = file.mediaInfo.track[0].OverallBitRate;
-} // end  getMediaInfo()
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -438,7 +417,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         // File now updated with new stats
         response.infoLog += 'Remuxing file to write in updated file stats! \n';
         response.preset += `-fflags +genpts <io> -map 0 -c copy -max_muxing_queue_size 9999 -map_metadata:g -1 
-            -metadata JBDONEDATE=${new Date().toISOString()}`;
+        -metadata JBDONEDATE=${new Date().toISOString()}`;
         response.processFile = true;
         return response;
       }
@@ -448,27 +427,53 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       + 'Continuing but file stats will likely be inaccurate...\n';
   }
 
-  getMediaInfo(file);
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
+    videoIdx = -1;
+    // Check if stream is a video.
+    if (videoIdx === -1 && strstreamType === 'video') {
+      videoIdx = i;
+      videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
 
-  // Check if duration info is filled, if so times it by 0.0166667 to get time in minutes.
-  // If not filled then get duration of stream 0 and do the same.
-  if (typeof file.meta.Duration !== 'undefined') {
-    duration = file.meta.Duration * 0.0166667;
-  } else {
-    duration = file.ffProbeData.streams[0].duration * 0.0166667;
+      // If MediaInfo fails somehow fallback to ffprobe - Try two types of tags that might exist
+      if (videoBR <= 0) {
+        if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
+          videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
+        } else {
+          try {
+            if (Number(file.ffProbeData.streams[i].tags.BPS['-eng']) > 0) {
+              videoBR = file.ffProbeData.streams[i].tags.BPS['-eng'] / 1000;
+            }
+          } catch (err) {
+            // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+          }
+        }
+      }
+    }
   }
 
-  // If invalid or suspiciously low we fall back on old calc for Current bitrate
-  if (Number.isNaN(MediaInfo.videoBR) || MediaInfo.videoBR < 250) {
+  // Check if duration info is filled, if so convert time format to minutes.
+  // If not filled then get duration of video stream and do the same.
+  if (typeof file.meta.Duration !== 'undefined') {
+    duration = file.meta.Duration;
+    // Get seconds by using a Date & then convert to minutes
+    duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+  } else {
+    duration = file.ffProbeData.streams[videoIdx].tags.DURATION;
+    duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+  }
+
+  if (Number.isNaN(videoBR) || videoBR <= 0) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
-    response.infoLog += '==WARNING== failed to get an accurate video bitrate, ';
-    response.infoLog += `falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps.`;
-    response.infoLog += 'Bitrate calculations for encode will likely be inaccurate... \n';
+    response.infoLog += '==WARNING== Failed to get an accurate video bitrate, ';
+    response.infoLog += `falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps. `;
+    response.infoLog += 'Bitrate calculations for video encode will likely be inaccurate... \n';
   } else {
-    currentBitrate = Math.round(MediaInfo.videoBR / 1000);
+    currentBitrate = Math.round(videoBR);
     response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps. \n`;
   }
+
   // Get overall bitrate for use with HEVC reprocessing
   overallBitRate = Math.round(file.file_size / (duration * 0.0075));
   // Halve current bitrate for Target bitrate, in theory h265 can be half the bitrate as h264 without losing quality.
@@ -512,7 +517,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // If so then cancel plugin without touching original files.
     if (currentBitrate <= inputs.bitrate_cutoff) {
       response.infoLog += `☑ Current bitrate is below set cutoff of ${inputs.bitrate_cutoff}kbps. \n`
-      + 'Cancelling plugin. \n';
+        + 'Cancelling plugin. \n';
       return response;
     }
     // If above cutoff then carry on
@@ -658,7 +663,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           Remux to MKV to allow generation of accurate video bitrate statistics. 
           File overall bitrate is ${overallBitRate}kbps.\n`;
         }
-
         if (inputs.hevc_max_bitrate > 0) {
           if (currentBitrate > inputs.hevc_max_bitrate) {
             // If bitrate is higher then hevc_max_bitrate then need to re-encode
@@ -725,42 +729,53 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // -fflags +genpts should regenerate timestamps if they end up missing...
   response.preset = '-fflags +genpts ';
 
-  // DECODE FLAGS
+  // HW ACCEL FLAGS
   // Account for different OS
   switch (os.platform()) {
     case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
       response.preset += '-hwaccel videotoolbox';
       break;
+    case 'linux': // Mac OS - Enable videotoolbox instead of QSV
+      response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
+      -init_hw_device qsv:hw_any,child_device_type=vaapi `;
+      break;
+    case 'win32': // Mac OS - Enable videotoolbox instead of QSV
+      response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
+      -init_hw_device qsv:hw_any,child_device_type=d3d11va `; // Win 11 may need child device set
+      break;
     default:
-      if (main10 === false) { // Don't enable if 10bit is on - seems to have issue with -c:v commands
-        switch (file.video_codec_name) {
-          case 'mpeg2':
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v mpeg2_qsv';
-            break;
-          case 'h264':
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v h264_qsv';
-            break;
-          case 'vc1':
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v vc1_qsv';
-            break;
-          case 'mjpeg':
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v mjpeg_qsv';
-            break;
-          case 'vp8':
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v vp8_qsv';
-            break;
-          case 'hevc':
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v hevc_qsv';
-            break;
-          case 'vp9': // Should be supported by 8th Gen +
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv -c:v vp9_qsv';
-            break;
-          default:
-            response.preset += '-hwaccel qsv -hwaccel_output_format qsv';
-        }
-      } else {
-        response.preset += '-hwaccel qsv -hwaccel_output_format qsv'; // Enable basic hwaccel regardless.
+      response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
+  }
+
+  // DECODE FLAGS
+  if (os.platform() !== 'darwin') {
+    if (main10 === false) { // Don't enable if 10bit is on - Seems to cause issues, may need different decode flags
+      switch (file.video_codec_name) {
+        case 'mpeg2':
+          response.preset += '-c:v mpeg2_qsv';
+          break;
+        case 'h264':
+          response.preset += '-c:v h264_qsv';
+          break;
+        case 'vc1':
+          response.preset += '-c:v vc1_qsv';
+          break;
+        case 'mjpeg':
+          response.preset += '-c:v mjpeg_qsv';
+          break;
+        case 'vp8':
+          response.preset += '-c:v vp8_qsv';
+          break;
+        case 'hevc':
+          response.preset += '-c:v hevc_qsv';
+          break;
+        case 'vp9': // Should be supported by 8th Gen +
+          response.preset += '-c:v vp9_qsv';
+          break;
+        default:
+          response.preset += '';
       }
+    }
   }
 
   // ENCODE FLAGS
