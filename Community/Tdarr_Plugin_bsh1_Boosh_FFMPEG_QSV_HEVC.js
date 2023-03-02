@@ -735,13 +735,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
       response.preset += '-hwaccel videotoolbox';
       break;
-    case 'linux': // Mac OS - Enable videotoolbox instead of QSV
+    case 'linux': // Linux - Full device, should fix child_device_type warnings
       response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
       -init_hw_device qsv:hw_any,child_device_type=vaapi `;
       break;
-    case 'win32': // Mac OS - Enable videotoolbox instead of QSV
+    case 'win32': // Windows - Full device, should fix child_device_type warnings
       response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
-      -init_hw_device qsv:hw_any,child_device_type=d3d11va `; // Win 11 may need child device set
+      -init_hw_device qsv:hw_any,child_device_type=d3d11va `;
       break;
     default:
       response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
