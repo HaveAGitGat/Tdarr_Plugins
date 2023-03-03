@@ -128,7 +128,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-     tooltip: `Specify amount of ref to use, 1-16, defaults to 3.
+      tooltip: `Specify amount of ref to use, 1-16, defaults to 3.
 
         \\nExample:\\n
         3`,
@@ -259,7 +259,7 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        `Enter the amnount to increment the CRF when transcoded file isn't within the size bounds.`,
+        'Enter the amnount to increment the CRF when transcoded file isn\'t within the size bounds.',
     },
   ],
 });
@@ -305,35 +305,35 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if the file contains a hevc track.
   if (file.ffProbeData.streams.some((x) => x.codec_name?.toLowerCase() === 'hevc')) {
-      if (typeof file.file_size !== 'undefined') {
-        // If file_size is defined, it has been transcoded (not necessarily by us).
-        // Let's check if the stream is within the boundaries.
-        const newSize = Number(file.mediaInfo.track[1][`StreamSize`]);
-        const oldSize = Number(otherArguments.originalLibraryFile.mediaInfo.track[1][`StreamSize`]);
-        const ratio = parseInt((newSize / oldSize) * 100, 10);
-        const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
+    if (typeof file.file_size !== 'undefined') {
+      // If file_size is defined, it has been transcoded (not necessarily by us).
+      // Let's check if the stream is within the boundaries.
+      const newSize = Number(file.mediaInfo.track[1].StreamSize);
+      const oldSize = Number(otherArguments.originalLibraryFile.mediaInfo.track[1].StreamSize);
+      const ratio = parseInt((newSize / oldSize) * 100, 10);
+      const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
           + `of original file size:  ${oldSize.toFixed(3)} MB`;
-        const getBound = (bound) => (bound / 100) * oldSize;
-        const errText = 'New file size not within limits.';
-        if (newSize > getBound(inputs.upperBound)) {
-          // If it's too large flag it for transcoding again.
-          retry = true;
-          response.infoLog += `${errText} ${sizeText}. upperBound is ${inputs.upperBound}%\n`;
-        } else if (newSize < getBound(inputs.lowerBound)) {
-          // Item will be errored in UI
-          throw new Error(`${errText} ${sizeText}. lowerBound is ${inputs.lowerBound}%`);
-        } else {
-          // It's within limits, return a response.
-          response.infoLog += sizeText;
-          return response;
-        }
+      const getBound = (bound) => (bound / 100) * oldSize;
+      const errText = 'New file size not within limits.';
+      if (newSize > getBound(inputs.upperBound)) {
+        // If it's too large flag it for transcoding again.
+        retry = true;
+        response.infoLog += `${errText} ${sizeText}. upperBound is ${inputs.upperBound}%\n`;
+      } else if (newSize < getBound(inputs.lowerBound)) {
+        // Item will be errored in UI
+        throw new Error(`${errText} ${sizeText}. lowerBound is ${inputs.lowerBound}%`);
       } else {
-        // Not transcoding since it's already hevc (the plugin will exit).
-        response.infoLog += '☑File is already in hevc! \n';
-        if (inputs.skipHevc) {
-            return response;
-        }
+        // It's within limits, return a response.
+        response.infoLog += sizeText;
+        return response;
       }
+    } else {
+      // Not transcoding since it's already hevc (the plugin will exit).
+      response.infoLog += '☑File is already in hevc! \n';
+      if (inputs.skipHevc) {
+        return response;
+      }
+    }
   }
 
   response.infoLog += `☑Preset set as ${inputs.ffmpegPreset}\n`;
@@ -361,32 +361,33 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (retry) {
     // If flagged for transcoding again.
     // Find the video track and old crf value to increase.
-    let mediaInfo = file.mediaInfo;
+    const { mediaInfo } = file;
     const tracks = mediaInfo.track.length;
-    for (i = 0; i < tracks; i++) {
-        if (typeof mediaInfo.track[i].Encoded_Library_Settings !== 'undefined') {
-        	var videoTrack = i;
-        }
+    let videoTrack;
+    for (let i = 0; i < tracks; i += 1) {
+      if (typeof mediaInfo.track[i].Encoded_Library_Settings !== 'undefined') {
+        videoTrack = i;
+      }
     }
     // If we found the video track, find and increment the CRF.
     if (typeof videoTrack !== 'undefined') {
-      let settings = mediaInfo.track[videoTrack].Encoded_Library_Settings;
+      const settings = mediaInfo.track[videoTrack].Encoded_Library_Settings;
       // Default CRF, to default value.
       let oldCRF = crf;
       const regexCRF = /\/ (crf=)([^.]+)/.exec(settings);
       // If we find a CRF increment it.
       if (regexCRF !== null) {
-        oldCRF = parseInt(regexCRF[2]);
+        oldCRF = parseInt(regexCRF[2], 10);
         crf = oldCRF + inputs.retryIncrement;
       }
       crf = String(crf);
       response.infoLog += `Retrying with new CRF ${crf} (was ${oldCRF})\n`;
     }
     // TODO: Handle if no video track found or remove this conditional?
-
   }
 
   // Set pixel format (bit depth) per configuration.
+  let pixelFormat = '';
   switch (inputs.bitdepth) {
     case 'force8bit':
       pixelFormat = ' -pix_fmt yuv420p';
@@ -401,7 +402,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // encoding settings
   response.preset += `<io> -map 0 -dn -c:v libx265 -preset ${inputs.ffmpegPreset}`
-    + ` -x265-params crf=${crf}:keyint=${inputs.keyint}:bframes=${inputs.bframe}:rc-lookahead=${inputs.rclookahead}:ref=${inputs.ref}:b-intra=${inputs.bintra}:aq-mode=${inputs.aqmode}`
+    + ` -x265-params crf=${crf}:keyint=${inputs.keyint}:bframes=${inputs.bframe}:rc-lookahead=${inputs.rclookahead}`
+    + `:ref=${inputs.ref}:b-intra=${inputs.bintra}:aq-mode=${inputs.aqmode}`
     + ` ${pixelFormat} -a53cc 0 -c:a copy -c:s copy -max_muxing_queue_size 9999`;
 
   response.infoLog += `☑File is ${file.video_resolution}, using CRF value of ${crf}!\n`;
