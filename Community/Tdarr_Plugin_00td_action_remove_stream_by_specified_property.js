@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_remove_stream_by_specified_property',
   Stage: 'Pre-processing',
-  Name: 'Remove streams specified property',
+  Name: 'Remove streams by specified property',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `
