@@ -59,15 +59,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
   // Catch error here incase the title metadata is completely missing.
     try {
-      // Check stream is subtitle AND stream codec contains certain words, removing these streams .
-      if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-        && tag_subtitle_codecs.indexOf(file.ffProbeData.streams[i].codec_name.toLowerCase()) > -1
-      ) {
-        ffmpegCommandInsert += `-c:s:${subtitleIdx} srt `;
-        response.infoLog += `☒Subtitle stream detected converting subtitle stream 0:s:${subtitleIdx} - `
-          + `${file.ffProbeData.streams[i].tags.title} - ${file.ffProbeData.streams[i].codec_name}. \n`;
-        convert = true;
+      // Check stream is subtitle.
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle') {
+        // Copy all the streams that don't match.
+        if (tag_subtitle_codecs.indexOf(file.ffProbeData.streams[i].codec_name.toLowerCase())) {
+          ffmpegCommandInsert += `-c:s:${subtitleIdx} copy `;
+          response.infoLog += `☒Subtitle stream detected copying subtitle stream 0:s:${subtitleIdx} - `
+            + `${file.ffProbeData.streams[i].tags.title} - ${file.ffProbeData.streams[i].codec_name}. \n`;
+        } else {
+          // If a stream matches convert it.
+          ffmpegCommandInsert += `-c:s:${subtitleIdx} srt `;
+          response.infoLog += `☒Subtitle stream detected converting subtitle stream 0:s:${subtitleIdx} - `
+            + `${file.ffProbeData.streams[i].tags.title} - ${file.ffProbeData.streams[i].codec_name}. \n`;
+          convert = true;
+        }
       }
     } catch (err) {
       // I want application to not crash, but don't care about the message.
@@ -78,7 +83,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // Convert file if convert variable is set to true.
+  // Convert file only if it needs its.
   if (convert === true) {
     response.processFile = true;
     response.preset = `, -map 0 ${ffmpegCommandInsert} -c:v copy -c:a copy -max_muxing_queue_size 4096`;
