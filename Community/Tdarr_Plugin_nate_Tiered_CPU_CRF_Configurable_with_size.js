@@ -1,3 +1,4 @@
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_nate_Tiered_CPU_CRF_Configurable_with_size',
   Stage: 'Pre-processing',

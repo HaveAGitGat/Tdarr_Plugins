@@ -1,3 +1,4 @@
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_nate_Convert_subs_to_srt',
   Stage: 'Pre-processing',
