@@ -38,8 +38,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          false,
-          true,
+          'false',
+          'true',
         ],
       },
       tooltip:
