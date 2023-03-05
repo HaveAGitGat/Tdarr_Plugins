@@ -13,7 +13,7 @@ const details = () => ({
        If files are not in hevc they will be transcoded.
        The output container is mkv.
 
-       Note that mediainfo is required for this plugin.\n\n`,
+       Note that ffprobe can be used and is prefered to determine the video stream size.\n\n`,
   Version: '1.00',
   Tags: 'pre-processing,ffmpeg,video only,h265,configurable',
 
@@ -265,6 +265,39 @@ const details = () => ({
   ],
 });
 
+// Helper function to get file size using ffprobe.
+function ffprobeSize(file) {
+  const path = file.substring(0, file.lastIndexOf('/'));
+  let size = 0;
+
+  const { spawnSync } = require('child_process');
+  let output = '';
+  try {
+    // Get all the video packet sizes.
+    // ffprobe -v error -select_streams v -show_entries packet=size -of default=nokey=1:noprint_wrappers=1 file.mkv
+    const ffprobe = spawnSync('ffprobe', [
+      '-v', 'error',
+      '-select_streams', 'v:0',
+      '-show_entries', 'packet=size',
+      '-of', 'default=nokey=1:noprint_wrappers=1',
+      file,
+    ], { encoding: 'utf-8', cwd: path });
+    // Split the output into an array.
+    output = ffprobe.output[1].split('\n');
+    // Convert the strings to numbers.
+    const nums = output.map((str) => parseInt(str, 10));
+    // Calculate the size by adding them all up.
+    nums.forEach((elements) => {
+      if (elements !== null && Number.isInteger(elements)) {
+        size += elements;
+      }
+    });
+  } catch (err) {
+    // We will handle errors later using the file size from tdarr.
+  }
+  return size;
+}
+
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
@@ -272,6 +305,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   inputs = lib.loadDefaultValues(inputs, details);
   let crf;
   let retry = false;
+  // TODO: set firstEncode and later have better messaging/logic?
+  // let firstEncode = true;
   // default values that will be returned
   const response = {
     processFile: false,
@@ -308,13 +343,29 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (file.ffProbeData.streams.some((x) => x.codec_name?.toLowerCase() === 'hevc')) {
     if (typeof file.file_size !== 'undefined') {
       // If file_size is defined, it has been transcoded (not necessarily by us).
-      // Let's check if the stream is within the boundaries.
-      const newSize = Number(file.mediaInfo.track[1].StreamSize);
-      const oldSize = Number(otherArguments.originalLibraryFile.mediaInfo.track[1].StreamSize);
-      const ratio = parseInt((newSize / oldSize) * 100, 10);
-      const sizeText = `New file has size ${newSize.toFixed(3)} MB which is ${ratio}% `
-          + `of original file size:  ${oldSize.toFixed(3)} MB`;
-      const getBound = (bound) => (bound / 100) * oldSize;
+      const origFile = otherArguments.originalLibraryFile.file;
+      const newFile = file.file;
+
+      // If the file name contains -TdarrCacheFile- it has probably been encoded atleast once.
+      if (/.+-TdarrCacheFile-.+/.test(newFile)) {
+        // TODO: set firstEncode and later have better messaging/logic?
+        // firstEncode = false;
+      }
+
+      // Try and get the video stream size using ffprobe. If it fails just use the file size.
+      let origSize = ffprobeSize(origFile);
+      if (origSize === 0) {
+        origSize = otherArguments.originalLibraryFile.file_size;
+      }
+      let newSize = ffprobeSize(newFile);
+      if (newSize === 0) {
+        newSize = file.file_size;
+      }
+      // Calculate the ratio and prepare the message.
+      const ratio = parseInt((newSize / origSize) * 100, 10);
+      const sizeText = `New file has size ${newSize.toFixed(3)} B which is ${ratio}% `
+          + `of original file size:  ${origSize.toFixed(3)} B`;
+      const getBound = (bound) => (bound / 100) * origSize;
       const errText = 'New file size not within limits.';
       if (newSize > getBound(inputs.upperBound)) {
         // If it's too large flag it for transcoding again.
@@ -381,6 +432,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         oldCRF = parseInt(regexCRF[2], 10);
         crf = oldCRF + inputs.retryIncrement;
       }
+      // TODO: use firstEncode to return better messaging/logic?
       crf = String(crf);
       response.infoLog += `Retrying with new CRF ${crf} (was ${oldCRF})\n`;
     }
