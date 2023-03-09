@@ -88,7 +88,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let duration = '';
 
   // Get duration of stream 0 and times it by 0.0166667 to get time in minutes
-  duration = file.ffProbeData.streams[0].duration * 0.0166667;
+  if (file.ffProbeData.streams[0].duration) {
+    duration = file.ffProbeData.streams[0].duration;
+  } else {
+    duration = file.ffProbeData.format.duration;
+  }
+
+  duration *= 0.0166667;
 
   // Set up required variables.
   let videoIdx = 0;
