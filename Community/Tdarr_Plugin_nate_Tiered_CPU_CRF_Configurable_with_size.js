@@ -412,14 +412,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // If flagged for transcoding again.
   if (retry) {
-    response.infoLog += `Flagged for retry!\n`;
+    response.infoLog += 'Flagged for retry!\n';
     const { mediaInfo } = file;
     const tracks = mediaInfo.track.length;
     let videoTrack = -1;
-    let mediaSettings = "";
+    let mediaSettings = '';
     // Find the video track and encoding settings.
     for (let i = 0; i < tracks; i += 1) {
-      if (mediaInfo.track[i]["@type"] === "Video") {
+      if (mediaInfo.track[i]['@type'] === 'Video') {
         videoTrack = i;
         mediaSettings = mediaInfo.track[videoTrack].Encoded_Library_Settings;
       }
