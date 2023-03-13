@@ -410,23 +410,25 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       return response;
   }
 
+  // If flagged for transcoding again.
   if (retry) {
-    // If flagged for transcoding again.
-    // Find the video track and old crf value to increase.
+    response.infoLog += `Flagged for retry!\n`;
     const { mediaInfo } = file;
     const tracks = mediaInfo.track.length;
-    let videoTrack;
+    let videoTrack = -1;
+    let mediaSettings = "";
+    // Find the video track and encoding settings.
     for (let i = 0; i < tracks; i += 1) {
-      if (typeof mediaInfo.track[i].Encoded_Library_Settings !== 'undefined') {
+      if (mediaInfo.track[i]["@type"] === "Video") {
         videoTrack = i;
+        mediaSettings = mediaInfo.track[videoTrack].Encoded_Library_Settings;
       }
     }
     // If we found the video track, find and increment the CRF.
-    if (typeof videoTrack !== 'undefined') {
-      const settings = mediaInfo.track[videoTrack].Encoded_Library_Settings;
+    if (videoTrack >= 0) {
       // Default CRF, to default value.
       let oldCRF = crf;
-      const regexCRF = /\/ (crf=)([^.]+)/.exec(settings);
+      const regexCRF = /\/ (crf=)([^.]+)/.exec(mediaSettings);
       // If we find a CRF increment it.
       if (regexCRF !== null) {
         oldCRF = parseInt(regexCRF[2], 10);
