@@ -18,14 +18,17 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: `Specify output container of file.
+    tooltip: `Specify output container of file. Use 'original' wihout qoutes to keep original container.
                   \\n Ensure that all stream types you may have are supported by your chosen container.
                   \\n mkv is recommended.
                     \\nExample:\\n
                     mkv
 
                     \\nExample:\\n
-                    mp4`,
+                    mp4
+                                        
+                    \\nExample:\\n
+                    original`,
   },
   {
     name: 'bitrate_cutoff',
@@ -107,7 +110,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.processFile = false;
     return response;
   }
-  response.container = `.${inputs.container}`;
+
+  if (inputs.container === 'original') {
+    // eslint-disable-next-line no-param-reassign
+    inputs.container = `${file.container}`;
+    response.container = `.${file.container}`;
+  } else {
+    response.container = `.${inputs.container}`;
+  }
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
