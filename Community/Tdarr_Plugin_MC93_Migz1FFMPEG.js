@@ -19,7 +19,7 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: `Specify output container of file. Use 'original' wihout qoutes to keep original container.
+    tooltip: `Specify output container of file. Use 'original' wihout quotes to keep original container.
                 \\n Ensure that all stream types you may have are supported by your chosen container.
                 \\n mkv is recommended.
                     \\nExample:\\n
