@@ -418,11 +418,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += `Selecting GPU ${gpu_num} with ${gpu_util}% utilization (lowest)\n`;
     response.preset = `-hwaccel cuvid -hwaccel_device ${gpu_num} -hwaccel_output_format cuda `;
     response.preset += `${genpts}, -map 0 ${vf_scale_args} `;
-    response.preset += `-c:V hevc_nvenc -gpu ${gpu_num} -cq:V 19 ${bitrateSettings} `;
+    response.preset += `-c:v hevc_nvenc -gpu ${gpu_num} -cq:v 19 ${bitrateSettings} `;
   } else {
-    response.preset += ` ${genpts}, -map 0 -c:V hevc_nvenc -cq:V 19 ${bitrateSettings} `;
+    response.preset += ` ${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `;
   }
-  response.preset += '-spatial_aq:V 1 -rc-lookahead:V 32 -c:a copy -c:s copy ';
+  response.preset += '-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy ';
   response.preset += `-max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
