@@ -24,8 +24,8 @@ jobs:
         git config --global core.eol lf
 
     - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
