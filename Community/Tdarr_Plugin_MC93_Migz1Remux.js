@@ -82,7 +82,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let extraArguments = '';
   let genpts = '';
   let convert = false;
-  
+
   // Check if force_conform option is checked.
   // If so then check streams and add any extra parameters required to make file conform with output format.
   if (inputs.force_conform === true) {
@@ -135,12 +135,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += `☑File is already in ${inputs.container} container. \n`;
     return response;
   }
-  
+
   // If Container .ts or .avi set genpts to fix unknown timestamp
   if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi') {
     genpts = '-fflags +genpts';
   }
-
 
   if (convert === true) {
     response.preset += `${genpts}, -map 0 -c copy -max_muxing_queue_size 9999 ${extraArguments}`;
