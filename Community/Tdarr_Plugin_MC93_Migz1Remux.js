@@ -6,7 +6,7 @@ const details = () => ({
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Files will be remuxed into either mkv or mp4. \n\n',
-  Version: '1.1',
+  Version: '1.2',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
   Inputs: [{
     name: 'container',
@@ -80,6 +80,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Set up required variables.
   let extraArguments = '';
+  let genpts = '';
   let convert = false;
 
   // Check if force_conform option is checked.
@@ -135,8 +136,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  // If Container .ts or .avi set genpts to fix unknown timestamp
+  if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi') {
+    genpts = '-fflags +genpts';
+  }
+
   if (convert === true) {
-    response.preset += `, -map 0 -c copy -max_muxing_queue_size 9999 ${extraArguments}`;
+    response.preset += `${genpts}, -map 0 -c copy -max_muxing_queue_size 9999 ${extraArguments}`;
     response.processFile = true;
     return response;
   }
