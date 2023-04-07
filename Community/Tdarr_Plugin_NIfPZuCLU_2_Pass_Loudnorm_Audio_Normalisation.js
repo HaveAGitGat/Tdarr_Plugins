@@ -128,6 +128,7 @@ const getloudNormValues = async (response, file) => {
 
     const loudNormDataArr = [];
 
+    // {
     for (let i = (idx + 1); i < lines.length; i += 1) {
       const lineArr = lines[i].split(' ');
       lineArr.shift();
