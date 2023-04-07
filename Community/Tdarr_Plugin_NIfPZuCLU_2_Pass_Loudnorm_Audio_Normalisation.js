@@ -220,8 +220,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
   // what is this tag?
-  response.infoLog += `Unknown normalisation stage tag: \n${probeData.format.tags.NORMALISATIONSTAGE}`;
-  return response;
+  throw new Error(`Unknown normalisation stage tag: \n${probeData.format.tags.NORMALISATIONSTAGE}`);
 };
 
 module.exports.details = details;
