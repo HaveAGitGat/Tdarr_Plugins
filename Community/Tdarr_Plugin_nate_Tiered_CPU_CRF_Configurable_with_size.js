@@ -74,6 +74,19 @@ const details = () => ({
         21`,
     },
     {
+      name: 'quadhdCRF',
+      type: 'string',
+      defaultValue: '22',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Enter the CRF value you want for 2k/1440p content.
+        \n Defaults to 22 (0-51, lower = higher quality, bigger file)
+
+        \\nExample:\\n
+        22`,
+    },
+    {
       name: 'uhdCRF',
       type: 'string',
       defaultValue: '23',
@@ -402,11 +415,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     case '1080p':
       crf = inputs.fullhdCRF;
       break;
+    case '1440p':
+      crf = inputs.quadhdCRF;
+      break;
     case '4KUHD':
       crf = inputs.uhdCRF;
       break;
     default:
-      response.infoLog += 'Could not for some reason detect resolution, plugin will not proceed. \n';
+      response.infoLog += `Could not set CRF for resolution (${file.video_resolution}), plugin will not proceed. \n`;
       return response;
   }
 
