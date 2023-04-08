@@ -161,11 +161,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     handBrakeMode: false,
     FFmpegMode: false,
     infoLog: '',
-    custom: {
-      args: [],
-      cliPath: '',
-      outputPath: ',',
-    },
   };
 
   response.infoLog += '';
