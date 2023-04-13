@@ -157,7 +157,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const response = {
     processFile: false,
     preset: '',
-    container: `.${file.container}`,
+    container: '.mkv',
     handBrakeMode: false,
     FFmpegMode: false,
     infoLog: '',
