@@ -257,6 +257,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           if (radarrResult) {
             imdbId = radarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Radarr \n`;
+            // eslint-disable-next-line import/no-unresolved
             const languages = require('@cospired/i18n-iso-languages');
             tmdbResult = { original_language: languages.getAlpha2Code(radarrResult.originalLanguage.name, 'en') };
           } else {
