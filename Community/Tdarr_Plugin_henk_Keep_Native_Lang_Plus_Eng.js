@@ -175,7 +175,7 @@ const tmdbApi = async (filename, api_key, axios) => {
   let fileName;
   // If filename begins with tt, it's already an imdb id
   if (filename) {
-    if (filename.substring(0, 2) === 'tt') {
+    if (filename.slice(0, 2) === 'tt') {
       fileName = filename;
     } else {
       const idRegex = /(tt\d{7,8})/;
