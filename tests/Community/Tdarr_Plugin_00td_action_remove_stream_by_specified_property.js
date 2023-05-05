@@ -196,6 +196,27 @@ const tests = [
     },
   },
 
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyToCheck: 'level',
+        valuesToRemove: '41',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: ', -map 0 -c copy -max_muxing_queue_size 9999 -map -0:0 ',
+      container: '.mkv',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: false,
+      infoLog: ' Removing stream 0 which is has level of 41 \n'
+        + ' Files has streams which need to be removed, processing \n',
+    },
+  },
 ];
 
 run(tests);
