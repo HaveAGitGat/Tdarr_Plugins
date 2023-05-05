@@ -76,7 +76,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     let streamToRemove = false;
     for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
       try {
-        if (valuesToRemove.includes(file.ffProbeData.streams[i][propertyToCheck])) {
+        if (valuesToRemove.includes(String(file.ffProbeData.streams[i][propertyToCheck]))) {
           response.preset += ` -map -0:${i} `;
           response.infoLog += ` Removing stream ${i} which is has ${propertyToCheck}`
           + ` of ${file.ffProbeData.streams[i][propertyToCheck]} \n`;
