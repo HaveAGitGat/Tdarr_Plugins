@@ -100,6 +100,28 @@ const tests = [
     },
   },
 
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH265_1.json'));
+        file.ffProbeData.streams[0].tags.COPYRIGHT = 'processed';
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        tagName: 'COPYRIGHT',
+        tagValues: 'proc,proce',
+        continueIfTagFound: false,
+        exactMatch: false,
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: 'A stream with tag name COPYRIGHT containing proc,proce has been found, breaking out of stack  \n',
+    },
+  },
+
   // continueIfTagFound: true
 
   {
@@ -183,6 +205,29 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'A stream with tag name COPYRIGHT containing proc,proce has not been found, breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH265_1.json'));
+        file.ffProbeData.streams[0].tags.COPYRIGHT = 'processed';
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        tagName: 'COPYRIGHT',
+        tagValues: 'proc,proce',
+        continueIfTagFound: true,
+        exactMatch: false,
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: 'A stream with tag name COPYRIGHT containing proc,proce has been found, continuing to next plugin  \n',
     },
   },
 ];

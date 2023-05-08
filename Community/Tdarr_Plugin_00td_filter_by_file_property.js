@@ -32,6 +32,21 @@ const details = () => ({
         'Enter a comma separated list of values to check for.',
     },
     {
+      name: 'exactMatch',
+      type: 'boolean',
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip:
+        'Specify true if the property value must be an exact match,'
+        + ' false if the property value must contain the value.',
+    },
+    {
       name: 'continueIfPropertyFound',
       type: 'boolean',
       defaultValue: false,
@@ -50,6 +65,7 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const { strHasValue } = require('../methods/utils');
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -72,19 +88,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const propertyValues = inputs.propertyValues.trim().split(',');
 
-  let fileContainsProperty = false;
   try {
-    for (let i = 0; i < propertyValues.length; i += 1) {
-      try {
-        if (file[propertyName].includes(propertyValues[i])) {
-          fileContainsProperty = true;
-          break;
-        }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-      }
-    }
+    const fileContainsProperty = strHasValue(propertyValues, file[propertyName], inputs.exactMatch);
 
     const message = `File property ${propertyName} of ${file[propertyName]}`
     + ` being one of ${propertyValues.join(',')} has`;

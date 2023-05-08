@@ -32,6 +32,21 @@ const details = () => ({
         'Enter a comma separated list of tag values to check for.',
     },
     {
+      name: 'exactMatch',
+      type: 'boolean',
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip:
+      'Specify true if the property value must be an exact match,'
+      + ' false if the property value must contain the value.',
+    },
+    {
       name: 'continueIfTagFound',
       type: 'boolean',
       defaultValue: false,
@@ -50,6 +65,7 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const { strHasValue } = require('../methods/utils');
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -76,12 +92,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   try {
     try {
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-        if (tagValues.includes(file.ffProbeData.streams[i]?.tags[tagName])) {
+        if (strHasValue(tagValues, file.ffProbeData.streams[i]?.tags[tagName], inputs.exactMatch)) {
           streamContainsTag = true;
+          break;
         }
       }
     } catch (err) {
-      // err
+    // eslint-disable-next-line no-console
+      console.log(err);
     }
 
     const message = `A stream with tag name ${tagName} containing ${tagValues.join(',')} has`;
