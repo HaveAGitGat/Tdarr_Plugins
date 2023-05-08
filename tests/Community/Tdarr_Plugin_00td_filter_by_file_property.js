@@ -96,6 +96,7 @@ const tests = [
         propertyName: 'file',
         propertyValues: 'Source Folder/h264.mkv',
         continueIfPropertyFound: false,
+        exactMatch: false,
 
       },
       otherArguments: {},
@@ -188,7 +189,7 @@ const tests = [
         propertyName: 'file',
         propertyValues: 'Source Folder/h264.mkv',
         continueIfPropertyFound: true,
-
+        exactMatch: false,
       },
       otherArguments: {},
     },

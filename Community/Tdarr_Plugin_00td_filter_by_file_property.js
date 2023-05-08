@@ -1,3 +1,5 @@
+const { strHasValue } = require('../methods/utils');
+
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_file_property',
   Stage: 'Pre-processing',
@@ -30,6 +32,21 @@ const details = () => ({
       },
       tooltip:
         'Enter a comma separated list of values to check for.',
+    },
+    {
+      name: 'exactMatch',
+      type: 'boolean',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip:
+        'Specify true if the property value must be an exact match,'
+        + ' false if the property value must contain the value.',
     },
     {
       name: 'continueIfPropertyFound',
@@ -72,19 +89,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const propertyValues = inputs.propertyValues.trim().split(',');
 
-  let fileContainsProperty = false;
   try {
-    for (let i = 0; i < propertyValues.length; i += 1) {
-      try {
-        if (file[propertyName].includes(propertyValues[i])) {
-          fileContainsProperty = true;
-          break;
-        }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-      }
-    }
+    const fileContainsProperty = strHasValue(propertyValues, file[propertyName], inputs.exactMatch);
 
     const message = `File property ${propertyName} of ${file[propertyName]}`
     + ` being one of ${propertyValues.join(',')} has`;
