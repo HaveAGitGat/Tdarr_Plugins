@@ -1,5 +1,3 @@
-const { strHasValue } = require('../methods/utils');
-
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_file_property',
   Stage: 'Pre-processing',
@@ -36,7 +34,7 @@ const details = () => ({
     {
       name: 'exactMatch',
       type: 'boolean',
-      defaultValue: 'true',
+      defaultValue: true,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -67,6 +65,7 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  const { strHasValue } = require('../methods/utils');
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
