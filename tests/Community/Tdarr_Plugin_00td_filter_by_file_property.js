@@ -88,6 +88,24 @@ const tests = [
     },
   },
 
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file',
+        propertyValues: 'Source Folder/h264.mkv',
+        continueIfPropertyFound: false,
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: 'File property file of C:/Transcode/Source Folder/h264.mkv being one of Source Folder/h264.mkv has been found, breaking out of stack  \n',
+    },
+  },
+
   // // continueIfPropertyFound: true
 
   {
@@ -159,6 +177,24 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'File property video_resolution of 1080p being one of 721p,1081p has not been found, breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file',
+        propertyValues: 'Source Folder/h264.mkv',
+        continueIfPropertyFound: true,
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: 'File property file of C:/Transcode/Source Folder/h264.mkv being one of Source Folder/h264.mkv has been found, continuing to next plugin  \n',
     },
   },
 ];

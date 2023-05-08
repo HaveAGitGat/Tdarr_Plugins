@@ -74,12 +74,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   let fileContainsProperty = false;
   try {
-    try {
-      if (propertyValues.includes(file[propertyName])) {
-        fileContainsProperty = true;
+    for (let i = 0; i < propertyValues.length; i += 1) {
+      try {
+        if (file[propertyName].includes(propertyValues[i])) {
+          fileContainsProperty = true;
+          break;
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(err);
       }
-    } catch (err) {
-      // err
     }
 
     const message = `File property ${propertyName} of ${file[propertyName]}`
