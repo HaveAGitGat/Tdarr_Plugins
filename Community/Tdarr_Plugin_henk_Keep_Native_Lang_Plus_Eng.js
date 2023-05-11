@@ -233,6 +233,15 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let radarrResult = null;
   let sonarrResult = null;
   let tmdbResult = null;
+  const langs = file.ffProbeData.streams
+    .filter((stream) => stream.codec_type.toLowerCase() === 'audio')
+    .flatMap((stream) => stream.tags?.language);
+
+  // End plugin if only a single language is found
+  if (new Set(langs).size === 1) {
+    response.infoLog += '☑File only has a single audio language or all are missing.\n';
+    return response;
+  }
 
   if (inputs.priority) {
     if (inputs.priority === 'sonarr') {
@@ -250,7 +259,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           radarrResult = await parseArrResponse(
             await axios.get(`http://${inputs.radarr_url}/api/v3/movie?apiKey=${inputs.radarr_api_key}`)
               .then((resp) => resp.data),
-            file.meta.FileName, 'radarr',
+            file.meta.FileName,
+            'radarr',
           );
 
           if (radarrResult) {
@@ -269,7 +279,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           sonarrResult = await parseArrResponse(
             await axios.get(`http://${inputs.sonarr_url}/api/series?apikey=${inputs.sonarr_api_key}`)
               .then((resp) => resp.data),
-            file.meta.Directory, 'sonarr',
+            file.meta.Directory,
+            'sonarr',
           );
 
           if (sonarrResult) {
