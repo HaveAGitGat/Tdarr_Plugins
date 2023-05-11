@@ -90,6 +90,7 @@ const parseJobName = (text) => {
 
 const getloudNormValues = async (inputs, response, file) => {
   // eslint-disable-next-line import/no-unresolved
+  // {
   const axios = require('axios');
 
   const serverIp = inputs.serverIp ? inputs.serverIp : process.env.serverIp;
