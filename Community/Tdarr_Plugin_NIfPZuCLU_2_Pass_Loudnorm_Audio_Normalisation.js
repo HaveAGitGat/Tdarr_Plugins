@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable no-unused-vars, no-await-in-loop */
 module.exports.dependencies = ['axios@0.27.2'];
 
 // PLugin runs multipass loudnorm filter
@@ -57,6 +57,25 @@ Output will be MKV to allow metadata to be added for tracking normalisation stag
       tooltip: `Desired "tp" value. \\n Defaults to -2.0 
               `,
     },
+
+    {
+      name: 'serverIp',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Enter the IP address of the server if plugin having trouble connecting.',
+    },
+    {
+      name: 'serverPort',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Enter the port number of the server if plugin having trouble connecting.',
+    },
   ],
 });
 
@@ -69,79 +88,92 @@ const parseJobName = (text) => {
   };
 };
 
-const getloudNormValues = async (response, file) => {
+const getloudNormValues = async (inputs, response, file) => {
+  // {
   // eslint-disable-next-line import/no-unresolved
   const axios = require('axios');
-  const serverUrl = `http://${process.env.serverIp}:${process.env.serverPort}`;
-  let loudNormValues = {};
-  try {
-    // wait for job report to be updated by server,
-    await new Promise((resolve) => setTimeout(resolve, 10000));
 
-    const logFilesReq = await axios.post(`${serverUrl}/api/v2/list-footprintId-reports`, {
-      data: {
-        footprintId: file.footprintId,
-      },
-    });
+  const serverIp = inputs.serverIp ? inputs.serverIp : process.env.serverIp;
+  const serverPort = inputs.serverPort ? inputs.serverPort : process.env.serverPort;
+  const serverUrl = `http://${serverIp}:${serverPort}`;
+  let loudNormValues = false;
+  let tries = 0;
+  let error = false;
+  while (tries < 15) {
+    try {
+      tries += 1;
+      // wait for job report to be updated by server,
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    if (logFilesReq.status !== 200) {
-      throw new Error('Failed to get log files, please rerun');
-    }
+      const logFilesReq = await axios.post(`${serverUrl}/api/v2/list-footprintId-reports`, {
+        data: {
+          footprintId: file.footprintId,
+        },
+      });
 
-    let logFiles = logFilesReq.data;
-
-    logFiles = logFiles.sort((a, b) => {
-      const joba = parseJobName(a);
-      const jobb = parseJobName(b);
-      return jobb.start - joba.start;
-    });
-
-    const latestJob = logFiles[0];
-
-    const reportReq = await axios.post(`${serverUrl}/api/v2/read-job-file`, {
-      data: {
-        footprintId: file.footprintId,
-        jobId: parseJobName(latestJob).jobId,
-        jobFileId: latestJob,
-      },
-    });
-
-    if (reportReq.status !== 200) {
-      throw new Error('Failed to get read latest log file, please rerun');
-    }
-
-    const report = reportReq.data.text;
-    const lines = report.split('\n');
-
-    let idx = -1;
-
-    // get last index of Parsed_loudnorm
-    lines.forEach((line, i) => {
-      if (line.includes('Parsed_loudnorm')) {
-        idx = i;
+      if (logFilesReq.status !== 200) {
+        throw new Error('Failed to get log files, please rerun');
       }
-    });
 
-    if (idx === -1) {
-      throw new Error('Failed to find loudnorm in report, please rerun');
-    }
+      let logFiles = logFilesReq.data;
 
-    const loudNormDataArr = [];
+      logFiles = logFiles.sort((a, b) => {
+        const joba = parseJobName(a);
+        const jobb = parseJobName(b);
+        return jobb.start - joba.start;
+      });
 
-    // {
-    for (let i = (idx + 1); i < lines.length; i += 1) {
-      const lineArr = lines[i].split(' ');
-      lineArr.shift();
-      loudNormDataArr.push(lineArr.join(' '));
-      if (lines[i].includes('}')) {
-        break;
+      const latestJob = logFiles[0];
+
+      const reportReq = await axios.post(`${serverUrl}/api/v2/read-job-file`, {
+        data: {
+          footprintId: file.footprintId,
+          jobId: parseJobName(latestJob).jobId,
+          jobFileId: latestJob,
+        },
+      });
+
+      if (reportReq.status !== 200) {
+        throw new Error('Failed to get read latest log file, please rerun');
       }
-    }
 
-    loudNormValues = JSON.parse(loudNormDataArr.join(''));
-  } catch (err) {
-    response.infoLog += err;
-    throw new Error(err);
+      const report = reportReq.data.text;
+      const lines = report.split('\n');
+
+      let idx = -1;
+
+      // get last index of Parsed_loudnorm
+      lines.forEach((line, i) => {
+        if (line.includes('Parsed_loudnorm')) {
+          idx = i;
+        }
+      });
+
+      if (idx === -1) {
+        throw new Error('Failed to find loudnorm in report, please rerun');
+      }
+
+      const loudNormDataArr = [];
+
+      for (let i = (idx + 1); i < lines.length; i += 1) {
+        const lineArr = lines[i].split(' ');
+        lineArr.shift();
+        loudNormDataArr.push(lineArr.join(' '));
+        if (lines[i].includes('}')) {
+          break;
+        }
+      }
+
+      loudNormValues = JSON.parse(loudNormDataArr.join(''));
+      break;
+    } catch (err) {
+      response.infoLog += err;
+      error = err;
+    }
+  }
+
+  if (loudNormValues === false && error) {
+    throw new Error(error);
   }
 
   return loudNormValues;
@@ -195,7 +227,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } if (
     probeData.format.tags.NORMALISATIONSTAGE === 'FirstPassComplete'
   ) {
-    const loudNormValues = await getloudNormValues(response, file);
+    const loudNormValues = await getloudNormValues(inputs, response, file);
 
     response.infoLog += `Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`;
 
