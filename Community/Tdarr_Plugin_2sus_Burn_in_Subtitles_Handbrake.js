@@ -42,8 +42,8 @@ const details = () => ({
       tooltip: `Container the output file will be in. Leave blank to leave container unchanged\n\n
             
             Common Containers:
-            mkv
-            mp4
+            .mkv
+            .mp4
             `,
     },
     {
@@ -90,8 +90,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
-    // eslint-disable-next-line no-console
-    console.log('File is not video');
     response.infoLog += '☒ File is not video \n';
     response.processFile = false;
     return response;
