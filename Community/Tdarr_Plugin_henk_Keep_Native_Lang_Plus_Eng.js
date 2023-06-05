@@ -11,7 +11,8 @@ const details = () => ({
      (requires TMDB api key) and English.
     'Native' languages are the ones that are listed on imdb. It does an API call to 
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
-    falls back to the IMDB id in the filename.`,
+    falls back to the IMDB id in the filename. Sonarr detection relies on your filenames formatted
+    starting as such "{Series TitleYear} - ..." (Note the space dash space)`,
   Version: '1.01',
   Tags: 'pre-processing,configurable',
   Inputs: [
@@ -206,14 +207,14 @@ const parseArrResponse = async (body, filePath, arr) => {
       }
       break;
     case 'sonarr':
-      // filePath = directory the file is in
+      // filePath = file name of the file
       for (let i = 0; i < body.length; i += 1) {
         if (body[i].path) {
-          const sonarrTemp = body[i].path.replace(/\\/g, '/').split('/');
+          const sonarrTemp = body[i].path.replace(/\\/g, '/').split('/').filter(part => part.length > 0);
           const sonarrFolder = sonarrTemp[sonarrTemp.length - 1];
-          const tdarrTemp = filePath.split('/');
-          const tdarrFolder = tdarrTemp[tdarrTemp.length - 2];
-          if (sonarrFolder === tdarrFolder) {
+          const tdarrTemp = filePath.split(' - ').filter(part => part.length > 0);
+          const tdarrSeriesName = tdarrTemp[0];
+          if (sonarrFolder === tdarrSeriesName) {
             return body[i];
           }
         }
@@ -269,7 +270,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           sonarrResult = await parseArrResponse(
             await axios.get(`http://${inputs.sonarr_url}/api/series?apikey=${inputs.sonarr_api_key}`)
               .then((resp) => resp.data),
-            file.meta.Directory, 'sonarr',
+            file.meta.FileName, 'sonarr',
           );
 
           if (sonarrResult) {
