@@ -5,11 +5,9 @@ const details = () => ({
   Name: 'tws101 trascode to AV1 Using CPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Prototype, if video is not av1 trascode to AV1, Maintain HDR, keep original container`,
-  //    Created by tws101 
-  //    Based DOOMs methods
-  //    Prototype version
-  Version: '0.3',
+  Description: `Prototype, Trascode to AV1, detect and maintain HDR, Keep orginal container.
+  Reconvert AV1 if the option is on and we are over the bitrate filter`,
+  Version: '0.4',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {
@@ -56,6 +54,94 @@ const details = () => ({
           type: 'text',
         },
         tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.`,
+      },
+      {
+        name: 'reconvert_480p_576p_av1',
+        type: 'boolean',
+        defaultValue: false,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            'false',
+            'true',
+          ],
+        },
+        tooltip: `Will reconvert 480p and 576p av1 files that are above the av1_480p_576p_filter_bitrate`,
+      },
+      {
+        name: 'av1_480p_576p_filter_bitrate',
+        type: 'string',
+        defaultValue: '1050000',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Filter bitrate to reconvert_480p_576p_av1`,
+      },
+      {
+        name: 'reconvert_720p_av1',
+        type: 'boolean',
+        defaultValue: false,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            'false',
+            'true',
+          ],
+        },
+        tooltip: `Will reconvert 720p av1 files that are above the av1_720p_filter_bitrate`,
+      },
+      {
+        name: 'av1_720p_filter_bitrate',
+        type: 'string',
+        defaultValue: '1212500',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Filter bitrate to reconvert_720p_av1 `,
+      },
+      {
+        name: 'reconvert_1080p_av1',
+        type: 'boolean',
+        defaultValue: false,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            'false',
+            'true',
+          ],
+        },
+        tooltip: `Will reconvert 1080p av1 files that are above the av1_1080p_filter_bitrate`,
+      },
+      {
+        name: 'av1_1080p_filter_bitrate',
+        type: 'string',
+        defaultValue: '1700000',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Filter bitrate to reconvert_1080p_av1 `,
+      },
+      {
+        name: 'reconvert_4KUHD_av1',
+        type: 'boolean',
+        defaultValue: false,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            'false',
+            'true',
+          ],
+        },
+        tooltip: `Will reconvert 4KUHD av1 files that are above the av1_filter_bitrate_4KUHD`,
+      },
+      {
+        name: 'av1_filter_bitrate_4KUHD',
+        type: 'string',
+        defaultValue: '2800000',
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Filter bitrate to reconvert_4KUHD_av1`,
       },
     ],
 });
@@ -275,11 +361,67 @@ function buildVideoConfiguration(inputs, file, logger) {
       return;
     }
 
-    //Determines if the file is already AV1
-    if (stream.codec_name === "av1") {
-      logger.AddSuccess("File is Already AV1");
-      return;
+
+    //check for reprocess av1
+
+    const fileResolution = file.video_resolution;
+
+    if ((inputs.reconvert_480p_576p_av1 === false) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
+      if (stream.codec_name === "av1") {
+        logger.AddSuccess("File is in av1 and, 480p or 576p, and av1 processing is off");
+        return;
+      }
     }
+
+    if ((inputs.av1_480p_576p_filter_bitrate > 0) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_480p_576p_filter_bitrate)) {
+        logger.AddSuccess("File is in av1 and, 480p or 576p, and under the av1_480p_576p_filter_bitrate");
+        return;
+      }
+    }
+
+    if ((inputs.reconvert_720p_av1 === false) && (fileResolution === "720p")) {
+      if (stream.codec_name === "av1") {
+        logger.AddSuccess("File is in av1 and 720p, and av1 processing is off");
+        return;
+      }
+    }
+
+    if ((inputs.av1_720p_filter_bitrate > 0) && (fileResolution === "720p")) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_720p_filter_bitrate)) {
+        logger.AddSuccess("File is in av1 and 720p, and under the av1_720p_filter_bitrate");
+        return;
+      }
+    }
+
+    if ((inputs.reconvert_1080p_av1 === false) && (fileResolution === "1080p")) {
+      if (stream.codec_name === "av1") {
+        logger.AddSuccess("File is in av1 and 1080p, and av1 processing is off");
+        return;
+      }
+    }
+
+    if ((inputs.av1_1080p_filter_bitrate > 0) && (fileResolution === "1080p")) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_1080p_filter_bitrate)) {
+        logger.AddSuccess("File is in av1 and 1080p, and under the av1_1080p_filter_bitrate");
+        return;
+      }
+    }
+
+    if ((inputs.reconvert_4KUHD_av1 === false) && (fileResolution === "4KUHD")) {
+      if (stream.codec_name === "av1") {
+        logger.AddSuccess("File is in av1 and 4KUHD, and av1 processing is off");
+        return;
+      }
+    }
+
+    if ((inputs.av1_filter_bitrate_4KUHD > 0) && (fileResolution === "4KUHD")) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_filter_bitrate_4KUHD)) {
+        logger.AddSuccess("File is in av1 and 4KUHD, and under the av1_filter_bitrate_4KUHD");
+        return;
+      }
+    }
+
 
     // remove png streams.
     if (stream.codec_name === "png") {
