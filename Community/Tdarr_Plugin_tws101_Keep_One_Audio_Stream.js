@@ -14,7 +14,7 @@ The third is Commentary and Descriptive tracks are excluded from being the chose
 //    Created by tws101 
 //    Based on Keep One Audio Stream Method
 //    Release version
-    Version: '1.10',
+    Version: '1.11',
     Tags: "pre-processing,audio only,ffmpeg,configurable",
     Inputs: [
       {
@@ -75,7 +75,7 @@ The third is Commentary and Descriptive tracks are excluded from being the chose
       {
         name: "bitrate",
         type: 'string',
-        defaultValue: '256k',
+        defaultValue: '300k',
         inputUI: {
           type: 'text',
         },
@@ -91,7 +91,7 @@ The third is Commentary and Descriptive tracks are excluded from being the chose
       {
         name: "filter_bitrate",
         type: 'string',
-        defaultValue: '300k',
+        defaultValue: '330k',
         inputUI: {
           type: 'text',
         },
