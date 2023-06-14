@@ -6,10 +6,11 @@ const details = () => {
     Name: "tws101 Custom Change Bit Rate of Audio",
     Type: "Audio",
     Operation: "Transcode",
-    Description: `Reduce bit rate to target value.  Input and Output Codec can be the same but, you must use a bit rate filter   \n\n`,
+    Description: `Reduce bit rate to target value.  transcodes audio stream can choose same codec.  Must be MP4 bit rate filter   \n\n`,
     //  made by tws101
-	//  inspired by unknown
-	Version: "1.00",
+	  //  inspired by unknown
+    //  Release Version
+    Version: "1.01",
     Tags: "pre-processing,audio only,ffmpeg,configurable",
     Inputs: [
       {

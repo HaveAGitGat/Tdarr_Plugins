@@ -11,20 +11,20 @@ const details = () => {
     Description:
       `This plugin will GPU trascode using NVENC to HEVC with bframes, 10bit, and HDR.  HDR in the source file is preserved if it is present
 	   The Primary use of this plugin is to reduce bit rate and save space as well as bandwidth.
-	   an NVENC capable GPU that can do bframes is required.  With reconvert HEVC off files not in HEVC will be converted into HEVC in an MKV container no exceptions.  With reconvert 
+	   an NVENC capable GPU that can do bframes is required.  With reconvert HEVC off files not in HEVC will be converted into HEVC. container is the input container.  With reconvert 
 	   HEVC on, even an HEVC file will be processed.  In reconvert HEVC mode the filter bitrate as well as the target bit rate is essential to program correctly. Example with a 1080p HEVC file
 	   with a preprocessing bit rate of 5M.  Setting the target to 2.1M we know the max bitrate should be 2.5M, tool tip tells you what to add, for the video. Next you need to add some overhead
 	   for audio lets say 500k for a total of 3M.  3M should be in the hevc_1080p_filter_bitrate to make this example work and not loop`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
 //    Release version
-    Version: "1.0",
+    Version: "1.01",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
         name: "target_bitrate_480p576p",
         type: 'string',
-        defaultValue: '1000000',
+        defaultValue: '600000',
         inputUI: {
           type: 'text',
         },
@@ -33,7 +33,7 @@ const details = () => {
       {
         name: "target_bitrate_720p",
         type: 'string',
-        defaultValue: '1500000',
+        defaultValue: '750000',
         inputUI: {
           type: 'text',
         },
@@ -42,7 +42,7 @@ const details = () => {
       {
         name: "target_bitrate_1080p",
         type: 'string',
-        defaultValue: '2500000',
+        defaultValue: '1200000',
         inputUI: {
           type: 'text',
         },
@@ -51,11 +51,11 @@ const details = () => {
       {
         name: "target_bitrate_4KUHD",
         type: 'string',
-        defaultValue: '5000000',
+        defaultValue: '2400000',
         inputUI: {
           type: 'text',
         },
-        tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Plus 1600k equals max bit rate.`,
+        tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Plus 600k equals max bit rate.`,
       },
       {
         name: "target_pct_reduction",
@@ -69,7 +69,7 @@ const details = () => {
 	  {
       name: 'reconvert_480p_576p_hevc',
       type: 'boolean',
-      defaultValue: false,
+      defaultValue: true,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -82,7 +82,7 @@ const details = () => {
 	  {
       name: 'hevc_480p_576p_filter_bitrate',
       type: 'string',
-      defaultValue: '1700000',
+      defaultValue: '1200000',
       inputUI: {
         type: 'text',
       },
@@ -91,7 +91,7 @@ const details = () => {
 	  {
       name: 'reconvert_720p_hevc',
       type: 'boolean',
-      defaultValue: false,
+      defaultValue: true,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -104,7 +104,7 @@ const details = () => {
 	  {
       name: 'hevc_720p_filter_bitrate',
       type: 'string',
-      defaultValue: '2250000',
+      defaultValue: '1400000',
       inputUI: {
         type: 'text',
       },
@@ -113,7 +113,7 @@ const details = () => {
 	  {
       name: 'reconvert_1080p_hevc',
       type: 'boolean',
-      defaultValue: false,
+      defaultValue: true,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -126,7 +126,7 @@ const details = () => {
 	  {
       name: 'hevc_1080p_filter_bitrate',
       type: 'string',
-      defaultValue: '3400000',
+      defaultValue: '2000000',
       inputUI: {
         type: 'text',
       },
@@ -135,7 +135,7 @@ const details = () => {
 	  {
       name: 'reconvert_4KUHD_hevc',
       type: 'boolean',
-      defaultValue: false,
+      defaultValue: true,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -148,7 +148,7 @@ const details = () => {
 	  {
       name: 'hevc_filter_bitrate_4KUHD',
       type: 'string',
-      defaultValue: '7100000',
+      defaultValue: '3400000',
       inputUI: {
         type: 'text',
       },
@@ -465,7 +465,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
 
-      if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10") {
+      if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10" && file.ffProbeData.streams[0].profile !== "High 4:4:4 Predictive") {
         configuration.AddInputSetting("-c:v h264_cuvid");
       }
 	  
@@ -502,7 +502,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   var response = {
-    container: ".mkv",
+    container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
     infoLog: "",
@@ -530,6 +530,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     };
     id++;
   }
+  // 10bit or HDR
 
   // b frames argument
   response.preset += ` -bf 5`;

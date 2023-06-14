@@ -75,7 +75,7 @@ The third is Commentary and Descriptive tracks are excluded from being the chose
       {
         name: "bitrate",
         type: 'string',
-        defaultValue: '320k',
+        defaultValue: '256k',
         inputUI: {
           type: 'text',
         },
@@ -91,7 +91,7 @@ The third is Commentary and Descriptive tracks are excluded from being the chose
       {
         name: "filter_bitrate",
         type: 'string',
-        defaultValue: '330k',
+        defaultValue: '300k',
         inputUI: {
           type: 'text',
         },
