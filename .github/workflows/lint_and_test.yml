@@ -8,7 +8,7 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
         os:
           [
             ["ubuntu-20.04"],
