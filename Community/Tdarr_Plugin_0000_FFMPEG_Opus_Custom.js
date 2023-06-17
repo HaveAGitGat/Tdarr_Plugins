@@ -4,7 +4,8 @@ const details = () => ({
   Name: 'FFMPEG Opus Custom',
   Type: 'Audio',
   Operation: 'Transcode',
-  Description: '[Contains built-in filter] This plugin transcodes non Opus audio streams into Opus, giving you a basic bitrate control. Video/subtitles/attachments not affected.  \n\n',
+  Description:
+    '[Contains built-in filter] This plugin transcodes non Opus audio streams into Opus, giving you a basic bitrate control. Video/subtitles/attachments not affected.  \n\n',
   Version: '1.1',
   Tags: 'pre-processing,ffmpeg,opus,audio only',
   Inputs: [
@@ -31,10 +32,10 @@ const details = () => ({
   ],
 });
 
-const plugin = (file, librarySettings, inputs, otherArguments) => {
+const plugin = (file, librarySettings, inputs) => {
   const lib = require('../methods/lib')();
-  inputs = lib.loadDefaultValues(inputs, details);
-  const bitrate = inputs.bitrate ?? '128k';
+  const adjustedInputs = lib.loadDefaultValues(inputs, details);
+  const bitrate = adjustedInputs.bitrate ?? '128k';
   const channelMapping = {
     Mono: 1,
     Stereo: 2,
@@ -43,7 +44,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     '5.1': 6,
     '7.1': 8,
   };
-  const maxchannels = channelMapping[inputs.maxchannels ?? 'Stereo'];
+  const maxchannels = channelMapping[adjustedInputs.maxchannels ?? 'Stereo'];
 
   const is5Point1Side =
     file.ffProbeData.streams.some(
@@ -53,7 +54,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         s.channel_layout === '5.1(side)'
     );
 
-  //  Workaround to force channel output to 6 if 5.1(side) detected
+  // Workaround to force channel output to 6 if 5.1(side) detected
   const adjustedChannels = is5Point1Side ? 6 : maxchannels;
 
   const response = {
@@ -71,6 +72,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += '☒File is not a video! \n';
     return response;
   }
+
   response.infoLog += '☑File is a video! \n';
 
   if (file.ffProbeData.streams.some((s) => s.codec_name === 'opus')) {
