@@ -7,7 +7,7 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `Prototype, Trascode to AV1, detect and maintain HDR, Keep orginal container.
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
-  Version: '0.4',
+  Version: '0.5',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {
@@ -305,8 +305,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 }
 
 /**
- * Attempts to ensure that video streams are h265 encoded and inside an
- * MKV container.
+ * Attempts to ensure that video streams are av1 encoded 
  */
 function buildVideoConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
