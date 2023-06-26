@@ -7,7 +7,9 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `Prototype, Trascode to AV1, detect and maintain HDR, Keep orginal container.
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
-  Version: '0.5',
+//    Created by tws101 
+//    Prototype version
+  Version: '0.6',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {

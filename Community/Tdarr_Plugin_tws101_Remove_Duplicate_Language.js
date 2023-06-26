@@ -7,13 +7,13 @@ const details = () => {
       Type: 'Audio',
       Operation: 'Transcode',
       Description: `
-  Configuraed language will be checked to see if multiple streams exist.  If yes the highest channel count will be kept the others removed.
+  Configured language will be checked to see if multiple streams exist.  If yes the highest channel count will be kept the others removed.
   Tracks with commentary or descriptive should be cleared in advance before using this plugin.
   `,
 //    Created by tws101 
 //    Based on Keep One Audio Stream Method
-//    Prototype version
-      Version: '0.95',
+//    Release version
+      Version: '1.00',
       Tags: "pre-processing,audio only,ffmpeg,configurable",
       Inputs: [
         {

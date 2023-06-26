@@ -18,7 +18,7 @@ const details = () => {
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
 //    Release version
-    Version: "1.01",
+    Version: "1.02",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
@@ -433,8 +433,6 @@ function buildVideoConfiguration(inputs, file, logger) {
         return;
 	  }
     }
-	
-	//Check HDR
 
     // remove png streams.
     if (stream.codec_name === "png") {
@@ -469,6 +467,7 @@ function buildVideoConfiguration(inputs, file, logger) {
         configuration.AddInputSetting("-c:v h264_cuvid");
       }
 	  
+      //Check HDR
 	  if (stream.color_space === "bt2020nc") {
         configuration.AddOutputSetting(
 		  ` -pix_fmt p010le -color_primaries bt2020 -colorspace bt2020nc -color_trc smpte2084 `
@@ -530,7 +529,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     };
     id++;
   }
-  // 10bit or HDR
 
   // b frames argument
   response.preset += ` -bf 5`;
