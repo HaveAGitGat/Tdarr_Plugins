@@ -10,16 +10,16 @@ const details = () => ({
   Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
   Inputs: [
     {
-      name: 'encoder',
+      name: 'target_codec',
       type: 'string',
       defaultValue: 'hevc',
       inputUI: {
         type: 'dropdown',
         options: [
           'hevc',
-          'vp9',
+          // 'vp9',
           'h264',
-          'vp8',
+          // 'vp8',
         ],
       },
       tooltip: 'Specify the codec to use',
@@ -191,8 +191,8 @@ const getEncoder = async ({
   inputs,
   otherArguments,
 }) => {
-  let { encoder } = inputs;
-  if (inputs.try_use_gpu && (inputs.encoder === 'hevc' || inputs.encoder === 'h264')) {
+  if (otherArguments.workerType.includes('gpu')
+    && inputs.try_use_gpu && (inputs.target_codec === 'hevc' || inputs.target_codec === 'h264')) {
     const gpuEncoders = [
       {
         encoder: 'hevc_nvenc',
@@ -229,7 +229,7 @@ const getEncoder = async ({
       },
     ];
 
-    const filteredGpuEncoders = gpuEncoders.filter((device) => device.encoder.includes(inputs.encoder));
+    const filteredGpuEncoders = gpuEncoders.filter((device) => device.encoder.includes(inputs.target_codec));
 
     // eslint-disable-next-line no-restricted-syntax
     for (const gpuEncoder of filteredGpuEncoders) {
@@ -243,11 +243,17 @@ const getEncoder = async ({
     const enabledDevices = gpuEncoders.filter((device) => device.enabled === true);
 
     if (enabledDevices.length > 0) {
-      encoder = enabledDevices[0].encoder;
+      return enabledDevices[0].encoder;
     }
   }
 
-  return encoder;
+  if (inputs.target_codec === 'hevc') {
+    return 'libx265';
+  } if (inputs.target_codec === 'h264') {
+    return 'libx264';
+  }
+
+  return '';
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -407,10 +413,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       // Check if codec of stream is hevc or vp9 AND check if file.container matches inputs.container.
       // If so nothing for plugin to do.
       if (
-        inputs.encoder === file.ffProbeData.streams[i].codec_name
+        inputs.target_codec === file.ffProbeData.streams[i].codec_name
         && file.container === inputs.container
       ) {
-        response.infoLog += `File is already ${inputs.encoder} & in ${inputs.container}. \n`;
+        response.infoLog += `File is already ${inputs.target_codec} and in ${inputs.container}. \n`;
         return response;
       }
       // Check if codec of stream is hevc or vp9
@@ -418,11 +424,12 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       // If so remux file.
       if (
 
-        inputs.encoder === file.ffProbeData.streams[i].codec_name
+        inputs.target_codec === file.ffProbeData.streams[i].codec_name
 
         && file.container !== inputs.container
       ) {
-        response.infoLog += `File is hevc or vp9 but is not in ${inputs.container} container. Remuxing. \n`;
+        response.infoLog += `File is in ${inputs.target_codec} but `
+          + `is not in ${inputs.container} container. Remuxing. \n`;
         response.preset = `<io> -map 0 -c copy ${extraArguments}`;
         response.processFile = true;
         return response;
@@ -430,7 +437,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
       // Check if video stream is HDR or 10bit
       if (
-        inputs.encoder === 'hevc'
+        inputs.target_codec === 'hevc'
         && (file.ffProbeData.streams[i].profile === 'High 10'
           || file.ffProbeData.streams[i].bits_per_raw_sample === '10')
       ) {
@@ -453,7 +460,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
-  if (encoder.contains('nvenc')) {
+  if (encoder.includes('nvenc')) {
     if (file.video_codec_name === 'h263') {
       response.preset = '-c:v h263_cuvid';
     } else if (file.video_codec_name === 'h264' && CPU10 === false) {
@@ -476,7 +483,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.preset += `${genpts}<io> -map 0 -c copy -c:v ${encoder} -cq:v 19 ${bitrateSettings} `
     + `-spatial_aq:v 1 -rc-lookahead:v 32 -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
-  response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
+  response.infoLog += `File is not in ${inputs.target_codec}. Transcoding. \n`;
   return response;
 };
 module.exports.details = details;
