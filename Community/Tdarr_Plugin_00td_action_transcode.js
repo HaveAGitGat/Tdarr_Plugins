@@ -90,7 +90,7 @@ const details = () => ({
                       false`,
     },
     {
-      name: 'enable_bframes',
+      name: 'bframes_enabled',
       type: 'boolean',
       defaultValue: false,
       inputUI: {
@@ -108,6 +108,15 @@ const details = () => ({
   
                       \\nExample:\\n
                       false`,
+    },
+    {
+      name: 'bframes_value',
+      type: 'number',
+      defaultValue: 5,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify number of bframes to use.',
     },
     {
       name: 'force_conform',
@@ -132,6 +141,11 @@ const details = () => ({
     },
   ],
 });
+
+const bframeSupport = [
+  'hevc_nvenc',
+  'h264_nvenc',
+];
 
 const hasEncoder = async ({
   ffmpegPath,
@@ -358,9 +372,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Check if b frame variable is true.
-  if (encoder === 'hevc_nvenc' && inputs.enable_bframes === true) {
+  if (bframeSupport.includes(encoder) && inputs.bframes_enabled === true) {
     // If set to true then add b frames argument
-    extraArguments += '-bf 5 ';
+    extraArguments += `-bf ${inputs.bframes_value} `;
   }
 
   // Go through each stream in the file.
