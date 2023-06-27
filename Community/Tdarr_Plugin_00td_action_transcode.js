@@ -25,7 +25,19 @@ const details = () => ({
       tooltip: 'Specify the codec to use',
     },
     {
-      name: 'use_gpu',
+      name: 'target_bitrate_multiplier',
+      type: 'number',
+      defaultValue: 0.5,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `
+      Specify the multiplier to use to calculate the target bitrate. 
+      Default of 0.5 will roughly half the size of the file.
+      `,
+    },
+    {
+      name: 'try_use_gpu',
       type: 'boolean',
       defaultValue: true,
       inputUI: {
@@ -180,7 +192,7 @@ const getEncoder = async ({
   otherArguments,
 }) => {
   let { encoder } = inputs;
-  if (inputs.use_gpu && (inputs.encoder === 'hevc' || inputs.encoder === 'h264')) {
+  if (inputs.try_use_gpu && (inputs.encoder === 'hevc' || inputs.encoder === 'h264')) {
     const gpuEncoders = [
       {
         encoder: 'hevc_nvenc',
@@ -293,7 +305,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Use the same calculation used for currentBitrate but divide it in half to get targetBitrate.
   // Logic of h265 can be half the bitrate as h264 without losing quality.
 
-  const targetBitrate = currentBitrate / 2;
+  const targetBitrate = currentBitrate * inputs.target_bitrate_multiplier;
   // Allow some leeway under and over the targetBitrate.
 
   const minimumBitrate = (targetBitrate * 0.7);
