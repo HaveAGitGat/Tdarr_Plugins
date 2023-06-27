@@ -191,7 +191,9 @@ const getEncoder = async ({
   inputs,
   otherArguments,
 }) => {
-  if (otherArguments.workerType.includes('gpu')
+  if (
+    otherArguments.workerType
+    && otherArguments.workerType.includes('gpu')
     && inputs.try_use_gpu && (inputs.target_codec === 'hevc' || inputs.target_codec === 'h264')) {
     const gpuEncoders = [
       {
