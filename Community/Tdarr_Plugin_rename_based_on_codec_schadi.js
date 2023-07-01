@@ -90,6 +90,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   var firstVideoStreamCodec;
   var firstAudioStreamCodec;
 
+  const videoCodecRegex = /(h264|h265|x264|x265|avc|hevc|mpeg2|av1)/gi;
+  const audioCodecRegex = /(aac|ac3|eac3|flac|mp2|mp3|truehd|dts[-. ]hd[-. ]ma|dts[-. ]hd[-. ]es|dts[-. ]hd[-. ]hra|dts[-. ]express|dts)/gi;
+
   const videoStream = file.ffProbeData.streams.find((stream) => stream.codec_type === 'video');
 
   if (videoStream && inputs.rename_video) {
@@ -98,8 +101,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 	
     if (videoCodec in codecMap) {
       const renamedCodec = codecMap[videoCodec];
-      file._id = file._id.replace(/(h264|h265|x264|x265|avc|hevc|mpeg2|av1)/gi, renamedCodec);
-      file.file = file.file.replace(/(h264|h265|x264|x265|avc|hevc|mpeg2|av1)/gi, renamedCodec);
+      file._id = file._id.replace(videoCodecRegex, renamedCodec);
+      file.file = file.file.replace(videoCodecRegex, renamedCodec);
     }
   }
 
@@ -111,8 +114,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 	
     if (audioCodec in codecMap) {
       const renamedCodec = codecMap[audioCodec];
-      file._id = file._id.replace(/(aac|ac3|eac3|flac|mp2|mp3|truehd|dts[-. ]hd[-. ]ma|dts[-. ]hd[-. ]es|dts[-. ]hd[-. ]hra|dts[-. ]express|dts)/gi, renamedCodec);
-      file.file = file.file.replace(/(aac|ac3|eac3|flac|mp2|mp3|truehd|dts[-. ]hd[-. ]ma|dts[-. ]hd[-. ]es|dts[-. ]hd[-. ]hra|dts[-. ]express|dts)/gi, renamedCodec);
+      file._id = file._id.replace(audioCodecRegex, renamedCodec);
+      file.file = file.file.replace(audioCodecRegex, renamedCodec);
     }
   }
 
@@ -142,8 +145,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           const renamedAudioCodec = codecMap[firstAudioStreamCodec];
 
           const renamedFileWithCodecs = additionalFileName
-            .replace(/(h264|h265|x264|x265|avc|hevc|mpeg2|av1)/gi, renamedVideoCodec)
-            .replace(/(aac|ac3|eac3|flac|mp2|mp3|truehd|dts[-. ]hd[-. ]ma|dts[-. ]hd[-. ]es|dts[-. ]hd[-. ]hra|dts[-. ]express|dts)/gi, renamedAudioCodec);
+            .replace(videoCodecRegex, renamedVideoCodec)
+            .replace(audioCodecRegex, renamedAudioCodec);
 
           return renamedFileWithCodecs;
         });
