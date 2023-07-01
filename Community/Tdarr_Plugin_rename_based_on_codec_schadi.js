@@ -8,7 +8,10 @@ const details = () => {
     Name: "Rename based on codec Video and Audio",
     Type: "Video_Audio",
     Operation: "Transcode",
-    Description: `[Contains built-in filter] If the filename contains '264' or '265' or some other Codecs and also Audio codecs, this plugin renames 264 files to 265 or vice versa depending on the codec same for Audio. It also takes care off addiotnal files like deffined in the input Option.	\n\n`,
+    Description: `
+    If the filename contains a codec information like h264, av1 or similar for video and AC3, AAC or trueHD \n\n
+    the plugin will read the codec info from the file and rename it accordingly. \n\n
+    It also takes care off addiotnal files deffined in the input Option.	\n\n`,
     Version: "1.00",
     Tags: "post-processing",
     Inputs:[
