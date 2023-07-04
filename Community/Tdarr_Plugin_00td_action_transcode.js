@@ -151,6 +151,25 @@ const details = () => ({
                       \\nExample:\\n
                       false`,
     },
+    {
+      name: 'exclude_gpus',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify the id(s) of any GPUs that needs to be excluded from assigning transcoding tasks.
+                 \\n Seperate with a comma (,). Leave empty to disable.
+                 \\n Get GPU numbers in the node by running 'nvidia-smi'
+                      \\nExample:\\n
+                      0,1,3,8
+  
+                      \\nExample:\\n
+                      3
+  
+                      \\nExample:\\n
+                      0`,
+    },
   ],
 });
 
@@ -162,15 +181,18 @@ const bframeSupport = [
 const hasEncoder = async ({
   ffmpegPath,
   encoder,
+  inputArgs,
 }) => {
   const { exec } = require('child_process');
   let isEnabled = false;
   try {
     isEnabled = await new Promise((resolve) => {
-      exec(`${ffmpegPath} -f lavfi -i color=c=black:s=256x256:d=1:r=30 -c:v ${encoder} -f null /dev/null`, (
+      const command = `${ffmpegPath} ${inputArgs || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
+      + ` -c:v ${encoder} -f null /dev/null`;
+      exec(command, (
         error,
         // stdout,
-        // stderr
+        // stderr,
       ) => {
         if (error) {
           resolve(false);
@@ -187,7 +209,66 @@ const hasEncoder = async ({
   return isEnabled;
 };
 
+// credit to UNCode101 for this
+const getBestNvencDevice = async ({
+  response,
+  inputs,
+  nvencDevice,
+}) => {
+  const { execSync } = require('child_process');
+  let gpu_num = -1;
+  let gpu_util = 100000;
+  let result_util = 0;
+  let gpu_count = -1;
+  let gpu_names = '';
+  const gpus_to_exclude = inputs.exclude_gpus === '' ? [] : inputs.exclude_gpus.split(',').map(Number);
+  try {
+    gpu_names = execSync('nvidia-smi --query-gpu=name --format=csv,noheader');
+    gpu_names = gpu_names.toString().trim();
+    gpu_names = gpu_names.split(/\r?\n/);
+    /* When nvidia-smi returns an error it contains 'nvidia-smi' in the error
+      Example: Linux: nvidia-smi: command not found
+               Windows: 'nvidia-smi' is not recognized as an internal or external command,
+                   operable program or batch file. */
+    if (!gpu_names[0].includes('nvidia-smi')) {
+      gpu_count = gpu_names.length;
+    }
+  } catch (error) {
+    response.infoLog += 'Error in reading nvidia-smi output! \n';
+    // response.infoLog += error.message;
+  }
+  if (gpu_count > 0) {
+    for (let gpui = 0; gpui < gpu_count; gpui++) {
+      // Check if GPU # is in GPUs to exclude
+      if (gpus_to_exclude.includes(gpui)) {
+        response.infoLog += `GPU ${gpui}: ${gpu_names[gpui]} is in exclusion list, will not be used!\n`;
+      } else {
+        try {
+          const cmd_gpu = `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`;
+          result_util = parseInt(execSync(cmd_gpu), 10);
+          if (!Number.isNaN(result_util)) { // != "No devices were found") {
+            response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
+            if (result_util < gpu_util) {
+              gpu_num = gpui;
+              gpu_util = result_util;
+            }
+          }
+        } catch (error) {
+          response.infoLog += `Error in reading GPU ${gpui} Utilization\nError: ${error}\n`;
+        }
+      }
+    }
+  }
+  if (gpu_num >= 0) {
+    // eslint-disable-next-line no-param-reassign
+    nvencDevice.inputArgs = `-hwaccel_device ${gpu_num}`;
+  }
+
+  return nvencDevice;
+};
+
 const getEncoder = async ({
+  response,
   inputs,
   otherArguments,
 }) => {
@@ -206,6 +287,11 @@ const getEncoder = async ({
       },
       {
         encoder: 'hevc_qsv',
+        enabled: false,
+      },
+      {
+        encoder: 'hevc_vaapi',
+        inputArgs: '-hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi',
         enabled: false,
       },
       {
@@ -239,23 +325,40 @@ const getEncoder = async ({
       gpuEncoder.enabled = await hasEncoder({
         ffmpegPath: otherArguments.ffmpegPath,
         encoder: gpuEncoder.encoder,
+        inputArgs: gpuEncoder.inputArgs,
       });
     }
 
     const enabledDevices = gpuEncoders.filter((device) => device.enabled === true);
 
     if (enabledDevices.length > 0) {
-      return enabledDevices[0].encoder;
+      if (enabledDevices[0].encoder.includes('nvenc')) {
+        return getBestNvencDevice({
+          response,
+          inputs,
+          nvencDevice: enabledDevices[0],
+        });
+      }
+      return enabledDevices[0];
     }
   }
 
   if (inputs.target_codec === 'hevc') {
-    return 'libx265';
+    return {
+      encoder: 'libx265',
+      inputArgs: '',
+    };
   } if (inputs.target_codec === 'h264') {
-    return 'libx264';
+    return {
+      encoder: 'libx264',
+      inputArgs: '',
+    };
   }
 
-  return '';
+  return {
+    encoder: '',
+    inputArgs: '',
+  };
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -272,7 +375,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const encoder = await getEncoder({
+  const encoderProperties = await getEncoder({
+    response,
     inputs,
     otherArguments,
   });
@@ -392,7 +496,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Check if b frame variable is true.
-  if (bframeSupport.includes(encoder) && inputs.bframes_enabled === true) {
+  if (bframeSupport.includes(encoderProperties.encoder) && inputs.bframes_enabled === true) {
     // If set to true then add b frames argument
     extraArguments += `-bf ${inputs.bframes_value} `;
   }
@@ -462,7 +566,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
-  if (encoder.includes('nvenc')) {
+  if (encoderProperties.encoder.includes('nvenc')) {
     if (file.video_codec_name === 'h263') {
       response.preset = '-c:v h263_cuvid';
     } else if (file.video_codec_name === 'h264' && CPU10 === false) {
@@ -482,7 +586,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  response.preset += `${genpts}<io> -map 0 -c copy -c:v ${encoder} -cq:v 19 ${bitrateSettings} `
+  response.preset += ` ${encoderProperties.inputArgs ? encoderProperties.inputArgs : ''} ${genpts}<io>`
+    + ` -map 0 -c copy -c:v ${encoderProperties.encoder} -cq:v 19 ${bitrateSettings} `
     + `-spatial_aq:v 1 -rc-lookahead:v 32 -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += `File is not in ${inputs.target_codec}. Transcoding. \n`;
