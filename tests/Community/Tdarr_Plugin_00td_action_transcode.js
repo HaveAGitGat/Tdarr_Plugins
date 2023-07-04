@@ -16,14 +16,14 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'Container for output selected as mkv. \n' +
-        'Current bitrate = 1591143.0722891565 \n' +
-        'Bitrate settings: \n' +
-        'Target = 795571.5361445782 \n' +
-        'Minimum = 556900.0753012047 \n' +
-        'Maximum = 1034242.9969879518 \n' +
-        'File is not in hevc. Transcoding. \n',
-      container: '.mkv'
+      infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 1591143.0722891565 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 795571.5361445782 \n'
+        + 'Minimum = 556900.0753012047 \n'
+        + 'Maximum = 1034242.9969879518 \n'
+        + 'File is not in hevc. Transcoding. \n',
+      container: '.mkv',
     },
   },
   {
@@ -69,14 +69,14 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'Container for output selected as mkv. \n' +
-        'Current bitrate = 1591143.0722891565 \n' +
-        'Bitrate settings: \n' +
-        'Target = 1193357.3042168673 \n' +
-        'Minimum = 835350.1129518071 \n' +
-        'Maximum = 1551364.4954819276 \n' +
-        'File is not in hevc. Transcoding. \n',
-      container: '.mkv'
+      infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 1591143.0722891565 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 1193357.3042168673 \n'
+        + 'Minimum = 835350.1129518071 \n'
+        + 'Maximum = 1551364.4954819276 \n'
+        + 'File is not in hevc. Transcoding. \n',
+      container: '.mkv',
     },
   },
 
