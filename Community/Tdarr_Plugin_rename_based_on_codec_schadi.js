@@ -1,5 +1,6 @@
 const loadDefaultValues = require('../methods/loadDefaultValues');
 const fs = require('fs');
+const path = require('path');
 
 const details = () => {
   return {
@@ -53,17 +54,30 @@ const details = () => {
         name: 'additional_extensions',
         type: 'text',
         defaultValue: '.nfo,.srt',
+		        inputUI: {
+          type: 'text',
+        },
         tooltip: `Additional file extensions to rename (comma-separated).
                    \\nExample:\\n
                    .nfo,.srt`,
       },
-    ],
+     ],
   };
 };
 
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   inputs = loadDefaultValues(inputs, details);
   const fileNameOld = file._id;
+ 
+
+	var response = {
+      file,
+      removeFromDB: false,
+      updateDB: true,
+	  infoLog: "",
+	  processFile: false,
+    };
+
 
   const codecMap = {
     'aac': 'AAC',
@@ -121,64 +135,69 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       file.file = file.file.replace(audioCodecRegex, renamedCodec);
     }
   }
+  
+let additionalFilesCount = 0; // Counter for additional files found
+  
+if ((audioStream && inputs.rename_audio) || (videoStream && inputs.rename_video)) {
+  const filename = path.basename(fileNameOld);
+  const JustName = path.parse(filename).name;
+  const popJustnamen = JustName.split('.');
+  popJustnamen.splice(popJustnamen.length - 5);
+  const modJustname = popJustnamen.join('.');
 
-  var filename = fileNameOld.replace(/^.*[\\\/]/, '');
-  var JustName = filename.split('.');
-  JustName.pop();
-  JustName = JustName.join('.').toString();
+  const fileDir = path.dirname(fileNameOld);
+  const directoryPath = fileDir;
 
-  const fileDir = fileNameOld.split('/');
-  fileDir.pop();
-  const directoryPath = fileDir.join('/');
+  const additionalExtensions = inputs.additional_extensions.split(',');
 
-  const additionalExtensions = inputs.additional_extensions
-    .split(/[,;/]/)
-    .map(extension => extension.trim())
-    .filter(extension => extension !== '');
+  let fileList = []; // Array to store the file names
+  const files = fs.readdirSync(directoryPath);
 
-  additionalExtensions.forEach(extension => {
-    const regex = new RegExp(`${JustName}.*${extension}`, 'i');
-    const files = fs.readdirSync(directoryPath);
-
-    files.forEach((supportFile) => {
-      if (regex.test(supportFile)) {
-        const renamedFile = supportFile.replace(regex, (match, p1, p2) => {
-          const additionalFileName = match;
-          const renamedVideoCodec = codecMap[firstVideoStreamCodec];
-          const renamedAudioCodec = codecMap[firstAudioStreamCodec];
-
-          const renamedFileWithCodecs = additionalFileName
-            .replace(videoCodecRegex, renamedVideoCodec)
-            .replace(audioCodecRegex, renamedAudioCodec);
-
-          return renamedFileWithCodecs;
-        });
-
-        fs.renameSync(`${directoryPath}/${supportFile}`, `${directoryPath}/${renamedFile}`, {
-          overwrite: true,
-        });
-      }
-    });
+  files.forEach((supportFile) => {
+    fileList.push(supportFile); // Add all files to the fileList array
   });
+
+  const extensionList = additionalExtensions.map(extension => extension.trim()); // Remove leading/trailing spaces from extensions
+  const regex = new RegExp(`(${extensionList.join('|')})$`, 'i');
+
+  files.forEach((supportFile) => {
+    if (supportFile.startsWith(modJustname) && regex.test(supportFile)) {
+      const renamedFileWithVideoCodec = supportFile.replace(videoCodecRegex, codecMap[firstVideoStreamCodec]);
+      const renamedFileWithBothCodecs = renamedFileWithVideoCodec.replace(audioCodecRegex, codecMap[firstAudioStreamCodec]);
+
+      fs.renameSync(`${directoryPath}/${supportFile}`, `${directoryPath}/${renamedFileWithBothCodecs}`, {
+        overwrite: true,
+      });
+
+      response.infoLog += `${directoryPath}/${supportFile} renamed to ${directoryPath}/${renamedFileWithBothCodecs}\n`;
+      additionalFilesCount++; // Increment the count for each additional file found
+    }
+  });
+
+  //const textFilePath = path.join(directoryPath, `${modJustname}.txt`);
+  //fs.writeFileSync(textFilePath, fileList.filter(file => file.startsWith(modJustname) && regex.test(file)).join('\n'), 'utf-8');
+}
+
+
 
   if (fileNameOld !== file._id) {
     fs.renameSync(fileNameOld, file._id, {
       overwrite: true,
     });
-
-    const response = {
-      file,
-      removeFromDB: false,
-      updateDB: true,
-    };
-
+	response.infoLog += `Renamed file to: ${file._id}\n`
+	if (additionalFilesCount > 0) {
+      response.infoLog += `and: ${additionalFilesCount} additional Files!\n`;
+    }
     return response;
-  } else {
-    return {
-      processFile: true,
-      infoLog: `Renamed file and associated files to: ${file._id}`,
-    };
   }
+	else {
+	response.infoLog += `Video File not renamed!\n`	
+    if (additionalFilesCount > 0) {
+      response.infoLog += `But: ${additionalFilesCount} additional Files!\n`;
+    }
+	return response;
+	}
+   
 };
 
 module.exports.details = details;
