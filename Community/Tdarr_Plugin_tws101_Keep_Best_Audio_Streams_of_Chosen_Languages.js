@@ -5,11 +5,11 @@ const details = () => ({
   Name: 'tws101 Keep Best Audio Stream of Chosen Languages',
   Type: 'Audio',
   Operation: 'Transcode',
-  Description: `Prototype, Keep Best Audio Stream of Chosen Languages, one of each language will be chosen based on highest channel count all others will be removed
+  Description: `Keep Best Audio Stream of Chosen Languages, one of each language will be chosen based on highest channel count all others will be removed
   The codec and bit rate will be encoded`,
 //    Created by tws101 
-//    Prototype version
-  Version: '0.6',
+//    Release version
+  Version: '1.00',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -35,7 +35,7 @@ const details = () => ({
         ],
       },
       tooltip:
-        `Do you want to keep the best undefined track? `,
+        `Do you want to keep the best undefined track? this is a track with tag und or a track with no lag at all.`,
     },
     {
       name: "audioCodec",
@@ -111,6 +111,19 @@ const details = () => ({
       \\nExample:\\n
       640k
       `,
+    },
+    {
+      name: "keep_native_language",
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: ` This should be false unless you tag the native language with originallanguage=true This plugin by itself will not create this tag. `,
     },
   ],
 });
@@ -252,8 +265,38 @@ function buildAudioConfiguration(inputs, file, logger) {
   var lan6count = 0;
   var lan7count = 0;
   var lan8count = 0;
+  var lan101count = 0;
   var lanundcount = 0;
+  var keep_native_language = false;
 
+  if (inputs.keep_native_language === true) {
+    var keep_native_language = true;
+  }
+
+  if (
+    keep_native_language === true &&
+    file.container === "mkv"
+    ) {
+      var orilanstream = file.ffProbeData.streams.filter((stream) => {
+        try {
+          if (
+            stream.codec_type == "audio" &&
+            stream.tags.ORIGINALLANGUAGE.toLowerCase().includes('true')
+          ) {
+            return true;
+          }
+        } catch (err) {
+          return false;
+        }
+      });
+      try {
+        var orilan = orilanstream[0].tags.language.toLowerCase()
+        if (orilan !== (lan1 || lan2 || lan3 || lan4 || lan5 || lan6 || lan7 || lan8)) {
+          var lan101 = orilan
+        }
+      } catch (err) {}
+    }
+  
   //begin audio loopthrough
 
   function audioProcess(stream, id) {
@@ -298,6 +341,11 @@ function buildAudioConfiguration(inputs, file, logger) {
       ) {
         lan8count += 1;
       }
+      if (
+        stream.tags.language.toLowerCase() == lan101
+      ) {
+        lan101count += 1;
+      }
     } catch (err) {
       lanundcount += 1;
     }
@@ -340,7 +388,8 @@ function buildAudioConfiguration(inputs, file, logger) {
         stream.tags.language.toLowerCase().includes(lan5) ||
         stream.tags.language.toLowerCase().includes(lan6) ||
         stream.tags.language.toLowerCase().includes(lan7) ||
-        stream.tags.language.toLowerCase().includes(lan8))
+        stream.tags.language.toLowerCase().includes(lan8) ||
+        stream.tags.language.toLowerCase().includes(lan101))
       ) {
         logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, ${stream.tags.language}.`);
         numberOfGoodAudioStreams += 1;
@@ -406,6 +455,7 @@ function buildAudioConfiguration(inputs, file, logger) {
     lan6count <= 1 &&
     lan7count <= 1 &&
     lan8count <= 1 &&
+    lan101count <= 1 &&
     lanundcount <= 1
   ) {
     logger.AddSuccess(`All Stream are what we want`);
@@ -422,6 +472,7 @@ function buildAudioConfiguration(inputs, file, logger) {
   var lan6Tagcount = 0;
   var lan7Tagcount = 0;
   var lan8Tagcount = 0;
+  var lan101Tagcount = 0;
   var UndTagcount = 0;
   var lan1Tag = file.ffProbeData.streams.filter((stream) => {
     try {
@@ -607,6 +658,29 @@ function buildAudioConfiguration(inputs, file, logger) {
     } catch (err) {}
     return false;
   });
+  var lan101Tag = file.ffProbeData.streams.filter((stream) => {
+    try {
+      if (
+        stream.codec_type == "audio" &&
+        stream.tags.language.toLowerCase().includes(lan101)
+      ) try {
+        if (
+          stream.tags.title.toLowerCase().includes('commentary') ||
+          stream.tags.title.toLowerCase().includes('description') ||
+          stream.tags.title.toLowerCase().includes('sdh')
+        ) {
+          return false;
+        }
+        lan101Tagcount += 1;
+        return true;
+      } catch (err) {
+        lan101Tagcount += 1;
+        return true;
+      }
+      return false;
+    } catch (err) {}
+    return false;
+  });
 
   var UndTag = file.ffProbeData.streams.filter((stream) => {
     try {
@@ -619,7 +693,8 @@ function buildAudioConfiguration(inputs, file, logger) {
         stream.tags.language.toLowerCase().includes(lan5) ||
         stream.tags.language.toLowerCase().includes(lan6) ||
         stream.tags.language.toLowerCase().includes(lan7) ||
-        stream.tags.language.toLowerCase().includes(lan8))
+        stream.tags.language.toLowerCase().includes(lan8) ||
+        stream.tags.language.toLowerCase().includes(lan101))
       ) {
         return false;
       }
@@ -627,7 +702,8 @@ function buildAudioConfiguration(inputs, file, logger) {
     try {
       if (
         stream.codec_type == "audio" &&
-        stream.tags.language.toLowerCase().includes(und)
+        (!stream.tags.language ||
+        stream.tags.language.toLowerCase().includes('und'))
       ) try {
         if (
           stream.tags.title.toLowerCase().includes('commentary') ||
@@ -644,8 +720,7 @@ function buildAudioConfiguration(inputs, file, logger) {
       }
       return false;
     } catch (err) {
-      UndTagcount += 1;
-      return true;
+      return false;
     }
   });
 
@@ -657,6 +732,7 @@ function buildAudioConfiguration(inputs, file, logger) {
   var attemptMakeStreamlan6Tagtriggered = false;
   var attemptMakeStreamlan7Tagtriggered = false;
   var attemptMakeStreamlan8Tagtriggered = false;
+  var attemptMakeStreamlan101Tagtriggered = false;
   var attemptMakeStreamundTagtriggered = false;
   var audioIdx = -1;
 
@@ -902,6 +978,36 @@ function buildAudioConfiguration(inputs, file, logger) {
     }
   }
 
+  if (lan101Tagcount != 0) {
+    if (lan101Tagcount >= 1) {
+      var highestChannelCount = lan101Tag.reduce(getHighest);
+      function getHighest(first, second) {
+        if (first.channels > second.channels && first) {
+          return first;
+        } else {
+          return second;
+        }
+      }
+      if (parseInt(highestChannelCount.channels) >= parseInt(channelCount)) {
+        attemptMakeStreamlan101Tagtriggered = true;
+        audioIdx += 1;
+        configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
+        configuration.AddOutputSetting(
+          ` -c:a:${audioIdx} ${audioEncoder} -ac ${channelCount} -b:a ${inputs.bitrate} `
+        );
+        logger.AddError(`Creating ${lan101} stream in ${audioEncoder}, ${channelCount} channels`);
+      } else {
+        attemptMakeStreamlan101Tagtriggered = true;
+        audioIdx += 1;
+        configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
+        configuration.AddOutputSetting(
+          ` -c:a:${audioIdx} ${audioEncoder} -ac ${highestChannelCount.channels} -b:a ${inputs.bitrate} `
+        );
+        logger.AddError(`Creating ${lan101} stream in ${audioEncoder}, ${highestChannelCount.channels} channels`);
+      }
+    }
+  }
+
   if (inputs.keepundefined === true) {
     if (UndTagcount >= 1) {
       var highestChannelCount = UndTag.reduce(getHighest);
@@ -932,7 +1038,7 @@ function buildAudioConfiguration(inputs, file, logger) {
     }
   }
 
-  if (lan1Tagcount + lan2Tagcount + lan3Tagcount + lan4Tagcount + lan5Tagcount + lan6Tagcount + lan7Tagcount + lan8Tagcount === 0) {
+  if (lan1Tagcount + lan2Tagcount + lan3Tagcount + lan4Tagcount + lan5Tagcount + lan6Tagcount + lan7Tagcount + lan8Tagcount + lan101Tagcount === 0) {
     if (inputs.keepundefined === false) {
       if (UndTagcount >= 1) {
         var highestChannelCount = UndTag.reduce(getHighest);
@@ -975,6 +1081,7 @@ function buildAudioConfiguration(inputs, file, logger) {
     attemptMakeStreamlan6Tagtriggered ||
     attemptMakeStreamlan7Tagtriggered ||
     attemptMakeStreamlan8Tagtriggered ||
+    attemptMakeStreamlan101Tagtriggered ||
     attemptMakeStreamundTagtriggered) === true) {
       logger.AddError(`We are Trascoding the above streams`);
       return configuration;
