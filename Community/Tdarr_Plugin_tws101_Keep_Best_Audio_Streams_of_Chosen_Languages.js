@@ -9,7 +9,7 @@ const details = () => ({
   The codec and bit rate will be encoded`,
 //    Created by tws101 
 //    Release version
-  Version: '1.00',
+  Version: '1.01',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -1116,110 +1116,110 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     
   const lib = require('../methods/lib')();
 // eslint-disable-next-line no-unused-vars,no-param-reassign
-inputs = lib.loadDefaultValues(inputs, details);
-var response = {
-  container: `.${file.container}`,
-  FFmpegMode: true,
-  handBrakeMode: false,
-  infoLog: "",
-  processFile: false,
-  preset: "",
-  reQueueAfter: true,
-};
+  inputs = lib.loadDefaultValues(inputs, details);
+  var response = {
+    container: `.${file.container}`,
+    FFmpegMode: true,
+    handBrakeMode: false,
+    infoLog: "",
+    processFile: false,
+    preset: "",
+    reQueueAfter: true,
+  };
 
-var logger = new Log();
+  var logger = new Log();
 
 //Abort Section not supported
 
-var audioCodec = inputs.audioCodec;
-var audioEncoder = audioCodec;
-var channelCount = inputs.channels;
-var numberOfLagTags = inputs.language.split(',').length;
+  var audioCodec = inputs.audioCodec;
+  var audioEncoder = audioCodec;
+  var channelCount = inputs.channels;
+  var numberOfLagTags = inputs.language.split(',').length;
 
 //Too Many Language Choices
 
-if (
-  numberOfLagTags >= 9
-) {
-  logger.AddError("More than 8 language tags are present. Reconfigure the Plugin");
-  response.processFile = false;
-  response.infoLog += logger.GetLogData();
-  return response;
-}
+  if (
+    numberOfLagTags >= 9
+  ) {
+    logger.AddError("More than 8 language tags are present. Reconfigure the Plugin");
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
 
 //Bitrate settings not supported
 
-if (
-  (inputs.filter_bitrate) < (inputs.bitrate) ||
-  (inputs.filter_bitrate) === 0 ||
-  (inputs.bitrate) == 0
-) {
-  logger.AddError("Bitrate setting are invalid. Reconfigure the Plugin");
-  response.processFile = false;
-  response.infoLog += logger.GetLogData();
-  return response;
-}
+  if (
+    (inputs.filter_bitrate) < (inputs.bitrate) ||
+    (inputs.filter_bitrate) === 0 ||
+    (inputs.bitrate) == 0
+  ) {
+    logger.AddError("Bitrate setting are invalid. Reconfigure the Plugin");
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
 
 //channel count 1 not supported
-if (
-  (['truehd'].includes(audioCodec)) &&
-  channelCount === 1
-) {
-  logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
-  response.processFile = false;
-  response.infoLog += logger.GetLogData();
-  return response;
-}
+  if (
+    (['truehd'].includes(audioCodec)) &&
+    channelCount === 1
+  ) {
+    logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
   
 //channel count 6 not supported
-if (
-  (['dca', 'libmp3lame'].includes(audioCodec)) &&
-  channelCount === 6
-) {
-  logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
-  response.processFile = false;
-  response.infoLog += logger.GetLogData();
-  return response;
-}
+  if (
+    (['dca', 'libmp3lame'].includes(audioCodec)) &&
+    channelCount === 6
+  ) {
+    logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
   
 //channel count 8 not supported
-if (
-  (['dca', 'libmp3lame', 'truehd', 'ac3', 'eac3'].includes(audioCodec)) &&
-  channelCount === 8
-) {
-  logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
-  response.processFile = false;
-  response.infoLog += logger.GetLogData();
-  return response;
-}
+  if (
+    (['dca', 'libmp3lame', 'truehd', 'ac3', 'eac3'].includes(audioCodec)) &&
+    channelCount === 8
+  ) {
+    logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
 
 
 // End Abort Section not supported
 
-var audioSettings = buildAudioConfiguration(inputs, file, logger);
-var videoSettings = buildVideoConfiguration(inputs, file, logger);
-var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  var audioSettings = buildAudioConfiguration(inputs, file, logger);
+  var videoSettings = buildVideoConfiguration(inputs, file, logger);
+  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
 
-response.preset = `,${videoSettings.GetOutputSettings()}`
-response.preset += ` ${audioSettings.GetInputSettings()}`
-response.preset += ` ${subtitleSettings.GetOutputSettings()}`
-response.preset += ` ${audioSettings.GetOutputSettings()}`
+  response.preset = `,${videoSettings.GetOutputSettings()}`
+  response.preset += ` ${audioSettings.GetInputSettings()}`
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
+  response.preset += ` ${audioSettings.GetOutputSettings()}`
 
-if (['dca', 'truehd', 'flac'].includes(audioCodec)) {
-  response.preset += ` -strict -2`;
-}
+  if (['dca', 'truehd', 'flac'].includes(audioCodec)) {
+    response.preset += ` -strict -2`;
+  }
 
 
-response.processFile =
-  audioSettings.shouldProcess;
+  response.processFile =
+    audioSettings.shouldProcess;
 
-if (!response.processFile) {
-  logger.AddSuccess("No need to process file");
-}
+  if (!response.processFile) {
+    logger.AddSuccess("No need to process file");
+  }
 
-response.infoLog += logger.GetLogData();
-return response;
+  response.infoLog += logger.GetLogData();
+  return response;
 }
 
 module.exports.details = details;

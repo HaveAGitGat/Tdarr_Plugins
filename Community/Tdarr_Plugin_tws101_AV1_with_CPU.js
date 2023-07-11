@@ -9,7 +9,7 @@ const details = () => ({
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
 //    Created by tws101 
 //    Prototype version
-  Version: '0.6',
+  Version: '0.61',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {
@@ -490,49 +490,49 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     
   const lib = require('../methods/lib')();
 // eslint-disable-next-line no-unused-vars,no-param-reassign
-inputs = lib.loadDefaultValues(inputs, details);
-var response = {
-  container: `.${file.container}`,
-  FFmpegMode: true,
-  handBrakeMode: false,
-  infoLog: "",
-  processFile: false,
-  preset: "",
-  reQueueAfter: true,
-};
+  inputs = lib.loadDefaultValues(inputs, details);
+  var response = {
+    container: `.${file.container}`,
+    FFmpegMode: true,
+    handBrakeMode: false,
+    infoLog: "",
+    processFile: false,
+    preset: "",
+    reQueueAfter: true,
+  };
 
-var logger = new Log();
-var audioSettings = buildAudioConfiguration(inputs, file, logger);
-var videoSettings = buildVideoConfiguration(inputs, file, logger);
-var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  var logger = new Log();
+  var audioSettings = buildAudioConfiguration(inputs, file, logger);
+  var videoSettings = buildVideoConfiguration(inputs, file, logger);
+  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
-response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
-response.preset += ` ${audioSettings.GetOutputSettings()}`
-response.preset += ` ${subtitleSettings.GetOutputSettings()}`
-response.preset += ` -max_muxing_queue_size 9999`;
+  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
+  response.preset += ` ${audioSettings.GetOutputSettings()}`
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
+  response.preset += ` -max_muxing_queue_size 9999`;
 
 // Extra parameters
-var id = 0;
-var badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
-for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-  if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
-    response.preset += ` -map -0:${i}`;
-  };
-  id++;
-}
+  var id = 0;
+  var badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+    if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
+      response.preset += ` -map -0:${i}`;
+    };
+    id++;
+  }
 
 // fix probe size errors
-response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
+  response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
 
-response.processFile =
-  videoSettings.shouldProcess;
+  response.processFile =
+    videoSettings.shouldProcess;
 
-if (!response.processFile) {
-  logger.AddSuccess("No need to process file");
-}
+  if (!response.processFile) {
+    logger.AddSuccess("No need to process file");
+  }
 
-response.infoLog += logger.GetLogData();
-return response;
+  response.infoLog += logger.GetLogData();
+  return response;
 }
 
 module.exports.details = details;
