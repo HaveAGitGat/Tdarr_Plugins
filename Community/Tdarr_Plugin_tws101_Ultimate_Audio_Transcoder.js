@@ -6,10 +6,10 @@ const details = () => ({
   Name: 'tws101 Ultimate Audio Transcoder',
   Type: 'Audio',
   Operation: 'Transcode',
-  Description: `Choose 8 languages, one of each will be kept.  Choose max channel count allowed, and taregt bit rate.  Filter bit rate will target streams for reduction. 
+  Description: `Choose 8 languages, one of each will be kept.  Choose max channel count allowed, and target bit rate.  Filter bit rate will target streams for reduction. 
   Keep native language is optional, but if it is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Prototype version
+//    Release Version
   Version: '1.00',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
