@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.22
-  Version: '1.22',
+//    Release Version 1.30
+  Version: '1.30',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -611,47 +611,47 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
   }
   
   if (lan1) {
-    var lan1gstreams = goodstreams(lan1)
+    var lan1gstreams = goodstreams(lan1);
     var lan1pstreams = possiblestreams(lan1);
   }
 
   if (lan2) {
-    var lan2gstreams = goodstreams(lan2)
+    var lan2gstreams = goodstreams(lan2);
     var lan2pstreams = possiblestreams(lan2);
   }
 
   if (lan3) {
-    var lan3gstreams = goodstreams(lan3)
+    var lan3gstreams = goodstreams(lan3);
     var lan3pstreams = possiblestreams(lan3);
   }
 
   if (lan4) {
-    var lan4gstreams = goodstreams(lan4)
+    var lan4gstreams = goodstreams(lan4);
     var lan4pstreams = possiblestreams(lan4);
   }
 
   if (lan5) {
-    var lan5gstreams = goodstreams(lan5)
+    var lan5gstreams = goodstreams(lan5);
     var lan5pstreams = possiblestreams(lan5);
   }
 
   if (lan6) {
-    var lan6gstreams = goodstreams(lan6)
+    var lan6gstreams = goodstreams(lan6);
     var lan6pstreams = possiblestreams(lan6);
   }
 
   if (lan7) {
-    var lan7gstreams = goodstreams(lan7)
+    var lan7gstreams = goodstreams(lan7);
     var lan7pstreams = possiblestreams(lan7);
   }
 
   if (lan8) {
-    var lan8gstreams = goodstreams(lan8)
+    var lan8gstreams = goodstreams(lan8);
     var lan8pstreams = possiblestreams(lan8);
   }
 
   if (lan101) {
-    var lan101gstreams = goodstreams(lan101)
+    var lan101gstreams = goodstreams(lan101);
     var lan101pstreams = possiblestreams(lan101);
   }
 
@@ -808,7 +808,6 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     audioIdx += 1;
     configuration.AddInputSetting(`-map 0:${goodstream[0].index}`);
     logger.AddError(`Copying ${lang} stream in ${audioEncoder}, ${channelCount} channels`);
-    return;
   }
 
   function createstream(highestChannelCount, lang) {
@@ -826,117 +825,33 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       );
       logger.AddError(`Creating ${lang} stream in ${audioEncoder}, ${highestChannelCount.channels} channels`);
     }
-    return;
   }
 
-  if (lan1gstreams) {
-    if (lan1gstreams != '') {
-      copystream(lan1gstreams, lan1)
-      attemptMakeStreamlan1triggered = true;
-    } else if (lan1pstreams != '') {
-      let highestChannelCount = lan1pstreams.reduce(getHighest);
-      attemptMakeStreamlan1triggered = true;
-      createstream(highestChannelCount, lan1);
+  function copycreate(goodstream, possiblestream, lang, attemptMakeStreamtriggered) {
+    if (goodstream) {
+      if (goodstream != '') {
+        copystream(goodstream, lang)
+        attemptMakeStreamtriggered = true;
+      } else if (possiblestream != '') {
+        let highestChannelCount = possiblestream.reduce(getHighest);
+        attemptMakeStreamtriggered = true;
+        createstream(highestChannelCount, lang);
+      }
     }
   }
 
-  if (lan2gstreams) {
-    if (lan2gstreams != '') {
-      copystream(lan2gstreams, lan2)
-      attemptMakeStreamlan2triggered = true;
-    } else if (lan2pstreams != '') {
-      let highestChannelCount = lan2pstreams.reduce(getHighest);
-      attemptMakeStreamlan2triggered = true;
-      createstream(highestChannelCount, lan2);
-    }
-  }
-
-  if (lan3gstreams) {
-    if (lan3gstreams != '') {
-      copystream(lan3gstreams, lan3)
-      attemptMakeStreamlan3triggered = true;
-    } else if (lan3pstreams != '') {
-      let highestChannelCount = lan3pstreams.reduce(getHighest);
-      attemptMakeStreamlan3triggered = true;
-      createstream(highestChannelCount, lan3);
-    }
-  }
-
-  if (lan4gstreams) {
-    if (lan4gstreams != '') {
-      copystream(lan4gstreams, lan4)
-      attemptMakeStreamlan4triggered = true;
-    } else if (lan4pstreams != '') {
-      let highestChannelCount = lan4pstreams.reduce(getHighest);
-      attemptMakeStreamlan4triggered = true;
-      createstream(highestChannelCount, lan4);
-    }
-  }
-
-  if (lan5gstreams) {
-    if (lan5gstreams != '') {
-      copystream(lan5gstreams, lan5)
-      attemptMakeStreamlan5triggered = true;
-    } else if (lan5pstreams != '') {
-      let highestChannelCount = lan5pstreams.reduce(getHighest);
-      attemptMakeStreamlan5triggered = true;
-      createstream(highestChannelCount, lan5);
-    }
-  }
-
-  if (lan6gstreams) {
-    if (lan6gstreams != '') {
-      copystream(lan6gstreams, lan6)
-      attemptMakeStreamlan6triggered = true;
-    } else if (lan6pstreams != '') {
-      let highestChannelCount = lan6pstreams.reduce(getHighest);
-      attemptMakeStreamlan6triggered = true;
-      createstream(highestChannelCount, lan6);
-    }
-  }
-
-  if (lan7gstreams) {
-    if (lan7gstreams != '') {
-      copystream(lan7gstreams, lan7)
-      attemptMakeStreamlan7triggered = true;
-    } else if (lan7pstreams != '') {
-      let highestChannelCount = lan7pstreams.reduce(getHighest);
-      attemptMakeStreamlan7triggered = true;
-      createstream(highestChannelCount, lan7);
-    }
-  }
-
-  if (lan8gstreams) {
-    if (lan8gstreams != '') {
-      copystream(lan8gstreams, lan8)
-      attemptMakeStreamlan8triggered = true;
-    } else if (lan8pstreams != '') {
-      let highestChannelCount = lan8pstreams.reduce(getHighest);
-      attemptMakeStreamlan8triggered = true;
-      createstream(highestChannelCount, lan8);
-    }
-  }
-
-  if (lan101gstreams) {
-    if (lan101gstreams != '') {
-      copystream(lan101gstreams, lan101)
-      attemptMakeStreamlan101triggered = true;
-    } else if (lan101pstreams != '') {
-      let highestChannelCount = lan101pstreams.reduce(getHighest);
-      attemptMakeStreamlan101triggered = true;
-      createstream(highestChannelCount, lan101);
-    }
-  }
+  copycreate(lan1gstreams, lan1pstreams, lan1, attemptMakeStreamlan1triggered);
+  copycreate(lan2gstreams, lan2pstreams, lan2, attemptMakeStreamlan2triggered);
+  copycreate(lan3gstreams, lan3pstreams, lan3, attemptMakeStreamlan3triggered);
+  copycreate(lan4gstreams, lan4pstreams, lan4, attemptMakeStreamlan4triggered);
+  copycreate(lan5gstreams, lan5pstreams, lan5, attemptMakeStreamlan5triggered);
+  copycreate(lan6gstreams, lan6pstreams, lan6, attemptMakeStreamlan6triggered);
+  copycreate(lan7gstreams, lan7pstreams, lan7, attemptMakeStreamlan7triggered);
+  copycreate(lan8gstreams, lan8pstreams, lan8, attemptMakeStreamlan8triggered);
+  copycreate(lan101gstreams, lan101pstreams, lan101, attemptMakeStreamlan101triggered);
   
   if (inputs.keepundefined === true) {
-    if (Undgstreams != '') {
-      copystream(Undgstreams, "Undefined")
-      attemptMakeStreamundtriggered = true;
-    } else if (Undpstreams != '') {
-      let highestChannelCount = Undpstreams.reduce(getHighest);
-      attemptMakeStreamundtriggered = true;
-      createstream(highestChannelCount, "Undefined");
-    }
+    copycreate(Undgstreams, Undpstreams, "Undefined", attemptMakeStreamfortriggered);
   }
 
   if (
