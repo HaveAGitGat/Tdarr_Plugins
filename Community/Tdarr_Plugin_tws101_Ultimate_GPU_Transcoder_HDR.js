@@ -18,7 +18,7 @@ const details = () => {
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
 //    Release version
-    Version: "1.02",
+    Version: "1.03",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
@@ -320,7 +320,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
  * MKV container.
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
+  var configuration = new Configurator(["-map 0", "-map -0:d"]);
 
   var tiered = {
     "480p": {
@@ -456,7 +456,6 @@ function buildVideoConfiguration(inputs, file, logger) {
       bitratemax = bitratetarget + tier["max_increase"];
       cq = tier["cq"];
 
-      configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
         `-c:v hevc_nvenc -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
       );

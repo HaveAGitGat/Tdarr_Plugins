@@ -9,7 +9,7 @@ const details = () => ({
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
 //    Created by tws101 
 //    Prototype version
-  Version: '0.61',
+  Version: '0.70',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {
@@ -272,7 +272,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Removes unsupported and unknown subtitles.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-c:s copy"]);
+  var configuration = new Configurator(["-map 0:s?", "-c copy"]);
 
   var languages = (".");
   if (languages.length === 0) return configuration;
@@ -310,7 +310,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
  * Attempts to ensure that video streams are av1 encoded 
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
+  var configuration = new Configurator(["-map 0", "-map -0:d"]);
 
   var tiered = {
     "480p": {
@@ -448,7 +448,6 @@ function buildVideoConfiguration(inputs, file, logger) {
       bitratemax = bitratetarget + tier["max_increase"];
       cq = tier["cq"];
 
-      configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
         `-c:v libsvtav1 -qmin 0 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k`
       );
