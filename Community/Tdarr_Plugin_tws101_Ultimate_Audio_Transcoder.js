@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.30
-  Version: '1.30',
+//    Release Version 1.32
+  Version: '1.32',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -789,20 +789,9 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  let attemptMakeStreamlan1triggered = false;
-  let attemptMakeStreamlan2triggered = false;
-  let attemptMakeStreamlan3triggered = false;
-  let attemptMakeStreamlan4triggered = false;
-  let attemptMakeStreamlan5triggered = false;
-  let attemptMakeStreamlan6triggered = false;
-  let attemptMakeStreamlan7triggered = false;
-  let attemptMakeStreamlan8triggered = false;
-  let attemptMakeStreamlan101triggered = false;
-  let attemptMakeStreamundtriggered = false;
-  let attemptMakeStreamfortriggered = false;
-  let audioIdx = -1;
-
   //Prepare trascode arguments, good streams will be copied, possible streams will be transcoded
+
+  let audioIdx = -1;
 
   function copystream(goodstream, lang) {
     audioIdx += 1;
@@ -827,32 +816,35 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   }
 
-  function copycreate(goodstream, possiblestream, lang, attemptMakeStreamtriggered) {
+  function copycreate(goodstream, possiblestream, lang) {
+    let output = false;
     if (goodstream) {
       if (goodstream != '') {
         copystream(goodstream, lang)
-        attemptMakeStreamtriggered = true;
+        output = true;
       } else if (possiblestream != '') {
         let highestChannelCount = possiblestream.reduce(getHighest);
-        attemptMakeStreamtriggered = true;
         createstream(highestChannelCount, lang);
+        output = true;
       }
     }
+    return output;
   }
 
-  copycreate(lan1gstreams, lan1pstreams, lan1, attemptMakeStreamlan1triggered);
-  copycreate(lan2gstreams, lan2pstreams, lan2, attemptMakeStreamlan2triggered);
-  copycreate(lan3gstreams, lan3pstreams, lan3, attemptMakeStreamlan3triggered);
-  copycreate(lan4gstreams, lan4pstreams, lan4, attemptMakeStreamlan4triggered);
-  copycreate(lan5gstreams, lan5pstreams, lan5, attemptMakeStreamlan5triggered);
-  copycreate(lan6gstreams, lan6pstreams, lan6, attemptMakeStreamlan6triggered);
-  copycreate(lan7gstreams, lan7pstreams, lan7, attemptMakeStreamlan7triggered);
-  copycreate(lan8gstreams, lan8pstreams, lan8, attemptMakeStreamlan8triggered);
-  copycreate(lan101gstreams, lan101pstreams, lan101, attemptMakeStreamlan101triggered);
-  
+  let attemptMakeStreamlan1triggered = copycreate(lan1gstreams, lan1pstreams, lan1);
+  let attemptMakeStreamlan2triggered = copycreate(lan2gstreams, lan2pstreams, lan2);
+  let attemptMakeStreamlan3triggered = copycreate(lan3gstreams, lan3pstreams, lan3);
+  let attemptMakeStreamlan4triggered = copycreate(lan4gstreams, lan4pstreams, lan4);
+  let attemptMakeStreamlan5triggered = copycreate(lan5gstreams, lan5pstreams, lan5);
+  let attemptMakeStreamlan6triggered = copycreate(lan6gstreams, lan6pstreams, lan6);
+  let attemptMakeStreamlan7triggered = copycreate(lan7gstreams, lan7pstreams, lan7);
+  let attemptMakeStreamlan8triggered = copycreate(lan8gstreams, lan8pstreams, lan8);
+  let attemptMakeStreamlan101triggered = copycreate(lan101gstreams, lan101pstreams, lan101);
+  let attemptMakeStreamundtriggered = false;
   if (inputs.keepundefined === true) {
-    copycreate(Undgstreams, Undpstreams, "Undefined", attemptMakeStreamfortriggered);
+    attemptMakeStreamundtriggered = copycreate(Undgstreams, Undpstreams, "Undefined");
   }
+  let attemptMakeStreamfortriggered = false;
 
   if (
     attemptMakeStreamlan1triggered === false &&
