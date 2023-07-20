@@ -9,7 +9,7 @@ const details = () => ({
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
 //    Created by tws101 
 //    Prototype version
-  Version: '0.70',
+  Version: '0.71',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {
@@ -272,37 +272,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Removes unsupported and unknown subtitles.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:s?", "-c copy"]);
-
-  var languages = (".");
-  if (languages.length === 0) return configuration;
-
-  loopOverStreamsOfType(file, "subtitle", function (stream, id) {
-    if ((stream.codec_name === "eia_608") ||
-      (stream.codec_tag_string === "mp4s")) {
-      // unsupported subtitle codec?
-      configuration.AddOutputSetting(`-map -0:s:${id}`);
-      logger.AddError(
-        `Removing unsupported subtitle`
-      );
-      return;
-    }
-
-    // Remove unknown sub streams
-    if (!("codec_name" in stream)) {
-      configuration.AddOutputSetting(`-map -0:s:${id}`);
-      logger.AddError(
-        `Removing unknown subtitle`
-      );
-      return;
-    }
-
-  });
-
-  if (!configuration.shouldProcess) {
-    logger.AddSuccess("No subtitle processing necessary");
-  }
-
+  var configuration = new Configurator(["-c:s copy"]);
   return configuration;
 }
 
@@ -310,7 +280,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
  * Attempts to ensure that video streams are av1 encoded 
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-map -0:d"]);
+  var configuration = new Configurator(["-map 0"]);
 
   var tiered = {
     "480p": {
@@ -346,14 +316,14 @@ function buildVideoConfiguration(inputs, file, logger) {
   };
 
   var inputSettings = {
-    "h263": "-c:v h263_cuvid",
+    "h263": "-c:v h263",
     "h264": "",
-    "mjpeg": "c:v mjpeg_cuvid",
-    "mpeg1": "-c:v mpeg1_cuvid",
-    "mpeg2": "-c:v mpeg2_cuvid",
-    "vc1": "-c:v vc1_cuvid",
-    "vp8": "-c:v vp8_cuvid",
-    "vp9": "-c:v vp9_cuvid"
+    "mjpeg": "c:v mjpeg",
+    "mpeg1": "-c:v mpeg1",
+    "mpeg2": "-c:v mpeg2",
+    "vc1": "-c:v vc1",
+    "vp8": "-c:v vp8",
+    "vp9": "-c:v vp9"
   }
 
   function videoProcess(stream, id) {
@@ -361,7 +331,6 @@ function buildVideoConfiguration(inputs, file, logger) {
       configuration.AddOutputSetting(`-map -v:${id}`);
       return;
     }
-
 
     //check for reprocess av1
 
@@ -434,8 +403,6 @@ function buildVideoConfiguration(inputs, file, logger) {
       var cq = 0;
       var bitratecheck = 0;
 
-
-
       /*  Determine tiered bitrate variables */
       var tier = tiered[file.video_resolution];
 
@@ -455,7 +422,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
 
       if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10" && file.ffProbeData.streams[0].profile !== "High 4:4:4 Predictive") {
-        configuration.AddInputSetting("-c:v h264_cuvid");
+        configuration.AddInputSetting("-c:v h264");
       }
 	  
 	  if (stream.color_space === "bt2020nc") {

@@ -18,7 +18,7 @@ const details = () => {
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
 //    Release version
-    Version: "1.03",
+    Version: "1.04",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
@@ -282,36 +282,6 @@ function buildAudioConfiguration(inputs, file, logger) {
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:s copy"]);
-
-  var languages = (".");
-  if (languages.length === 0) return configuration;
-
-  loopOverStreamsOfType(file, "subtitle", function (stream, id) {
-    if ((stream.codec_name === "eia_608") ||
-      (stream.codec_tag_string === "mp4s")) {
-      // unsupported subtitle codec?
-      configuration.AddOutputSetting(`-map -0:s:${id}`);
-      logger.AddError(
-        `Removing unsupported subtitle`
-      );
-      return;
-    }
-
-    // Remove unknown sub streams
-    if (!("codec_name" in stream)) {
-      configuration.AddOutputSetting(`-map -0:s:${id}`);
-      logger.AddError(
-        `Removing unknown subtitle`
-      );
-      return;
-    }
-
-  });
-
-  if (!configuration.shouldProcess) {
-    logger.AddSuccess("No subtitle processing necessary");
-  }
-
   return configuration;
 }
 
@@ -320,7 +290,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
  * MKV container.
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-map -0:d"]);
+  var configuration = new Configurator(["-map 0"]);
 
   var tiered = {
     "480p": {
