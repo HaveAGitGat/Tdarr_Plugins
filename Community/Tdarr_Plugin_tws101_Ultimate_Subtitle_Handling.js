@@ -8,8 +8,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.00
-  Version: '1.00',
+  //    Release Version 1.10
+  Version: '1.10',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -361,27 +361,26 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     subsFile = subsFile.join('.');
 
     if (stream.length !== 0) {
-      const { index } = stream;
       if (!bolRemoveAll) {
         // Copy subtitle stream
         if (bolCopyStream) {
-          logger.AddSuccess(`stream ${index}: ${lang}${strDisposition} will be copied. `);
+          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} will be copied. `);
           // Skip/Remove undesired subtitle streams.
         } else {
-          logger.AddError(`stream ${index}: ${lang}${strDisposition} will be removed`);
-          configuration.AddOutputSetting(` -map -0:${index}`);
+          logger.AddError(`Subtitle stream ${id}: ${lang}${strDisposition} will be removed`);
+          configuration.AddOutputSetting(` -map -0:s:${id}`);
         }
       }
       // Verify subtitle track is a format that can be extracted.
       if (bolExtractStream || bolExtractAll) {
         // Extract subtitle if it doesn't exist on disk or the option to overwrite is set.
         if (!bolTextSubs) {
-          logger.AddSuccess(`stream ${index}: ${lang}${strDisposition} is not text based, can not extract.`);
+          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} is not text based, can not extract.`);
         } else if (fs.existsSync(`${subsFile}`) && !bolOverwright) {
-          logger.AddSuccess(`stream ${index}: ${lang}${strDisposition} External subtitle already exists, will not extract`);
+          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} External subtitle already exists, will not extract`);
         } else {
-          logger.AddError(`stream ${index}: ${lang}${strDisposition} will be extracted to file.`);
-          configuration.AddInputSetting(` -map 0:${index} "${subsFile}"`);
+          logger.AddError(`Subtitle stream ${id}: ${lang}${strDisposition} will be extracted to file.`);
+          configuration.AddInputSetting(` -map 0:s:${id} "${subsFile}"`);
         }
       }
     }
