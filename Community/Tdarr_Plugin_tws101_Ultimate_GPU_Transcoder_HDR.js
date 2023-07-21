@@ -4,7 +4,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_tws101_Ultimate_GPU_Transcoder_HDR",
     Stage: 'Pre-processing',
-    Name: "tws101 Ultimate GPU Transcoder HDR",
+    Name: "tws101 - Ultimate GPU Transcoder HDR",
     Stage: "Pre-processing",
     Type: "Video",
     Operation: "Transcode",
@@ -17,8 +17,8 @@ const details = () => {
 	   for audio lets say 500k for a total of 3M.  3M should be in the hevc_1080p_filter_bitrate to make this example work and not loop`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
-//    Release version
-    Version: "1.04",
+//    Release version 1.05
+    Version: "1.05",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {

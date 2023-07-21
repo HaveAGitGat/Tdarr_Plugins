@@ -1,15 +1,15 @@
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Ultimate_Subtitle_Handling',
   Stage: 'Pre-processing',
-  Name: 'tws101 Ultimate Subtitle Handling',
+  Name: 'tws101 -  Ultimate Subtitle Handling',
   Type: 'Subtitle',
   Operation: 'Transcode',
   Description: `This plugin will extract and remove subtitles as configured.  Extractions can only be done with text subs. 
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.10
-  Version: '1.10',
+  //    Release Version 1.11
+  Version: '1.11',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {

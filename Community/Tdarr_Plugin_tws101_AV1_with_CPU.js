@@ -2,14 +2,14 @@
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_AV1_with_CPU',
   Stage: 'Pre-processing',
-  Name: 'tws101 trascode to AV1 Using CPU & FFMPEG',
+  Name: 'tws101 - Trascode to AV1 Using CPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Prototype, Trascode to AV1, detect and maintain HDR, Keep orginal container.
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
 //    Created by tws101 
-//    Prototype version
-  Version: '0.71',
+//    Prototype version 0.72
+  Version: '0.72',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {

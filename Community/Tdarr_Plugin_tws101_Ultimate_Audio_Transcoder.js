@@ -3,14 +3,14 @@ module.exports.dependencies = ['axios@0.27.2', '@cospired/i18n-iso-languages'];
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Ultimate_Audio_Transcoder',
   Stage: 'Pre-processing',
-  Name: 'tws101 Ultimate Audio Transcoder',
+  Name: 'tws101 - Ultimate Audio Transcoder',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.32
-  Version: '1.32',
+//    Release Version 1.33
+  Version: '1.33',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
