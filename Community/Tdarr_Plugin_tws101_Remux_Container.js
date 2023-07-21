@@ -35,8 +35,8 @@ const details = () => ({
         ],
       },
       tooltip: `Make the file conform to output containers requirements.
-                  \\n Drop hdmv_pgs_subtitle/eia_608/subrip/timed_id3 for MP4.
-                  \\n Drop data streams/mov_text/eia_608/timed_id3 for MKV.
+                  \\n Drop all attachment streams and hdmv_pgs_subtitle/eia_608/subrip/timed_id3/ass/ssa subs for MP4.
+                  \\n Drop all data streams and /mov_text/eia_608/timed_id3 subs for MKV.
                   \\n Default is true.`,
     },
   ],
