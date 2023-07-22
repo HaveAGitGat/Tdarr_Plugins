@@ -6,8 +6,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ` The input file will be remuxed into MKV or MP4. Force conform is recommended, this will remove incompatible items from the new container. `,
   //    Created by tws101 
-  //    Release Version 1.00
-  Version: '1.00',
+  //    Release Version 1.01
+  Version: '1.01',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
   Inputs: [
     {
@@ -146,7 +146,7 @@ function loopOverStreamsOfType(file, type, method) {
 }  
 
 /**
- * Video Config map all and copy all if we need to remux
+ * Video, Map ALL and set ALL to copy
  */
 function buildVideoConfiguration(inputs, file, logger) {
   var configuration = new Configurator([""]);
@@ -166,7 +166,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 }
 
 /**
- * No Audio Config
+ * Audio, No Audio Config
  */
 function buildAudioConfiguration(inputs, file, logger) {
   var configuration = new Configurator([""]);
@@ -174,7 +174,7 @@ function buildAudioConfiguration(inputs, file, logger) {
 }
 
 /**
- * Remove incompatible subs, data or attachments as needed.
+ * Subtitles, remove incompatible: subs, data, or attachments as needed.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
   var configuration = new Configurator([""]);

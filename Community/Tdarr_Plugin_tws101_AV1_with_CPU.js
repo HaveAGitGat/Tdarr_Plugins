@@ -8,8 +8,8 @@ const details = () => ({
   Description: `Prototype, Trascode to AV1, detect and maintain HDR, Keep orginal container.
   Reconvert AV1 if the option is on and we are over the bitrate filter`,
 //    Created by tws101 
-//    Prototype version 0.72
-  Version: '0.72',
+//    Prototype version 0.73
+  Version: '0.73',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
     Inputs: [
       {
@@ -261,7 +261,7 @@ function loopOverStreamsOfType(file, type, method) {
 }
 
 /**
- * Keep all audio
+ * Audio, set all audio to copy
  */
 function buildAudioConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:a copy"]);
@@ -269,7 +269,7 @@ function buildAudioConfiguration(inputs, file, logger) {
 }
 
 /**
- * Removes unsupported and unknown subtitles.
+ * Subtitles, set all subtitles to copy
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:s copy"]);
@@ -277,7 +277,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 }
 
 /**
- * Attempts to ensure that video streams are av1 encoded 
+ * Video, Map EVERYTHING and encode video streams to av1
  */
 function buildVideoConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-map 0"]);

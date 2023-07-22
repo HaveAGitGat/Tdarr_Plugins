@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.33
-  Version: '1.33',
+//    Release Version 1.34
+  Version: '1.34',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -352,8 +352,7 @@ function getHighest(first, second) {
 }
 
 /**
- * Begin Audio Configuration
- * Variable Setup
+ * Audio, Map and trascode what we want
  */
 function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
   var configuration = new Configurator([""]);
@@ -900,18 +899,18 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
 }
 
 /**
- * Keep all subtitles and data streams
+ * Subtitles, Map all subtitles data and attachments, enable copy all.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:s?", "-map 0:d?","-c copy"]);
+  var configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
   return configuration;
 }
 
 /**
- * Keep all Video
+ * Video, Map all Video
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:v", "-c:v copy"]);
+  var configuration = new Configurator(["-map 0:v"]);
   return configuration;
 }
 

@@ -17,8 +17,8 @@ const details = () => {
 	   for audio lets say 500k for a total of 3M.  3M should be in the hevc_1080p_filter_bitrate to make this example work and not loop`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
-//    Release version 1.05
-    Version: "1.05",
+//    Release version 1.06
+    Version: "1.06",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
@@ -270,7 +270,7 @@ function loopOverStreamsOfType(file, type, method) {
 }
 
 /**
- * Keep all audio
+ * Audio, set audio to copy
  */
 function buildAudioConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:a copy"]);
@@ -278,7 +278,7 @@ function buildAudioConfiguration(inputs, file, logger) {
 }
 
 /**
- * Removes unsupported and unknown subtitles.
+ * Subtitles, set subs to copy
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-c:s copy"]);
@@ -286,8 +286,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 }
 
 /**
- * Attempts to ensure that video streams are h265 encoded and inside an
- * MKV container.
+ * Video, Map EVERYTHING and encode video streams to 265 
  */
 function buildVideoConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-map 0"]);

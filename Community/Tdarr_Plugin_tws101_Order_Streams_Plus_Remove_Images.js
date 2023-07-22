@@ -6,8 +6,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true `,
   //    Created by tws101 
-  //    Release Version 1.00
-  Version: '1.00',
+  //    Release Version 1.01
+  Version: '1.01',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -133,7 +133,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video    Map ALL  "-map 0"   Map Video  "-map 0:v"    Copy Video  "-c:v copy"
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:v", "-c:v copy"]);
+  var configuration = new Configurator(["-map 0:v"]);
 
   function imageremoval(stream, id) {
     if (
@@ -156,7 +156,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio   Map Audio "-map 0:a"  Copy Audio  "-c:a copy"
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-c:a copy"]);
+  var configuration = new Configurator([""]);
 
   function orderaudiostreams1ch(stream, id) {
     try {
@@ -199,7 +199,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles and data  Map subs "-map 0:s?" Map Data "-map 0:d?"   Copy Subs  "-c:s copy"  Copy Data "-c:d copy"   Ending copy command "-c copy"
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-c:s copy", "-c:d copy", "-c copy"]);
+  var configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
   return configuration;
 }
 

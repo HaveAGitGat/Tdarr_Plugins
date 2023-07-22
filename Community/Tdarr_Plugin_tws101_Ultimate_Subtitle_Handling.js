@@ -8,8 +8,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.11
-  Version: '1.11',
+  //    Release Version 1.12
+  Version: '1.12',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -238,23 +238,23 @@ function loopOverStreamsOfType(file, type, method) {
 }
 
 /**
- * Keep all audio
+ * Audio, No Audio Config
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-c:a copy"]);
+  var configuration = new Configurator([""]);
   return configuration;
 }
 
 /**
- * Keep all Video
+ * Video, Map EVERYTHING
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0", "-c:v copy"]);
+  var configuration = new Configurator(["-map 0"]);
   return configuration;
 }
 
 /**
- * Process subtitles section needs work
+ * Subtitles set ALL streams to copy and unmap unwanted subs
  */
 function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const fs = require('fs');
