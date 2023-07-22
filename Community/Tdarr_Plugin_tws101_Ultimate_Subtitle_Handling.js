@@ -8,8 +8,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.12
-  Version: '1.12',
+  //    Release Version 1.13
+  Version: '1.13',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -329,14 +329,20 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
       }
     } else if (!bolKeepAll) {
       if (bolKeepUndefined) {
-        if (!stream.tags.language || stream.tags.language.toLowerCase().includes('und')) {}
+        if (!stream.tags.language || stream.tags.language.toLowerCase().includes('und')) {
+        } else {
+          bolCopyStream = false;
+        }
       } else {
         bolCopyStream = false;
       }
     }
     if ((processLanguage.indexOf(lang) === -1) && !bolExtractAll) {
       if (bolKeepUndefined) {
-        if (!stream.tags.language || stream.tags.language.toLowerCase().includes('und')) {}
+        if (!stream.tags.language || stream.tags.language.toLowerCase().includes('und')) {
+        } else {
+          bolExtractStream = false;
+        }
       } else {
         bolExtractStream = false;
       }
