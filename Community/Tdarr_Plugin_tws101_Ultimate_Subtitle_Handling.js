@@ -8,8 +8,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.13
-  Version: '1.13',
+  //    Release Version 1.20
+  Version: '1.20',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -201,7 +201,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    var index = this.outputSettings.indexOf(configuration);
+    let index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -228,8 +228,8 @@ class Configurator {
  * @param {function} method the method to call.
  */
 function loopOverStreamsOfType(file, type, method) {
-  var id = 0;
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
       method(file.ffProbeData.streams[i], id);
       id++;
@@ -238,18 +238,18 @@ function loopOverStreamsOfType(file, type, method) {
 }
 
 /**
- * Audio, No Audio Config
+ * Video, Map EVERYTHING
  */
-function buildAudioConfiguration(inputs, file, logger) {
-  var configuration = new Configurator([""]);
+function buildVideoConfiguration(inputs, file, logger) {
+  let configuration = new Configurator(["-map 0"]);
   return configuration;
 }
 
 /**
- * Video, Map EVERYTHING
+ * Audio, No Audio Config
  */
-function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0"]);
+function buildAudioConfiguration(inputs, file, logger) {
+  let configuration = new Configurator([""]);
   return configuration;
 }
 
@@ -258,7 +258,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  */
 function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const fs = require('fs');
-  var configuration = new Configurator(["-c copy"]);
+  let configuration = new Configurator(["-c copy"]);
   const processLanguage = inputs.language.toLowerCase().split(',');
   const bolExtract = inputs.extract;
   const bolRemoveCommentary = inputs.remove_commentary;
@@ -411,7 +411,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
 // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  var response = {
+  const response = {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
@@ -421,7 +421,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  var logger = new Log();
+  let logger = new Log();
   const bolRemoveAll = inputs.remove_all;
   const bolKeepAll = inputs.keep_all;
 
@@ -452,9 +452,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // End Abort Section
 
-  var audioSettings = buildAudioConfiguration(inputs, file, logger);
-  var videoSettings = buildVideoConfiguration(inputs, file, logger);
-  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger, otherArguments);
+  let videoSettings = buildVideoConfiguration(inputs, file, logger);
+  let audioSettings = buildAudioConfiguration(inputs, file, logger);
+  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger, otherArguments);
 
   response.preset = '-y <io>';
   response.preset += ` ${subtitleSettings.GetInputSettings()}`

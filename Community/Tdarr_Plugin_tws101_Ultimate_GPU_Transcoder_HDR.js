@@ -17,8 +17,8 @@ const details = () => {
 	   for audio lets say 500k for a total of 3M.  3M should be in the hevc_1080p_filter_bitrate to make this example work and not loop`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
-//    Release version 1.06
-    Version: "1.06",
+//    Release version 1.10
+    Version: "1.10",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
@@ -225,7 +225,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    var index = this.outputSettings.indexOf(configuration);
+    let index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -245,7 +245,7 @@ class Configurator {
 // #region Plugin Methods
 
 function calculateBitrate(file) {
-  var bitrateprobe = file.ffProbeData.streams[0].bit_rate;
+  let bitrateprobe = file.ffProbeData.streams[0].bit_rate;
   if (isNaN(bitrateprobe)) {
     bitrateprobe = file.bit_rate;
   }
@@ -260,8 +260,8 @@ function calculateBitrate(file) {
  * @param {function} method the method to call.
  */
 function loopOverStreamsOfType(file, type, method) {
-  var id = 0;
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
       method(file.ffProbeData.streams[i], id);
       id++;
@@ -270,28 +270,12 @@ function loopOverStreamsOfType(file, type, method) {
 }
 
 /**
- * Audio, set audio to copy
- */
-function buildAudioConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-c:a copy"]);
-  return configuration;
-}
-
-/**
- * Subtitles, set subs to copy
- */
-function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-c:s copy"]);
-  return configuration;
-}
-
-/**
  * Video, Map EVERYTHING and encode video streams to 265 
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0"]);
+  let configuration = new Configurator(["-map 0"]);
 
-  var tiered = {
+  let tiered = {
     "480p": {
       "bitrate": inputs.target_bitrate_480p576p,
       "max_increase": 200,
@@ -324,7 +308,7 @@ function buildVideoConfiguration(inputs, file, logger) {
     }
   };
 
-  var inputSettings = {
+  let inputSettings = {
     "h263": "-c:v h263_cuvid",
     "h264": "",
     "mjpeg": "c:v mjpeg_cuvid",
@@ -407,14 +391,14 @@ function buildVideoConfiguration(inputs, file, logger) {
     if (stream.codec_name === "png") {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
     } else {  // Transcode.
-      var bitrateprobe = calculateBitrate(file);
-      var bitratetarget = 0;
-      var bitratemax = 0;
-      var cq = 0;
-      var bitratecheck = 0;
+      let bitrateprobe = calculateBitrate(file);
+      let bitratetarget = 0;
+      let bitratemax = 0;
+      let cq = 0;
+      let bitratecheck = 0;
 
       /*  Determine tiered bitrate variables */
-      var tier = tiered[file.video_resolution];
+      let tier = tiered[file.video_resolution];
 
       bitratecheck = parseInt(tier["bitrate"]);
       if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
@@ -461,6 +445,22 @@ function buildVideoConfiguration(inputs, file, logger) {
   return configuration;
 }
 
+/**
+ * Audio, set audio to copy
+ */
+function buildAudioConfiguration(inputs, file, logger) {
+  let configuration = new Configurator(["-c:a copy"]);
+  return configuration;
+}
+
+/**
+ * Subtitles, set subs to copy
+ */
+function buildSubtitleConfiguration(inputs, file, logger) {
+  let configuration = new Configurator(["-c:s copy"]);
+  return configuration;
+}
+
 //#endregion
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -468,7 +468,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  var response = {
+  const response = {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
@@ -478,10 +478,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  var logger = new Log();
-  var audioSettings = buildAudioConfiguration(inputs, file, logger);
-  var videoSettings = buildVideoConfiguration(inputs, file, logger);
-  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  let logger = new Log();
+  let videoSettings = buildVideoConfiguration(inputs, file, logger);
+  let audioSettings = buildAudioConfiguration(inputs, file, logger);
+  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetOutputSettings()}`
@@ -489,9 +489,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += ` -max_muxing_queue_size 9999`;
 
   // Extra parameters
-  var id = 0;
-  var badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  let id = 0;
+  let badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
       response.preset += ` -map -0:${i}`;
     };

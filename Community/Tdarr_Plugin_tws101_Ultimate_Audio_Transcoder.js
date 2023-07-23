@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.34
-  Version: '1.34',
+//    Release Version 1.40
+  Version: '1.40',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -266,7 +266,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    var index = this.outputSettings.indexOf(configuration);
+    let index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -291,8 +291,8 @@ class Configurator {
  * @param {function} method the method to call.
  */
 function loopOverStreamsOfType(file, type, method) {
-  var id = 0;
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
       method(file.ffProbeData.streams[i], id);
       id++;
@@ -352,13 +352,21 @@ function getHighest(first, second) {
 }
 
 /**
+ * Video, Map all Video
+ */
+function buildVideoConfiguration(inputs, file, logger) {
+  let configuration = new Configurator(["-map 0:v"]);
+  return configuration;
+}
+
+/**
  * Audio, Map and trascode what we want
  */
 function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
-  var configuration = new Configurator([""]);
-  var audioCodec = inputs.audioCodec;
-  var audioEncoder = audioCodec;
-  var channelCount = inputs.channels;
+  let configuration = new Configurator([""]);
+  let audioCodec = inputs.audioCodec;
+  let audioEncoder = audioCodec;
+  let channelCount = inputs.channels;
 
   if (audioEncoder == "dca") {
     audioCodec = "dts";
@@ -654,7 +662,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     var lan101pstreams = possiblestreams(lan101);
   }
 
-  var Undgstreams = file.ffProbeData.streams.filter((stream) => {
+  let Undgstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -681,7 +689,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  var Undpstreams = file.ffProbeData.streams.filter((stream) => {
+  let Undpstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -705,7 +713,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  var Forgstreams = file.ffProbeData.streams.filter((stream) => {
+  let Forgstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -748,7 +756,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  var Forpstreams = file.ffProbeData.streams.filter((stream) => {
+  let Forpstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -902,15 +910,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
  * Subtitles, Map all subtitles data and attachments, enable copy all.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
-  return configuration;
-}
-
-/**
- * Video, Map all Video
- */
-function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:v"]);
+  let configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
   return configuration;
 }
 
@@ -920,7 +920,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
 // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  var response = {
+  const response = {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
@@ -930,14 +930,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  var logger = new Log();
+  let logger = new Log();
 
 //Abort Section not supported
 
-  var audioCodec = inputs.audioCodec;
-  var audioEncoder = audioCodec;
-  var channelCount = inputs.channels;
-  var numberOfLagTags = inputs.language.split(',').length;
+  let audioCodec = inputs.audioCodec;
+  let audioEncoder = audioCodec;
+  let channelCount = inputs.channels;
+  let numberOfLagTags = inputs.language.split(',').length;
 
 //Too Many Language Choices
 
@@ -1078,9 +1078,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
 //Build Configuration
 
-  var audioSettings = buildAudioConfiguration(inputs, file, logger, flagtmdbresult, tmdbResult);
-  var videoSettings = buildVideoConfiguration(inputs, file, logger);
-  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  let videoSettings = buildVideoConfiguration(inputs, file, logger);
+  let audioSettings = buildAudioConfiguration(inputs, file, logger, flagtmdbresult, tmdbResult);
+  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `,${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetInputSettings()}`

@@ -6,8 +6,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true `,
   //    Created by tws101 
-  //    Release Version 1.01
-  Version: '1.01',
+  //    Release Version 1.10
+  Version: '1.10',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -93,7 +93,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    var index = this.outputSettings.indexOf(configuration);
+    let index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -120,8 +120,8 @@ class Configurator {
  * @param {function} method the method to call.
  */
 function loopOverStreamsOfType(file, type, method) {
-  var id = 0;
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
       method(file.ffProbeData.streams[i], id);
       id++;
@@ -133,7 +133,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video    Map ALL  "-map 0"   Map Video  "-map 0:v"    Copy Video  "-c:v copy"
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:v"]);
+  let configuration = new Configurator(["-map 0:v"]);
 
   function imageremoval(stream, id) {
     if (
@@ -156,7 +156,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio   Map Audio "-map 0:a"  Copy Audio  "-c:a copy"
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  var configuration = new Configurator([""]);
+  let configuration = new Configurator([""]);
 
   function orderaudiostreams1ch(stream, id) {
     try {
@@ -199,7 +199,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles and data  Map subs "-map 0:s?" Map Data "-map 0:d?"   Copy Subs  "-c:s copy"  Copy Data "-c:d copy"   Ending copy command "-c copy"
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  var configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
+  let configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
   return configuration;
 }
 
@@ -211,7 +211,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
 // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  var response = {
+  const response = {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
@@ -221,7 +221,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  var logger = new Log();
+  let logger = new Log();
 
   // Begin Abort Section
 
@@ -313,9 +313,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // End Abort Section
 
-  var audioSettings = buildAudioConfiguration(inputs, file, logger);
-  var videoSettings = buildVideoConfiguration(inputs, file, logger);
-  var subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  let videoSettings = buildVideoConfiguration(inputs, file, logger);
+  let audioSettings = buildAudioConfiguration(inputs, file, logger);
+  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetOutputSettings()}`
