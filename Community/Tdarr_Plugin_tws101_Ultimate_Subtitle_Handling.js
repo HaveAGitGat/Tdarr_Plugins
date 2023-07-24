@@ -426,7 +426,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const bolKeepAll = inputs.keep_all;
 
   // Begin Abort Section
+  
+  // Varibles for aborot section
   let hasSubs = false;
+
+  // Verify video
+  if (file.fileMedium !== 'video') {
+    logger.AddError("File is not a video.");
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
+
+  //check has subs
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     if (strStreamType === 'text' || strStreamType === 'subtitle') {

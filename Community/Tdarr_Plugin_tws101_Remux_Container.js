@@ -230,6 +230,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let logger = new Log();
 
   // Begin Abort Section
+  
   // Verify video
   if (file.fileMedium !== 'video') {
     logger.AddError("File is not a video.");

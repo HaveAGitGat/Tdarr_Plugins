@@ -469,6 +469,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   let logger = new Log();
+
+  // Begin Abort Section
+  // Check if file is a video. If it isn't then exit plugin.
+  if (file.fileMedium !== 'video') {
+    logger.AddError("File is not a video.");
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
+  // End Abort Section
+
   let videoSettings = buildVideoConfiguration(inputs, file, logger);
   let audioSettings = buildAudioConfiguration(inputs, file, logger);
   let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);

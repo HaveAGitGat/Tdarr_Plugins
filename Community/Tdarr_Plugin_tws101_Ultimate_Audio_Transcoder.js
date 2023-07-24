@@ -932,14 +932,23 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   let logger = new Log();
 
-//Abort Section not supported
+  // Begin Abort Section
 
+  // Varibles for aborot section
   let audioCodec = inputs.audioCodec;
   let audioEncoder = audioCodec;
   let channelCount = inputs.channels;
   let numberOfLagTags = inputs.language.split(',').length;
 
-//Too Many Language Choices
+  // Check if file is a video. If it isn't then exit plugin.
+  if (file.fileMedium !== 'video') {
+    logger.AddError("File is not a video.");
+    response.processFile = false;
+    response.infoLog += logger.GetLogData();
+    return response;
+  }
+
+  //Too Many Language Choices
 
   if (
     numberOfLagTags >= 9
@@ -950,7 +959,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-//Bitrate settings not supported
+  //Bitrate settings not supported
 
   if (
     (inputs.filter_bitrate) < (inputs.bitrate) ||
@@ -963,7 +972,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-//channel count 1 not supported
+  //channel count 1 not supported
   if (
     (['truehd'].includes(audioCodec)) &&
     channelCount === 1
@@ -974,7 +983,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
   
-//channel count 6 not supported
+  //channel count 6 not supported
   if (
     (['dca', 'libmp3lame'].includes(audioCodec)) &&
     channelCount === 6
@@ -985,7 +994,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
   
-//channel count 8 not supported
+  //channel count 8 not supported
   if (
     (['dca', 'libmp3lame', 'truehd', 'ac3', 'eac3'].includes(audioCodec)) &&
     channelCount === 8
@@ -996,9 +1005,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-// End Abort Section not supported
+  // End Abort Section
 
-//Keep Native Background Work
+  //Keep Native Background Work
 
   if (inputs.keep_native_language === true) {
     const axios = require('axios').default;
