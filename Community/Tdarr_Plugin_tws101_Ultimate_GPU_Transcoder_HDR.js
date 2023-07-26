@@ -1,75 +1,70 @@
 /* eslint-disable */
-
-const details = () => {
-  return {
-    id: "Tdarr_Plugin_tws101_Ultimate_GPU_Transcoder_HDR",
-    Stage: 'Pre-processing',
-    Name: "tws101 - Ultimate GPU Transcoder HDR",
-    Stage: "Pre-processing",
-    Type: "Video",
-    Operation: "Transcode",
-    Description:
-      `This plugin will GPU trascode using NVENC to HEVC with bframes, 10bit, and HDR.  HDR in the source file is preserved if it is present
-	   The Primary use of this plugin is to reduce bit rate and save space as well as bandwidth.
-	   an NVENC capable GPU that can do bframes is required.  With reconvert HEVC off files not in HEVC will be converted into HEVC. container is the input container.  With reconvert 
-	   HEVC on, even an HEVC file will be processed.  In reconvert HEVC mode the filter bitrate as well as the target bit rate is essential to program correctly. Example with a 1080p HEVC file
-	   with a preprocessing bit rate of 5M.  Setting the target to 2.1M we know the max bitrate should be 2.5M, tool tip tells you what to add, for the video. Next you need to add some overhead
-	   for audio lets say 500k for a total of 3M.  3M should be in the hevc_1080p_filter_bitrate to make this example work and not loop`,
+const details = () => ({
+  id: "Tdarr_Plugin_tws101_Ultimate_GPU_Transcoder_HDR",
+  Stage: 'Pre-processing',
+  Name: "tws101 - Ultimate GPU Transcoder HDR",
+  Stage: "Pre-processing",
+  Type: "Video",
+  Operation: "Transcode",
+  Description:
+    `This plugin will GPU trascode using NVENC to HEVC with bframes, 10bit, and HDR.  An NVENC capable GPU that can do bframes is required.  
+    If reconvert HEVC is on and the entire file over the bitrate filter, the hevc streams will be re-encoded
+    When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
-//    Release version 1.10
-    Version: "1.10",
-    Tags: "pre-processing,ffmpeg,nvenc h265",
-    Inputs: [
-      {
-        name: "target_bitrate_480p576p",
-        type: 'string',
-        defaultValue: '600000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 480p and 576p files, if current bitrate exceeds the target. Plus 200k equals max bit rate.`,
+//    Release version 1.20
+  Version: "1.20",
+  Tags: "pre-processing,ffmpeg,nvenc h265",
+  Inputs: [
+    {
+      name: "target_bitrate_480p576p",
+      type: 'number',
+      defaultValue: 1000,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_bitrate_720p",
-        type: 'string',
-        defaultValue: '750000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 720p files, if current bitrate exceeds the target. Plus 250k equals max bit rate.`,
+      tooltip: `Specify the target bitrate in kilobits for 480p and 576p files.  Example 400 equals 400k`,
+    },
+    {
+      name: "target_bitrate_720p",
+      type: 'number',
+      defaultValue: 2000,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_bitrate_1080p",
-        type: 'string',
-        defaultValue: '1200000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 1080p files, if current bitrate exceeds the target. Plus 400k equals max bit rate.`,
+      tooltip: `Specify the target bitrate in kilobits for 720p files. Example 400 equals 400k`,
+    },
+    {
+      name: "target_bitrate_1080p",
+      type: 'number',
+      defaultValue: 2500,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_bitrate_4KUHD",
-        type: 'string',
-        defaultValue: '2400000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Plus 600k equals max bit rate.`,
+      tooltip: `Specify the target bitrate in kilobits for 1080p files. Example 400 equals 400k`,
+    },
+    {
+      name: "target_bitrate_4KUHD",
+      type: 'number',
+      defaultValue: 5000,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_pct_reduction",
-        type: 'string',
-        defaultValue: '.50',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.`,
+      tooltip: `Specify the target bitrate in kilobits for 4KUHD files. Example 400 equals 400k`,
+    },
+    {
+      name: "target_pct_reduction",
+      type: 'number',
+      defaultValue: .5,
+      inputUI: {
+        type: 'text',
       },
+      tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.`,
+    },
 	  {
       name: 'reconvert_480p_576p_hevc',
       type: 'boolean',
-      defaultValue: true,
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -81,17 +76,17 @@ const details = () => {
     },
 	  {
       name: 'hevc_480p_576p_filter_bitrate',
-      type: 'string',
-      defaultValue: '1200000',
+      type: 'number',
+      defaultValue: 2000,
       inputUI: {
         type: 'text',
       },
-      tooltip: `Filter bitrate to reconvert_480p_576p_hevc `,
+      tooltip: `Filter bitrate in kilobits to reconvert_480p_576p_hevc. Example 1200 equals 1200k `,
     },
 	  {
       name: 'reconvert_720p_hevc',
       type: 'boolean',
-      defaultValue: true,
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -103,17 +98,17 @@ const details = () => {
     },
 	  {
       name: 'hevc_720p_filter_bitrate',
-      type: 'string',
-      defaultValue: '1400000',
+      type: 'number',
+      defaultValue: 3000,
       inputUI: {
         type: 'text',
       },
-      tooltip: `Filter bitrate to reconvert_720p_hevc `,
+      tooltip: `Filter bitrate in kilobits to reconvert_720p_hevc. Example 1200 equals 1200k `,
     },
 	  {
       name: 'reconvert_1080p_hevc',
       type: 'boolean',
-      defaultValue: true,
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -125,17 +120,17 @@ const details = () => {
     },
 	  {
       name: 'hevc_1080p_filter_bitrate',
-      type: 'string',
-      defaultValue: '2000000',
+      type: 'number',
+      defaultValue: 3500,
       inputUI: {
         type: 'text',
       },
-      tooltip: `Filter bitrate to reconvert_1080p_hevc `,
+      tooltip: `Filter bitrate in kilobits to reconvert_1080p_hevc. Example 1200 equals 1200k `,
     },
 	  {
       name: 'reconvert_4KUHD_hevc',
       type: 'boolean',
-      defaultValue: true,
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
@@ -147,16 +142,15 @@ const details = () => {
     },
 	  {
       name: 'hevc_filter_bitrate_4KUHD',
-      type: 'string',
-      defaultValue: '3400000',
+      type: 'number',
+      defaultValue: 7000,
       inputUI: {
         type: 'text',
       },
-      tooltip: `Filter bitrate to reconvert_4KUHD_hevc`,
+      tooltip: `Filter bitrate in kilobits to reconvert_4KUHD_hevc. Example 1200 equals 1200k`,
     },
-    ],
-  };
-}
+  ],
+});
 
 // #region Helper Classes/Modules
 
@@ -275,7 +269,7 @@ function loopOverStreamsOfType(file, type, method) {
 function buildVideoConfiguration(inputs, file, logger) {
   let configuration = new Configurator(["-map 0"]);
 
-  let tiered = {
+  const tiered = {
     "480p": {
       "bitrate": inputs.target_bitrate_480p576p,
       "max_increase": 200,
@@ -308,7 +302,7 @@ function buildVideoConfiguration(inputs, file, logger) {
     }
   };
 
-  let inputSettings = {
+  const inputSettings = {
     "h263": "-c:v h263_cuvid",
     "h264": "",
     "mjpeg": "c:v mjpeg_cuvid",
@@ -325,111 +319,100 @@ function buildVideoConfiguration(inputs, file, logger) {
       return;
     }
 
+    //Setup variables for re-encode checks
+
+    const filterbitrate480 = (inputs.hevc_480p_576p_filter_bitrate * 1000);
+    const filterbitrate720 = (inputs.hevc_720p_filter_bitrate * 1000);
+    const filterbitrate1080 = (inputs.hevc_1080p_filter_bitrate * 1000);
+    const filterbitrate4k = (inputs.hevc_filter_bitrate_4KUHD * 1000);
     const fileResolution = file.video_resolution;
 
-    //Determines if a 480p and/or 576p is HEVC and should be re-encoded
-	if ((inputs.reconvert_480p_576p_hevc === false) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
+    //Returns if a 480p and/or 576p re-encode is NOT needed
+	  if ((inputs.reconvert_480p_576p_hevc === false) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
       if (stream.codec_name === "hevc" || stream.codec_name === "vp9") {
-	    logger.AddSuccess("File is in HEVC and, 480p or 576p, and HEVC processing is off");
-	    return;
+	      logger.AddSuccess("File is in HEVC and, 480p or 576p, and HEVC processing is off");
+	      return;
+	    }
 	  }
-	}
-
-    if ((inputs.hevc_480p_576p_filter_bitrate > 0) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
-      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < inputs.hevc_480p_576p_filter_bitrate)) {
+    if ((filterbitrate480 > 0) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
+      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < filterbitrate480)) {
         logger.AddSuccess("File is in HEVC and, 480p or 576p, and under the hevc_480p_576p_filter_bitrate");
         return;
-	  }
+	    }
     }
-	
-    //Determines if a 720p is HEVC and should be re-encoded
-	if ((inputs.reconvert_720p_hevc === false) && (fileResolution === "720p")) {
+    //Returns if a 720p re-encode is NOT needed
+	  if ((inputs.reconvert_720p_hevc === false) && (fileResolution === "720p")) {
       if (stream.codec_name === "hevc" || stream.codec_name === "vp9") {
-	    logger.AddSuccess("File is in HEVC and 720p and HEVC processing is off");
-	    return;
+	      logger.AddSuccess("File is in HEVC and 720p and HEVC processing is off");
+	      return;
+	    }
 	  }
-	}
-
-    if ((inputs.hevc_720p_filter_bitrate > 0) && (fileResolution === "720p")) {
-      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < inputs.hevc_720p_filter_bitrate)) {
+    if ((filterbitrate720 > 0) && (fileResolution === "720p")) {
+      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < filterbitrate720)) {
         logger.AddSuccess("File is in HEVC and 720p and under the filter hevc 720p bit rate");
         return;
-	  }
+	    }
     }
-
-    //Determines if a 1080p is HEVC and should be re-encoded
-	if ((inputs.reconvert_1080p_hevc === false) && (fileResolution === "1080p")) {
+    //Returns if a 1080p re-encode is NOT needed
+	  if ((inputs.reconvert_1080p_hevc === false) && (fileResolution === "1080p")) {
       if (stream.codec_name === "hevc" || stream.codec_name === "vp9") {
-	    logger.AddSuccess("File is in HEVC and 1080p and HEVC processing is off");
-	    return;
+	      logger.AddSuccess("File is in HEVC and 1080p and HEVC processing is off");
+	      return;
+	    }
 	  }
-	}
-
-    if ((inputs.hevc_1080p_filter_bitrate > 0) && (fileResolution === "1080p")) {
-      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < inputs.hevc_1080p_filter_bitrate)) {
+    if ((filterbitrate1080 > 0) && (fileResolution === "1080p")) {
+      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < filterbitrate1080)) {
         logger.AddSuccess("File is in HEVC and 1080p and under the filter hevc 1080p bit rate");
         return;
-	  }
+	    }
     }
-	
-	//Determines if a 4K that is HEVC should be re-encoded
-	if ((inputs.reconvert_4KUHD_hevc === false) && (fileResolution === "4KUHD")) {
+	  //Returns if a 4k re-encode is NOT needed
+	  if ((inputs.reconvert_4KUHD_hevc === false) && (fileResolution === "4KUHD")) {
       if (stream.codec_name === "hevc" || stream.codec_name === "vp9") {
-	    logger.AddSuccess("File is in HEVC 4KUHD and HEVC 4KUHD processing is off");
-	    return;
+	      logger.AddSuccess("File is in HEVC 4KUHD and HEVC 4KUHD processing is off");
+	      return;
+	    }
 	  }
-	}
-
-    if ((inputs.hevc_filter_bitrate_4KUHD > 0) && (fileResolution === "4KUHD")) {
-      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < inputs.hevc_filter_bitrate_4KUHD)) {
+    if ((filterbitrate4k > 0) && (fileResolution === "4KUHD")) {
+      if ((stream.codec_name === "hevc" || stream.codec_name === "vp9") && (file.bit_rate < filterbitrate4k)) {
         logger.AddSuccess("File is in HEVC and 4KUHD and under the filter hevc 4KUHD bit rate");
         return;
-	  }
+	    }
     }
 
     // remove png streams.
     if (stream.codec_name === "png") {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
-    } else {  // Transcode.
-      let bitrateprobe = calculateBitrate(file);
+    } else {  
+      //Setup required variables to trascode
+      const bitrateprobe = calculateBitrate(file);
       let bitratetarget = 0;
-      let bitratemax = 0;
-      let cq = 0;
-      let bitratecheck = 0;
+      const tier = tiered[file.video_resolution];
+      const bitratecheck = parseInt(tier["bitrate"]);
 
-      /*  Determine tiered bitrate variables */
-      let tier = tiered[file.video_resolution];
-
-      bitratecheck = parseInt(tier["bitrate"]);
       if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
-        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
+        bitratetarget = parseInt(bitrateprobe * inputs.target_pct_reduction);
       } else {
-        bitratetarget = parseInt(tier["bitrate"] / 1000);
+        bitratetarget = parseInt(tier["bitrate"]);
       }
-      bitratemax = bitratetarget + tier["max_increase"];
-      cq = tier["cq"];
 
-      configuration.AddOutputSetting(
-        `-c:v hevc_nvenc -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
-      );
+      const bitratemax = bitratetarget + tier["max_increase"];
+      const cq = tier["cq"];
 
+      //Trascode all video streams that made it this far
+      configuration.AddOutputSetting(`-c:v hevc_nvenc -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`);
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
-
       if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10" && file.ffProbeData.streams[0].profile !== "High 4:4:4 Predictive") {
         configuration.AddInputSetting("-c:v h264_cuvid");
       }
-	  
-      //Check HDR
-	  if (stream.color_space === "bt2020nc") {
-        configuration.AddOutputSetting(
-		  ` -pix_fmt p010le -color_primaries bt2020 -colorspace bt2020nc -color_trc smpte2084 `
-		);
-		logger.AddSuccess("HDR Detected Maintaining");
+
+      //Check HDR and add required configuration
+	    if (stream.color_space === "bt2020nc") {
+        configuration.AddOutputSetting(` -pix_fmt p010le -color_primaries bt2020 -colorspace bt2020nc -color_trc smpte2084 `);
+		    logger.AddSuccess("HDR Detected Maintaining");
       } else {
-        configuration.AddOutputSetting(
-		  ` -pix_fmt p010le `
-		);
-		logger.AddSuccess("HDR Not Detected");
+        configuration.AddOutputSetting(` -pix_fmt p010le `);
+		    logger.AddSuccess("HDR Not Detected");
       }
 
       logger.AddError("Transcoding to HEVC using NVidia NVENC");
@@ -464,8 +447,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 //#endregion
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-    
-    const lib = require('../methods/lib')();
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
@@ -499,16 +481,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += ` ${audioSettings.GetOutputSettings()}`
   response.preset += ` ${subtitleSettings.GetOutputSettings()}`
   response.preset += ` -max_muxing_queue_size 9999`;
-
-  // Extra parameters
-  let id = 0;
-  let badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
-      response.preset += ` -map -0:${i}`;
-    };
-    id++;
-  }
 
   // b frames argument
   response.preset += ` -bf 5`;

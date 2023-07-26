@@ -5,147 +5,148 @@ const details = () => ({
   Name: 'tws101 - Trascode to AV1 Using CPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Prototype, Trascode to AV1, detect and maintain HDR, Keep orginal container.
-  Reconvert AV1 if the option is on and we are over the bitrate filter`,
+  Description: `Trascode to AV1, detect and maintain HDR, Keep orginal container.
+    If reconvert AV1 is on and the entire file over the bitrate filter, the av1 streams will be re-encoded
+    When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
 //    Created by tws101 
-//    Prototype version 0.80
-  Version: '0.80',
+//    Release version 1.00
+  Version: '1.00',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
-    Inputs: [
-      {
-        name: "target_bitrate_480p576p",
-        type: 'string',
-        defaultValue: '450000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 480p and 576p files, if current bitrate exceeds the target. Plus 200k equals max bit rate.`,
+  Inputs: [
+    {
+      name: "target_bitrate_480p576p",
+      type: 'number',
+      defaultValue: 700,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_bitrate_720p",
-        type: 'string',
-        defaultValue: '562500',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 720p files, if current bitrate exceeds the target. Plus 250k equals max bit rate.`,
+      tooltip: `Specify the target bitrate in kilobits for 480p and 576p files.  Example 400 equals 400k`,
+    },
+    {
+      name: "target_bitrate_720p",
+      type: 'number',
+      defaultValue: 1400,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_bitrate_1080p",
-        type: 'string',
-        defaultValue: '900000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 1080p files, if current bitrate exceeds the target. Plus 300k equals max bit rate.`,
+      tooltip: `Specify the target bitrate in kilobits for 720p files. Example 400 equals 400k`,
+    },
+    {
+      name: "target_bitrate_1080p",
+      type: 'number',
+      defaultValue: 1750,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_bitrate_4KUHD",
-        type: 'string',
-        defaultValue: '1800000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target bitrate for 4KUHD files, if current bitrate exceeds the target. Plus 600k equals max bit rate.`,
+      tooltip: `Specify the target bitrate in kilobits for 1080p files. Example 400 equals 400k`,
+    },
+    {
+      name: "target_bitrate_4KUHD",
+      type: 'number',
+      defaultValue: 3500,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: "target_pct_reduction",
-        type: 'string',
-        defaultValue: '.50',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.`,
+      tooltip: `Specify the target bitrate in kilobits for 4KUHD files. Example 400 equals 400k`,
+    },
+    {
+      name: "target_pct_reduction",
+      type: 'number',
+      defaultValue: .5,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'reconvert_480p_576p_av1',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: `Will reconvert 480p and 576p av1 files that are above the av1_480p_576p_filter_bitrate`,
+      tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.`,
+    },
+    {
+      name: 'reconvert_480p_576p_av1',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'av1_480p_576p_filter_bitrate',
-        type: 'string',
-        defaultValue: '1050000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Filter bitrate to reconvert_480p_576p_av1`,
+      tooltip: `Will reconvert 480p and 576p av1 files that are above the av1_480p_576p_filter_bitrate`,
+    },
+    {
+      name: 'av1_480p_576p_filter_bitrate',
+      type: 'number',
+      defaultValue: 1700,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'reconvert_720p_av1',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: `Will reconvert 720p av1 files that are above the av1_720p_filter_bitrate`,
+      tooltip: `Filter bitrate in kilobits to reconvert_480p_576p_av1.  Example 1200 equals 1200k`,
+    },
+    {
+      name: 'reconvert_720p_av1',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'av1_720p_filter_bitrate',
-        type: 'string',
-        defaultValue: '1212500',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Filter bitrate to reconvert_720p_av1 `,
+      tooltip: `Will reconvert 720p av1 files that are above the av1_720p_filter_bitrate`,
+    },
+    {
+      name: 'av1_720p_filter_bitrate',
+      type: 'number',
+      defaultValue: 2400,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'reconvert_1080p_av1',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: `Will reconvert 1080p av1 files that are above the av1_1080p_filter_bitrate`,
+      tooltip: `Filter bitrate in kilobits to reconvert_720p_av1. Example 1200 equals 1200k`,
+    },
+    {
+      name: 'reconvert_1080p_av1',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'av1_1080p_filter_bitrate',
-        type: 'string',
-        defaultValue: '1700000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Filter bitrate to reconvert_1080p_av1 `,
+      tooltip: `Will reconvert 1080p av1 files that are above the av1_1080p_filter_bitrate`,
+    },
+    {
+      name: 'av1_1080p_filter_bitrate',
+      type: 'number',
+      defaultValue: 2750,
+      inputUI: {
+        type: 'text',
       },
-      {
-        name: 'reconvert_4KUHD_av1',
-        type: 'boolean',
-        defaultValue: false,
-        inputUI: {
-          type: 'dropdown',
-          options: [
-            'false',
-            'true',
-          ],
-        },
-        tooltip: `Will reconvert 4KUHD av1 files that are above the av1_filter_bitrate_4KUHD`,
+      tooltip: `Filter bitrate in kilobits to reconvert_1080p_av1. Example 1200 equals 1200k `,
+    },
+    {
+      name: 'reconvert_4KUHD_av1',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
       },
-      {
-        name: 'av1_filter_bitrate_4KUHD',
-        type: 'string',
-        defaultValue: '2800000',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Filter bitrate to reconvert_4KUHD_av1`,
+      tooltip: `Will reconvert 4KUHD av1 files that are above the av1_filter_bitrate_4KUHD`,
+    },
+    {
+      name: 'av1_filter_bitrate_4KUHD',
+      type: 'number',
+      defaultValue: 4400,
+      inputUI: {
+        type: 'text',
       },
-    ],
+      tooltip: `Filter bitrate in kilobits to reconvert_4KUHD_av1. Example 1200 equals 1200k`,
+    },
+  ],
 });
 
 // #region Helper Classes/Modules
@@ -266,40 +267,40 @@ function loopOverStreamsOfType(file, type, method) {
 function buildVideoConfiguration(inputs, file, logger) {
   let configuration = new Configurator(["-map 0"]);
 
-  let tiered = {
+  const tiered = {
     "480p": {
       "bitrate": inputs.target_bitrate_480p576p,
       "max_increase": 200,
-      "cq": 29
+      "max_decrease": 400
     },
     "576p": {
       "bitrate": inputs.target_bitrate_480p576p,
       "max_increase": 200,
-      "cq": 29
+      "max_decrease": 400
     },
     "720p": {
       "bitrate": inputs.target_bitrate_720p,
       "max_increase": 250,
-      "cq": 30
+      "max_decrease": 500
     },
     "1080p": {
       "bitrate": inputs.target_bitrate_1080p,
       "max_increase": 300,
-      "cq": 31
+      "max_decrease": 600
     },
     "4KUHD": {
       "bitrate": inputs.target_bitrate_4KUHD,
       "max_increase": 600,
-      "cq": 31
+      "max_decrease": 1200
     },
     "Other": {
       "bitrate": inputs.target_bitrate_1080p,
       "max_increase": 300,
-      "cq": 31
+      "max_decrease": 600
     }
   };
 
-  let inputSettings = {
+  const inputSettings = {
     "h263": "-c:v h263",
     "h264": "",
     "mjpeg": "c:v mjpeg",
@@ -316,108 +317,100 @@ function buildVideoConfiguration(inputs, file, logger) {
       return;
     }
 
-    //check for reprocess av1
+    //Setup variables for re-encode checks
 
+    const filterbitrate480 = (inputs.av1_480p_576p_filter_bitrate * 1000);
+    const filterbitrate720 = (inputs.av1_720p_filter_bitrate * 1000);
+    const filterbitrate1080 = (inputs.av1_1080p_filter_bitrate * 1000);
+    const filterbitrate4k = (inputs.av1_filter_bitrate_4KUHD * 1000);
     const fileResolution = file.video_resolution;
 
+    //Returns if a 480p and/or 576p re-encode is NOT needed
     if ((inputs.reconvert_480p_576p_av1 === false) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
       if (stream.codec_name === "av1") {
         logger.AddSuccess("File is in av1 and, 480p or 576p, and av1 processing is off");
         return;
       }
     }
-
-    if ((inputs.av1_480p_576p_filter_bitrate > 0) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_480p_576p_filter_bitrate)) {
+    if ((filterbitrate480 > 0) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate480)) {
         logger.AddSuccess("File is in av1 and, 480p or 576p, and under the av1_480p_576p_filter_bitrate");
         return;
       }
     }
-
+    //Returns if a 720p re-encode is NOT needed
     if ((inputs.reconvert_720p_av1 === false) && (fileResolution === "720p")) {
       if (stream.codec_name === "av1") {
         logger.AddSuccess("File is in av1 and 720p, and av1 processing is off");
         return;
       }
     }
-
-    if ((inputs.av1_720p_filter_bitrate > 0) && (fileResolution === "720p")) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_720p_filter_bitrate)) {
+    if ((filterbitrate720 > 0) && (fileResolution === "720p")) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate720)) {
         logger.AddSuccess("File is in av1 and 720p, and under the av1_720p_filter_bitrate");
         return;
       }
     }
-
+    //Returns if a 1080p re-encode is NOT needed
     if ((inputs.reconvert_1080p_av1 === false) && (fileResolution === "1080p")) {
       if (stream.codec_name === "av1") {
         logger.AddSuccess("File is in av1 and 1080p, and av1 processing is off");
         return;
       }
     }
-
-    if ((inputs.av1_1080p_filter_bitrate > 0) && (fileResolution === "1080p")) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_1080p_filter_bitrate)) {
+    if ((filterbitrate1080 > 0) && (fileResolution === "1080p")) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate1080)) {
         logger.AddSuccess("File is in av1 and 1080p, and under the av1_1080p_filter_bitrate");
         return;
       }
     }
-
+    //Returns if a 4k re-encode is NOT needed
     if ((inputs.reconvert_4KUHD_av1 === false) && (fileResolution === "4KUHD")) {
       if (stream.codec_name === "av1") {
         logger.AddSuccess("File is in av1 and 4KUHD, and av1 processing is off");
         return;
       }
     }
-
-    if ((inputs.av1_filter_bitrate_4KUHD > 0) && (fileResolution === "4KUHD")) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < inputs.av1_filter_bitrate_4KUHD)) {
+    if ((filterbitrate4k > 0) && (fileResolution === "4KUHD")) {
+      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate4k)) {
         logger.AddSuccess("File is in av1 and 4KUHD, and under the av1_filter_bitrate_4KUHD");
         return;
       }
     }
 
-
-    // remove png streams.
+    // remove png streams.  
     if (stream.codec_name === "png") {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
-    } else {  // Transcode.
-      let bitrateprobe = calculateBitrate(file);
+    } else {
+      //Setup required variables to trascode  
+      const bitrateprobe = calculateBitrate(file);
       let bitratetarget = 0;
-      let bitratemax = 0;
-      let bitratecheck = 0;
+      const tier = tiered[file.video_resolution];
+      const bitratecheck = parseInt(tier["bitrate"]);
 
-      /*  Determine tiered bitrate variables */
-      let tier = tiered[file.video_resolution];
-
-      bitratecheck = parseInt(tier["bitrate"]);
       if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
-        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
+        bitratetarget = parseInt(bitrateprobe * inputs.target_pct_reduction);
       } else {
-        bitratetarget = parseInt(tier["bitrate"] / 1000);
+        bitratetarget = parseInt(tier["bitrate"]);
       }
-      bitratemax = bitratetarget + tier["max_increase"];
-      cq = tier["cq"];
 
-      configuration.AddOutputSetting(
-        `-c:v libsvtav1 -qmin 0 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k`
-      );
+      const bitratemax = bitratetarget + tier["max_increase"];
+      const bitratemin = bitratetarget - tier["max_decrease"];
 
+      //Trascode all video streams that made it this far
+      configuration.AddOutputSetting(`-c:v libsvtav1 -minrate ${bitratemin}k -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k`);
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
-
       if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10" && file.ffProbeData.streams[0].profile !== "High 4:4:4 Predictive") {
         configuration.AddInputSetting("-c:v h264");
       }
-	  
-	  if (stream.color_space === "bt2020nc") {
-        configuration.AddOutputSetting(
-		  ` -pix_fmt p010le -color_primaries bt2020 -colorspace bt2020nc -color_trc smpte2084 `
-		);
-		logger.AddSuccess("HDR Detected Maintaining");
+
+	    //Check HDR and add required configuration
+	    if (stream.color_space === "bt2020nc") {
+        configuration.AddOutputSetting(` -pix_fmt p010le -color_primaries bt2020 -colorspace bt2020nc -color_trc smpte2084 `);
+		    logger.AddSuccess("HDR Detected Maintaining");
       } else {
-        configuration.AddOutputSetting(
-		  ` -pix_fmt p010le `
-		);
-		logger.AddSuccess("HDR Not Detected");
+        configuration.AddOutputSetting(` -pix_fmt p010le `);
+		    logger.AddSuccess("HDR Not Detected");
       }
 
       logger.AddError("Transcoding to AV1 using CPU");
@@ -454,7 +447,6 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-    
   const lib = require('../methods/lib')();
 // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -489,16 +481,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += ` ${audioSettings.GetOutputSettings()}`
   response.preset += ` ${subtitleSettings.GetOutputSettings()}`
   response.preset += ` -max_muxing_queue_size 9999`;
-
-// Extra parameters
-  let id = 0;
-  let badTypes = ['mov_text', 'eia_608', 'timed_id3', 'mp4s'];
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (badTypes.includes(file.ffProbeData.streams[i].codec_name)) {
-      response.preset += ` -map -0:${i}`;
-    };
-    id++;
-  }
 
 // fix probe size errors
   response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
