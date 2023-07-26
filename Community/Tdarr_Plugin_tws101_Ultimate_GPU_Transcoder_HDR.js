@@ -7,8 +7,8 @@ const details = () => ({
   Type: "Video",
   Operation: "Transcode",
   Description:
-    `This plugin will GPU trascode using NVENC to HEVC with bframes, 10bit, and HDR.  An NVENC capable GPU that can do bframes is required.  
-    If reconvert HEVC is on and the entire file over the bitrate filter, the hevc streams will be re-encoded
+    `This plugin will GPU trascode using NVENC to HEVC with bframes, 10bit, and HDR.  An NVENC capable GPU is required.  
+    If reconvert HEVC is on and the entire file over the bitrate filter, the hevc streams will be re-encoded.
     When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
@@ -109,6 +109,19 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `Filter bitrate in kilobits to reconvert_4KUHD_hevc. Example 1200 equals 1200k`,
+    },
+    {
+      name: 'bframes',
+      type: 'boolean',
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `Requires bframes capable GPU or you need to set it to false.`,
     },
   ],
 });
@@ -423,7 +436,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.preset += ` -max_muxing_queue_size 9999`;
 
   // b frames argument
-  response.preset += ` -bf 5`;
+  if (inputs.bframes === true) {
+    response.preset += ` -bf 5`;
+  }
 
   // fix probe size errors
   response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
