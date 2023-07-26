@@ -59,7 +59,7 @@ const details = () => ({
       tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.`,
     },
     {
-      name: 'reconvert_480p_576p_av1',
+      name: 'reconvert_av1',
       type: 'boolean',
       defaultValue: false,
       inputUI: {
@@ -81,19 +81,6 @@ const details = () => ({
       tooltip: `Filter bitrate in kilobits to reconvert_480p_576p_av1.  Example 1200 equals 1200k`,
     },
     {
-      name: 'reconvert_720p_av1',
-      type: 'boolean',
-      defaultValue: false,
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
-      },
-      tooltip: `Will reconvert 720p av1 files that are above the av1_720p_filter_bitrate`,
-    },
-    {
       name: 'av1_720p_filter_bitrate',
       type: 'number',
       defaultValue: 2400,
@@ -103,19 +90,6 @@ const details = () => ({
       tooltip: `Filter bitrate in kilobits to reconvert_720p_av1. Example 1200 equals 1200k`,
     },
     {
-      name: 'reconvert_1080p_av1',
-      type: 'boolean',
-      defaultValue: false,
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
-      },
-      tooltip: `Will reconvert 1080p av1 files that are above the av1_1080p_filter_bitrate`,
-    },
-    {
       name: 'av1_1080p_filter_bitrate',
       type: 'number',
       defaultValue: 2750,
@@ -123,19 +97,6 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `Filter bitrate in kilobits to reconvert_1080p_av1. Example 1200 equals 1200k `,
-    },
-    {
-      name: 'reconvert_4KUHD_av1',
-      type: 'boolean',
-      defaultValue: false,
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
-      },
-      tooltip: `Will reconvert 4KUHD av1 files that are above the av1_filter_bitrate_4KUHD`,
     },
     {
       name: 'av1_filter_bitrate_4KUHD',
@@ -317,65 +278,43 @@ function buildVideoConfiguration(inputs, file, logger) {
       return;
     }
 
-    //Setup variables for re-encode checks
-
+    //Return if a re-encode is not needed
     const filterbitrate480 = (inputs.av1_480p_576p_filter_bitrate * 1000);
     const filterbitrate720 = (inputs.av1_720p_filter_bitrate * 1000);
     const filterbitrate1080 = (inputs.av1_1080p_filter_bitrate * 1000);
     const filterbitrate4k = (inputs.av1_filter_bitrate_4KUHD * 1000);
     const fileResolution = file.video_resolution;
+    const reconvert = inputs.reconvert_av1;
+    const res480p = "480p";
+    const res576p = "576p";
+    const res720p = "720p";
+    const res1080p = "1080p";
+    const res4k = "4KUHD";
 
-    //Returns if a 480p and/or 576p re-encode is NOT needed
-    if ((inputs.reconvert_480p_576p_av1 === false) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
+    if (reconvert === false) {
       if (stream.codec_name === "av1") {
-        logger.AddSuccess("File is in av1 and, 480p or 576p, and av1 processing is off");
+        logger.AddSuccess(`Video stream ${id} is av1, and av1 reconvert is off`);
         return;
       }
     }
-    if ((filterbitrate480 > 0) && ((fileResolution === "480p") || (fileResolution === "576p"))) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate480)) {
-        logger.AddSuccess("File is in av1 and, 480p or 576p, and under the av1_480p_576p_filter_bitrate");
-        return;
+
+    function reconvertcheck(filterbitrate, res, res2) {
+      if ((filterbitrate > 0) && ((fileResolution === res) || (fileResolution === res2))) {
+        if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate)) {
+          logger.AddSuccess(`Video stream ${id} is av1 and under the filter bitrate`);
+          return true;
+        }
       }
+      return false;
     }
-    //Returns if a 720p re-encode is NOT needed
-    if ((inputs.reconvert_720p_av1 === false) && (fileResolution === "720p")) {
-      if (stream.codec_name === "av1") {
-        logger.AddSuccess("File is in av1 and 720p, and av1 processing is off");
-        return;
-      }
-    }
-    if ((filterbitrate720 > 0) && (fileResolution === "720p")) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate720)) {
-        logger.AddSuccess("File is in av1 and 720p, and under the av1_720p_filter_bitrate");
-        return;
-      }
-    }
-    //Returns if a 1080p re-encode is NOT needed
-    if ((inputs.reconvert_1080p_av1 === false) && (fileResolution === "1080p")) {
-      if (stream.codec_name === "av1") {
-        logger.AddSuccess("File is in av1 and 1080p, and av1 processing is off");
-        return;
-      }
-    }
-    if ((filterbitrate1080 > 0) && (fileResolution === "1080p")) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate1080)) {
-        logger.AddSuccess("File is in av1 and 1080p, and under the av1_1080p_filter_bitrate");
-        return;
-      }
-    }
-    //Returns if a 4k re-encode is NOT needed
-    if ((inputs.reconvert_4KUHD_av1 === false) && (fileResolution === "4KUHD")) {
-      if (stream.codec_name === "av1") {
-        logger.AddSuccess("File is in av1 and 4KUHD, and av1 processing is off");
-        return;
-      }
-    }
-    if ((filterbitrate4k > 0) && (fileResolution === "4KUHD")) {
-      if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate4k)) {
-        logger.AddSuccess("File is in av1 and 4KUHD, and under the av1_filter_bitrate_4KUHD");
-        return;
-      }
+
+    const Bol480 = reconvertcheck(filterbitrate480, res480p, res576p);
+    const Bol720 = reconvertcheck(filterbitrate720, res720p);
+    const Bol1080 = reconvertcheck(filterbitrate1080, res1080p);
+    const Bol4k = reconvertcheck(filterbitrate4k, res4k);
+
+    if (Bol480 === true || Bol720 === true ||Bol1080 === true || Bol4k === true) {
+      return;
     }
 
     // remove png streams.  
