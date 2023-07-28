@@ -49,7 +49,10 @@ const details = () => ({
         ],
       },
       tooltip:
-        'Specify the condition to use when comparing the property value to the input value.',
+        'Specify the condition to use when comparing the property value to the input value. \\n'
+        + ' The property value is on the left hand side of the comparison. For example \\n'
+        + ' property value includes input \\n'
+        + ' property value >= input \\n',
     },
     {
       name: 'continueIfPropertyFound',
