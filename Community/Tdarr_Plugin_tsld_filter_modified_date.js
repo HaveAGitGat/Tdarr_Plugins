@@ -22,9 +22,9 @@ const details = () => ({
        365  
        
        \\nExample:\\n
-       30`       
+       30`,
     },
-  ]
+  ],
 });
 
 // eslint-disable-next-line no-unused-vars
@@ -36,26 +36,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     processFile: true,
     infoLog: '',
   };
-  //response.infoLog += `Filter preventing processing. File mod time ${file.statSync.mtimeMs}`;
-  //response.infoLog += ` Now ${Date.now()}`;
+  // response.infoLog += `Filter preventing processing. File mod time ${file.statSync.mtimeMs}`;
+  // response.infoLog += ` Now ${Date.now()}`;
   const age = Date.now() - file.statSync.mtimeMs;
   const reqage = Number(inputs.minModifiedDaysOld) * 86400000;
   // response.infoLog += ` Age ${age} Require Min Age: ${reqage}`;
-  if (reqage < age) 
-  {
-     response.infoLog += "File modified date old enough. Moving to next plugin.";     
-     response.processFile = true;
+  if (reqage < age) {
+    response.infoLog += 'File modified date old enough. Moving to next plugin.';
+    response.processFile = true;
+  } else {
+    response.infoLog += 'Skipping, file modified date not old enough';
+    response.processFile = false;
   }
-  else
-  {
-     response.infoLog += "Skipping, file modified date not old enough";
-     response.processFile = false;
-  }
-
 
   return response;
 };
 
 module.exports.details = details;
 module.exports.plugin = plugin;
-
