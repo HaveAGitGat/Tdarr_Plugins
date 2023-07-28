@@ -12,7 +12,10 @@ const tests = [
     },
     output: {
       processFile: false,
-      infoLog: 'File property container of mkv being one of mkv,mp4 has been found, breaking out of stack  \n',
+      infoLog: ' Checking property value of mkv == input value of mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
     },
   },
 
@@ -30,7 +33,10 @@ const tests = [
     },
     output: {
       processFile: true,
-      infoLog: 'File property container of mkv being one of avi has not been found, continuing to next plugin \n',
+      infoLog: ' Checking property value of mkv == input value of avi \n'
+      + ' isConditionMet: false \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Continuing to next plugin  \n',
     },
   },
 
@@ -48,7 +54,10 @@ const tests = [
     },
     output: {
       processFile: false,
-      infoLog: 'File property container of mkv being one of mkv has been found, breaking out of stack  \n',
+      infoLog: ' Checking property value of mkv == input value of mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
     },
   },
 
@@ -66,7 +75,11 @@ const tests = [
     },
     output: {
       processFile: false,
-      infoLog: 'File property video_resolution of 1080p being one of 720p,1080p has been found, breaking out of stack  \n',
+      infoLog: ' Checking property value of 1080p == input value of 720p \n'
+      + ' Checking property value of 1080p == input value of 1080p \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
     },
   },
 
@@ -84,7 +97,11 @@ const tests = [
     },
     output: {
       processFile: true,
-      infoLog: 'File property video_resolution of 1080p being one of 721p,1081p has not been found, continuing to next plugin \n',
+      infoLog: ' Checking property value of 1080p == input value of 721p \n'
+      + ' Checking property value of 1080p == input value of 1081p \n'
+      + ' isConditionMet: false \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Continuing to next plugin  \n',
     },
   },
 
@@ -103,7 +120,10 @@ const tests = [
     },
     output: {
       processFile: false,
-      infoLog: 'File property file of C:/Transcode/Source Folder/h264.mkv being one of Source Folder/h264.mkv has been found, breaking out of stack  \n',
+      infoLog: ' Checking property value of C:/Transcode/Source Folder/h264.mkv includes input value of Source Folder/h264.mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
     },
   },
 
@@ -123,7 +143,10 @@ const tests = [
     },
     output: {
       processFile: false,
-      infoLog: 'File property container of mkv being one of avi has not been found, breaking out of stack  \n',
+      infoLog: ' Checking property value of mkv == input value of avi \n'
+      + ' isConditionMet: false \n'
+      + ' continueIfPropertyFound: true \n'
+      + 'Breaking out of stack  \n',
     },
   },
 
@@ -141,7 +164,10 @@ const tests = [
     },
     output: {
       processFile: true,
-      infoLog: 'File property container of mkv being one of mkv has been found, continuing to next plugin  \n',
+      infoLog: ' Checking property value of mkv == input value of mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: true \n'
+      + 'Continuing to next plugin  \n',
     },
   },
 
@@ -159,7 +185,10 @@ const tests = [
     },
     output: {
       processFile: true,
-      infoLog: 'File property container of mkv being one of mkv,mp4 has been found, continuing to next plugin  \n',
+      infoLog: ' Checking property value of mkv == input value of mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: true \n'
+      + 'Continuing to next plugin  \n',
     },
   },
 
@@ -177,7 +206,11 @@ const tests = [
     },
     output: {
       processFile: false,
-      infoLog: 'File property video_resolution of 1080p being one of 721p,1081p has not been found, breaking out of stack  \n',
+      infoLog: ' Checking property value of 1080p == input value of 721p \n'
+      + ' Checking property value of 1080p == input value of 1081p \n'
+      + ' isConditionMet: false \n'
+      + ' continueIfPropertyFound: true \n'
+      + 'Breaking out of stack  \n',
     },
   },
 
@@ -195,7 +228,306 @@ const tests = [
     },
     output: {
       processFile: true,
-      infoLog: 'File property file of C:/Transcode/Source Folder/h264.mkv being one of Source Folder/h264.mkv has been found, continuing to next plugin  \n',
+      infoLog: ' Checking property value of C:/Transcode/Source Folder/h264.mkv includes input value of Source Folder/h264.mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: true \n'
+      + 'Continuing to next plugin  \n',
+    },
+  },
+
+  // check other conditions
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'container',
+        propertyValues: 'mkv',
+        condition: '==',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of mkv == input value of mkv \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'container',
+        propertyValues: 'avi',
+        condition: '==',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of mkv == input value of avi \n'
+      + ' isConditionMet: false \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '60',
+        condition: '>',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of 64.9300765991211 > input value of 60 \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '70',
+        condition: '>',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of 64.9300765991211 > input value of 70 \n'
+        + ' isConditionMet: false \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '60',
+        condition: '>=',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of 64.9300765991211 >= input value of 60 \n'
+      + ' isConditionMet: true \n'
+      + ' continueIfPropertyFound: false \n'
+      + 'Breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '70',
+        condition: '>=',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of 64.9300765991211 >= input value of 70 \n'
+        + ' isConditionMet: false \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '60',
+        condition: '<',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of 64.9300765991211 < input value of 60 \n'
+        + ' isConditionMet: false \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '70',
+        condition: '<',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of 64.9300765991211 < input value of 70 \n'
+        + ' isConditionMet: true \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '60',
+        condition: '<=',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of 64.9300765991211 <= input value of 60 \n'
+        + ' isConditionMet: false \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'file_size',
+        propertyValues: '70',
+        condition: '<=',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of 64.9300765991211 <= input value of 70 \n'
+        + ' isConditionMet: true \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'container',
+        propertyValues: 'mk',
+        condition: 'includes',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of mkv includes input value of mk \n'
+        + ' isConditionMet: true \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Breaking out of stack  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'container',
+        propertyValues: 'av',
+        condition: 'includes',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of mkv includes input value of av \n'
+        + ' isConditionMet: false \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'container',
+        propertyValues: 'mk',
+        condition: 'not includes',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: ' Checking property value of mkv not includes input value of mk \n'
+        + ' isConditionMet: false \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Continuing to next plugin  \n',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyName: 'container',
+        propertyValues: 'av',
+        condition: 'not includes',
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: ' Checking property value of mkv not includes input value of av \n'
+        + ' isConditionMet: true \n'
+        + ' continueIfPropertyFound: false \n'
+        + 'Breaking out of stack  \n',
     },
   },
 ];

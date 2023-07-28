@@ -7,7 +7,7 @@ const tests = [
       file: require('../sampleData/media/sampleH264_2.json'),
       librarySettings: {},
       inputs: {
-        minModifiedDaysOld: 1
+        minModifiedDaysOld: 1,
       },
       otherArguments: {},
     },
@@ -21,13 +21,13 @@ const tests = [
       file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {
-        minModifiedDaysOld: 9999
+        minModifiedDaysOld: 9999,
       },
       otherArguments: {},
     },
     output: {
       processFile: false,
-      infoLog:  'Skipping, file modified date not old enough',
+      infoLog: 'Skipping, file modified date not old enough',
     },
   },
   {
@@ -35,7 +35,7 @@ const tests = [
       file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {
-        minModifiedDaysOld: 1
+        minModifiedDaysOld: 1,
       },
       otherArguments: {},
     },
@@ -49,7 +49,7 @@ const tests = [
       file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {
-        minModifiedDaysOld: 9999
+        minModifiedDaysOld: 9999,
       },
       otherArguments: {},
     },
