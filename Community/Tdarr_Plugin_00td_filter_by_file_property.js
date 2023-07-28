@@ -68,9 +68,88 @@ const details = () => ({
   ],
 });
 
+const conditionMet = (response, inputsArr, value, condition) => {
+  for (let j = 0; j < inputsArr.length; j += 1) {
+    try {
+      let v = value;
+      let i = inputsArr[j];
+
+      if (
+        condition === '>'
+        || condition === '>='
+        || condition === '<'
+        || condition === '<='
+
+      ) {
+        v = Number(value);
+        i = Number(inputsArr[j]);
+      } else if (
+        condition === '=='
+        || condition === '!='
+        || condition === 'includes'
+        || condition === 'not includes'
+      ) {
+        v = String(value);
+        i = String(inputsArr[j]);
+      }
+
+      response.infoLog += ` Checking property value of ${v} ${condition} input value of ${i} \n`;
+
+      switch (condition) {
+        case '==':
+          if (v === i) {
+            return true;
+          }
+          break;
+        case '!=':
+          if (v !== i) {
+            return true;
+          }
+          break;
+        case '>':
+          if (v > i) {
+            return true;
+          }
+          break;
+        case '>=':
+          if (v >= i) {
+            return true;
+          }
+          break;
+        case '<':
+          if (v < i) {
+            return true;
+          }
+          break;
+
+        case '<=':
+          if (v <= i) {
+            return true;
+          }
+          break;
+        case 'includes':
+          if (v.includes(i)) {
+            return true;
+          }
+          break;
+        case 'not includes':
+          if (!v.includes(i)) {
+            return true;
+          }
+          break;
+        default:
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.log(err);
+    }
+  }
+
+  return false;
+};
+
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-  const { conditionMet } = require('../methods/utils');
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -100,26 +179,25 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const propertyValues = inputs.propertyValues.trim().split(',');
 
   try {
-    const fileContainsProperty = conditionMet(propertyValues, file[propertyName], inputs.condition);
+    const isConditionMet = conditionMet(response, propertyValues, file[propertyName], inputs.condition);
 
-    const message = `File property ${propertyName} of ${file[propertyName]}`
-    + ` being one of ${propertyValues.join(',')} has`;
-
+    response.infoLog += ` isConditionMet: ${isConditionMet} \n`;
+    response.infoLog += ` continueIfPropertyFound: ${inputs.continueIfPropertyFound} \n`;
     if (inputs.continueIfPropertyFound === true) {
-      if (fileContainsProperty === true) {
+      if (isConditionMet === true) {
         response.processFile = true;
-        response.infoLog += `${message} been found, continuing to next plugin  \n`;
+        response.infoLog += 'Continuing to next plugin  \n';
       } else {
         response.processFile = false;
-        response.infoLog += `${message} not been found, breaking out of stack  \n`;
+        response.infoLog += 'Breaking out of stack  \n';
       }
     } else if (inputs.continueIfPropertyFound === false) {
-      if (fileContainsProperty === true) {
+      if (isConditionMet === true) {
         response.processFile = false;
-        response.infoLog += `${message} been found, breaking out of stack  \n`;
+        response.infoLog += 'Breaking out of stack  \n';
       } else {
         response.processFile = true;
-        response.infoLog += `${message} not been found, continuing to next plugin \n`;
+        response.infoLog += 'Continuing to next plugin  \n';
       }
     }
   } catch (err) {
