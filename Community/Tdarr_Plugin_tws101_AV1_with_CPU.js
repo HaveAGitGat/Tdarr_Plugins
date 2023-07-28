@@ -325,6 +325,10 @@ function buildVideoConfiguration(inputs, file, logger) {
       const bitrateprobe = calculateBitrate(file);
       let bitratetarget = 0;
       const tier = tiered[file.video_resolution];
+      if (tier == null) {
+        logger.AddError("Plugin does not support the files video resolution");
+        return;
+      }
       const bitratecheck = parseInt(tier["bitrate"]);
 
       if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
@@ -352,7 +356,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 		    logger.AddSuccess("HDR Not Detected");
       }
 
-      logger.AddError("Transcoding to AV1 using CPU");
+      logger.AddError(`Transcoding stream ${id} to AV1 using CPU`);
     }
   }
 
