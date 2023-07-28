@@ -9,8 +9,8 @@ const details = () => ({
     If reconvert AV1 is on and the entire file over the bitrate filter, the av1 streams will be re-encoded
     When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
 //    Created by tws101 
-//    Release version 1.00
-  Version: '1.00',
+//    Release version 1.01
+  Version: '1.01',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
   Inputs: [
     {
@@ -322,7 +322,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
     } else {
       //Setup required variables to trascode  
-      const bitrateprobe = calculateBitrate(file);
+      const bitrateprobe = (calculateBitrate(file) / 1000);
       let bitratetarget = 0;
       const tier = tiered[file.video_resolution];
       if (tier == null) {

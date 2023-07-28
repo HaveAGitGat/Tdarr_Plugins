@@ -12,8 +12,8 @@ const details = () => ({
     When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
 //    Pluggin inspired by DOOM and MIGZ
 //    Created by tws101 
-//    Release version 1.20
-  Version: "1.20",
+//    Release version 1.21
+  Version: "1.21",
   Tags: "pre-processing,ffmpeg,nvenc h265",
   Inputs: [
     {
@@ -338,7 +338,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
     } else {  
       //Setup required variables to trascode
-      const bitrateprobe = calculateBitrate(file);
+      const bitrateprobe = (calculateBitrate(file) / 1000);
       let bitratetarget = 0;
       const tier = tiered[file.video_resolution];
       if (tier == null) {
