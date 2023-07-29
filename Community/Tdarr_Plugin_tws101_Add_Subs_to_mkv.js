@@ -7,8 +7,8 @@ const details = () => ({
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
   //    Created by tws101 
-  //    Release Version 1.00
-  Version: '1.00',
+  //    Release Version 1.01
+  Version: '1.01',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
@@ -351,10 +351,10 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   if (boolfoundmainsrt === true) {
     transcode(mainchosensubsfile, trantitlepmain, logdispmain);
   }
-  if (boolfoundforcedsrt === true) {
+  if (boolfoundforcedsrt === true && getforced === true) {
     transcode(forcedchosensubsfile, trantitleforced, logdispforced);
   }
-  if (boolfoundsdhsrt === true) {
+  if (boolfoundsdhsrt === true && getsdh === true) {
     transcode(sdhchosensubsfile, trantitlesdh, logdispsdh);
   }
 
