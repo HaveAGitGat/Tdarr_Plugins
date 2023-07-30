@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.41
-  Version: '1.41',
+//    Release Version 1.43
+  Version: '1.43',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -266,7 +266,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    let index = this.outputSettings.indexOf(configuration);
+    const index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -325,7 +325,7 @@ const tmdbApi = async (filename, api_key, axios) => {
         : resp.data.tv_results[0]));
 
     if (!result) {
-      response.infoLog += '☒No IMDB result was found. \n';
+      logger.AddError(`No IMDB result was found.`);
     }
     return result;
   }
@@ -355,7 +355,7 @@ function getHighest(first, second) {
  * Video, Map all Video
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-map 0:v"]);
+  const configuration = new Configurator(["-map 0:v"]);
   return configuration;
 }
 
@@ -363,10 +363,10 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio, Map and trascode what we want
  */
 function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
-  let configuration = new Configurator([""]);
+  const configuration = new Configurator([""]);
   let audioCodec = inputs.audioCodec;
-  let audioEncoder = audioCodec;
-  let channelCount = inputs.channels;
+  const audioEncoder = audioCodec;
+  const channelCount = inputs.channels;
 
   if (audioEncoder == "dca") {
     audioCodec = "dts";
@@ -397,7 +397,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     logger.AddSuccess(`Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(
       langsTemp,
     )}.`);
-    let orilan = (languages.alpha2ToAlpha3B(langsTemp))
+    const orilan = (languages.alpha2ToAlpha3B(langsTemp))
 
     if (orilan !== (lan1 || lan2 || lan3 || lan4 || lan5 || lan6 || lan7 || lan8)) {
       var lan101 = orilan
@@ -563,7 +563,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
 //Setup Additional Variables to prepare to trascode, streams will be sorted into good streams and possible streams. 
 
   function goodstreams(lang) {
-    let gstreams = file.ffProbeData.streams.filter((stream) => {
+    const gstreams = file.ffProbeData.streams.filter((stream) => {
       try {
         if (
           stream.codec_type == "audio" &&
@@ -591,7 +591,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
   }
 
   function possiblestreams(lang) {
-    let pstreams = file.ffProbeData.streams.filter((stream) => {
+    const pstreams = file.ffProbeData.streams.filter((stream) => {
       try {
         if (
           stream.codec_type == "audio" &&
@@ -660,7 +660,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     var lan101pstreams = possiblestreams(lan101);
   }
 
-  let Undgstreams = file.ffProbeData.streams.filter((stream) => {
+  const Undgstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -687,7 +687,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  let Undpstreams = file.ffProbeData.streams.filter((stream) => {
+  const Undpstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -711,7 +711,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  let Forgstreams = file.ffProbeData.streams.filter((stream) => {
+  const Forgstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -754,7 +754,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  let Forpstreams = file.ffProbeData.streams.filter((stream) => {
+  const Forpstreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -828,7 +828,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
         copystream(goodstream, lang)
         output = true;
       } else if (possiblestream != '') {
-        let highestChannelCount = possiblestream.reduce(getHighest);
+        const highestChannelCount = possiblestream.reduce(getHighest);
         createstream(highestChannelCount, lang);
         output = true;
       }
@@ -836,15 +836,15 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     return output;
   }
 
-  let attemptMakeStreamlan1triggered = copycreate(lan1gstreams, lan1pstreams, lan1);
-  let attemptMakeStreamlan2triggered = copycreate(lan2gstreams, lan2pstreams, lan2);
-  let attemptMakeStreamlan3triggered = copycreate(lan3gstreams, lan3pstreams, lan3);
-  let attemptMakeStreamlan4triggered = copycreate(lan4gstreams, lan4pstreams, lan4);
-  let attemptMakeStreamlan5triggered = copycreate(lan5gstreams, lan5pstreams, lan5);
-  let attemptMakeStreamlan6triggered = copycreate(lan6gstreams, lan6pstreams, lan6);
-  let attemptMakeStreamlan7triggered = copycreate(lan7gstreams, lan7pstreams, lan7);
-  let attemptMakeStreamlan8triggered = copycreate(lan8gstreams, lan8pstreams, lan8);
-  let attemptMakeStreamlan101triggered = copycreate(lan101gstreams, lan101pstreams, lan101);
+  const attemptMakeStreamlan1triggered = copycreate(lan1gstreams, lan1pstreams, lan1);
+  const attemptMakeStreamlan2triggered = copycreate(lan2gstreams, lan2pstreams, lan2);
+  const attemptMakeStreamlan3triggered = copycreate(lan3gstreams, lan3pstreams, lan3);
+  const attemptMakeStreamlan4triggered = copycreate(lan4gstreams, lan4pstreams, lan4);
+  const attemptMakeStreamlan5triggered = copycreate(lan5gstreams, lan5pstreams, lan5);
+  const attemptMakeStreamlan6triggered = copycreate(lan6gstreams, lan6pstreams, lan6);
+  const attemptMakeStreamlan7triggered = copycreate(lan7gstreams, lan7pstreams, lan7);
+  const attemptMakeStreamlan8triggered = copycreate(lan8gstreams, lan8pstreams, lan8);
+  const attemptMakeStreamlan101triggered = copycreate(lan101gstreams, lan101pstreams, lan101);
   let attemptMakeStreamundtriggered = false;
   if (inputs.keepundefined === true) {
     attemptMakeStreamundtriggered = copycreate(Undgstreams, Undpstreams, "Undefined");
@@ -867,14 +867,14 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       copystream(Undgstreams, "Undefined")
       attemptMakeStreamundtriggered = true;
     } else if (Undpstreams != '') {
-      let highestChannelCount = Undpstreams.reduce(getHighest);
+      const highestChannelCount = Undpstreams.reduce(getHighest);
       attemptMakeStreamundtriggered = true;
       createstream(highestChannelCount, "Undefined");
     } else if (Forgstreams != '') {
       copystream(Forgstreams, "Foreign")
       attemptMakeStreamfortriggered = true;
     } else if (Forpstreams != '') {
-      let highestChannelCount = Forpstreams.reduce(getHighest);
+      const highestChannelCount = Forpstreams.reduce(getHighest);
       attemptMakeStreamfortriggered = true;
       createstream(highestChannelCount, "Foreign");
     }
@@ -908,7 +908,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
  * Subtitles, Map all subtitles data and attachments, enable copy all.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
+  const configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
   return configuration;
 }
 
@@ -928,15 +928,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  let logger = new Log();
+  const logger = new Log();
 
   // Begin Abort Section
 
   // Varibles for aborot section
-  let audioCodec = inputs.audioCodec;
-  let audioEncoder = audioCodec;
-  let channelCount = inputs.channels;
-  let numberOfLagTags = inputs.language.split(',').length;
+  const audioCodec = inputs.audioCodec;
+  const channelCount = inputs.channels;
+  const numberOfLagTags = inputs.language.split(',').length;
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
@@ -975,7 +974,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     (['truehd'].includes(audioCodec)) &&
     channelCount === 1
   ) {
-    logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -986,7 +985,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     (['dca', 'libmp3lame'].includes(audioCodec)) &&
     channelCount === 6
   ) {
-    logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -997,7 +996,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     (['dca', 'libmp3lame', 'truehd', 'ac3', 'eac3'].includes(audioCodec)) &&
     channelCount === 8
   ) {
-    logger.AddError(`Selected ${audioEncoder} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -1085,9 +1084,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
 //Build Configuration
 
-  let videoSettings = buildVideoConfiguration(inputs, file, logger);
-  let audioSettings = buildAudioConfiguration(inputs, file, logger, flagtmdbresult, tmdbResult);
-  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  const videoSettings = buildVideoConfiguration(inputs, file, logger);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger, flagtmdbresult, tmdbResult);
+  const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `,${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetInputSettings()}`
