@@ -7,8 +7,8 @@ const details = () => ({
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
   //    Created by tws101 
-  //    Release Version 1.01
-  Version: '1.01',
+  //    Release Version 1.10
+  Version: '1.10',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
@@ -47,6 +47,19 @@ const details = () => ({
         ],
       },
       tooltip: `Sdh subtitles will also be added, required naming is source.eng.sdh.srt, this example assumes chosen tag is eng.`,
+    },
+    {
+      name: 'include_cc',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `Sdh subtitles will also be added, required naming is source.eng.cc.srt, this example assumes chosen tag is eng.`,
     },
   ],
 });
@@ -186,6 +199,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   let boolhavemain = false;
   let boolhaveforced = false;
   let boolhavesdh = false;
+  let boolhavecc = false;
 
   //Loop through the streams
   function subProcess(stream, id) {
@@ -226,6 +240,8 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} sdh disposition`);
         return;
       } else if (stream.disposition.cc || (title.includes('cc'))) {
+        boolhavecc = true;
+        logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} cc disposition`);
         return;
       } else if (stream.disposition.commentary || stream.disposition.description
         || (title.includes('commentary')) || (title.includes('description'))) {
@@ -246,11 +262,15 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   //Determine what we are needing
   let getforced = false;
   let getsdh = false;
+  let getcc = false;
   if (inputs.include_forced === true) {
     getforced = true;
   }
   if (inputs.include_sdh === true) {
     getsdh = true;
+  }
+  if (inputs.include_cc === true) {
+    getcc = true;
   }
 
   //Check if all Good
@@ -268,6 +288,11 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
       convert = true;
     }
   }
+  if (getcc === true) {
+    if (boolhavecc === false) {
+      convert = true;
+    }
+  }
   if (convert === false) {
     return configuration;
   }
@@ -278,9 +303,11 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   let boolfoundmainsrt = false;
   let boolfoundforcedsrt = false;
   let boolfoundsdhsrt = false;
+  let boolfoundccsrt = false;
   const dispmain = '';
   const dispforced = '.forced';
   const dispsdh = '.sdh';
+  const dispcc = '.cc';
 
   function buildsrtfile(lang, disposition) {
     let srtfile = "";
@@ -302,6 +329,8 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const forcedaltsubfile = buildsrtfile(processLanguage2, dispforced);
   const sdhsubfile = buildsrtfile(processLanguage, dispsdh);
   const sdhaltsubfile = buildsrtfile(processLanguage2, dispsdh);
+  const ccsubfile = buildsrtfile(processLanguage, dispcc);
+  const ccaltsubfile = buildsrtfile(processLanguage2, dispcc);
 
   //Check to make sure srt exists
   function findsrtfile(subfile, altsubfile) {
@@ -324,6 +353,10 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   if (sdhchosensubsfile != null) {
     boolfoundsdhsrt = true;
   }
+  const ccchosensubsfile = findsrtfile(ccsubfile, ccaltsubfile);
+  if (ccchosensubsfile != null) {
+    boolfoundccsrt = true;
+  }
 
   //Trascode
   let subindex = 1;
@@ -333,11 +366,13 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const logdispforced = 'disposition forced';
   const trantitlesdh = 'sdh';
   const logdispsdh = 'disposition sdh';
+  const trantitlecc = 'cc';
+  const logdispcc = 'disposition cc';
 
   function transcode(chosensubsfile, title, displog) {
     logger.AddError(`Adding SRT ${chosensubsfile} to MKV ${displog}`);
     let disposition = title;
-    if (disposition === 'sdh') {
+    if (disposition === 'sdh' || disposition === 'cc') {
       disposition = 'hearing_impaired';
     }
     configuration.AddInputSetting(` -sub_charenc "UTF-8" -f srt -i "${chosensubsfile}"`);
@@ -356,6 +391,9 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   }
   if (boolfoundsdhsrt === true && getsdh === true) {
     transcode(sdhchosensubsfile, trantitlesdh, logdispsdh);
+  }
+  if (boolfoundccsrt === true && getcc === true) {
+    transcode(ccchosensubsfile, trantitlecc, logdispcc);
   }
 
   return configuration;
