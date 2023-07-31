@@ -8,8 +8,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.21
-  Version: '1.21',
+  //    Release Version 1.23
+  Version: '1.23',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -201,7 +201,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    let index = this.outputSettings.indexOf(configuration);
+    const index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -241,7 +241,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video, Map EVERYTHING
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-map 0"]);
+  const configuration = new Configurator(["-map 0"]);
   return configuration;
 }
 
@@ -249,7 +249,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio, No Audio Config
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  let configuration = new Configurator([""]);
+  const configuration = new Configurator([""]);
   return configuration;
 }
 
@@ -258,7 +258,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  */
 function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const fs = require('fs');
-  let configuration = new Configurator(["-c copy"]);
+  const configuration = new Configurator(["-c copy"]);
   const processLanguage = inputs.language.toLowerCase().split(',');
   const bolExtract = inputs.extract;
   const bolRemoveCommentary = inputs.remove_commentary;
@@ -371,10 +371,10 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
       if (!bolRemoveAll) {
         // Copy subtitle stream
         if (bolCopyStream) {
-          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} will be copied. `);
+          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} is wanted keeping. `);
           // Skip/Remove undesired subtitle streams.
         } else {
-          logger.AddError(`Subtitle stream ${id}: ${lang}${strDisposition} will be removed`);
+          logger.AddError(`Subtitle stream ${id}: ${lang}${strDisposition} will be removed.`);
           configuration.AddOutputSetting(` -map -0:s:${id}`);
         }
       }
@@ -382,9 +382,9 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
       if (bolExtractStream || bolExtractAll) {
         // Extract subtitle if it doesn't exist on disk or the option to overwrite is set.
         if (!bolTextSubs) {
-          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} is not text based, can not extract.`);
+          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} is not text based, can not extract. no action needed.`);
         } else if (fs.existsSync(`${subsFile}`) && !bolOverwright) {
-          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} External subtitle already exists, will not extract`);
+          logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} External subtitle already exists, will not extract, no action needed.`);
         } else {
           logger.AddError(`Subtitle stream ${id}: ${lang}${strDisposition} will be extracted to file.`);
           configuration.AddInputSetting(` -map 0:s:${id} "${subsFile}"`);
@@ -422,7 +422,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  let logger = new Log();
+  const logger = new Log();
   const bolRemoveAll = inputs.remove_all;
   const bolKeepAll = inputs.keep_all;
 
@@ -465,9 +465,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // End Abort Section
 
-  let videoSettings = buildVideoConfiguration(inputs, file, logger);
-  let audioSettings = buildAudioConfiguration(inputs, file, logger);
-  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger, otherArguments);
+  const videoSettings = buildVideoConfiguration(inputs, file, logger);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger);
+  const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger, otherArguments);
 
   response.preset = '-y <io>';
   response.preset += ` ${subtitleSettings.GetInputSettings()}`
