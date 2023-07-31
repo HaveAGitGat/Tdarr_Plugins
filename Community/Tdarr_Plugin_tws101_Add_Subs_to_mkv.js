@@ -7,8 +7,8 @@ const details = () => ({
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
   //    Created by tws101 
-  //    Release Version 1.10
-  Version: '1.10',
+  //    Release Version 1.11
+  Version: '1.11',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
@@ -274,30 +274,30 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   }
 
   //Check if all Good
-  let convert = false;
+  let checkforsrt = false;
   if (boolhavemain === false) {
-    convert = true;
+    checkforsrt = true;
   }
   if (getforced === true) {
     if (boolhaveforced === false) {
-      convert = true;
+      checkforsrt = true;
     }
   }
   if (getsdh === true) {
     if (boolhavesdh === false) {
-      convert = true;
+      checkforsrt = true;
     }
   }
   if (getcc === true) {
     if (boolhavecc === false) {
-      convert = true;
+      checkforsrt = true;
     }
   }
-  if (convert === false) {
+  if (checkforsrt === false) {
     return configuration;
   }
 
-  logger.AddError(`Did not find all requested ${processLanguage} streams with subrip codec, looking for srt.`);
+  logger.Add(`Did not find all requested ${processLanguage} streams with subrip codec, looking for srt.`);
 
   //Setup Variable to Trasnscode
   let boolfoundmainsrt = false;
@@ -383,17 +383,26 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     subindex++;
   }
 
-  if (boolfoundmainsrt === true) {
+  let convert = false;
+  if (boolfoundmainsrt === true && boolhavemain === false) {
     transcode(mainchosensubsfile, trantitlepmain, logdispmain);
+    convert = true;
   }
-  if (boolfoundforcedsrt === true && getforced === true) {
+  if (boolfoundforcedsrt === true && getforced === true && boolhaveforced === false) {
     transcode(forcedchosensubsfile, trantitleforced, logdispforced);
+    convert = true;
   }
-  if (boolfoundsdhsrt === true && getsdh === true) {
+  if (boolfoundsdhsrt === true && getsdh === true && boolhavesdh === false) {
     transcode(sdhchosensubsfile, trantitlesdh, logdispsdh);
+    convert = true;
   }
-  if (boolfoundccsrt === true && getcc === true) {
+  if (boolfoundccsrt === true && getcc === true && boolhavecc === false) {
     transcode(ccchosensubsfile, trantitlecc, logdispcc);
+    convert = true;
+  }
+
+  if (convert === false) {
+    logger.Add("Did not locate any requested SRT to import, nothing to do here.");
   }
 
   return configuration;
