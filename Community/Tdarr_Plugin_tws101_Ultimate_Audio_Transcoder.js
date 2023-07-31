@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.43
-  Version: '1.43',
+//    Release Version 1.50
+  Version: '1.50',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -569,7 +569,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
           stream.codec_type == "audio" &&
           stream.tags.language.toLowerCase().includes(lang) &&
           stream.codec_name === audioCodec &&
-          stream.channels == channelCount &&
+          stream.channels <= channelCount &&
           stream.bit_rate < (inputs.filter_bitrate)
         ) try {
           if (
@@ -665,7 +665,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       if (
         stream.codec_type == "audio" &&
         stream.codec_name === audioCodec &&
-        stream.channels == channelCount &&
+        stream.channels <= channelCount &&
         stream.bit_rate < (inputs.filter_bitrate) &&
         (!stream.tags.language ||
         stream.tags.language.toLowerCase().includes('und'))
@@ -734,7 +734,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       if (
         stream.codec_type == "audio" &&
         stream.codec_name === audioCodec &&
-        stream.channels == channelCount &&
+        stream.channels <= channelCount &&
         stream.bit_rate < (inputs.filter_bitrate)
       ) try {
         if (
@@ -798,10 +798,10 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
 
   let audioIdx = -1;
 
-  function copystream(goodstream, lang) {
+  function copystream(highestChannelCount, lang) {
     audioIdx += 1;
-    configuration.AddInputSetting(`-map 0:${goodstream[0].index}`);
-    logger.AddError(`Copying ${lang} stream in ${audioEncoder}, ${channelCount} channels`);
+    configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
+    logger.AddError(`Copying ${lang} stream in ${audioEncoder}, ${highestChannelCount.channels} channels`);
   }
 
   function createstream(highestChannelCount, lang) {
@@ -825,7 +825,8 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     let output = false;
     if (goodstream) {
       if (goodstream != '') {
-        copystream(goodstream, lang)
+        const highestChannelCount = goodstream.reduce(getHighest);
+        copystream(highestChannelCount, lang)
         output = true;
       } else if (possiblestream != '') {
         const highestChannelCount = possiblestream.reduce(getHighest);
