@@ -4,10 +4,11 @@ const details = () => ({
   Name: 'tws101 - Order Streams Plus Remove Images',
   Type: 'Any',
   Operation: 'Transcode',
-  Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true `,
+  Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true.
+  Option to remove invalid data streams that ffmpeg does not suppport `,
   //    Created by tws101 
-  //    Release Version 1.10
-  Version: '1.10',
+  //    Release Version 1.20
+  Version: '1.20',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -22,6 +23,19 @@ const details = () => ({
         ],
       },
       tooltip: `This will remove: MJPEG, PNG & GIF.  Recommended `,
+    },
+    {
+      name: 'remove_invalid_data',
+      type: 'boolean',
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `This will remove data streams that have incomplete data in them.  Recommended `,
     },
   ],
 });
@@ -93,7 +107,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    let index = this.outputSettings.indexOf(configuration);
+    const index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -133,7 +147,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video    Map ALL  "-map 0"   Map Video  "-map 0:v"    Copy Video  "-c:v copy"
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-map 0:v"]);
+  const configuration = new Configurator(["-map 0:v"]);
 
   function imageremoval(stream, id) {
     if (
@@ -156,7 +170,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio   Map Audio "-map 0:a"  Copy Audio  "-c:a copy"
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  let configuration = new Configurator([""]);
+  const configuration = new Configurator([""]);
 
   function orderaudiostreams1ch(stream, id) {
     try {
@@ -199,7 +213,16 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles and data  Map subs "-map 0:s?" Map Data "-map 0:d?"   Copy Subs  "-c:s copy"  Copy Data "-c:d copy"   Ending copy command "-c copy"
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
+  const configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
+
+  function invaliddata(stream, id) {
+    if (!stream.codec_name && stream.codec_tag_string === "tmcd") {
+      configuration.AddOutputSetting(` -map -0:d:${id} -write_tmcd false `);
+    }
+  }
+
+  loopOverStreamsOfType(file, "data", invaliddata);
+
   return configuration;
 }
 
@@ -221,7 +244,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  let logger = new Log();
+  const logger = new Log();
 
   // Begin Abort Section
 
@@ -251,6 +274,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         ) {
           allgood = false;
           logger.AddError("Image format detected removing");
+        }
+      }
+    }
+  }
+
+  if (inputs.remove_invalid_data === true) {
+    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'data') {
+        if (!file.ffProbeData.streams[i].codec_name) {
+          allgood = false;
+          logger.AddError("Invalid data stream detected removing");
         }
       }
     }
@@ -313,9 +347,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // End Abort Section
 
-  let videoSettings = buildVideoConfiguration(inputs, file, logger);
-  let audioSettings = buildAudioConfiguration(inputs, file, logger);
-  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  const videoSettings = buildVideoConfiguration(inputs, file, logger);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger);
+  const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetOutputSettings()}`
@@ -324,10 +358,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   response.processFile =
     audioSettings.shouldProcess ||
-    videoSettings.shouldProcess;
+    videoSettings.shouldProcess ||
+    subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
-    logger.AddSuccess("YOU SHOULD NOT SEE THIS ALL GOOD FAILED AND NO ACTION WAS TAKEN!");
+    logger.AddError("YOU SHOULD NOT SEE THIS ALL GOOD FAILED AND NO ACTION WAS TAKEN!");
   }
 
   response.infoLog += logger.GetLogData();
