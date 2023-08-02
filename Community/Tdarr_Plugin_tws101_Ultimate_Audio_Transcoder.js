@@ -380,6 +380,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
   ).length;
   let numberOfGoodAudioStreams = 0;
   const [lan1, lan2, lan3, lan4, lan5, lan6, lan7, lan8] = inputs.language.split(',');
+  let lan101;
   let lan1Count = 0;
   let lan2Count = 0;
   let lan3Count = 0;
@@ -400,7 +401,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     const originalLang = (languages.alpha2ToAlpha3B(langsTemp))
 
     if (originalLang !== (lan1 || lan2 || lan3 || lan4 || lan5 || lan6 || lan7 || lan8)) {
-      var lan101 = originalLang
+      lan101 = originalLang
     }
   }
 
@@ -615,50 +616,24 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     return possibleStreams;
   }
   
-  if (lan1) {
-    var lan1GoodStreams = goodStreams(lan1);
-    var lan1PossibleStreams = possibleStreams(lan1);
-  }
-
-  if (lan2) {
-    var lan2GoodStreams = goodStreams(lan2);
-    var lan2PossibleStreams = possibleStreams(lan2);
-  }
-
-  if (lan3) {
-    var lan3GoodStreams = goodStreams(lan3);
-    var lan3PossibleStreams = possibleStreams(lan3);
-  }
-
-  if (lan4) {
-    var lan4GoodStreams = goodStreams(lan4);
-    var lan4PossibleStreams = possibleStreams(lan4);
-  }
-
-  if (lan5) {
-    var lan5GoodStreams = goodStreams(lan5);
-    var lan5PossibleStreams = possibleStreams(lan5);
-  }
-
-  if (lan6) {
-    var lan6GoodStreams = goodStreams(lan6);
-    var lan6PossibleStreams = possibleStreams(lan6);
-  }
-
-  if (lan7) {
-    var lan7GoodStreams = goodStreams(lan7);
-    var lan7PossibleStreams = possibleStreams(lan7);
-  }
-
-  if (lan8) {
-    var lan8GoodStreams = goodStreams(lan8);
-    var lan8PossibleStreams = possibleStreams(lan8);
-  }
-
-  if (lan101) {
-    var lan101GoodStreams = goodStreams(lan101);
-    var lan101PossibleStreams = possibleStreams(lan101);
-  }
+  const lan1GoodStreams = goodStreams(lan1);
+  const lan1PossibleStreams = possibleStreams(lan1);
+  const lan2GoodStreams = goodStreams(lan2);
+  const lan2PossibleStreams = possibleStreams(lan2);
+  const lan3GoodStreams = goodStreams(lan3);
+  const lan3PossibleStreams = possibleStreams(lan3);
+  const lan4GoodStreams = goodStreams(lan4);
+  const lan4PossibleStreams = possibleStreams(lan4);
+  const lan5GoodStreams = goodStreams(lan5);
+  const lan5PossibleStreams = possibleStreams(lan5);
+  const lan6GoodStreams = goodStreams(lan6);
+  const lan6PossibleStreams = possibleStreams(lan6);
+  const lan7GoodStreams = goodStreams(lan7);
+  const lan7PossibleStreams = possibleStreams(lan7);
+  const lan8GoodStreams = goodStreams(lan8);
+  const lan8PossibleStreams = possibleStreams(lan8);
+  const lan101GoodStreams = goodStreams(lan101);
+  const lan101PossibleStreams = possibleStreams(lan101);
 
   const undefinedGoodStreams = file.ffProbeData.streams.filter((stream) => {
     try {
@@ -1005,12 +980,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   //Keep Native Background Work
 
+  let tmdbResult = null;
+  let flagTmdbResult = false;
+
   if (inputs.keep_native_language === true) {
     const axios = require('axios').default;
     let prio = ['radarr', 'sonarr'];
     let radarrResult = null;
     let sonarrResult = null;
-    var tmdbResult = null;
 
     if (inputs.priority) {
       if (inputs.priority === 'sonarr') {
@@ -1074,9 +1051,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
 
     if (tmdbResult) {
-      var flagTmdbResult = true;
+      flagTmdbResult = true;
     } else {
-      var flagTmdbResult = false;
       logger.AddError(`Couldn't find the IMDB id of this file. I do not know what the native language is.`);
     }
   }
