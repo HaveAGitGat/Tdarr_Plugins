@@ -1,4 +1,3 @@
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_AV1_with_CPU',
   Stage: 'Pre-processing',
@@ -194,7 +193,6 @@ class Configurator {
 
 // #endregion
 
-
 // #region Plugin Methods
 
 function calculateBitrate(file) {
@@ -385,13 +383,8 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   return configuration;
 }
 
-
-
-
-// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-// eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     container: `.${file.container}`,

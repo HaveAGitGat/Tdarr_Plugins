@@ -229,10 +229,8 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 // #end region
 
 // #Final Region
-// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-// eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     container: `.${file.container}`,

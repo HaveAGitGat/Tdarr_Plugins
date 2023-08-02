@@ -1,4 +1,3 @@
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 module.exports.dependencies = ['axios@0.27.2', '@cospired/i18n-iso-languages'];
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Ultimate_Audio_Transcoder',
@@ -309,7 +308,6 @@ const tmdbApi = async (filename, api_key, axios) => {
     } else {
       const idRegex = /(tt\d{7,8})/;
       const fileMatch = filename.match(idRegex);
-      // eslint-disable-next-line prefer-destructuring
       if (fileMatch) fileName = fileMatch[1];
     }
   }
@@ -332,9 +330,7 @@ const tmdbApi = async (filename, api_key, axios) => {
   return null;
 };
 
-// eslint-disable-next-line consistent-return
 const parseArrResponse = async (body, filePath, arr) => {
-  // eslint-disable-next-line default-case
   switch (arr) {
     case 'radarr':
       return body.movie;
@@ -886,11 +882,9 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   return configuration;
 }
 
-// eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
     
   const lib = require('../methods/lib')();
-// eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     container: `.${file.container}`,
@@ -999,7 +993,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
     for (const arr of prio) {
       let imdbId;
-      // eslint-disable-next-line default-case
       switch (arr) {
         case 'radarr':
           if (tmdbResult) break;
@@ -1017,7 +1010,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
             if (radarrResult) {
               imdbId = radarrResult.imdbId;
               logger.AddSuccess(`Grabbed ID (${imdbId}) from Radarr `);
-              // eslint-disable-next-line import/no-unresolved
               const languages = require('@cospired/i18n-iso-languages');
               tmdbResult = { original_language: languages.getAlpha2Code(radarrResult.originalLanguage.name, 'en') };
             } else {

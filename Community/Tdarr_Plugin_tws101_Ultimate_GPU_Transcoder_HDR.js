@@ -1,4 +1,3 @@
-/* eslint-disable */
 const details = () => ({
   id: "Tdarr_Plugin_tws101_Ultimate_GPU_Transcoder_HDR",
   Stage: 'Pre-processing',
@@ -402,10 +401,8 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 }
 
 //#endregion
-// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     container: `.${file.container}`,
