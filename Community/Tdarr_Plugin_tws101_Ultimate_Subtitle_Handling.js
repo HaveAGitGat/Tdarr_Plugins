@@ -20,7 +20,7 @@ const details = () => ({
       type: 'text',
       },
       tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
-        + '\\nEnter "all" without quotes to copy/extract all subtitle tracks.'
+        + '\\nEnter "all" without quotes to extract all subtitle tracks.  '
         + '\\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes.'
         + '\\nExample: \\neng\\nExample: \\neng,jpn,fre',
     },
@@ -62,8 +62,8 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: `When false languages not listed will be removed. If remove_commentary, remove_signs_and_songs, remove_cc_sdh 
-      are true those setting are authoritative over this one. Do not use this remove_all.`
+      tooltip: `If true don't remove langauges that are not listed above. If remove_commentary, remove_signs_and_songs, remove_cc_sdh 
+      are true those setting are authoritative over this one, and the track will be removed. Do not use this with remove_all.`
     },
     {
       name: 'keep_undefinded',
@@ -89,7 +89,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: 'Remove commentary streams from file. May be used with keep_all.',
+      tooltip: 'Remove commentary streams from file. Even if keep_all is true.',
     },
     {
       name: 'remove_signs_and_songs',
@@ -102,7 +102,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: 'Remove signs and songs streams from file. May be used with keep_all.',
+      tooltip: 'Remove signs and songs streams from file. Even if keep_all is true.',
     },
     {
       name: 'remove_cc_sdh',
@@ -115,7 +115,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: 'Remove CC/SDH streams from file. May be used with keep_all.',
+      tooltip: 'Remove CC/SDH streams from file. Even if keep_all is true.',
     },
     {
       name: 'remove_all',
