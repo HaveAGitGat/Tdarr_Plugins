@@ -1,3 +1,4 @@
+/* eslint-disable */
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Order_Streams_Plus_Remove_Images',
   Stage: 'Pre-processing',

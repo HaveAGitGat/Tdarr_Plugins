@@ -1,3 +1,4 @@
+/* eslint-disable */
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Remux_Container',
   Stage: 'Pre-processing',

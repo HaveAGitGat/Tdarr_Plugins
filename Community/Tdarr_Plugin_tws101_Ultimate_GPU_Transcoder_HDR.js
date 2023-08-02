@@ -1,3 +1,4 @@
+/* eslint-disable */
 const details = () => ({
   id: "Tdarr_Plugin_tws101_Ultimate_GPU_Transcoder_HDR",
   Stage: 'Pre-processing',
