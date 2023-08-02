@@ -9,8 +9,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
 //    Created by tws101 
-//    Release Version 1.50
-  Version: '1.50',
+//    Release Version 1.60
+  Version: '1.60',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -362,7 +362,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 /**
  * Audio, Map and trascode what we want
  */
-function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
+function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
   const configuration = new Configurator([""]);
   let audioCodec = inputs.audioCodec;
   const audioEncoder = audioCodec;
@@ -380,27 +380,27 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
   ).length;
   let numberOfGoodAudioStreams = 0;
   const [lan1, lan2, lan3, lan4, lan5, lan6, lan7, lan8] = inputs.language.split(',');
-  let lan1count = 0;
-  let lan2count = 0;
-  let lan3count = 0;
-  let lan4count = 0;
-  let lan5count = 0;
-  let lan6count = 0;
-  let lan7count = 0;
-  let lan8count = 0;
-  let lan101count = 0;
-  let lanundcount = 0;
+  let lan1Count = 0;
+  let lan2Count = 0;
+  let lan3Count = 0;
+  let lan4Count = 0;
+  let lan5Count = 0;
+  let lan6Count = 0;
+  let lan7Count = 0;
+  let lan8Count = 0;
+  let lan101Count = 0;
+  let lanUndefinedCount = 0;
 
-  if (flagtmdbresult === true) {
+  if (flagTmdbResult === true) {
     const languages = require('@cospired/i18n-iso-languages');
     const langsTemp = result.original_language === 'cn' ? 'zh' : result.original_language;
     logger.AddSuccess(`Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(
       langsTemp,
     )}.`);
-    const orilan = (languages.alpha2ToAlpha3B(langsTemp))
+    const originalLang = (languages.alpha2ToAlpha3B(langsTemp))
 
-    if (orilan !== (lan1 || lan2 || lan3 || lan4 || lan5 || lan6 || lan7 || lan8)) {
-      var lan101 = orilan
+    if (originalLang !== (lan1 || lan2 || lan3 || lan4 || lan5 || lan6 || lan7 || lan8)) {
+      var lan101 = originalLang
     }
   }
 
@@ -411,64 +411,64 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       if (
         stream.tags.language.toLowerCase() == lan1
       ) {
-        lan1count += 1;
+        lan1Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan2
       ) {
-        lan2count += 1;
+        lan2Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan3
       ) {
-        lan3count += 1;
+        lan3Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan4
       ) {
-        lan4count += 1;
+        lan4Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan5
       ) {
-        lan5count += 1;
+        lan5Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan6
       ) {
-        lan6count += 1;
+        lan6Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan7
       ) {
-        lan7count += 1;
+        lan7Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan8
       ) {
-        lan8count += 1;
+        lan8Count += 1;
       }
       if (
         stream.tags.language.toLowerCase() == lan101
       ) {
-        lan101count += 1;
+        lan101Count += 1;
       }
     } catch (err) {
-      lanundcount += 1;
+      lanUndefinedCount += 1;
     }
 
-    let bitratecheckdisabled = false;
+    let boolBitrateCheckDisabled = false;
     if (
       (stream.codec_name === 'aac' ||
       stream.codec_name === 'truehd' ||
       stream.codec_name === 'flac') &&
       file.container.toLowerCase() === 'mkv'
     ) {
-      bitratecheckdisabled = true;
+      boolBitrateCheckDisabled = true;
     }
     try {
       if (
-        bitratecheckdisabled == false
+        boolBitrateCheckDisabled == false
       ) {
         if (stream.bit_rate > (inputs.filter_bitrate)) {
           return;
@@ -545,16 +545,16 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
 
   if (
     numberOfAudioStreams === numberOfGoodAudioStreams &&
-    lan1count <= 1 &&
-    lan2count <= 1 &&
-    lan3count <= 1 &&
-    lan4count <= 1 &&
-    lan5count <= 1 &&
-    lan6count <= 1 &&
-    lan7count <= 1 &&
-    lan8count <= 1 &&
-    lan101count <= 1 &&
-    lanundcount <= 1
+    lan1Count <= 1 &&
+    lan2Count <= 1 &&
+    lan3Count <= 1 &&
+    lan4Count <= 1 &&
+    lan5Count <= 1 &&
+    lan6Count <= 1 &&
+    lan7Count <= 1 &&
+    lan8Count <= 1 &&
+    lan101Count <= 1 &&
+    lanUndefinedCount <= 1
   ) {
     logger.AddSuccess(`All Stream are what we want`);
     return configuration;
@@ -562,8 +562,8 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
 
 //Setup Additional Variables to prepare to trascode, streams will be sorted into good streams and possible streams. 
 
-  function goodstreams(lang) {
-    const gstreams = file.ffProbeData.streams.filter((stream) => {
+  function goodStreams(lang) {
+    const goodStreams = file.ffProbeData.streams.filter((stream) => {
       try {
         if (
           stream.codec_type == "audio" &&
@@ -587,11 +587,11 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       } catch (err) {}
       return false;
     });
-    return gstreams;
+    return goodStreams;
   }
 
-  function possiblestreams(lang) {
-    const pstreams = file.ffProbeData.streams.filter((stream) => {
+  function possibleStreams(lang) {
+    const possibleStreams = file.ffProbeData.streams.filter((stream) => {
       try {
         if (
           stream.codec_type == "audio" &&
@@ -612,55 +612,55 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
       } catch (err) {}
       return false;
     });
-    return pstreams;
+    return possibleStreams;
   }
   
   if (lan1) {
-    var lan1gstreams = goodstreams(lan1);
-    var lan1pstreams = possiblestreams(lan1);
+    var lan1GoodStreams = goodStreams(lan1);
+    var lan1PossibleStreams = possibleStreams(lan1);
   }
 
   if (lan2) {
-    var lan2gstreams = goodstreams(lan2);
-    var lan2pstreams = possiblestreams(lan2);
+    var lan2GoodStreams = goodStreams(lan2);
+    var lan2PossibleStreams = possibleStreams(lan2);
   }
 
   if (lan3) {
-    var lan3gstreams = goodstreams(lan3);
-    var lan3pstreams = possiblestreams(lan3);
+    var lan3GoodStreams = goodStreams(lan3);
+    var lan3PossibleStreams = possibleStreams(lan3);
   }
 
   if (lan4) {
-    var lan4gstreams = goodstreams(lan4);
-    var lan4pstreams = possiblestreams(lan4);
+    var lan4GoodStreams = goodStreams(lan4);
+    var lan4PossibleStreams = possibleStreams(lan4);
   }
 
   if (lan5) {
-    var lan5gstreams = goodstreams(lan5);
-    var lan5pstreams = possiblestreams(lan5);
+    var lan5GoodStreams = goodStreams(lan5);
+    var lan5PossibleStreams = possibleStreams(lan5);
   }
 
   if (lan6) {
-    var lan6gstreams = goodstreams(lan6);
-    var lan6pstreams = possiblestreams(lan6);
+    var lan6GoodStreams = goodStreams(lan6);
+    var lan6PossibleStreams = possibleStreams(lan6);
   }
 
   if (lan7) {
-    var lan7gstreams = goodstreams(lan7);
-    var lan7pstreams = possiblestreams(lan7);
+    var lan7GoodStreams = goodStreams(lan7);
+    var lan7PossibleStreams = possibleStreams(lan7);
   }
 
   if (lan8) {
-    var lan8gstreams = goodstreams(lan8);
-    var lan8pstreams = possiblestreams(lan8);
+    var lan8GoodStreams = goodStreams(lan8);
+    var lan8PossibleStreams = possibleStreams(lan8);
   }
 
   if (lan101) {
-    var lan101gstreams = goodstreams(lan101);
-    var lan101pstreams = possiblestreams(lan101);
+    var lan101GoodStreams = goodStreams(lan101);
+    var lan101PossibleStreams = possibleStreams(lan101);
   }
 
-  const Undgstreams = file.ffProbeData.streams.filter((stream) => {
+  const undefinedGoodStreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -687,7 +687,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  const Undpstreams = file.ffProbeData.streams.filter((stream) => {
+  const undefinedPossibleStreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -711,7 +711,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  const Forgstreams = file.ffProbeData.streams.filter((stream) => {
+  const foreignGoodStreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -754,7 +754,7 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   });
 
-  const Forpstreams = file.ffProbeData.streams.filter((stream) => {
+  const foreignPossibleStreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
         stream.codec_type == "audio" &&
@@ -798,13 +798,13 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
 
   let audioIdx = -1;
 
-  function copystream(highestChannelCount, lang) {
+  function copyStream(highestChannelCount, lang) {
     audioIdx += 1;
     configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
     logger.AddError(`Copying ${lang} stream in ${audioEncoder}, ${highestChannelCount.channels} channels`);
   }
 
-  function createstream(highestChannelCount, lang) {
+  function createStream(highestChannelCount, lang) {
     audioIdx += 1;
     if (parseInt(highestChannelCount.channels) >= parseInt(channelCount)) {
       configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
@@ -821,80 +821,80 @@ function buildAudioConfiguration(inputs, file, logger, flagtmdbresult, result) {
     }
   }
 
-  function copycreate(goodstream, possiblestream, lang) {
+  function runCopyCreate(goodstream, possiblestream, lang) {
     let output = false;
     if (goodstream) {
       if (goodstream != '') {
         const highestChannelCount = goodstream.reduce(getHighest);
-        copystream(highestChannelCount, lang)
+        copyStream(highestChannelCount, lang)
         output = true;
       } else if (possiblestream != '') {
         const highestChannelCount = possiblestream.reduce(getHighest);
-        createstream(highestChannelCount, lang);
+        createStream(highestChannelCount, lang);
         output = true;
       }
     }
     return output;
   }
 
-  const attemptMakeStreamlan1triggered = copycreate(lan1gstreams, lan1pstreams, lan1);
-  const attemptMakeStreamlan2triggered = copycreate(lan2gstreams, lan2pstreams, lan2);
-  const attemptMakeStreamlan3triggered = copycreate(lan3gstreams, lan3pstreams, lan3);
-  const attemptMakeStreamlan4triggered = copycreate(lan4gstreams, lan4pstreams, lan4);
-  const attemptMakeStreamlan5triggered = copycreate(lan5gstreams, lan5pstreams, lan5);
-  const attemptMakeStreamlan6triggered = copycreate(lan6gstreams, lan6pstreams, lan6);
-  const attemptMakeStreamlan7triggered = copycreate(lan7gstreams, lan7pstreams, lan7);
-  const attemptMakeStreamlan8triggered = copycreate(lan8gstreams, lan8pstreams, lan8);
-  const attemptMakeStreamlan101triggered = copycreate(lan101gstreams, lan101pstreams, lan101);
-  let attemptMakeStreamundtriggered = false;
+  const boolAttemptMakeStreamlan1Triggered = runCopyCreate(lan1GoodStreams, lan1PossibleStreams, lan1);
+  const boolAttemptMakeStreamlan2Triggered = runCopyCreate(lan2GoodStreams, lan2PossibleStreams, lan2);
+  const boolAttemptMakeStreamlan3Triggered = runCopyCreate(lan3GoodStreams, lan3PossibleStreams, lan3);
+  const boolAttemptMakeStreamlan4Triggered = runCopyCreate(lan4GoodStreams, lan4PossibleStreams, lan4);
+  const boolAttemptMakeStreamlan5Triggered = runCopyCreate(lan5GoodStreams, lan5PossibleStreams, lan5);
+  const boolAttemptMakeStreamlan6Triggered = runCopyCreate(lan6GoodStreams, lan6PossibleStreams, lan6);
+  const boolAttemptMakeStreamlan7Triggered = runCopyCreate(lan7GoodStreams, lan7PossibleStreams, lan7);
+  const boolAttemptMakeStreamlan8Triggered = runCopyCreate(lan8GoodStreams, lan8PossibleStreams, lan8);
+  const boolAttemptMakeStreamlan101Triggered = runCopyCreate(lan101GoodStreams, lan101PossibleStreams, lan101);
+  let boolAttemptMakeStreamUndefinedTriggered = false;
   if (inputs.keepundefined === true) {
-    attemptMakeStreamundtriggered = copycreate(Undgstreams, Undpstreams, "Undefined");
+    boolAttemptMakeStreamUndefinedTriggered = runCopyCreate(undefinedGoodStreams, undefinedPossibleStreams, "Undefined");
   }
-  let attemptMakeStreamfortriggered = false;
+  let boolAttemptMakeStreamForeignTriggered = false;
 
   if (
-    attemptMakeStreamlan1triggered === false &&
-    attemptMakeStreamlan2triggered === false &&
-    attemptMakeStreamlan3triggered === false &&
-    attemptMakeStreamlan4triggered === false &&
-    attemptMakeStreamlan5triggered === false &&
-    attemptMakeStreamlan6triggered === false &&
-    attemptMakeStreamlan7triggered === false &&
-    attemptMakeStreamlan8triggered === false &&
-    attemptMakeStreamlan101triggered === false &&
-    attemptMakeStreamundtriggered === false
+    boolAttemptMakeStreamlan1Triggered === false &&
+    boolAttemptMakeStreamlan2Triggered === false &&
+    boolAttemptMakeStreamlan3Triggered === false &&
+    boolAttemptMakeStreamlan4Triggered === false &&
+    boolAttemptMakeStreamlan5Triggered === false &&
+    boolAttemptMakeStreamlan6Triggered === false &&
+    boolAttemptMakeStreamlan7Triggered === false &&
+    boolAttemptMakeStreamlan8Triggered === false &&
+    boolAttemptMakeStreamlan101Triggered === false &&
+    boolAttemptMakeStreamUndefinedTriggered === false
   ) {
-    if (Undgstreams != '') {
-      copystream(Undgstreams, "Undefined")
-      attemptMakeStreamundtriggered = true;
-    } else if (Undpstreams != '') {
-      const highestChannelCount = Undpstreams.reduce(getHighest);
-      attemptMakeStreamundtriggered = true;
-      createstream(highestChannelCount, "Undefined");
-    } else if (Forgstreams != '') {
-      copystream(Forgstreams, "Foreign")
-      attemptMakeStreamfortriggered = true;
-    } else if (Forpstreams != '') {
-      const highestChannelCount = Forpstreams.reduce(getHighest);
-      attemptMakeStreamfortriggered = true;
-      createstream(highestChannelCount, "Foreign");
+    if (undefinedGoodStreams != '') {
+      copyStream(undefinedGoodStreams, "Undefined")
+      boolAttemptMakeStreamUndefinedTriggered = true;
+    } else if (undefinedPossibleStreams != '') {
+      const highestChannelCount = undefinedPossibleStreams.reduce(getHighest);
+      boolAttemptMakeStreamUndefinedTriggered = true;
+      createStream(highestChannelCount, "Undefined");
+    } else if (foreignGoodStreams != '') {
+      copyStream(foreignGoodStreams, "Foreign")
+      boolAttemptMakeStreamForeignTriggered = true;
+    } else if (foreignPossibleStreams != '') {
+      const highestChannelCount = foreignPossibleStreams.reduce(getHighest);
+      boolAttemptMakeStreamForeignTriggered = true;
+      createStream(highestChannelCount, "Foreign");
     }
   }
 
   //Check configuration and return
 
   if (
-    (attemptMakeStreamlan1triggered ||
-    attemptMakeStreamlan2triggered ||
-    attemptMakeStreamlan3triggered ||
-    attemptMakeStreamlan4triggered ||
-    attemptMakeStreamlan5triggered ||
-    attemptMakeStreamlan6triggered ||
-    attemptMakeStreamlan7triggered ||
-    attemptMakeStreamlan8triggered ||
-    attemptMakeStreamlan101triggered ||
-    attemptMakeStreamundtriggered ||
-    attemptMakeStreamfortriggered) === true) {
+    (boolAttemptMakeStreamlan1Triggered ||
+    boolAttemptMakeStreamlan2Triggered ||
+    boolAttemptMakeStreamlan3Triggered ||
+    boolAttemptMakeStreamlan4Triggered ||
+    boolAttemptMakeStreamlan5Triggered ||
+    boolAttemptMakeStreamlan6Triggered ||
+    boolAttemptMakeStreamlan7Triggered ||
+    boolAttemptMakeStreamlan8Triggered ||
+    boolAttemptMakeStreamlan101Triggered ||
+    boolAttemptMakeStreamUndefinedTriggered ||
+    boolAttemptMakeStreamForeignTriggered) === true) {
       logger.AddError(`We are Processing the above streams`);
       return configuration;
     }
@@ -1076,9 +1076,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
 
     if (tmdbResult) {
-      var flagtmdbresult = true;
+      var flagTmdbResult = true;
     } else {
-      var flagtmdbresult = false;
+      var flagTmdbResult = false;
       logger.AddError(`Couldn't find the IMDB id of this file. I do not know what the native language is.`);
     }
   }
@@ -1086,7 +1086,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 //Build Configuration
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
-  const audioSettings = buildAudioConfiguration(inputs, file, logger, flagtmdbresult, tmdbResult);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger, flagTmdbResult, tmdbResult);
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `,${videoSettings.GetOutputSettings()}`

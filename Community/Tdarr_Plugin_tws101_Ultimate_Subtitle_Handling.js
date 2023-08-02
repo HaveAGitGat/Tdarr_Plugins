@@ -8,8 +8,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101 
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.23
-  Version: '1.23',
+  //    Release Version 1.30
+  Version: '1.30',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -260,18 +260,18 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const fs = require('fs');
   const configuration = new Configurator(["-c copy"]);
   const processLanguage = inputs.language.toLowerCase().split(',');
-  const bolExtract = inputs.extract;
-  const bolRemoveCommentary = inputs.remove_commentary;
-  const bolRemovesignsandsongs = inputs.remove_signs_and_songs;
-  const bolRemoveCC_SDH = inputs.remove_cc_sdh;
-  const bolKeepAll = inputs.keep_all;
-  const bolRemoveAll = inputs.remove_all;
-  const bolOverwright = inputs.overwrite;
-  const bolKeepUndefined = inputs.keep_undefinded;
+  const boolExtract = inputs.extract;
+  const boolRemoveCommentary = inputs.remove_commentary;
+  const boolRemoveSignsAndSongs = inputs.remove_signs_and_songs;
+  const boolRemoveCc_Sdh = inputs.remove_cc_sdh;
+  const boolKeepAll = inputs.keep_all;
+  const boolRemoveAll = inputs.remove_all;
+  const boolOverwright = inputs.overwrite;
+  const boolKeepUndefined = inputs.keep_undefinded;
 
-  let bolExtractAll = false;
-  if (bolExtract && processLanguage === 'all') {
-    bolExtractAll = true;
+  let boolExtractAll = false;
+  if (boolExtract && processLanguage === 'all') {
+    boolExtractAll = true;
   }
 
   function subProcess(stream, id) {
@@ -281,12 +281,12 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     let title = '';
     let codec = '';
     let strDisposition = '';
-    let bolCommentary = false;
-    let bolSigns = false;
-    let bolCC_SDH = false;
-    let bolCopyStream = true;
-    let bolExtractStream = true;
-    let bolTextSubs = false;
+    let boolCommentary = false;
+    let boolSigns = false;
+    let boolCc_Sdh = false;
+    let boolCopyStream = true;
+    let boolExtractStream = true;
+    let boolTextSubs = false;
 
     if (stream.tags !== undefined) {
       if (stream.tags.language !== undefined) {
@@ -305,55 +305,55 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
       strDisposition = '.forced';
     } else if (stream.disposition.sdh || (title.includes('sdh'))) {
       strDisposition = '.sdh';
-      bolCC_SDH = true;
+      boolCc_Sdh = true;
     } else if (stream.disposition.cc || (title.includes('cc'))) {
       strDisposition = '.cc';
-      bolCC_SDH = true;
+      boolCc_Sdh = true;
     } else if (stream.disposition.commentary || stream.disposition.description
       || (title.includes('commentary')) || (title.includes('description'))) {
       strDisposition = '.commentary';
-      bolCommentary = true;
+      boolCommentary = true;
     } else if (stream.disposition.lyrics
       || (title.includes('signs')) || (title.includes('songs'))) {
       strDisposition = '.signsandsongs';
-      bolSigns = true;
+      boolSigns = true;
     }
 
     // Determine if subtitle should be extracted/copied/removed
     if (processLanguage.indexOf(lang) !== -1) {
-      if ((bolCommentary && bolRemoveCommentary) || (bolCC_SDH && bolRemoveCC_SDH) || (bolSigns && bolRemovesignsandsongs)) {
-        bolCopyStream = false;
-        bolExtractStream = false;
+      if ((boolCommentary && boolRemoveCommentary) || (boolCc_Sdh && boolRemoveCc_Sdh) || (boolSigns && boolRemoveSignsAndSongs)) {
+        boolCopyStream = false;
+        boolExtractStream = false;
       }
-      if (!bolExtract) {
-        bolExtractStream = false;
+      if (!boolExtract) {
+        boolExtractStream = false;
       }
-    } else if (!bolKeepAll) {
-      if (bolKeepUndefined) {
+    } else if (!boolKeepAll) {
+      if (boolKeepUndefined) {
         if (!stream.tags.language || stream.tags.language.toLowerCase().includes('und')) {
         } else {
-          bolCopyStream = false;
+          boolCopyStream = false;
         }
       } else {
-        bolCopyStream = false;
+        boolCopyStream = false;
       }
     }
-    if ((processLanguage.indexOf(lang) === -1) && !bolExtractAll) {
-      if (bolKeepUndefined) {
+    if ((processLanguage.indexOf(lang) === -1) && !boolExtractAll) {
+      if (boolKeepUndefined) {
         if (!stream.tags.language || stream.tags.language.toLowerCase().includes('und')) {
         } else {
-          bolExtractStream = false;
+          boolExtractStream = false;
         }
       } else {
-        bolExtractStream = false;
+        boolExtractStream = false;
       }
     }
 
     // Determine subtitle stream type
     if (codec === 'ass' || codec === 'mov_text' || codec === 'ssa' || codec === 'subrip') {
-      bolTextSubs = true;
+      boolTextSubs = true;
     } else if (codec === 's_text/webvtt') {
-      bolCopyStream = false;
+      boolCopyStream = false;
     }
 
     // Build subtitle file names.
@@ -368,9 +368,9 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     subsFile = subsFile.join('.');
 
     if (stream.length !== 0) {
-      if (!bolRemoveAll) {
+      if (!boolRemoveAll) {
         // Copy subtitle stream
-        if (bolCopyStream) {
+        if (boolCopyStream) {
           logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} is wanted keeping. `);
           // Skip/Remove undesired subtitle streams.
         } else {
@@ -379,11 +379,11 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
         }
       }
       // Verify subtitle track is a format that can be extracted.
-      if (bolExtractStream || bolExtractAll) {
+      if (boolExtractStream || boolExtractAll) {
         // Extract subtitle if it doesn't exist on disk or the option to overwrite is set.
-        if (!bolTextSubs) {
+        if (!boolTextSubs) {
           logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} is not text based, can not extract. no action needed.`);
-        } else if (fs.existsSync(`${subsFile}`) && !bolOverwright) {
+        } else if (fs.existsSync(`${subsFile}`) && !boolOverwright) {
           logger.AddSuccess(`Subtitle stream ${id}: ${lang}${strDisposition} External subtitle already exists, will not extract, no action needed.`);
         } else {
           logger.AddError(`Subtitle stream ${id}: ${lang}${strDisposition} will be extracted to file.`);
@@ -396,7 +396,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
 
   loopOverStreamsOfType(file, "subtitle", subProcess);
 
-  if (bolRemoveAll) {
+  if (boolRemoveAll) {
     logger.AddError(`Removing all subtitles!`);
     configuration.AddOutputSetting(` -map -0:s`);
   }
@@ -423,12 +423,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   const logger = new Log();
-  const bolRemoveAll = inputs.remove_all;
-  const bolKeepAll = inputs.keep_all;
+  const boolRemoveAll = inputs.remove_all;
+  const boolKeepAll = inputs.keep_all;
 
   // Begin Abort Section
   
-  // Varibles for aborot section
+  // Varibles for abort section
   let hasSubs = false;
 
   // Verify video
@@ -456,7 +456,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  if (bolKeepAll && bolRemoveAll) {
+  if (boolKeepAll && boolRemoveAll) {
     logger.AddError(`Cant remove all and keep all at the same time wise guy`);
     response.infoLog += logger.GetLogData();
     response.processFile = false;

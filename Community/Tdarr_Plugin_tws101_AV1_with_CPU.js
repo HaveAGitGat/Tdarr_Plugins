@@ -9,8 +9,8 @@ const details = () => ({
     If reconvert AV1 is on and the entire file over the bitrate filter, the av1 streams will be re-encoded
     When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
 //    Created by tws101 
-//    Release version 1.01
-  Version: '1.01',
+//    Release version 1.10
+  Version: '1.10',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
   Inputs: [
     {
@@ -177,7 +177,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    let index = this.outputSettings.indexOf(configuration);
+    const index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -198,11 +198,11 @@ class Configurator {
 // #region Plugin Methods
 
 function calculateBitrate(file) {
-  let bitrateprobe = file.ffProbeData.streams[0].bit_rate;
-  if (isNaN(bitrateprobe)) {
-    bitrateprobe = file.bit_rate;
+  let bitrateProbe = file.ffProbeData.streams[0].bit_rate;
+  if (isNaN(bitrateProbe)) {
+    bitrateProbe = file.bit_rate;
   }
-  return bitrateprobe;
+  return bitrateProbe;
 }
 
 /**
@@ -226,7 +226,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video, Map EVERYTHING and encode video streams to av1
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-map 0"]);
+  const configuration = new Configurator(["-map 0"]);
 
   const tiered = {
     "480p": {
@@ -279,10 +279,10 @@ function buildVideoConfiguration(inputs, file, logger) {
     }
 
     //Return if a re-encode is not needed
-    const filterbitrate480 = (inputs.av1_480p_576p_filter_bitrate * 1000);
-    const filterbitrate720 = (inputs.av1_720p_filter_bitrate * 1000);
-    const filterbitrate1080 = (inputs.av1_1080p_filter_bitrate * 1000);
-    const filterbitrate4k = (inputs.av1_filter_bitrate_4KUHD * 1000);
+    const filterBitrate480 = (inputs.av1_480p_576p_filter_bitrate * 1000);
+    const filterBitrate720 = (inputs.av1_720p_filter_bitrate * 1000);
+    const filterBitrate1080 = (inputs.av1_1080p_filter_bitrate * 1000);
+    const filterBitrate4k = (inputs.av1_filter_bitrate_4KUHD * 1000);
     const fileResolution = file.video_resolution;
     const reconvert = inputs.reconvert_av1;
     const res480p = "480p";
@@ -298,7 +298,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       }
     }
 
-    function reconvertcheck(filterbitrate, res, res2) {
+    function reconvertCheck(filterbitrate, res, res2) {
       if ((filterbitrate > 0) && ((fileResolution === res) || (fileResolution === res2))) {
         if ((stream.codec_name === "av1") && (file.bit_rate < filterbitrate)) {
           logger.AddSuccess(`Video stream ${id} is av1 and under the filter bitrate`);
@@ -308,12 +308,12 @@ function buildVideoConfiguration(inputs, file, logger) {
       return false;
     }
 
-    const Bol480 = reconvertcheck(filterbitrate480, res480p, res576p);
-    const Bol720 = reconvertcheck(filterbitrate720, res720p);
-    const Bol1080 = reconvertcheck(filterbitrate1080, res1080p);
-    const Bol4k = reconvertcheck(filterbitrate4k, res4k);
+    const bool480 = reconvertCheck(filterBitrate480, res480p, res576p);
+    const bool720  = reconvertCheck(filterBitrate720, res720p);
+    const bool1080 = reconvertCheck(filterBitrate1080, res1080p);
+    const bool4k = reconvertCheck(filterBitrate4k, res4k);
 
-    if (Bol480 === true || Bol720 === true ||Bol1080 === true || Bol4k === true) {
+    if (bool480 === true || bool720  === true ||bool1080 === true || bool4k === true) {
       return;
     }
 
@@ -322,26 +322,26 @@ function buildVideoConfiguration(inputs, file, logger) {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
     } else {
       //Setup required variables to trascode  
-      const bitrateprobe = (calculateBitrate(file) / 1000);
-      let bitratetarget = 0;
+      const bitrateProbe = (calculateBitrate(file) / 1000);
+      let bitrateTarget = 0;
       const tier = tiered[file.video_resolution];
       if (tier == null) {
         logger.AddError("Plugin does not support the files video resolution");
         return;
       }
-      const bitratecheck = parseInt(tier["bitrate"]);
+      const bitrateCheck = parseInt(tier["bitrate"]);
 
-      if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
-        bitratetarget = parseInt(bitrateprobe * inputs.target_pct_reduction);
+      if (bitrateProbe !== null && bitrateProbe < bitrateCheck) {
+        bitrateTarget = parseInt(bitrateProbe * inputs.target_pct_reduction);
       } else {
-        bitratetarget = parseInt(tier["bitrate"]);
+        bitrateTarget = parseInt(tier["bitrate"]);
       }
 
-      const bitratemax = bitratetarget + tier["max_increase"];
-      const bitratemin = bitratetarget - tier["max_decrease"];
+      const bitrateMax = bitrateTarget + tier["max_increase"];
+      const bitrateMin = bitrateTarget - tier["max_decrease"];
 
       //Trascode all video streams that made it this far
-      configuration.AddOutputSetting(`-c:v libsvtav1 -minrate ${bitratemin}k -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k`);
+      configuration.AddOutputSetting(`-c:v libsvtav1 -minrate ${bitrateMin}k -b:v ${bitrateTarget}k -maxrate:v ${bitrateMax}k`);
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
       if (file.video_codec_name === "h264" && file.ffProbeData.streams[0].profile !== "High 10" && file.ffProbeData.streams[0].profile !== "High 4:4:4 Predictive") {
         configuration.AddInputSetting("-c:v h264");
@@ -373,7 +373,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio, set all audio to copy
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-c:a copy"]);
+  const configuration = new Configurator(["-c:a copy"]);
   return configuration;
 }
 
@@ -381,7 +381,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles, set all subtitles to copy
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  let configuration = new Configurator(["-c:s copy"]);
+  const configuration = new Configurator(["-c:s copy"]);
   return configuration;
 }
 
@@ -403,7 +403,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  let logger = new Log();
+  const logger = new Log();
 
   // Begin Abort Section
   
@@ -416,9 +416,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
   // End Abort Section
 
-  let videoSettings = buildVideoConfiguration(inputs, file, logger);
-  let audioSettings = buildAudioConfiguration(inputs, file, logger);
-  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  const videoSettings = buildVideoConfiguration(inputs, file, logger);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger);
+  const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetOutputSettings()}`

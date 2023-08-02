@@ -7,8 +7,8 @@ const details = () => ({
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
   //    Created by tws101 
-  //    Release Version 1.11
-  Version: '1.11',
+  //    Release Version 1.20
+  Version: '1.20',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
@@ -195,15 +195,15 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const processLanguage = inputs.language.toLowerCase();
   const processLanguage2 = languages.alpha3BToAlpha2(processLanguage);
   const { originalLibraryFile } = otherArguments;
-  let embeddedsubs = 0;
-  let boolhavemain = false;
-  let boolhaveforced = false;
-  let boolhavesdh = false;
-  let boolhavecc = false;
+  let embeddedSubs = 0;
+  let boolHaveMain = false;
+  let boolHaveForced = false;
+  let boolHaveSdh = false;
+  let boolHaveCc = false;
 
   //Loop through the streams
   function subProcess(stream, id) {
-    embeddedsubs++;
+    embeddedSubs++;
     let lang = '';
     let title = '';
     let codec = '';
@@ -232,15 +232,15 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     // Check these titles
     if (processLanguage === lang || processLanguage2 === lang) {
       if (stream.disposition.forced || (title.includes('forced'))) {
-        boolhaveforced = true;
+        boolHaveForced = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} forced disposition`);
         return;
       } else if (stream.disposition.sdh || (title.includes('sdh'))) {
-        boolhavesdh = true;
+        boolHaveSdh = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} sdh disposition`);
         return;
       } else if (stream.disposition.cc || (title.includes('cc'))) {
-        boolhavecc = true;
+        boolHaveCc = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} cc disposition`);
         return;
       } else if (stream.disposition.commentary || stream.disposition.description
@@ -250,7 +250,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
         || (title.includes('signs')) || (title.includes('songs'))) {
         return;
       } else {
-        boolhavemain = true;
+        boolHaveMain = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} `);
         return;
       }
@@ -260,144 +260,144 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   loopOverStreamsOfType(file, "subtitle", subProcess);
 
   //Determine what we are needing
-  let getforced = false;
-  let getsdh = false;
-  let getcc = false;
+  let boolGetForced = false;
+  let boolGetSdh = false;
+  let boolGetCc = false;
   if (inputs.include_forced === true) {
-    getforced = true;
+    boolGetForced = true;
   }
   if (inputs.include_sdh === true) {
-    getsdh = true;
+    boolGetSdh = true;
   }
   if (inputs.include_cc === true) {
-    getcc = true;
+    boolGetCc = true;
   }
 
   //Check if all Good
-  let checkforsrt = false;
-  if (boolhavemain === false) {
-    checkforsrt = true;
+  let boolCheckForSrt = false;
+  if (boolHaveMain === false) {
+    boolCheckForSrt = true;
   }
-  if (getforced === true) {
-    if (boolhaveforced === false) {
-      checkforsrt = true;
+  if (boolGetForced === true) {
+    if (boolHaveForced === false) {
+      boolCheckForSrt = true;
     }
   }
-  if (getsdh === true) {
-    if (boolhavesdh === false) {
-      checkforsrt = true;
+  if (boolGetSdh === true) {
+    if (boolHaveSdh === false) {
+      boolCheckForSrt = true;
     }
   }
-  if (getcc === true) {
-    if (boolhavecc === false) {
-      checkforsrt = true;
+  if (boolGetCc === true) {
+    if (boolHaveCc === false) {
+      boolCheckForSrt = true;
     }
   }
-  if (checkforsrt === false) {
+  if (boolCheckForSrt === false) {
     return configuration;
   }
 
   logger.Add(`Did not find all requested ${processLanguage} streams with subrip codec, looking for srt.`);
 
   //Setup Variable to Trasnscode
-  let boolfoundmainsrt = false;
-  let boolfoundforcedsrt = false;
-  let boolfoundsdhsrt = false;
-  let boolfoundccsrt = false;
-  const dispmain = '';
-  const dispforced = '.forced';
-  const dispsdh = '.sdh';
-  const dispcc = '.cc';
+  let boolFoundMainSrt = false;
+  let boolFoundForcedSrt = false;
+  let boolFoundSdhSrt = false;
+  let boolFoundCcSrt = false;
+  const dispostionMain = '';
+  const dispostionForced = '.forced';
+  const dispostionSdh = '.sdh';
+  const dispostionCc = '.cc';
 
-  function buildsrtfile(lang, disposition) {
-    let srtfile = "";
+  function buildSrtFile(lang, disposition) {
+    let srtFile = "";
     if (originalLibraryFile && originalLibraryFile.file) {
-      srtfile = originalLibraryFile.file;
+      srtFile = originalLibraryFile.file;
     } else {
-      srtfile = file.file;
+      srtFile = file.file;
     }
-    srtfile = srtfile.split(".");
-    srtfile[srtfile.length - 2] += `.${lang}${disposition}`;
-    srtfile[srtfile.length - 1] = "srt";
-    srtfile = srtfile.join(".");
-    return srtfile;
+    srtFile = srtFile.split(".");
+    srtFile[srtFile.length - 2] += `.${lang}${disposition}`;
+    srtFile[srtFile.length - 1] = "srt";
+    srtFile = srtFile.join(".");
+    return srtFile;
   }
 
-  const mainsubfile = buildsrtfile(processLanguage, dispmain);
-  const mainaltsubfile = buildsrtfile(processLanguage2, dispmain);
-  const forcedsubfile = buildsrtfile(processLanguage, dispforced);
-  const forcedaltsubfile = buildsrtfile(processLanguage2, dispforced);
-  const sdhsubfile = buildsrtfile(processLanguage, dispsdh);
-  const sdhaltsubfile = buildsrtfile(processLanguage2, dispsdh);
-  const ccsubfile = buildsrtfile(processLanguage, dispcc);
-  const ccaltsubfile = buildsrtfile(processLanguage2, dispcc);
+  const mainSubFile = buildSrtFile(processLanguage, dispostionMain);
+  const mainAltSubFile = buildSrtFile(processLanguage2, dispostionMain);
+  const forcedSubFile = buildSrtFile(processLanguage, dispostionForced);
+  const forcedAltSubFile = buildSrtFile(processLanguage2, dispostionForced);
+  const sdhSubFile = buildSrtFile(processLanguage, dispostionSdh);
+  const sdhAltSubFile = buildSrtFile(processLanguage2, dispostionSdh);
+  const ccSubFile = buildSrtFile(processLanguage, dispostionCc);
+  const ccAltSubFile = buildSrtFile(processLanguage2, dispostionCc);
 
   //Check to make sure srt exists
-  function findsrtfile(subfile, altsubfile) {
-    if (fs.existsSync(`${subfile}`)) {
-      return subfile;
-    } else if (fs.existsSync(`${altsubfile}`)) {
-      return altsubfile;
+  function findSrtFile(subFile, altSubFile) {
+    if (fs.existsSync(`${subFile}`)) {
+      return subFile;
+    } else if (fs.existsSync(`${altSubFile}`)) {
+      return altSubFile;
     }
   }
 
-  const mainchosensubsfile = findsrtfile(mainsubfile, mainaltsubfile);
-  if (mainchosensubsfile != null) {
-    boolfoundmainsrt = true;
+  const mainChosenSubsFile = findSrtFile(mainSubFile, mainAltSubFile);
+  if (mainChosenSubsFile != null) {
+    boolFoundMainSrt = true;
   }
-  const forcedchosensubsfile = findsrtfile(forcedsubfile, forcedaltsubfile);
-  if (forcedchosensubsfile != null) {
-    boolfoundforcedsrt = true;
+  const forcedChosenSubsFile = findSrtFile(forcedSubFile, forcedAltSubFile);
+  if (forcedChosenSubsFile != null) {
+    boolFoundForcedSrt = true;
   }
-  const sdhchosensubsfile = findsrtfile(sdhsubfile, sdhaltsubfile);
-  if (sdhchosensubsfile != null) {
-    boolfoundsdhsrt = true;
+  const sdhChosenSubsFile = findSrtFile(sdhSubFile, sdhAltSubFile);
+  if (sdhChosenSubsFile != null) {
+    boolFoundSdhSrt = true;
   }
-  const ccchosensubsfile = findsrtfile(ccsubfile, ccaltsubfile);
-  if (ccchosensubsfile != null) {
-    boolfoundccsrt = true;
+  const ccChosenSubsFile = findSrtFile(ccSubFile, ccAltSubFile);
+  if (ccChosenSubsFile != null) {
+    boolFoundCcSrt = true;
   }
 
   //Trascode
-  let subindex = 1;
-  const trantitlepmain = 'default';
-  const logdispmain = 'disposition default';
-  const trantitleforced = 'forced';
-  const logdispforced = 'disposition forced';
-  const trantitlesdh = 'sdh';
-  const logdispsdh = 'disposition sdh';
-  const trantitlecc = 'cc';
-  const logdispcc = 'disposition cc';
+  let subIndex = 1;
+  const titlepMain = 'default';
+  const logDispostionMain = 'disposition default';
+  const titleForced = 'forced';
+  const logDispostionForced = 'disposition forced';
+  const titleSdh = 'sdh';
+  const logDispostionSdh = 'disposition sdh';
+  const titleCc = 'cc';
+  const logDispostionCc = 'disposition cc';
 
-  function transcode(chosensubsfile, title, displog) {
-    logger.AddError(`Adding SRT ${chosensubsfile} to MKV ${displog}`);
+  function transcode(chosenSubsFile, title, displog) {
+    logger.AddError(`Adding SRT ${chosenSubsFile} to MKV ${displog}`);
     let disposition = title;
     if (disposition === 'sdh' || disposition === 'cc') {
       disposition = 'hearing_impaired';
     }
-    configuration.AddInputSetting(` -sub_charenc "UTF-8" -f srt -i "${chosensubsfile}"`);
+    configuration.AddInputSetting(` -sub_charenc "UTF-8" -f srt -i "${chosenSubsFile}"`);
     configuration.AddOutputSetting(
-      ` -map ${subindex}:s -metadata:s:s:${embeddedsubs} language=${processLanguage} -metadata:s:s:${embeddedsubs} title=${title} -disposition:s:${embeddedsubs} ${disposition}`
+      ` -map ${subIndex}:s -metadata:s:s:${embeddedSubs} language=${processLanguage} -metadata:s:s:${embeddedSubs} title=${title} -disposition:s:${embeddedSubs} ${disposition}`
       );
-    embeddedsubs++;
-    subindex++;
+    embeddedSubs++;
+    subIndex++;
   }
 
   let convert = false;
-  if (boolfoundmainsrt === true && boolhavemain === false) {
-    transcode(mainchosensubsfile, trantitlepmain, logdispmain);
+  if (boolFoundMainSrt === true && boolHaveMain === false) {
+    transcode(mainChosenSubsFile, titlepMain, logDispostionMain);
     convert = true;
   }
-  if (boolfoundforcedsrt === true && getforced === true && boolhaveforced === false) {
-    transcode(forcedchosensubsfile, trantitleforced, logdispforced);
+  if (boolFoundForcedSrt === true && boolGetForced === true && boolHaveForced === false) {
+    transcode(forcedChosenSubsFile, titleForced, logDispostionForced);
     convert = true;
   }
-  if (boolfoundsdhsrt === true && getsdh === true && boolhavesdh === false) {
-    transcode(sdhchosensubsfile, trantitlesdh, logdispsdh);
+  if (boolFoundSdhSrt === true && boolGetSdh === true && boolHaveSdh === false) {
+    transcode(sdhChosenSubsFile, titleSdh, logDispostionSdh);
     convert = true;
   }
-  if (boolfoundccsrt === true && getcc === true && boolhavecc === false) {
-    transcode(ccchosensubsfile, trantitlecc, logdispcc);
+  if (boolFoundCcSrt === true && boolGetCc === true && boolHaveCc === false) {
+    transcode(ccChosenSubsFile, titleCc, logDispostionCc);
     convert = true;
   }
 

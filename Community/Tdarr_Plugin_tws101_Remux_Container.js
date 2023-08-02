@@ -6,8 +6,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ` The input file will be remuxed into MKV or MP4. Force conform is recommended, this will remove incompatible items from the new container. `,
   //    Created by tws101 
-  //    Release Version 1.10
-  Version: '1.10',
+  //    Release Version 1.11
+  Version: '1.11',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
   Inputs: [
     {
@@ -109,7 +109,7 @@ class Configurator {
   }
 
   RemoveOutputSetting(configuration) {
-    let index = this.outputSettings.indexOf(configuration);
+    const index = this.outputSettings.indexOf(configuration);
 
     if (index === -1) return;
     this.outputSettings.splice(index, 1);
@@ -149,7 +149,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video, Map ALL and set ALL to copy
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  let configuration = new Configurator([""]);
+  const configuration = new Configurator([""]);
 
   //Check if we are going to Remux
   if (file.container !== inputs.container) {
@@ -169,7 +169,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio, No Audio Config
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  let configuration = new Configurator([""]);
+  const configuration = new Configurator([""]);
   return configuration;
 }
 
@@ -177,7 +177,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles, remove incompatible: subs, data, or attachments as needed.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  let configuration = new Configurator([""]);
+  const configuration = new Configurator([""]);
 
   if (inputs.force_conform === true) {
     if (inputs.container === 'mkv') {
@@ -227,7 +227,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
   };
 
-  let logger = new Log();
+  const logger = new Log();
 
   // Begin Abort Section
   
@@ -240,9 +240,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
   // End Abort Section
 
-  let videoSettings = buildVideoConfiguration(inputs, file, logger);
-  let audioSettings = buildAudioConfiguration(inputs, file, logger);
-  let subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
+  const videoSettings = buildVideoConfiguration(inputs, file, logger);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger);
+  const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
   response.preset += ` ${audioSettings.GetOutputSettings()}`
