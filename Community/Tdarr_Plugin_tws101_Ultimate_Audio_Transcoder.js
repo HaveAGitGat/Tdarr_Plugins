@@ -823,16 +823,14 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
 
   function runCopyCreate(goodstream, possiblestream, lang) {
     let output = false;
-    if (goodstream) {
-      if (goodstream != '') {
-        const highestChannelCount = goodstream.reduce(getHighest);
-        copyStream(highestChannelCount, lang)
-        output = true;
-      } else if (possiblestream != '') {
-        const highestChannelCount = possiblestream.reduce(getHighest);
-        createStream(highestChannelCount, lang);
-        output = true;
-      }
+    if (goodstream != '') {
+      const highestChannelCount = goodstream.reduce(getHighest);
+      copyStream(highestChannelCount, lang)
+      output = true;
+    } else if (possiblestream != '') {
+      const highestChannelCount = possiblestream.reduce(getHighest);
+      createStream(highestChannelCount, lang);
+      output = true;
     }
     return output;
   }
