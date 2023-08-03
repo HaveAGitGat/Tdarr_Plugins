@@ -50,7 +50,8 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: '',
+    tooltip: 'By default this plugin will downmix each track. So four 6 channel tracks will result in four 2 channel tracks.'
+    + ' Enable this option to only downmix a single track.',
   },
   ],
 });
