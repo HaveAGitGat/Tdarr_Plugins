@@ -5,10 +5,10 @@ const details = () => ({
   Name: 'tws101 - Remux Container',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: ` The input file will be remuxed into MKV or MP4. Force conform is recommended, this will remove incompatible items from the new container. `,
-  //    Created by tws101 
-  //    Release Version 1.11
-  Version: '1.11',
+  Description: ' The input file will be remuxed into MKV or MP4. Force conform is recommended, this will remove incompatible items from the new container. ',
+  //    Created by tws101
+  //    Release Version 1.12
+  Version: '1.12',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
   Inputs: [
     {
@@ -22,7 +22,7 @@ const details = () => ({
           'mp4',
         ],
       },
-      tooltip: `Choose output container of file`,
+      tooltip: 'Choose output container of file',
     },
     {
       name: 'force_conform',
@@ -81,7 +81,7 @@ class Log {
    * Returns the log lines separated by new line delimiter.
    */
   GetLogData() {
-    return this.entries.join("\n");
+    return this.entries.join('\n');
   }
 }
 
@@ -117,11 +117,11 @@ class Configurator {
   }
 
   GetOutputSettings() {
-    return this.outputSettings.join(" ");
+    return this.outputSettings.join(' ');
   }
 
   GetInputSettings() {
-    return this.inputSettings.join(" ");
+    return this.inputSettings.join(' ');
   }
 }
 
@@ -144,23 +144,23 @@ function loopOverStreamsOfType(file, type, method) {
       id++;
     }
   }
-}  
+}
 
 /**
  * Video, Map ALL and set ALL to copy
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  const configuration = new Configurator([""]);
+  const configuration = new Configurator(['']);
 
-  //Check if we are going to Remux
+  // Check if we are going to Remux
   if (file.container !== inputs.container) {
     logger.AddError(`File is ${file.container} but requested is ${inputs.container} container. Remuxing.`);
-    configuration.AddOutputSetting(` -map 0 -c copy -max_muxing_queue_size 9999 `);
+    configuration.AddOutputSetting(' -map 0 -c copy -max_muxing_queue_size 9999 ');
   }
 
   // If Container .ts or .avi set genpts to fix unknown timestamp
   if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi') {
-    configuration.AddInputSetting(` -fflags +genpts`);
+    configuration.AddInputSetting(' -fflags +genpts');
   }
 
   return configuration;
@@ -170,7 +170,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio, No Audio Config
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  const configuration = new Configurator([""]);
+  const configuration = new Configurator(['']);
   return configuration;
 }
 
@@ -178,11 +178,11 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles, remove incompatible: subs, data, or attachments as needed.
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  const configuration = new Configurator([""]);
+  const configuration = new Configurator(['']);
 
   if (inputs.force_conform === true) {
     if (inputs.container === 'mkv') {
-      configuration.AddOutputSetting(` -map -0:d `);
+      configuration.AddOutputSetting(' -map -0:d ');
       function mkvconform(stream, id) {
         if (stream.codec_name !== undefined) {
           codec = stream.codec_name.toLowerCase();
@@ -191,10 +191,10 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           configuration.AddOutputSetting(` -map -0:s:${id} `);
         }
       }
-      loopOverStreamsOfType(file, "subtitle", mkvconform);
+      loopOverStreamsOfType(file, 'subtitle', mkvconform);
     }
     if (inputs.container === 'mp4') {
-      configuration.AddOutputSetting(` -map -0:t `);
+      configuration.AddOutputSetting(' -map -0:t ');
       function mp4conform(stream, id) {
         if (stream.codec_name !== undefined) {
           codec = stream.codec_name.toLowerCase();
@@ -203,7 +203,7 @@ function buildSubtitleConfiguration(inputs, file, logger) {
           }
         }
       }
-      loopOverStreamsOfType(file, "subtitle", mp4conform);
+      loopOverStreamsOfType(file, 'subtitle', mp4conform);
     }
   }
 
@@ -220,19 +220,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: `.${inputs.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
-    infoLog: "",
+    infoLog: '',
     processFile: false,
-    preset: "",
+    preset: '',
     reQueueAfter: true,
   };
 
   const logger = new Log();
 
   // Begin Abort Section
-  
+
   // Verify video
   if (file.fileMedium !== 'video') {
-    logger.AddError("File is not a video.");
+    logger.AddError('File is not a video.');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -243,12 +243,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const audioSettings = buildAudioConfiguration(inputs, file, logger);
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
-  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
-  response.preset += ` ${audioSettings.GetOutputSettings()}`
-  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
+  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`;
+  response.preset += ` ${audioSettings.GetOutputSettings()}`;
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`;
 
-  response.processFile =
-    videoSettings.shouldProcess;
+  response.processFile = videoSettings.shouldProcess;
 
   if (!response.processFile) {
     logger.AddSuccess(`File is already in ${inputs.container} container.`);
@@ -256,7 +255,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   response.infoLog += logger.GetLogData();
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;

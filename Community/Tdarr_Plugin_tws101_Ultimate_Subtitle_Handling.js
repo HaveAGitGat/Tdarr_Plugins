@@ -7,10 +7,10 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `This plugin will extract and remove subtitles as configured.  Extractions can only be done with text subs. 
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
-  //    Created by tws101 
+  //    Created by tws101
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.30
-  Version: '1.30',
+  //    Release Version 1.31
+  Version: '1.31',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -18,7 +18,7 @@ const details = () => ({
       type: 'string',
       defaultValue: 'eng',
       inputUI: {
-      type: 'text',
+        type: 'text',
       },
       tooltip: 'Specify language tag(s) here for the subtitle tracks you would like to keep/extract.'
         + '\\nEnter "all" without quotes to extract all subtitle tracks.  '
@@ -64,7 +64,7 @@ const details = () => ({
         ],
       },
       tooltip: `If true don't remove langauges that are not listed above. If remove_commentary, remove_signs_and_songs, remove_cc_sdh 
-      are true those setting are authoritative over this one, and the track will be removed. Do not use this with remove_all.`
+      are true those setting are authoritative over this one, and the track will be removed. Do not use this with remove_all.`,
     },
     {
       name: 'keep_undefinded',
@@ -77,7 +77,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: 'Keep any undefined subtitle track. '
+      tooltip: 'Keep any undefined subtitle track. ',
     },
     {
       name: 'remove_commentary',
@@ -172,7 +172,7 @@ class Log {
    * Returns the log lines separated by new line delimiter.
    */
   GetLogData() {
-    return this.entries.join("\n");
+    return this.entries.join('\n');
   }
 }
 
@@ -209,11 +209,11 @@ class Configurator {
   }
 
   GetOutputSettings() {
-    return this.outputSettings.join(" ");
+    return this.outputSettings.join(' ');
   }
 
   GetInputSettings() {
-    return this.inputSettings.join(" ");
+    return this.inputSettings.join(' ');
   }
 }
 
@@ -242,7 +242,7 @@ function loopOverStreamsOfType(file, type, method) {
  * Video, Map EVERYTHING
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  const configuration = new Configurator(["-map 0"]);
+  const configuration = new Configurator(['-map 0']);
   return configuration;
 }
 
@@ -250,7 +250,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio, No Audio Config
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  const configuration = new Configurator([""]);
+  const configuration = new Configurator(['']);
   return configuration;
 }
 
@@ -259,7 +259,7 @@ function buildAudioConfiguration(inputs, file, logger) {
  */
 function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const fs = require('fs');
-  const configuration = new Configurator(["-c copy"]);
+  const configuration = new Configurator(['-c copy']);
   const processLanguage = inputs.language.toLowerCase().split(',');
   const boolExtract = inputs.extract;
   const boolRemoveCommentary = inputs.remove_commentary;
@@ -392,20 +392,19 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
         }
       }
     }
-    return;
   }
 
-  loopOverStreamsOfType(file, "subtitle", subProcess);
+  loopOverStreamsOfType(file, 'subtitle', subProcess);
 
   if (boolRemoveAll) {
-    logger.AddError(`Removing all subtitles!`);
-    configuration.AddOutputSetting(` -map -0:s`);
+    logger.AddError('Removing all subtitles!');
+    configuration.AddOutputSetting(' -map -0:s');
   }
 
   return configuration;
 }
 
-//end process subs needs work
+// end process subs needs work
 
 // Final Region
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -415,9 +414,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
-    infoLog: "",
+    infoLog: '',
     processFile: false,
-    preset: "",
+    preset: '',
     reQueueAfter: true,
   };
 
@@ -426,19 +425,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const boolKeepAll = inputs.keep_all;
 
   // Begin Abort Section
-  
+
   // Varibles for abort section
   let hasSubs = false;
 
   // Verify video
   if (file.fileMedium !== 'video') {
-    logger.AddError("File is not a video.");
+    logger.AddError('File is not a video.');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
 
-  //check has subs
+  // check has subs
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     if (strStreamType === 'text' || strStreamType === 'subtitle') {
@@ -447,16 +446,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (hasSubs === true) {
-    logger.AddSuccess(`Found subs!`);
+    logger.AddSuccess('Found subs!');
   } else {
-    logger.AddSuccess(`No subs in file, skipping!`);
+    logger.AddSuccess('No subs in file, skipping!');
     response.infoLog += logger.GetLogData();
     response.processFile = false;
     return response;
   }
 
   if (boolKeepAll && boolRemoveAll) {
-    logger.AddError(`Cant remove all and keep all at the same time wise guy`);
+    logger.AddError('Cant remove all and keep all at the same time wise guy');
     response.infoLog += logger.GetLogData();
     response.processFile = false;
     return response;
@@ -469,21 +468,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger, otherArguments);
 
   response.preset = '-y <io>';
-  response.preset += ` ${subtitleSettings.GetInputSettings()}`
-  response.preset += ` ${videoSettings.GetOutputSettings()}`
-  response.preset += ` ${audioSettings.GetOutputSettings()}`
-  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
+  response.preset += ` ${subtitleSettings.GetInputSettings()}`;
+  response.preset += ` ${videoSettings.GetOutputSettings()}`;
+  response.preset += ` ${audioSettings.GetOutputSettings()}`;
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`;
 
-  response.processFile =
-    subtitleSettings.shouldProcess;
+  response.processFile = subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
-    logger.AddSuccess("No need to process file");
+    logger.AddSuccess('No need to process file');
   }
 
   response.infoLog += logger.GetLogData();
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;

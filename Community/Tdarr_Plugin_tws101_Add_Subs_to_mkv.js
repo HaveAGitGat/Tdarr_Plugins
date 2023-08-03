@@ -7,13 +7,13 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
-  //    Created by tws101 
-  //    Release Version 1.20
-  Version: '1.20',
+  //    Created by tws101
+  //    Release Version 1.21
+  Version: '1.21',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
-      name: "language",
+      name: 'language',
       type: 'string',
       defaultValue: 'eng',
       inputUI: {
@@ -34,7 +34,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: `Forced subtitles will also be added, required naming is source.eng.forced.srt, this example assumes chosen tag is eng.`,
+      tooltip: 'Forced subtitles will also be added, required naming is source.eng.forced.srt, this example assumes chosen tag is eng.',
     },
     {
       name: 'include_sdh',
@@ -47,7 +47,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: `Sdh subtitles will also be added, required naming is source.eng.sdh.srt, this example assumes chosen tag is eng.`,
+      tooltip: 'Sdh subtitles will also be added, required naming is source.eng.sdh.srt, this example assumes chosen tag is eng.',
     },
     {
       name: 'include_cc',
@@ -60,7 +60,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: `Sdh subtitles will also be added, required naming is source.eng.cc.srt, this example assumes chosen tag is eng.`,
+      tooltip: 'Sdh subtitles will also be added, required naming is source.eng.cc.srt, this example assumes chosen tag is eng.',
     },
   ],
 });
@@ -103,7 +103,7 @@ class Log {
    * Returns the log lines separated by new line delimiter.
    */
   GetLogData() {
-    return this.entries.join("\n");
+    return this.entries.join('\n');
   }
 }
 
@@ -139,11 +139,11 @@ class Configurator {
   }
 
   GetOutputSettings() {
-    return this.outputSettings.join(" ");
+    return this.outputSettings.join(' ');
   }
 
   GetInputSettings() {
-    return this.inputSettings.join(" ");
+    return this.inputSettings.join(' ');
   }
 }
 
@@ -166,13 +166,13 @@ function loopOverStreamsOfType(file, type, method) {
       id++;
     }
   }
-}  
+}
 
 /**
  * Keep all Video.    Map ALL  "-map 0"   Map Video  "-map 0:v"    Copy Video  "-c:v copy"
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  const configuration = new Configurator(["-map 0"]);
+  const configuration = new Configurator(['-map 0']);
   return configuration;
 }
 
@@ -180,7 +180,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Keep all audio   Map Audio "-map 0:a"  Copy Audio  "-c:a copy"
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  const configuration = new Configurator([""]);
+  const configuration = new Configurator(['']);
   return configuration;
 }
 
@@ -188,8 +188,8 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Keep all subtitles  Map subs "-map 0:s?" Map Data "-map 0:d?" Map Attachments "-map 0:t?"   Copy Subs  "-c:s copy"     Copy all "-c copy"
  */
 function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
-  const configuration = new Configurator([""]);
-  const fs = require("fs");
+  const configuration = new Configurator(['']);
+  const fs = require('fs');
   const languages = require('@cospired/i18n-iso-languages');
 
   // Setup Required Variables
@@ -202,7 +202,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   let boolHaveSdh = false;
   let boolHaveCc = false;
 
-  //Loop through the streams
+  // Loop through the streams
   function subProcess(stream, id) {
     embeddedSubs++;
     let lang = '';
@@ -235,32 +235,22 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
       if (stream.disposition.forced || (title.includes('forced'))) {
         boolHaveForced = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} forced disposition`);
-        return;
       } else if (stream.disposition.sdh || (title.includes('sdh'))) {
         boolHaveSdh = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} sdh disposition`);
-        return;
       } else if (stream.disposition.cc || (title.includes('cc'))) {
         boolHaveCc = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} cc disposition`);
-        return;
-      } else if (stream.disposition.commentary || stream.disposition.description
-        || (title.includes('commentary')) || (title.includes('description'))) {
-        return;
-      } else if (stream.disposition.lyrics
-        || (title.includes('signs')) || (title.includes('songs'))) {
-        return;
       } else {
         boolHaveMain = true;
         logger.AddSuccess(`Subtitle stream ${id} is ${processLanguage} `);
-        return;
       }
     }
   }
 
-  loopOverStreamsOfType(file, "subtitle", subProcess);
+  loopOverStreamsOfType(file, 'subtitle', subProcess);
 
-  //Determine what we are needing
+  // Determine what we are needing
   let boolGetForced = false;
   let boolGetSdh = false;
   let boolGetCc = false;
@@ -274,7 +264,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     boolGetCc = true;
   }
 
-  //Check if all Good
+  // Check if all Good
   let boolCheckForSrt = false;
   if (boolHaveMain === false) {
     boolCheckForSrt = true;
@@ -300,7 +290,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
 
   logger.Add(`Did not find all requested ${processLanguage} streams with subrip codec, looking for srt.`);
 
-  //Setup Variable to Trasnscode
+  // Setup Variable to Trasnscode
   let boolFoundMainSrt = false;
   let boolFoundForcedSrt = false;
   let boolFoundSdhSrt = false;
@@ -311,16 +301,16 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const dispostionCc = '.cc';
 
   function buildSrtFile(lang, disposition) {
-    let srtFile = "";
+    let srtFile = '';
     if (originalLibraryFile && originalLibraryFile.file) {
       srtFile = originalLibraryFile.file;
     } else {
       srtFile = file.file;
     }
-    srtFile = srtFile.split(".");
+    srtFile = srtFile.split('.');
     srtFile[srtFile.length - 2] += `.${lang}${disposition}`;
-    srtFile[srtFile.length - 1] = "srt";
-    srtFile = srtFile.join(".");
+    srtFile[srtFile.length - 1] = 'srt';
+    srtFile = srtFile.join('.');
     return srtFile;
   }
 
@@ -333,11 +323,11 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   const ccSubFile = buildSrtFile(processLanguage, dispostionCc);
   const ccAltSubFile = buildSrtFile(processLanguage2, dispostionCc);
 
-  //Check to make sure srt exists
+  // Check to make sure srt exists
   function findSrtFile(subFile, altSubFile) {
     if (fs.existsSync(`${subFile}`)) {
       return subFile;
-    } else if (fs.existsSync(`${altSubFile}`)) {
+    } if (fs.existsSync(`${altSubFile}`)) {
       return altSubFile;
     }
   }
@@ -359,7 +349,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     boolFoundCcSrt = true;
   }
 
-  //Trascode
+  // Trascode
   let subIndex = 1;
   const titlepMain = 'default';
   const logDispostionMain = 'disposition default';
@@ -378,8 +368,8 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
     }
     configuration.AddInputSetting(` -sub_charenc "UTF-8" -f srt -i "${chosenSubsFile}"`);
     configuration.AddOutputSetting(
-      ` -map ${subIndex}:s -metadata:s:s:${embeddedSubs} language=${processLanguage} -metadata:s:s:${embeddedSubs} title=${title} -disposition:s:${embeddedSubs} ${disposition}`
-      );
+      ` -map ${subIndex}:s -metadata:s:s:${embeddedSubs} language=${processLanguage} -metadata:s:s:${embeddedSubs} title=${title} -disposition:s:${embeddedSubs} ${disposition}`,
+    );
     embeddedSubs++;
     subIndex++;
   }
@@ -403,7 +393,7 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   }
 
   if (convert === false) {
-    logger.Add("Did not locate any requested SRT to import, nothing to do here.");
+    logger.Add('Did not locate any requested SRT to import, nothing to do here.');
   }
 
   return configuration;
@@ -419,9 +409,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
-    infoLog: "",
+    infoLog: '',
     processFile: false,
-    preset: "",
+    preset: '',
     reQueueAfter: true,
   };
 
@@ -431,7 +421,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Verify video
   if (file.fileMedium !== 'video') {
-    logger.AddError("File is not a video.");
+    logger.AddError('File is not a video.');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -439,33 +429,32 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Verify MKV
   if (file.container !== 'mkv') {
-    logger.AddError("File is not an MKV.");
+    logger.AddError('File is not an MKV.');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
-  
+
   // End Abort Section
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const audioSettings = buildAudioConfiguration(inputs, file, logger);
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger, otherArguments);
 
-  response.preset = `${videoSettings.GetInputSettings()},${subtitleSettings.GetInputSettings()} ${videoSettings.GetOutputSettings()}`
-  response.preset += ` ${audioSettings.GetOutputSettings()}`
-  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
-  response.preset += ` -c copy`;
+  response.preset = `${videoSettings.GetInputSettings()},${subtitleSettings.GetInputSettings()} ${videoSettings.GetOutputSettings()}`;
+  response.preset += ` ${audioSettings.GetOutputSettings()}`;
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`;
+  response.preset += ' -c copy';
 
-  response.processFile =
-    subtitleSettings.shouldProcess;
+  response.processFile = subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
-    logger.AddSuccess("No need to process file");
+    logger.AddSuccess('No need to process file');
   }
 
   response.infoLog += logger.GetLogData();
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;

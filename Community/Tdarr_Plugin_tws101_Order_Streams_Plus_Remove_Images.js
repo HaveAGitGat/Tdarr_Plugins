@@ -7,9 +7,9 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true.
   Option to remove invalid data streams that ffmpeg does not suppport `,
-  //    Created by tws101 
-  //    Release Version 1.30
-  Version: '1.30',
+  //    Created by tws101
+  //    Release Version 1.31
+  Version: '1.31',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -23,7 +23,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: `This will remove: MJPEG, PNG & GIF.  Recommended `,
+      tooltip: 'This will remove: MJPEG, PNG & GIF.  Recommended ',
     },
     {
       name: 'remove_invalid_data',
@@ -36,7 +36,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: `This will remove data streams that have incomplete data in them.  Recommended `,
+      tooltip: 'This will remove data streams that have incomplete data in them.  Recommended ',
     },
   ],
 });
@@ -79,7 +79,7 @@ class Log {
    * Returns the log lines separated by new line delimiter.
    */
   GetLogData() {
-    return this.entries.join("\n");
+    return this.entries.join('\n');
   }
 }
 
@@ -115,11 +115,11 @@ class Configurator {
   }
 
   GetOutputSettings() {
-    return this.outputSettings.join(" ");
+    return this.outputSettings.join(' ');
   }
 
   GetInputSettings() {
-    return this.inputSettings.join(" ");
+    return this.inputSettings.join(' ');
   }
 }
 
@@ -142,13 +142,13 @@ function loopOverStreamsOfType(file, type, method) {
       id++;
     }
   }
-}  
+}
 
 /**
  * Video    Map ALL  "-map 0"   Map Video  "-map 0:v"    Copy Video  "-c:v copy"
  */
 function buildVideoConfiguration(inputs, file, logger) {
-  const configuration = new Configurator(["-map 0:v"]);
+  const configuration = new Configurator(['-map 0:v']);
 
   function imageremoval(stream, id) {
     if (
@@ -161,7 +161,7 @@ function buildVideoConfiguration(inputs, file, logger) {
   }
 
   if (inputs.remove_images === true) {
-    loopOverStreamsOfType(file, "video", imageremoval);
+    loopOverStreamsOfType(file, 'video', imageremoval);
   }
 
   return configuration;
@@ -171,7 +171,7 @@ function buildVideoConfiguration(inputs, file, logger) {
  * Audio   Map Audio "-map 0:a"  Copy Audio  "-c:a copy"
  */
 function buildAudioConfiguration(inputs, file, logger) {
-  const configuration = new Configurator([""]);
+  const configuration = new Configurator(['']);
 
   function orderaudiostreams1ch(stream, id) {
     try {
@@ -202,10 +202,10 @@ function buildAudioConfiguration(inputs, file, logger) {
     } catch (err) {}
   }
 
-  loopOverStreamsOfType(file, "audio", orderaudiostreams1ch);
-  loopOverStreamsOfType(file, "audio", orderaudiostreams2ch);
-  loopOverStreamsOfType(file, "audio", orderaudiostreams6ch);
-  loopOverStreamsOfType(file, "audio", orderaudiostreams8ch);
+  loopOverStreamsOfType(file, 'audio', orderaudiostreams1ch);
+  loopOverStreamsOfType(file, 'audio', orderaudiostreams2ch);
+  loopOverStreamsOfType(file, 'audio', orderaudiostreams6ch);
+  loopOverStreamsOfType(file, 'audio', orderaudiostreams8ch);
 
   return configuration;
 }
@@ -214,15 +214,15 @@ function buildAudioConfiguration(inputs, file, logger) {
  * Subtitles and data  Map subs "-map 0:s?" Map Data "-map 0:d?"   Copy Subs  "-c:s copy"  Copy Data "-c:d copy"   Ending copy command "-c copy"
  */
 function buildSubtitleConfiguration(inputs, file, logger) {
-  const configuration = new Configurator(["-map 0:s?", "-map 0:d?", "-map 0:t?", "-c copy"]);
+  const configuration = new Configurator(['-map 0:s?', '-map 0:d?', '-map 0:t?', '-c copy']);
 
   function invaliddata(stream, id) {
-    if (!stream.codec_name && stream.codec_tag_string === "tmcd") {
+    if (!stream.codec_name && stream.codec_tag_string === 'tmcd') {
       configuration.AddOutputSetting(` -map -0:d:${id} -write_tmcd false `);
     }
   }
 
-  loopOverStreamsOfType(file, "data", invaliddata);
+  loopOverStreamsOfType(file, 'data', invaliddata);
 
   return configuration;
 }
@@ -237,9 +237,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     container: `.${file.container}`,
     FFmpegMode: true,
     handBrakeMode: false,
-    infoLog: "",
+    infoLog: '',
     processFile: false,
-    preset: "",
+    preset: '',
     reQueueAfter: true,
   };
 
@@ -249,7 +249,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
-    logger.AddError("File is not a video.");
+    logger.AddError('File is not a video.');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -272,7 +272,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           || file.ffProbeData.streams[i].codec_name === 'gif'
         ) {
           allGood = false;
-          logger.AddError("Image format detected removing");
+          logger.AddError('Image format detected removing');
         }
       }
     }
@@ -283,7 +283,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'data') {
         if (!file.ffProbeData.streams[i].codec_name) {
           allGood = false;
-          logger.AddError("Invalid data stream detected removing");
+          logger.AddError('Invalid data stream detected removing');
         }
       }
     }
@@ -294,34 +294,34 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
         if (audioIdx !== 0 || subtitleIdx !== 0) {
           allGood = false;
-          logger.AddError("Video not first.");
+          logger.AddError('Video not first.');
         }
       }
 
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (subtitleIdx !== 0) {
           allGood = false;
-          logger.AddError("Audio not second.");
+          logger.AddError('Audio not second.');
         }
         audioIdx += 1;
 
         if (file.ffProbeData.streams[i].channels === 1) {
           if (audio2Idx !== 0 || audio6Idx !== 0 || audio8Idx !== 0) {
             allGood = false;
-            logger.AddError("Audio 1ch not first.");
+            logger.AddError('Audio 1ch not first.');
           }
         }
         if (file.ffProbeData.streams[i].channels === 2) {
           if (audio6Idx !== 0 || audio8Idx !== 0) {
             allGood = false;
-            logger.AddError("Audio 2ch not second.");
+            logger.AddError('Audio 2ch not second.');
           }
           audio2Idx += 1;
         }
         if (file.ffProbeData.streams[i].channels === 6) {
           if (audio8Idx !== 0) {
             allGood = false;
-            logger.AddError("Audio 6ch not third.");
+            logger.AddError('Audio 6ch not third.');
           }
           audio6Idx += 1;
         }
@@ -338,7 +338,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (allGood === true) {
-    logger.AddSuccess("Everything is in order.");
+    logger.AddSuccess('Everything is in order.');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
@@ -350,23 +350,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const audioSettings = buildAudioConfiguration(inputs, file, logger);
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
-  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`
-  response.preset += ` ${audioSettings.GetOutputSettings()}`
-  response.preset += ` ${subtitleSettings.GetOutputSettings()}`
-  response.preset += ` -max_muxing_queue_size 9999`
+  response.preset = `${videoSettings.GetInputSettings()},${videoSettings.GetOutputSettings()}`;
+  response.preset += ` ${audioSettings.GetOutputSettings()}`;
+  response.preset += ` ${subtitleSettings.GetOutputSettings()}`;
+  response.preset += ' -max_muxing_queue_size 9999';
 
-  response.processFile =
-    audioSettings.shouldProcess ||
-    videoSettings.shouldProcess ||
-    subtitleSettings.shouldProcess;
+  response.processFile = audioSettings.shouldProcess
+    || videoSettings.shouldProcess
+    || subtitleSettings.shouldProcess;
 
   if (!response.processFile) {
-    logger.AddError("YOU SHOULD NOT SEE THIS ALL GOOD FAILED AND NO ACTION WAS TAKEN!");
+    logger.AddError('YOU SHOULD NOT SEE THIS ALL GOOD FAILED AND NO ACTION WAS TAKEN!');
   }
 
   response.infoLog += logger.GetLogData();
   return response;
-}
+};
 
 module.exports.details = details;
 module.exports.plugin = plugin;
