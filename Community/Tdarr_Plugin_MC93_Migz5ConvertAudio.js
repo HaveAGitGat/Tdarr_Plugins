@@ -39,6 +39,19 @@ const details = () => ({
              \\nExample:\\n
              false`,
   },
+  {
+    name: 'downmix_single_track',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: '',
+  },
   ],
 });
 
@@ -77,8 +90,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let audioIdx = 0;
   let has2Channel = false;
   let has6Channel = false;
-  let has8Channel = false;
   let convert = false;
+  let is2channelAdded = false;
+  let is6channelAdded = false;
 
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -90,9 +104,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         }
         if (file.ffProbeData.streams[i].channels === 6) {
           has6Channel = true;
-        }
-        if (file.ffProbeData.streams[i].channels === 8) {
-          has8Channel = true;
         }
       }
     } catch (err) {
@@ -110,23 +121,28 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         if (inputs.downmix.toLowerCase() === 'true') {
           // Check if file has 8 channel audio but no 6 channel, if so then create extra downmix from the 8 channel.
           if (
-            has8Channel === true
+            file.ffProbeData.streams[i].channels === 8
             && has6Channel === false
-            && file.ffProbeData.streams[i].channels === 8
+            && (inputs.downmix_single_track === false
+              || (inputs.downmix_single_track === true && is6channelAdded === false))
+
           ) {
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
             response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel from 8 channel. \n';
             convert = true;
+            is6channelAdded = true;
           }
           // Check if file has 6 channel audio but no 2 channel, if so then create extra downmix from the 6 channel.
           if (
-            has6Channel === true
+            file.ffProbeData.streams[i].channels === 6
             && has2Channel === false
-            && file.ffProbeData.streams[i].channels === 6
+            && (inputs.downmix_single_track === false
+              || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
             response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel from 6 channel. \n';
             convert = true;
+            is2channelAdded = true;
           }
         }
       } catch (err) {
