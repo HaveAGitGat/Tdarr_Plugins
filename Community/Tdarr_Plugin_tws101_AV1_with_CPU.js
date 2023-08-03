@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_AV1_with_CPU',
   Stage: 'Pre-processing',
@@ -10,7 +11,7 @@ const details = () => ({
     When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
   //    Created by tws101
   //    Release version 1.11
-  Version: '1.10',
+  Version: '1.11',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
   Inputs: [
     {

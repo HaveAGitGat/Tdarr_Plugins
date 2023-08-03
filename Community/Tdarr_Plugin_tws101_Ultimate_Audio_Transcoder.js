@@ -1,4 +1,5 @@
 /* eslint-disable */
+// tdarrSkipTest
 module.exports.dependencies = ['axios@0.27.2', '@cospired/i18n-iso-languages'];
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Ultimate_Audio_Transcoder',
