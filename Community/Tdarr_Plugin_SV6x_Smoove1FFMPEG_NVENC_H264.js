@@ -68,6 +68,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
     // Leave as true. File will be re-qeued afterwards and pass through the plugin
     // filter again to make sure it meets conditions.
+    preset: '', // Initialize with an empty string
   };
 
   // Check that inputs.container has been configured, else dump out
