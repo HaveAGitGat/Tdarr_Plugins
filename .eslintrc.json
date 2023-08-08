@@ -12,7 +12,7 @@
         "SharedArrayBuffer": "readonly"
     },
     "parserOptions": {
-        "ecmaVersion": 2020
+        "ecmaVersion": 2022
     },
     "rules": {
         "global-require":0,
@@ -26,6 +26,9 @@
           {
             "code": 120
           }
-        ]
+        ],
+        "function-paren-newline": 0,
+        "function-call-argument-newline": 0,
+        "no-promise-executor-return": 0
       }
 }
