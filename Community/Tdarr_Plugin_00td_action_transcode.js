@@ -217,7 +217,7 @@ const getBestNvencDevice = async ({
 }) => {
   const { execSync } = require('child_process');
   let gpu_num = -1;
-  let gpu_util = 100000;
+  let lowest_gpu_util = 100000;
   let result_util = 0;
   let gpu_count = -1;
   let gpu_names = '';
@@ -237,6 +237,7 @@ const getBestNvencDevice = async ({
     response.infoLog += 'Error in reading nvidia-smi output! \n';
     // response.infoLog += error.message;
   }
+
   if (gpu_count > 0) {
     for (let gpui = 0; gpui < gpu_count; gpui++) {
       // Check if GPU # is in GPUs to exclude
@@ -248,9 +249,10 @@ const getBestNvencDevice = async ({
           result_util = parseInt(execSync(cmd_gpu), 10);
           if (!Number.isNaN(result_util)) { // != "No devices were found") {
             response.infoLog += `GPU ${gpui} : Utilization ${result_util}%\n`;
-            if (result_util < gpu_util) {
+
+            if (result_util < lowest_gpu_util) {
               gpu_num = gpui;
-              gpu_util = result_util;
+              lowest_gpu_util = result_util;
             }
           }
         } catch (error) {
@@ -262,6 +264,8 @@ const getBestNvencDevice = async ({
   if (gpu_num >= 0) {
     // eslint-disable-next-line no-param-reassign
     nvencDevice.inputArgs = `-hwaccel_device ${gpu_num}`;
+    // eslint-disable-next-line no-param-reassign
+    nvencDevice.outputArgs = `-gpu ${gpu_num}`;
   }
 
   return nvencDevice;
@@ -586,9 +590,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  const vEncode = `-cq:v 19 ${bitrateSettings}`;
+
   response.preset += ` ${encoderProperties.inputArgs ? encoderProperties.inputArgs : ''} ${genpts}<io>`
-    + ` -map 0 -c copy -c:v ${encoderProperties.encoder} -cq:v 19 ${bitrateSettings} `
-    + `-spatial_aq:v 1 -rc-lookahead:v 32 -max_muxing_queue_size 9999 ${extraArguments}`;
+    + ` -map 0 -c copy -c:v ${encoderProperties.encoder}`
+    + ` ${encoderProperties.outputArgs ? encoderProperties.outputArgs : ''}`
+    + ` ${vEncode}`
+    + ` -spatial_aq:v 1 -rc-lookahead:v 32 -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += `File is not in ${inputs.target_codec}. Transcoding. \n`;
   return response;
