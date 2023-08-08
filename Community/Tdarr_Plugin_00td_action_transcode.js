@@ -182,13 +182,15 @@ const hasEncoder = async ({
   ffmpegPath,
   encoder,
   inputArgs,
+  filter,
 }) => {
   const { exec } = require('child_process');
   let isEnabled = false;
   try {
     isEnabled = await new Promise((resolve) => {
       const command = `${ffmpegPath} ${inputArgs || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
-      + ` -c:v ${encoder} -f null /dev/null`;
+              + ` ${filter || ''}`
+              + ` -c:v ${encoder} -f null /dev/null`;
       exec(command, (
         error,
         // stdout,
@@ -290,12 +292,13 @@ const getEncoder = async ({
         enabled: false,
       },
       {
-        encoder: 'hevc_qsv',
-        enabled: false,
-      },
-      {
         encoder: 'hevc_vaapi',
         inputArgs: '-hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi',
+        enabled: false,
+        filter: '-vf format=nv12,hwupload',
+      },
+      {
+        encoder: 'hevc_qsv',
         enabled: false,
       },
       {
@@ -330,6 +333,7 @@ const getEncoder = async ({
         ffmpegPath: otherArguments.ffmpegPath,
         encoder: gpuEncoder.encoder,
         inputArgs: gpuEncoder.inputArgs,
+        filter: gpuEncoder.filter,
       });
     }
 
