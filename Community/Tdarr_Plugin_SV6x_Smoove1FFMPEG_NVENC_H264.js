@@ -68,6 +68,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
     // Leave as true. File will be re-qeued afterwards and pass through the plugin
     // filter again to make sure it meets conditions.
+    preset: '', // Initialize with an empty string
   };
 
   // Check that inputs.container has been configured, else dump out
@@ -228,7 +229,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film ${bitrateSettings} `
+  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 ${bitrateSettings} `
   + `-c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not h264. Transcoding. \n';
