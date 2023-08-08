@@ -10,11 +10,12 @@ const details = () => ({
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [{
     name: 'aac_stereo',
-    type: 'string',
-    defaultValue: '',
-    inputUI: {
-      type: 'text',
-    },
+    type: 'boolean',
+    defaultValue: false,
+    options: [
+      'false',
+      'true',
+    ],
     tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
                     \\nOptional.
              \\nExample:\\n
@@ -25,10 +26,14 @@ const details = () => ({
   },
   {
     name: 'downmix',
-    type: 'string',
-    defaultValue: '',
+    type: 'boolean',
+    defaultValue: false,
     inputUI: {
-      type: 'text',
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
     },
     tooltip: `Specify if downmixing should be used to create extra audio tracks.
                     \\nI.e if you have an 8ch but no 2ch or 6ch, create the missing audio tracks from the 8 ch.
@@ -120,7 +125,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Catch error here incase user left inputs.downmix empty.
       try {
         // Check if inputs.downmix is set to true.
-        if (inputs.downmix.toLowerCase() === 'true') {
+        if (inputs.downmix === true) {
           // Check if file has 8 channel audio but no 6 channel, if so then create extra downmix from the 8 channel.
           if (
             file.ffProbeData.streams[i].channels === 8
@@ -154,7 +159,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Catch error here incase user left inputs.downmix empty.
       try {
         // Check if inputs.aac_stereo is set to true.
-        if (inputs.aac_stereo === 'true') {
+        if (inputs.aac_stereo === true) {
           // Check if codec_name for stream is NOT aac AND check if channel ammount is 2.
           if (
             file.ffProbeData.streams[i].codec_name !== 'aac'
