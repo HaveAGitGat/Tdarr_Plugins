@@ -12,10 +12,13 @@ const details = () => ({
     name: 'aac_stereo',
     type: 'boolean',
     defaultValue: false,
-    options: [
-      'false',
-      'true',
-    ],
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
     tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
                     \\nOptional.
              \\nExample:\\n
