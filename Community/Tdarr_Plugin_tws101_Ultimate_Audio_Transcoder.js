@@ -10,8 +10,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
   //    Created by tws101
-  //    Release Version 1.61
-  Version: '1.61',
+  //    Release Version 1.70
+  Version: '1.70',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -284,6 +284,8 @@ class Configurator {
 
 // #endregion
 
+// #region Plugin Methods
+
 /**
  * Loops over the file streams and executes the given method on
  * each stream when the matching codec_type is found.
@@ -301,6 +303,7 @@ function loopOverStreamsOfType(file, type, method) {
   }
 }
 
+// Begin Keep Native Langauge Constants
 const tmdbApi = async (filename, api_key, axios) => {
   let fileName;
   // If filename begins with tt, it's already an imdb id
@@ -341,6 +344,9 @@ const parseArrResponse = async (body, filePath, arr) => {
   }
 };
 
+// End Keep Native Langauge Constants
+
+// Get highest channel count
 function getHighest(first, second) {
   if (first.channels > second.channels && first) {
     return first;
@@ -361,9 +367,13 @@ function buildVideoConfiguration(inputs, file, logger) {
  */
 function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
   const configuration = new Configurator(['']);
+
+  // Setup required Variables
+
   let { audioCodec } = inputs;
   const audioEncoder = audioCodec;
   const channelCount = inputs.channels;
+  const filterBitrate = inputs.filter_bitrate;
 
   if (audioEncoder == 'dca') {
     audioCodec = 'dts';
@@ -402,59 +412,22 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     }
   }
 
-  // Start loop to check the audio streams
+  // Count the audio streams and determine if each stream is a stream we want
 
-  function audioProcess(stream, id) {
+  function audioStreamCheck(stream, id) {
     try {
-      if (
-        stream.tags.language.toLowerCase() == lan1
-      ) {
-        lan1Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan2
-      ) {
-        lan2Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan3
-      ) {
-        lan3Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan4
-      ) {
-        lan4Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan5
-      ) {
-        lan5Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan6
-      ) {
-        lan6Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan7
-      ) {
-        lan7Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan8
-      ) {
-        lan8Count += 1;
-      }
-      if (
-        stream.tags.language.toLowerCase() == lan101
-      ) {
-        lan101Count += 1;
-      }
+      if (stream.tags.language.toLowerCase() == lan1) lan1Count += 1;
+      if (stream.tags.language.toLowerCase() == lan2) lan2Count += 1;
+      if (stream.tags.language.toLowerCase() == lan3) lan3Count += 1;
+      if (stream.tags.language.toLowerCase() == lan4) lan4Count += 1;
+      if (stream.tags.language.toLowerCase() == lan5) lan5Count += 1;
+      if (stream.tags.language.toLowerCase() == lan6) lan6Count += 1;
+      if (stream.tags.language.toLowerCase() == lan7) lan7Count += 1;
+      if (stream.tags.language.toLowerCase() == lan8) lan8Count += 1;
+      if (stream.tags.language.toLowerCase() == lan101) lan101Count += 1;
     } catch (err) {
       lanUndefinedCount += 1;
     }
-
     let boolBitrateCheckDisabled = false;
     if (
       (stream.codec_name === 'aac'
@@ -468,7 +441,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
       if (
         boolBitrateCheckDisabled == false
       ) {
-        if (stream.bit_rate > (inputs.filter_bitrate)) {
+        if (stream.bit_rate > (filterBitrate)) {
           return;
         }
       }
@@ -534,9 +507,8 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     }
   }
 
-  loopOverStreamsOfType(file, 'audio', audioProcess);
+  loopOverStreamsOfType(file, 'audio', audioStreamCheck);
 
-  // End Loop
   // Check to see if the file is exactly what we want
 
   if (
@@ -556,7 +528,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     return configuration;
   }
 
-  // Setup Additional Variables to prepare to trascode, streams will be sorted into good streams and possible streams.
+  // Setup Additional Constants to prepare to trascode, streams will be sorted into good streams and possible streams.
 
   function goodStreams(lang) {
     const goodStreams = file.ffProbeData.streams.filter((stream) => {
@@ -566,7 +538,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
           && stream.tags.language.toLowerCase().includes(lang)
           && stream.codec_name === audioCodec
           && stream.channels <= channelCount
-          && stream.bit_rate < (inputs.filter_bitrate)
+          && stream.bit_rate < (filterBitrate)
         ) {
           try {
             if (
@@ -640,7 +612,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
         stream.codec_type == 'audio'
         && stream.codec_name === audioCodec
         && stream.channels <= channelCount
-        && stream.bit_rate < (inputs.filter_bitrate)
+        && stream.bit_rate < (filterBitrate)
         && (!stream.tags.language
         || stream.tags.language.toLowerCase().includes('und'))
       ) {
@@ -713,7 +685,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
         stream.codec_type == 'audio'
         && stream.codec_name === audioCodec
         && stream.channels <= channelCount
-        && stream.bit_rate < (inputs.filter_bitrate)
+        && stream.bit_rate < (filterBitrate)
       ) {
         try {
           if (
@@ -776,9 +748,23 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     }
   });
 
-  // Prepare trascode arguments, good streams will be copied, possible streams will be transcoded
+  // Functions to prepare trascode arguments, good streams will be copied, possible streams will be transcoded
 
   let audioIdx = -1;
+
+  function runCopyCreate(goodstream, possiblestream, lang) {
+    let output = false;
+    if (goodstream != '') {
+      const highestChannelCount = goodstream.reduce(getHighest);
+      copyStream(highestChannelCount, lang);
+      output = true;
+    } else if (possiblestream != '') {
+      const highestChannelCount = possiblestream.reduce(getHighest);
+      createStream(highestChannelCount, lang);
+      output = true;
+    }
+    return output;
+  }
 
   function copyStream(highestChannelCount, lang) {
     audioIdx += 1;
@@ -803,19 +789,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     }
   }
 
-  function runCopyCreate(goodstream, possiblestream, lang) {
-    let output = false;
-    if (goodstream != '') {
-      const highestChannelCount = goodstream.reduce(getHighest);
-      copyStream(highestChannelCount, lang);
-      output = true;
-    } else if (possiblestream != '') {
-      const highestChannelCount = possiblestream.reduce(getHighest);
-      createStream(highestChannelCount, lang);
-      output = true;
-    }
-    return output;
-  }
+  // Execution of the functions with bool flag to confirm it produced output
 
   const boolAttemptMakeStreamlan1Triggered = runCopyCreate(lan1GoodStreams, lan1PossibleStreams, lan1);
   const boolAttemptMakeStreamlan2Triggered = runCopyCreate(lan2GoodStreams, lan2PossibleStreams, lan2);
@@ -831,6 +805,8 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     boolAttemptMakeStreamUndefinedTriggered = runCopyCreate(undefinedGoodStreams, undefinedPossibleStreams, 'Undefined');
   }
   let boolAttemptMakeStreamForeignTriggered = false;
+
+  // If none of them executed proceed with getting an undefined or foreign stream
 
   if (
     boolAttemptMakeStreamlan1Triggered === false
@@ -861,7 +837,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     }
   }
 
-  // Check configuration and return
+  // Check output configuration and return
 
   if (
     (boolAttemptMakeStreamlan1Triggered
@@ -877,12 +853,10 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
     || boolAttemptMakeStreamForeignTriggered) === true) {
     logger.AddError('We are Processing the above streams');
     return configuration;
+  } else {
+    logger.AddError('ERROR PROCESSING INVALID OUTPUT DETECTED');
+    return configuration;
   }
-
-  // Code should not hit this next message, this has been left behind intentionally
-
-  logger.AddError('YOU SHOULD NOT SEE THIS NO TRASCODE AND NO ALL GOOD MESSAGE SHOWED UP');
-  return configuration;
 }
 
 /**
@@ -893,6 +867,9 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   return configuration;
 }
 
+// #end region
+
+// #Final Region
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
   inputs = lib.loadDefaultValues(inputs, details);
@@ -910,10 +887,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Begin Abort Section
 
-  // Varibles for aborot section
+  // Varibles for abort section
   const { audioCodec } = inputs;
   const channelCount = inputs.channels;
   const numberOfLagTags = inputs.language.split(',').length;
+  const filterBitrate = inputs.filter_bitrate;
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
@@ -928,17 +906,16 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   if (
     numberOfLagTags >= 9
   ) {
-    logger.AddError('More than 8 language tags are present. Reconfigure the Plugin');
+    logger.AddError('You chose too many languages. Only 8 is allowed. Reconfigure the Plugin');
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
 
   // Bitrate settings not supported
-
   if (
-    (inputs.filter_bitrate) < (inputs.bitrate)
-    || (inputs.filter_bitrate) === 0
+    (filterBitrate) < (inputs.bitrate)
+    || (filterBitrate) === 0
     || (inputs.bitrate) == 0
   ) {
     logger.AddError('Bitrate setting are invalid. Reconfigure the Plugin');
@@ -982,7 +959,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // End Abort Section
 
-  // Keep Native Background Work
+  // Begin Keep Native Language Section
 
   let tmdbResult = null;
   let flagTmdbResult = false;
@@ -1058,6 +1035,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       logger.AddError('Couldn\'t find the IMDB id of this file. I do not know what the native language is.');
     }
   }
+
+  // End Keep Native Language Section
 
   // Build Configuration
 
