@@ -365,23 +365,17 @@ function buildVideoConfiguration(inputs, file, logger) {
 /**
  * Audio, Map and trascode what we want
  */
-function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result) {
+function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, audioCodec, channelCount, filterBitrate) {
   const configuration = new Configurator(['']);
 
   // Setup required Variables
-
-  let { audioCodec } = inputs;
   const audioEncoder = audioCodec;
-  const channelCount = inputs.channels;
-  const filterBitrate = inputs.filter_bitrate;
-
   if (audioEncoder == 'dca') {
     audioCodec = 'dts';
   }
   if (audioEncoder == 'libmp3lame') {
 	  audioCodec = 'mp3';
   }
-
   const numberOfAudioStreams = file.ffProbeData.streams.filter(
     (stream) => stream.codec_type == 'audio',
   ).length;
@@ -885,14 +879,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   const logger = new Log();
 
-  // Begin Abort Section
-
-  // Varibles for abort section
+  // Load input constants
   const { audioCodec } = inputs;
   const channelCount = inputs.channels;
-  const numberOfLagTags = inputs.language.split(',').length;
   const filterBitrate = inputs.filter_bitrate;
 
+  // Begin Abort Section
+  
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
     logger.AddError('File is not a video.');
@@ -902,7 +895,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Too Many Language Choices
-
+  const numberOfLagTags = inputs.language.split(',').length;
   if (
     numberOfLagTags >= 9
   ) {
@@ -1041,7 +1034,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Build Configuration
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
-  const audioSettings = buildAudioConfiguration(inputs, file, logger, flagTmdbResult, tmdbResult);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger, flagTmdbResult, tmdbResult, audioCodec, channelCount, filterBitrate);
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `,${videoSettings.GetOutputSettings()}`;
