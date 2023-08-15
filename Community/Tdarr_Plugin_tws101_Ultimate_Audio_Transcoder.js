@@ -10,8 +10,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
   //    Created by tws101
-  //    Release Version 1.70
-  Version: '1.70',
+  //    Release Version 1.80
+  Version: '1.80',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -354,6 +354,21 @@ function getHighest(first, second) {
   return second;
 }
 
+// Check to make sure the stream has no commentary
+function noCommentary(stream) {
+  try {
+    if (
+      stream.tags.title.toLowerCase().includes('commentary')
+    || stream.tags.title.toLowerCase().includes('description')
+    || stream.tags.title.toLowerCase().includes('sdh')
+    ) {
+      return false;
+    } else return true;
+  } catch (err) {
+    return true;
+  }
+}
+
 /**
  * Video, Map all Video
  */
@@ -392,6 +407,25 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
   let lan8Count = 0;
   let lan101Count = 0;
   let lanUndefinedCount = 0;
+  function hasLanguageTag(stream) {
+    try {
+      if (
+        stream.tags.language.toLowerCase().includes(lan1)
+        || stream.tags.language.toLowerCase().includes(lan2)
+        || stream.tags.language.toLowerCase().includes(lan3)
+        || stream.tags.language.toLowerCase().includes(lan4)
+        || stream.tags.language.toLowerCase().includes(lan5)
+        || stream.tags.language.toLowerCase().includes(lan6)
+        || stream.tags.language.toLowerCase().includes(lan7)
+        || stream.tags.language.toLowerCase().includes(lan8)
+        || stream.tags.language.toLowerCase().includes(lan101)
+      ) {
+        return true;
+      } else return false;
+    } catch (err) {
+      return false;
+    }
+  }
 
   if (flagTmdbResult === true) {
     const languages = require('@cospired/i18n-iso-languages');
@@ -439,66 +473,38 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
           return;
         }
       }
-      try {
-        if (
-          stream.tags.title.toLowerCase().includes('commentary')
-          || stream.tags.title.toLowerCase().includes('description')
-          || stream.tags.title.toLowerCase().includes('sdh')
-        ) {
-          return;
-        }
-      } catch (err) {}
-      if (
-        stream.codec_name === audioCodec
-        && stream.channels <= channelCount
-        && (stream.tags.language.toLowerCase().includes(lan1)
-        || stream.tags.language.toLowerCase().includes(lan2)
-        || stream.tags.language.toLowerCase().includes(lan3)
-        || stream.tags.language.toLowerCase().includes(lan4)
-        || stream.tags.language.toLowerCase().includes(lan5)
-        || stream.tags.language.toLowerCase().includes(lan6)
-        || stream.tags.language.toLowerCase().includes(lan7)
-        || stream.tags.language.toLowerCase().includes(lan8)
-        || stream.tags.language.toLowerCase().includes(lan101))
-      ) {
-        logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, ${stream.tags.language}.`);
-        numberOfGoodAudioStreams += 1;
-        return;
-      }
-      if (
-        stream.codec_name === audioCodec
-        && stream.channels <= channelCount
-        && numberOfAudioStreams === 1
-      ) {
-        logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, Other Language, it is the only track.`);
-        numberOfGoodAudioStreams += 1;
-        return;
-      }
+    } catch (err) {}
+    if (noCommentary(stream) === false) {
       return;
-    } catch (err) {
-      try {
-        if (
-          inputs.keepundefined === true
-          && stream.codec_name === audioCodec
-          && stream.channels <= channelCount
-        ) {
-          logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, Other Language.`);
-          numberOfGoodAudioStreams += 1;
-          return;
-        }
-        if (
-          stream.codec_name === audioCodec
-          && stream.channels <= channelCount
-          && numberOfAudioStreams === 1
-        ) {
-          logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, Other Language, it is the only track.`);
-          numberOfGoodAudioStreams += 1;
-          return;
-        }
-      } catch (err) {
-        logger.AddError(`Error reading Stream ${id} `);
-      }
     }
+    if (
+      stream.codec_name === audioCodec
+      && stream.channels <= channelCount
+      && hasLanguageTag(stream)
+    ) {
+      logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, ${stream.tags.language}.`);
+      numberOfGoodAudioStreams += 1;
+      return;
+    }
+    if (
+      stream.codec_name === audioCodec
+      && stream.channels <= channelCount
+      && numberOfAudioStreams === 1
+    ) {
+      logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, Other Language, it is the only track.`);
+      numberOfGoodAudioStreams += 1;
+      return;
+    }
+    if (
+      inputs.keepundefined === true
+      && stream.codec_name === audioCodec
+      && stream.channels <= channelCount
+    ) {
+      logger.AddSuccess(`Good, Stream ${id} is ${stream.codec_name}, ${stream.channels} channels, Other Language.`);
+      numberOfGoodAudioStreams += 1;
+      return;
+    }
+    return;
   }
 
   loopOverStreamsOfType(file, 'audio', audioStreamCheck);
@@ -533,21 +539,10 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
           && stream.codec_name === audioCodec
           && stream.channels <= channelCount
           && stream.bit_rate < (filterBitrate)
+          && noCommentary(stream)
         ) {
-          try {
-            if (
-              stream.tags.title.toLowerCase().includes('commentary')
-            || stream.tags.title.toLowerCase().includes('description')
-            || stream.tags.title.toLowerCase().includes('sdh')
-            ) {
-              return false;
-            }
-            return true;
-          } catch (err) {
-            return true;
-          }
-        }
-        return false;
+          return true;
+        } else return false;  
       } catch (err) {}
       return false;
     });
@@ -560,21 +555,10 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
         if (
           stream.codec_type == 'audio'
           && stream.tags.language.toLowerCase().includes(lang)
+          && noCommentary(stream)
         ) {
-          try {
-            if (
-              stream.tags.title.toLowerCase().includes('commentary')
-            || stream.tags.title.toLowerCase().includes('description')
-            || stream.tags.title.toLowerCase().includes('sdh')
-            ) {
-              return false;
-            }
-            return true;
-          } catch (err) {
-            return true;
-          }
-        }
-        return false;
+          return true;
+        } else return false;
       } catch (err) {}
       return false;
     });
@@ -607,23 +591,12 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
         && stream.codec_name === audioCodec
         && stream.channels <= channelCount
         && stream.bit_rate < (filterBitrate)
+        && noCommentary(stream)
         && (!stream.tags.language
         || stream.tags.language.toLowerCase().includes('und'))
       ) {
-        try {
-          if (
-            stream.tags.title.toLowerCase().includes('commentary')
-          || stream.tags.title.toLowerCase().includes('description')
-          || stream.tags.title.toLowerCase().includes('sdh')
-          ) {
-            return false;
-          }
-          return true;
-        } catch (err) {
-          return true;
-        }
-      }
-      return false;
+        return true;
+      } else return false;
     } catch (err) {
       return false;
     }
@@ -633,23 +606,12 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
     try {
       if (
         stream.codec_type == 'audio'
+        && noCommentary(stream)
         && (!stream.tags.language
         || stream.tags.language.toLowerCase().includes('und'))
       ) {
-        try {
-          if (
-            stream.tags.title.toLowerCase().includes('commentary')
-          || stream.tags.title.toLowerCase().includes('description')
-          || stream.tags.title.toLowerCase().includes('sdh')
-          ) {
-            return false;
-          }
-          return true;
-        } catch (err) {
-          return true;
-        }
-      }
-      return false;
+        return true;
+      } else return false;
     } catch (err) {
       return false;
     }
@@ -661,15 +623,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
         stream.codec_type == 'audio'
         && (!stream.tags.language
         || stream.tags.language.toLowerCase().includes('und')
-        || stream.tags.language.toLowerCase().includes(lan1)
-        || stream.tags.language.toLowerCase().includes(lan2)
-        || stream.tags.language.toLowerCase().includes(lan3)
-        || stream.tags.language.toLowerCase().includes(lan4)
-        || stream.tags.language.toLowerCase().includes(lan5)
-        || stream.tags.language.toLowerCase().includes(lan6)
-        || stream.tags.language.toLowerCase().includes(lan7)
-        || stream.tags.language.toLowerCase().includes(lan8)
-        || stream.tags.language.toLowerCase().includes(lan101))
+        || hasLanguageTag(stream))
       ) {
         return false;
       }
@@ -680,21 +634,10 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
         && stream.codec_name === audioCodec
         && stream.channels <= channelCount
         && stream.bit_rate < (filterBitrate)
+        && noCommentary(stream)
       ) {
-        try {
-          if (
-            stream.tags.title.toLowerCase().includes('commentary')
-          || stream.tags.title.toLowerCase().includes('description')
-          || stream.tags.title.toLowerCase().includes('sdh')
-          ) {
-            return false;
-          }
-          return true;
-        } catch (err) {
-          return true;
-        }
-      }
-      return false;
+        return true;
+      } else return false;
     } catch (err) {
       return false;
     }
@@ -706,15 +649,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
         stream.codec_type == 'audio'
         && (!stream.tags.language
         || stream.tags.language.toLowerCase().includes('und')
-        || stream.tags.language.toLowerCase().includes(lan1)
-        || stream.tags.language.toLowerCase().includes(lan2)
-        || stream.tags.language.toLowerCase().includes(lan3)
-        || stream.tags.language.toLowerCase().includes(lan4)
-        || stream.tags.language.toLowerCase().includes(lan5)
-        || stream.tags.language.toLowerCase().includes(lan6)
-        || stream.tags.language.toLowerCase().includes(lan7)
-        || stream.tags.language.toLowerCase().includes(lan8)
-        || stream.tags.language.toLowerCase().includes(lan101))
+        || hasLanguageTag(stream))
       ) {
         return false;
       }
@@ -722,21 +657,10 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
     try {
       if (
         stream.codec_type == 'audio'
+        && noCommentary(stream)
       ) {
-        try {
-          if (
-            stream.tags.title.toLowerCase().includes('commentary')
-          || stream.tags.title.toLowerCase().includes('description')
-          || stream.tags.title.toLowerCase().includes('sdh')
-          ) {
-            return false;
-          }
-          return true;
-        } catch (err) {
-          return true;
-        }
-      }
-      return false;
+        return true;
+      } else return false;
     } catch (err) {
       return false;
     }
