@@ -357,75 +357,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // MKVPROPEDIT - Refresh video stats
-  const intStatsDays = 7; // Use 1 week threshold for new stats
   let statsUptoDate = false;
-  const currentFileName = file._id;
-  let statsError = false;
-  let metadataEncode = '';
-
-  // Only process MKV files
-  if (file.container === 'mkv') {
-    let datStats = Date.parse(new Date(70, 1).toISOString()); // Placeholder date
-    metadataEncode = `-map_metadata:g -1 -metadata JBDONEDATE=${datStats}`;
-    if (file.mediaInfo.track[0].extra !== undefined && file.mediaInfo.track[0].extra.JBDONEDATE !== undefined) {
-      datStats = Date.parse(file.mediaInfo.track[0].extra.JBDONEDATE);
-    } else {
-      try {
-        if (
-          file.mediaInfo.track[0].extra !== undefined
-          && file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng'] !== undefined
-        ) {
-          // Set stats date to match info inside file
-          datStats = Date.parse(`${file.ffProbeData.streams[0].tags['_STATISTICS_WRITING_DATE_UTC-eng']} GMT`);
-        }
-      } catch (err) {
-        // Catch error - Ignore & carry on - If check can bomb out if the tag doesn't exist...
-      }
-    }
-
-    // Threshold for stats date
-    const statsThres = Date.parse(new Date(new Date().setDate(new Date().getDate() - intStatsDays)).toISOString());
-
-    // Strings for easy to read dates in info log
-    let statsThresString = new Date(statsThres);
-    statsThresString = statsThresString.toUTCString();
-    let datStatsString = new Date(datStats);
-    datStatsString = datStatsString.toUTCString();
-    response.infoLog += `Checking file stats - If stats are older than ${intStatsDays} days we'll grab new stats.\n
-    Stats threshold: ${statsThresString}\n
-    Current stats date: ${datStatsString}\n`;
-
-    // Are the stats out of date?
-    if (datStats >= statsThres) {
-      statsUptoDate = true;
-      response.infoLog += '☑ File stats are upto date! - Continuing...\n';
-    } else {
-      response.infoLog += '☒ File stats are out of date! - Will attempt to use mkvpropedit to refresh stats\n';
-      try {
-        if (otherArguments.mkvpropeditPath !== '') { // Try to use mkvpropedit path if it is set
-          proc.execSync(`"${otherArguments.mkvpropeditPath}" --add-track-statistics-tags "${currentFileName}"`);
-        } else { // Otherwise just use standard mkvpropedit cmd
-          proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
-        }
-      } catch (err) {
-        response.infoLog += '☒ Error updating file stats - Possible mkvpropedit failure or file issue - '
-          + ' Ensure mkvpropedit is set correctly in the node settings & check the filename for unusual characters.\n'
-          + ' Continuing but file stats will likely be inaccurate...\n';
-        statsError = true;
-      }
-      if (statsError !== true) {
-        // File now updated with new stats
-        response.infoLog += 'Remuxing file to write in updated file stats! \n';
-        response.preset += `-fflags +genpts <io> -map 0 -c copy -max_muxing_queue_size 9999 -map_metadata:g -1 
-        -metadata JBDONEDATE=${new Date().toISOString()}`;
-        response.processFile = true;
-        return response;
-      }
-    }
-  } else {
-    response.infoLog += 'Input file is not MKV so cannot use mkvpropedit to get new file stats. '
-      + 'Continuing but file stats will likely be inaccurate...\n';
-  }
 
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
@@ -439,10 +371,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (videoBR <= 0) {
         if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
           videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
+          statsUptoDate = true;
         } else {
           try {
             if (Number(file.ffProbeData.streams[i].tags.BPS['-eng']) > 0) {
               videoBR = file.ffProbeData.streams[i].tags.BPS['-eng'] / 1000;
+              statsUptoDate = true;
             }
           } catch (err) {
             // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
@@ -451,7 +385,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
     }
   }
-
+  
   // Check if duration info is filled, if so convert time format to minutes.
   // If not filled then get duration of video stream and do the same.
   if (typeof file.meta.Duration !== 'undefined') {
@@ -811,7 +745,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Normal behavior
       response.preset += ` ${bitrateSettings} `
         + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} `
-        + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments} ${metadataEncode}`;
+        + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments} `;
   }
 
   response.processFile = true;
