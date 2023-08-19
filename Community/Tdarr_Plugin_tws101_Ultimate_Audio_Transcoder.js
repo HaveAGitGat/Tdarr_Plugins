@@ -10,8 +10,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
   //    Created by tws101
-  //    Release Version 1.80
-  Version: '1.80',
+  //    Release Version 1.90
+  Version: '1.90',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -287,23 +287,65 @@ class Configurator {
 // #region Plugin Methods
 
 /**
- * Loops over the file streams and executes the given method on
- * each stream when the matching codec_type is found.
- * @param {Object} file the file.
- * @param {string} type the typeo of stream.
- * @param {function} method the method to call.
+ * Abort Section 
  */
-function loopOverStreamsOfType(file, type, method) {
-  let id = 0;
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
-      method(file.ffProbeData.streams[i], id);
-      id++;
-    }
+function checkAbort(inputs, file, logger, audioCodec, channelCount, filterBitrate, numberOfAudioStreams) {
+  if (file.fileMedium !== 'video') {
+    logger.AddError('File is not a video.');
+    return true;
   }
+  // Number of audio streams is zero
+  if (numberOfAudioStreams === 0) {
+    logger.AddError('No audio streams detected.');
+    return true;
+  }
+  // Too Many Language Choices
+  const numberOfLagTags = inputs.language.split(',').length;
+  if (
+    numberOfLagTags >= 9
+  ) {
+    logger.AddError('You chose too many languages. Only 8 is allowed. Reconfigure the Plugin');
+    return true;
+  }
+  // Bitrate settings not supported
+  if (
+    (filterBitrate) < (inputs.bitrate)
+    || (filterBitrate) === 0
+    || (inputs.bitrate) == 0
+  ) {
+    logger.AddError('Bitrate setting are invalid. Reconfigure the Plugin');
+    return true;
+  }
+  // channel count 1 not supported
+  if (
+    (['truehd'].includes(audioCodec))
+    && channelCount === 1
+  ) {
+    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    return true;
+  }
+  // channel count 6 not supported
+  if (
+    (['dca', 'libmp3lame'].includes(audioCodec))
+    && channelCount === 6
+  ) {
+    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    return true;
+  }
+  // channel count 8 not supported
+  if (
+    (['dca', 'libmp3lame', 'truehd', 'ac3', 'eac3'].includes(audioCodec))
+    && channelCount === 8
+  ) {
+    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
+    return true;
+  }
+  return false;
 }
 
-// Begin Keep Native Langauge Constants
+/**
+ * Load Keep Native Language Constants 
+ */
 const tmdbApi = async (filename, api_key, axios) => {
   let fileName;
   // If filename begins with tt, it's already an imdb id
@@ -316,7 +358,6 @@ const tmdbApi = async (filename, api_key, axios) => {
       if (fileMatch) fileName = fileMatch[1];
     }
   }
-
   if (fileName) {
     const result = await axios
       .get(
@@ -334,7 +375,6 @@ const tmdbApi = async (filename, api_key, axios) => {
   }
   return null;
 };
-
 const parseArrResponse = async (body, filePath, arr) => {
   switch (arr) {
     case 'radarr':
@@ -344,9 +384,99 @@ const parseArrResponse = async (body, filePath, arr) => {
   }
 };
 
-// End Keep Native Langauge Constants
+/**
+ * Fetch the TMDB result
+ */
+const tmdbFetchResult = async (inputs, file, logger) => {
+  let tmdbResult = null;
+  if (inputs.keep_native_language === true) {
+    const axios = require('axios').default;
+    let prio = ['radarr', 'sonarr'];
+    let radarrResult = null;
+    let sonarrResult = null;
+    if (inputs.priority) {
+      if (inputs.priority === 'sonarr') {
+        prio = ['sonarr', 'radarr'];
+      }
+    }
+    const fileNameEncoded = encodeURIComponent(file.meta.FileName);
+    for (const arr of prio) {
+      let imdbId;
+      switch (arr) {
+        case 'radarr':
+          if (tmdbResult) break;
+          if (inputs.radarr_api_key) {
+            radarrResult = await parseArrResponse(
+              await axios
+                .get(
+                  `http://${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
+                )
+                .then((resp) => resp.data),
+              fileNameEncoded,
+              'radarr',
+            );
+            if (radarrResult) {
+              imdbId = radarrResult.imdbId;
+              logger.AddSuccess(`Grabbed ID (${imdbId}) from Radarr `);
+              const languages = require('@cospired/i18n-iso-languages');
+              tmdbResult = { original_language: languages.getAlpha2Code(radarrResult.originalLanguage.name, 'en') };
+            } else {
+              logger.AddError('Couldn\'t grab ID from Radarr ');
+              imdbId = fileNameEncoded;
+            }
+          }
+          break;
+        case 'sonarr':
+          if (tmdbResult) break;
+          if (inputs.sonarr_api_key) {
+            sonarrResult = await parseArrResponse(
+              await axios.get(
+                `http://${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
+              )
+                .then((resp) => resp.data),
+              file.meta.Directory,
+              'sonarr',
+            );
+            if (sonarrResult) {
+              imdbId = sonarrResult.imdbId;
+              logger.AddSuccess(`Grabbed ID (${imdbId}) from Sonarr `);
+            } else {
+              logger.AddError('Couldn\'t grab ID from Sonarr ');
+              imdbId = fileNameEncoded;
+            }
+            tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
+          }
+      }
+    }
+    if (tmdbResult) {
+      return tmdbResult;
+    } else {
+      logger.AddError('Couldn\'t find the IMDB id of this file. I do not know what the native language is.');
+      return null;
+    }
+  }
+};
 
-// Get highest channel count
+/**
+ * Loops over the file streams and executes the given method on
+ * each stream when the matching codec_type is found.
+ * @param {Object} file the file.
+ * @param {string} type the typeo of stream.
+ * @param {function} method the method to call.
+ */
+function loopOverStreamsOfType(file, type, method) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
+      method(file.ffProbeData.streams[i], id);
+      id++;
+    }
+  }
+}
+
+/**
+ * Get highest channel count
+ */
 function getHighest(first, second) {
   if (first.channels > second.channels && first) {
     return first;
@@ -354,7 +484,9 @@ function getHighest(first, second) {
   return second;
 }
 
-// Check to make sure the stream has no commentary
+/**
+ * Check to make sure the stream has no commentary
+ */
 function noCommentary(stream) {
   try {
     if (
@@ -380,7 +512,7 @@ function buildVideoConfiguration(inputs, file, logger) {
 /**
  * Audio, Map and trascode what we want
  */
-function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, audioCodec, channelCount, filterBitrate) {
+function buildAudioConfiguration(inputs, file, logger, result, audioCodec, channelCount, filterBitrate, numberOfAudioStreams) {
   const configuration = new Configurator(['']);
 
   // Setup required Variables
@@ -391,9 +523,6 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
   if (audioEncoder == 'libmp3lame') {
 	  audioCodec = 'mp3';
   }
-  const numberOfAudioStreams = file.ffProbeData.streams.filter(
-    (stream) => stream.codec_type == 'audio',
-  ).length;
   let numberOfGoodAudioStreams = 0;
   const [lan1, lan2, lan3, lan4, lan5, lan6, lan7, lan8] = inputs.language.split(',');
   let lan101;
@@ -427,7 +556,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
     }
   }
 
-  if (flagTmdbResult === true) {
+  if (result) {
     const languages = require('@cospired/i18n-iso-languages');
     const langsTemp = result.original_language === 'cn' ? 'zh' : result.original_language;
     logger.AddSuccess(`Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(
@@ -620,10 +749,9 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
   const foreignGoodStreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
-        stream.codec_type == 'audio'
-        && (!stream.tags.language
+        !stream.tags.language
         || stream.tags.language.toLowerCase().includes('und')
-        || hasLanguageTag(stream))
+        || hasLanguageTag(stream)
       ) {
         return false;
       }
@@ -646,10 +774,9 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
   const foreignPossibleStreams = file.ffProbeData.streams.filter((stream) => {
     try {
       if (
-        stream.codec_type == 'audio'
-        && (!stream.tags.language
+        !stream.tags.language
         || stream.tags.language.toLowerCase().includes('und')
-        || hasLanguageTag(stream))
+        || hasLanguageTag(stream)
       ) {
         return false;
       }
@@ -707,7 +834,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
     }
   }
 
-  // Execution of the functions with bool flag to confirm it produced output
+  // Execution of the above functions with true or false returns below
 
   const boolAttemptMakeStreamlan1Triggered = runCopyCreate(lan1GoodStreams, lan1PossibleStreams, lan1);
   const boolAttemptMakeStreamlan2Triggered = runCopyCreate(lan2GoodStreams, lan2PossibleStreams, lan2);
@@ -724,7 +851,7 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
   }
   let boolAttemptMakeStreamForeignTriggered = false;
 
-  // If none of them executed proceed with getting an undefined or foreign stream
+  // Check if all were false, and if so attempt to make undefined or foreign audio stream
 
   if (
     boolAttemptMakeStreamlan1Triggered === false
@@ -755,10 +882,10 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
     }
   }
 
-  // Check output configuration and return
+  // Check output configuration and return at this point the else result below should not happen, UNLESS all audio streams are commentary.
 
   if (
-    (boolAttemptMakeStreamlan1Triggered
+    boolAttemptMakeStreamlan1Triggered
     || boolAttemptMakeStreamlan2Triggered
     || boolAttemptMakeStreamlan3Triggered
     || boolAttemptMakeStreamlan4Triggered
@@ -768,11 +895,11 @@ function buildAudioConfiguration(inputs, file, logger, flagTmdbResult, result, a
     || boolAttemptMakeStreamlan8Triggered
     || boolAttemptMakeStreamlan101Triggered
     || boolAttemptMakeStreamUndefinedTriggered
-    || boolAttemptMakeStreamForeignTriggered) === true) {
+    || boolAttemptMakeStreamForeignTriggered) {
     logger.AddError('We are Processing the above streams');
     return configuration;
   } else {
-    logger.AddError('ERROR PROCESSING INVALID OUTPUT DETECTED');
+    logger.AddError('ERROR PROCESSING INVALID OUTPUT DETECTED, were all audio streams marked commentary?');
     return configuration;
   }
 }
@@ -803,162 +930,24 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   const logger = new Log();
 
-  // Load input constants
   const { audioCodec } = inputs;
   const channelCount = inputs.channels;
   const filterBitrate = inputs.filter_bitrate;
+  const numberOfAudioStreams = file.ffProbeData.streams.filter(
+    (stream) => stream.codec_type == 'audio',
+  ).length;
 
-  // Begin Abort Section
-  
-  // Check if file is a video. If it isn't then exit plugin.
-  if (file.fileMedium !== 'video') {
-    logger.AddError('File is not a video.');
+  const abort = checkAbort(inputs, file, logger, audioCodec, channelCount, filterBitrate, numberOfAudioStreams);
+  if (abort) {
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
 
-  // Too Many Language Choices
-  const numberOfLagTags = inputs.language.split(',').length;
-  if (
-    numberOfLagTags >= 9
-  ) {
-    logger.AddError('You chose too many languages. Only 8 is allowed. Reconfigure the Plugin');
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // Bitrate settings not supported
-  if (
-    (filterBitrate) < (inputs.bitrate)
-    || (filterBitrate) === 0
-    || (inputs.bitrate) == 0
-  ) {
-    logger.AddError('Bitrate setting are invalid. Reconfigure the Plugin');
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // channel count 1 not supported
-  if (
-    (['truehd'].includes(audioCodec))
-    && channelCount === 1
-  ) {
-    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // channel count 6 not supported
-  if (
-    (['dca', 'libmp3lame'].includes(audioCodec))
-    && channelCount === 6
-  ) {
-    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // channel count 8 not supported
-  if (
-    (['dca', 'libmp3lame', 'truehd', 'ac3', 'eac3'].includes(audioCodec))
-    && channelCount === 8
-  ) {
-    logger.AddError(`Selected ${audioCodec} does not support the channel count of ${channelCount}. Reconfigure the Plugin`);
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // End Abort Section
-
-  // Begin Keep Native Language Section
-
-  let tmdbResult = null;
-  let flagTmdbResult = false;
-
-  if (inputs.keep_native_language === true) {
-    const axios = require('axios').default;
-    let prio = ['radarr', 'sonarr'];
-    let radarrResult = null;
-    let sonarrResult = null;
-
-    if (inputs.priority) {
-      if (inputs.priority === 'sonarr') {
-        prio = ['sonarr', 'radarr'];
-      }
-    }
-
-    const fileNameEncoded = encodeURIComponent(file.meta.FileName);
-
-    for (const arr of prio) {
-      let imdbId;
-      switch (arr) {
-        case 'radarr':
-          if (tmdbResult) break;
-          if (inputs.radarr_api_key) {
-            radarrResult = await parseArrResponse(
-              await axios
-                .get(
-                  `http://${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
-                )
-                .then((resp) => resp.data),
-              fileNameEncoded,
-              'radarr',
-            );
-
-            if (radarrResult) {
-              imdbId = radarrResult.imdbId;
-              logger.AddSuccess(`Grabbed ID (${imdbId}) from Radarr `);
-              const languages = require('@cospired/i18n-iso-languages');
-              tmdbResult = { original_language: languages.getAlpha2Code(radarrResult.originalLanguage.name, 'en') };
-            } else {
-              logger.AddError('Couldn\'t grab ID from Radarr ');
-              imdbId = fileNameEncoded;
-            }
-          }
-          break;
-        case 'sonarr':
-          if (tmdbResult) break;
-          if (inputs.sonarr_api_key) {
-            sonarrResult = await parseArrResponse(
-              await axios.get(
-                `http://${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
-              )
-                .then((resp) => resp.data),
-              file.meta.Directory,
-              'sonarr',
-            );
-
-            if (sonarrResult) {
-              imdbId = sonarrResult.imdbId;
-              logger.AddSuccess(`Grabbed ID (${imdbId}) from Sonarr `);
-            } else {
-              logger.AddError('Couldn\'t grab ID from Sonarr ');
-              imdbId = fileNameEncoded;
-            }
-            tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
-          }
-      }
-    }
-
-    if (tmdbResult) {
-      flagTmdbResult = true;
-    } else {
-      logger.AddError('Couldn\'t find the IMDB id of this file. I do not know what the native language is.');
-    }
-  }
-
-  // End Keep Native Language Section
-
-  // Build Configuration
+  const tmdbResult = await tmdbFetchResult(inputs, file, logger);
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
-  const audioSettings = buildAudioConfiguration(inputs, file, logger, flagTmdbResult, tmdbResult, audioCodec, channelCount, filterBitrate);
+  const audioSettings = buildAudioConfiguration(inputs, file, logger, tmdbResult, audioCodec, channelCount, filterBitrate, numberOfAudioStreams);;
   const subtitleSettings = buildSubtitleConfiguration(inputs, file, logger);
 
   response.preset = `,${videoSettings.GetOutputSettings()}`;

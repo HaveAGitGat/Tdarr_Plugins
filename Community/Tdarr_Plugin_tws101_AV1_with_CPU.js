@@ -10,8 +10,8 @@ const details = () => ({
     If reconvert AV1 is on and the entire file over the bitrate filter, the av1 streams will be re-encoded
     When setting the re-encode bitrate filter be aware that it is a file total bitrate, so leave overhead for audio`,
   //    Created by tws101
-  //    Release version 1.11
-  Version: '1.11',
+  //    Release version 1.20
+  Version: '1.20',
   Tags: 'pre-processing,ffmpeg,video only,configurable,av1',
   Inputs: [
     {
@@ -197,6 +197,20 @@ class Configurator {
 
 // #region Plugin Methods
 
+/**
+ * Abort Section 
+ */
+function checkAbort(inputs, file, logger) {
+  if (file.fileMedium !== 'video') {
+    logger.AddError('File is not a video.');
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Calculate Bitrate 
+ */
 function calculateBitrate(file) {
   let bitrateProbe = file.ffProbeData.streams[0].bit_rate;
   if (isNaN(bitrateProbe)) {
@@ -400,16 +414,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const logger = new Log();
 
-  // Begin Abort Section
-
-  // Check if file is a video. If it isn't then exit plugin.
-  if (file.fileMedium !== 'video') {
-    logger.AddError('File is not a video.');
+  const abort = checkAbort(inputs, file, logger);
+  if (abort) {
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
-  // End Abort Section
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const audioSettings = buildAudioConfiguration(inputs, file, logger);

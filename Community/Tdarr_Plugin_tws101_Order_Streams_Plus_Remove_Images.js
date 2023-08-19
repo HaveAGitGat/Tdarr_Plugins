@@ -9,8 +9,8 @@ const details = () => ({
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true.
   Option to remove invalid data streams that ffmpeg does not suppport `,
   //    Created by tws101
-  //    Release Version 1.31
-  Version: '1.31',
+  //    Release Version 1.40
+  Version: '1.40',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -127,6 +127,102 @@ class Configurator {
 // #endregion
 
 // #region Plugin Methods
+
+/**
+ * Abort Section 
+ */
+function checkAbort(inputs, file, logger) {
+  if (file.fileMedium !== 'video') {
+    logger.AddError('File is not a video.');
+    return true;
+  }
+  let audioIdx = 0;
+  let audio2Idx = 0;
+  let audio6Idx = 0;
+  let audio8Idx = 0;
+  let subtitleIdx = 0;
+  let allGood = true;
+
+  if (inputs.remove_images === true) {
+    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
+        if (
+          file.ffProbeData.streams[i].codec_name === 'mjpeg'
+          || file.ffProbeData.streams[i].codec_name === 'png'
+          || file.ffProbeData.streams[i].codec_name === 'gif'
+        ) {
+          allGood = false;
+          logger.AddError('Image format detected removing');
+        }
+      }
+    }
+  }
+
+  if (inputs.remove_invalid_data === true) {
+    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'data') {
+        if (!file.ffProbeData.streams[i].codec_name) {
+          allGood = false;
+          logger.AddError('Invalid data stream detected removing');
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+    try {
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
+        if (audioIdx !== 0 || subtitleIdx !== 0) {
+          allGood = false;
+          logger.AddError('Video not first.');
+        }
+      }
+
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
+        if (subtitleIdx !== 0) {
+          allGood = false;
+          logger.AddError('Audio not second.');
+        }
+        audioIdx += 1;
+
+        if (file.ffProbeData.streams[i].channels === 1) {
+          if (audio2Idx !== 0 || audio6Idx !== 0 || audio8Idx !== 0) {
+            allGood = false;
+            logger.AddError('Audio 1ch not first.');
+          }
+        }
+        if (file.ffProbeData.streams[i].channels === 2) {
+          if (audio6Idx !== 0 || audio8Idx !== 0) {
+            allGood = false;
+            logger.AddError('Audio 2ch not second.');
+          }
+          audio2Idx += 1;
+        }
+        if (file.ffProbeData.streams[i].channels === 6) {
+          if (audio8Idx !== 0) {
+            allGood = false;
+            logger.AddError('Audio 6ch not third.');
+          }
+          audio6Idx += 1;
+        }
+
+        if (file.ffProbeData.streams[i].channels === 8) {
+          audio8Idx += 1;
+        }
+      }
+
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle') {
+        subtitleIdx += 1;
+      }
+    } catch (err) {}
+  }
+
+  if (allGood) {
+    logger.AddSuccess('Everything is in order.');
+    return true;
+  }
+  return false;
+}
 
 /**
  * Loops over the file streams and executes the given method on
@@ -246,106 +342,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const logger = new Log();
 
-  // Begin Abort Section
-
-  // Check if file is a video. If it isn't then exit plugin.
-  if (file.fileMedium !== 'video') {
-    logger.AddError('File is not a video.');
+  const abort = checkAbort(inputs, file, logger);
+  if (abort) {
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
-
-  // Check all good
-  let audioIdx = 0;
-  let audio2Idx = 0;
-  let audio6Idx = 0;
-  let audio8Idx = 0;
-  let subtitleIdx = 0;
-  let allGood = true;
-
-  if (inputs.remove_images === true) {
-    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
-        if (
-          file.ffProbeData.streams[i].codec_name === 'mjpeg'
-          || file.ffProbeData.streams[i].codec_name === 'png'
-          || file.ffProbeData.streams[i].codec_name === 'gif'
-        ) {
-          allGood = false;
-          logger.AddError('Image format detected removing');
-        }
-      }
-    }
-  }
-
-  if (inputs.remove_invalid_data === true) {
-    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'data') {
-        if (!file.ffProbeData.streams[i].codec_name) {
-          allGood = false;
-          logger.AddError('Invalid data stream detected removing');
-        }
-      }
-    }
-  }
-
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    try {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
-        if (audioIdx !== 0 || subtitleIdx !== 0) {
-          allGood = false;
-          logger.AddError('Video not first.');
-        }
-      }
-
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
-        if (subtitleIdx !== 0) {
-          allGood = false;
-          logger.AddError('Audio not second.');
-        }
-        audioIdx += 1;
-
-        if (file.ffProbeData.streams[i].channels === 1) {
-          if (audio2Idx !== 0 || audio6Idx !== 0 || audio8Idx !== 0) {
-            allGood = false;
-            logger.AddError('Audio 1ch not first.');
-          }
-        }
-        if (file.ffProbeData.streams[i].channels === 2) {
-          if (audio6Idx !== 0 || audio8Idx !== 0) {
-            allGood = false;
-            logger.AddError('Audio 2ch not second.');
-          }
-          audio2Idx += 1;
-        }
-        if (file.ffProbeData.streams[i].channels === 6) {
-          if (audio8Idx !== 0) {
-            allGood = false;
-            logger.AddError('Audio 6ch not third.');
-          }
-          audio6Idx += 1;
-        }
-
-        if (file.ffProbeData.streams[i].channels === 8) {
-          audio8Idx += 1;
-        }
-      }
-
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle') {
-        subtitleIdx += 1;
-      }
-    } catch (err) {}
-  }
-
-  if (allGood === true) {
-    logger.AddSuccess('Everything is in order.');
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // End Abort Section
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const audioSettings = buildAudioConfiguration(inputs, file, logger);

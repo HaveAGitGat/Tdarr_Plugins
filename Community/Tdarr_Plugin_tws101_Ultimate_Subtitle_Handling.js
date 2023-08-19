@@ -10,8 +10,8 @@ const details = () => ({
   S_TEXT/WEBVTT subtitles will be removed as ffmpeg does not handle them properly.`,
   //    Created by tws101
   //    Inspired by tehNiemer who was inspired by drpeppershaker
-  //    Release Version 1.31
-  Version: '1.31',
+  //    Release Version 1.40
+  Version: '1.40',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -223,6 +223,36 @@ class Configurator {
 // #region Plugin Methods
 
 /**
+ * Abort Section 
+ */
+function checkAbort(inputs, file, logger) {
+  if (file.fileMedium !== 'video') {
+    logger.AddError('File is not a video.');
+    return true;
+  }
+  const boolRemoveAll = inputs.remove_all;
+  const boolKeepAll = inputs.keep_all;
+  let hasSubs = false;
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
+    if (strStreamType === 'text' || strStreamType === 'subtitle') {
+      hasSubs = true;
+    }
+  }
+  if (hasSubs === true) {
+    logger.AddSuccess('Found subs!');
+  } else {
+    logger.AddSuccess('No subs in file, skipping!');
+    return true;
+  }
+  if (boolKeepAll && boolRemoveAll) {
+    logger.AddError('Cant remove all and keep all at the same time wise guy');
+    return true;
+  }
+  return false;
+}
+
+/**
  * Loops over the file streams and executes the given method on
  * each stream when the matching codec_type is found.
  * @param {Object} file the file.
@@ -405,8 +435,6 @@ function buildSubtitleConfiguration(inputs, file, logger, otherArguments) {
   return configuration;
 }
 
-// end process subs needs work
-
 // Final Region
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
@@ -422,47 +450,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   const logger = new Log();
-  const boolRemoveAll = inputs.remove_all;
-  const boolKeepAll = inputs.keep_all;
 
-  // Begin Abort Section
-
-  // Varibles for abort section
-  let hasSubs = false;
-
-  // Verify video
-  if (file.fileMedium !== 'video') {
-    logger.AddError('File is not a video.');
+  const abort = checkAbort(inputs, file, logger);
+  if (abort) {
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
-
-  // check has subs
-  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    const strStreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
-    if (strStreamType === 'text' || strStreamType === 'subtitle') {
-      hasSubs = true;
-    }
-  }
-
-  if (hasSubs === true) {
-    logger.AddSuccess('Found subs!');
-  } else {
-    logger.AddSuccess('No subs in file, skipping!');
-    response.infoLog += logger.GetLogData();
-    response.processFile = false;
-    return response;
-  }
-
-  if (boolKeepAll && boolRemoveAll) {
-    logger.AddError('Cant remove all and keep all at the same time wise guy');
-    response.infoLog += logger.GetLogData();
-    response.processFile = false;
-    return response;
-  }
-
-  // End Abort Section
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const audioSettings = buildAudioConfiguration(inputs, file, logger);

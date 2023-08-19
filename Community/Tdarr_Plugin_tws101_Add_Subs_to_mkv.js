@@ -9,8 +9,8 @@ const details = () => ({
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
   //    Created by tws101
-  //    Release Version 1.21
-  Version: '1.21',
+  //    Release Version 1.30
+  Version: '1.30',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
@@ -151,6 +151,21 @@ class Configurator {
 // #endregion
 
 // #region Plugin Methods
+
+/**
+ * Abort Section 
+ */
+function checkAbort(inputs, file, logger) {
+  if (file.fileMedium !== 'video') {
+    logger.AddError('File is not a video.');
+    return true;
+  }
+  if (file.container !== 'mkv') {
+    logger.AddError('File is not an MKV.');
+    return true;
+  }
+  return false;
+}
 
 /**
  * Loops over the file streams and executes the given method on
@@ -418,25 +433,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const logger = new Log();
 
-  // Begin Abort Section
-
-  // Verify video
-  if (file.fileMedium !== 'video') {
-    logger.AddError('File is not a video.');
+  const abort = checkAbort(inputs, file, logger);
+  if (abort) {
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
-
-  // Verify MKV
-  if (file.container !== 'mkv') {
-    logger.AddError('File is not an MKV.');
-    response.processFile = false;
-    response.infoLog += logger.GetLogData();
-    return response;
-  }
-
-  // End Abort Section
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const audioSettings = buildAudioConfiguration(inputs, file, logger);

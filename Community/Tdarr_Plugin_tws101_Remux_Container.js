@@ -8,8 +8,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ' The input file will be remuxed into MKV or MP4. Force conform is recommended, this will remove incompatible items from the new container. ',
   //    Created by tws101
-  //    Release Version 1.12
-  Version: '1.12',
+  //    Release Version 1.20
+  Version: '1.20',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
   Inputs: [
     {
@@ -131,6 +131,17 @@ class Configurator {
 // #region Plugin Methods
 
 /**
+ * Abort Section 
+ */
+function checkAbort(inputs, file, logger) {
+  if (file.fileMedium !== 'video') {
+    logger.AddError('File is not a video.');
+    return true;
+  }
+  return false;
+}
+
+/**
  * Loops over the file streams and executes the given method on
  * each stream when the matching codec_type is found.
  * @param {Object} file the file.
@@ -229,16 +240,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const logger = new Log();
 
-  // Begin Abort Section
-
-  // Verify video
-  if (file.fileMedium !== 'video') {
-    logger.AddError('File is not a video.');
+  const abort = checkAbort(inputs, file, logger);
+  if (abort) {
     response.processFile = false;
     response.infoLog += logger.GetLogData();
     return response;
   }
-  // End Abort Section
 
   const videoSettings = buildVideoConfiguration(inputs, file, logger);
   const audioSettings = buildAudioConfiguration(inputs, file, logger);
