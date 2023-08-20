@@ -212,7 +212,7 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
   }],
 });
 
-function findMediaInfoItem(file, index) {
+const findMediaInfoItem = (file, index) => {
   let currMIOrder = -1;
   const strStreamType = file.ffProbeData.streams[index].codec_type.toLowerCase();
 
@@ -230,13 +230,13 @@ function findMediaInfoItem(file, index) {
     }
   }
   return -1;
-}
+};
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line global-require
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
 
   const response = {

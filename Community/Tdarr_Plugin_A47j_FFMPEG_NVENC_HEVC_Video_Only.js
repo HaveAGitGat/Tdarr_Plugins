@@ -109,7 +109,7 @@ const response = {
 }; // var response
 
 // Finds the first video stream and populates some useful variables
-function getMediaInfo(file) {
+const getMediaInfo = (file) => {
   let videoIdx = -1;
 
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
@@ -128,12 +128,12 @@ function getMediaInfo(file) {
     }
   }
   MediaInfo.overallBR = file.mediaInfo.track[0].OverallBitRate;
-} // end  getMediaInfo()
+}; // end  getMediaInfo()
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
 
   if (file.fileMedium !== 'video') {

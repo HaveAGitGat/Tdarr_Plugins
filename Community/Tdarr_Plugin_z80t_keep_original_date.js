@@ -63,10 +63,10 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // eslint-disable-next-line import/no-unresolved
   const axios = require('axios');
@@ -75,14 +75,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line import/no-unresolved
   const path = require('path-extra');
 
-  function log(msg) {
+  const log = (msg) => {
     if (inputs.log === true) {
       // eslint-disable-next-line no-console
       console.log(msg);
     }
-  }
+  };
 
-  async function getFileData(filePath, extensions, server) {
+  const getFileData = async (filePath, extensions, server) => {
     const originalExtension = path.extname(filePath).split('.')[1];
     if (extensions.indexOf(originalExtension) > -1) {
       extensions.splice(extensions.indexOf(originalExtension), 1);
@@ -114,7 +114,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
     log('Could not get file info from API, giving up.');
     return httpResponse;
-  }
+  };
 
   const responseData = {
     file,

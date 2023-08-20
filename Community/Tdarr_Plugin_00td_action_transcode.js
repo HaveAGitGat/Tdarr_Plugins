@@ -212,7 +212,7 @@ const hasEncoder = async ({
 };
 
 // credit to UNCode101 for this
-const getBestNvencDevice = async ({
+const getBestNvencDevice = ({
   response,
   inputs,
   nvencDevice,
@@ -369,10 +369,10 @@ const getEncoder = async ({
   };
 };
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
