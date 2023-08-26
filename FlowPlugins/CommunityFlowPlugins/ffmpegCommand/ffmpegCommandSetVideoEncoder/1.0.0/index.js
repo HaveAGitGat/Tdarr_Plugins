@@ -64,7 +64,7 @@ var details = function () { return ({
                     // 'vp8',
                 ],
             },
-            tooltip: 'Specify the codec to use',
+            tooltip: 'Specify codec of the output file',
         },
         {
             name: 'ffmpegPreset',
@@ -84,7 +84,7 @@ var details = function () { return ({
                     'ultrafast',
                 ],
             },
-            tooltip: 'Specify the codec to use',
+            tooltip: 'Specify ffmpeg preset',
         },
         {
             name: 'ffmpegQuality',
@@ -93,7 +93,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Specify the codec to use',
+            tooltip: 'Specify ffmpeg quality',
         },
         {
             name: 'hardwareEncoding',
