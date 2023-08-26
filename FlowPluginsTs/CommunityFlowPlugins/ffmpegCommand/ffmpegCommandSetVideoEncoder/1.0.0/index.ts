@@ -32,7 +32,7 @@ const details = (): IpluginDetails => ({
           // 'vp8',
         ],
       },
-      tooltip: 'Specify the codec to use',
+      tooltip: 'Specify codec of the output file',
     },
     {
       name: 'ffmpegPreset',
@@ -52,7 +52,7 @@ const details = (): IpluginDetails => ({
           'ultrafast',
         ],
       },
-      tooltip: 'Specify the codec to use',
+      tooltip: 'Specify ffmpeg preset',
     },
     {
       name: 'ffmpegQuality',
@@ -61,7 +61,7 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Specify the codec to use',
+      tooltip: 'Specify ffmpeg quality',
     },
     {
       name: 'hardwareEncoding',
