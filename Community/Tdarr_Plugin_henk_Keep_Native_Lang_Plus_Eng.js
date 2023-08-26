@@ -204,7 +204,7 @@ const tmdbApi = async (filename, api_key, axios) => {
 };
 
 // eslint-disable-next-line consistent-return
-const parseArrResponse = async (body, filePath, arr) => {
+const parseArrResponse = (body, filePath, arr) => {
   // eslint-disable-next-line default-case
   switch (arr) {
     case 'radarr':
@@ -214,10 +214,10 @@ const parseArrResponse = async (body, filePath, arr) => {
   }
 };
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // eslint-disable-next-line import/no-unresolved
   const axios = require('axios').default;
@@ -244,7 +244,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       case 'radarr':
         if (tmdbResult) break;
         if (inputs.radarr_api_key) {
-          radarrResult = await parseArrResponse(
+          radarrResult = parseArrResponse(
             await axios
               .get(
                 `http://${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
@@ -269,7 +269,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       case 'sonarr':
         if (tmdbResult) break;
         if (inputs.sonarr_api_key) {
-          sonarrResult = await parseArrResponse(
+          sonarrResult = parseArrResponse(
             await axios.get(
               `http://${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
             )
