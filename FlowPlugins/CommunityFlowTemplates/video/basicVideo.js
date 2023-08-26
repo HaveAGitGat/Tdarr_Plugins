@@ -1,7 +1,7 @@
 "use strict";
 var details = function () { return ({
     name: 'Basic HEVC Video Flow',
-    description: 'Flow description',
+    description: 'Basic HEVC Video Flow',
     tags: 'video',
     flowPlugins: [
         {
@@ -33,8 +33,8 @@ var details = function () { return ({
             version: '1.0.0',
             id: '4Swd6qzvc',
             position: {
-                x: 499.4549563302081,
-                y: 367.1114810297392,
+                x: 489.25252076795084,
+                y: 370.51229288382495,
             },
         },
         {
@@ -44,8 +44,8 @@ var details = function () { return ({
             version: '1.0.0',
             id: '450g167D8',
             position: {
-                x: 496.4549563302081,
-                y: 653.1114810297393,
+                x: 488.72295602997406,
+                y: 699.5034828311435,
             },
         },
         {
@@ -55,8 +55,8 @@ var details = function () { return ({
             version: '1.0.0',
             id: '8B_6pRd_U',
             position: {
-                x: 498.4549563302081,
-                y: 527.1114810297393,
+                x: 488.5270135748424,
+                y: 477.83202026423606,
             },
         },
         {
@@ -68,6 +68,17 @@ var details = function () { return ({
             position: {
                 x: 820.4549563302082,
                 y: 742.2114810297393,
+            },
+        },
+        {
+            name: 'Set Container',
+            sourceRepo: 'Community',
+            pluginName: 'ffmpegCommandSetContainer',
+            version: '1.0.0',
+            id: 'TtKXi3Q7h',
+            position: {
+                x: 488.21110165973323,
+                y: 570.3064821931456,
             },
         },
     ],
@@ -100,15 +111,6 @@ var details = function () { return ({
             type: 'smoothstep',
         },
         {
-            source: '8B_6pRd_U',
-            sourceHandle: '1',
-            target: '450g167D8',
-            targetHandle: null,
-            id: 'BQerEKase',
-            animated: true,
-            type: 'smoothstep',
-        },
-        {
             source: '450g167D8',
             sourceHandle: '1',
             target: '4fkfOyR3l',
@@ -123,6 +125,24 @@ var details = function () { return ({
             target: '4fkfOyR3l',
             targetHandle: null,
             id: 'W2nVG7ts5',
+            animated: true,
+            type: 'smoothstep',
+        },
+        {
+            source: '8B_6pRd_U',
+            sourceHandle: '1',
+            target: 'TtKXi3Q7h',
+            targetHandle: null,
+            id: 'epqtLsPuG',
+            animated: true,
+            type: 'smoothstep',
+        },
+        {
+            source: 'TtKXi3Q7h',
+            sourceHandle: '1',
+            target: '450g167D8',
+            targetHandle: null,
+            id: 'ljOeP0cAZ',
             animated: true,
             type: 'smoothstep',
         },
