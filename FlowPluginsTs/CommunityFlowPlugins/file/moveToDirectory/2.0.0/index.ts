@@ -1,3 +1,5 @@
+import { promises as fs } from 'fs';
+import { getContainer, getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -10,14 +12,23 @@ const details = ():IpluginDetails => ({
   description: 'Move working file to directory.',
   style: {
     borderColor: 'green',
-    opacity: 0.5,
   },
   tags: '',
 
   isStartPlugin: false,
   sidebarPosition: -1,
   icon: 'faArrowRight',
-  inputs: [],
+  inputs: [
+    {
+      name: 'outputDirectory',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify ouput directory',
+    },
+  ],
   outputs: [
     {
       number: 1,
@@ -27,13 +38,22 @@ const details = ():IpluginDetails => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
+const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  const originalFileName = getFileName(args.originalLibraryFile._id);
+  const newContainer = getContainer(args.inputFileObj._id);
+
+  const outputPath = `${args.inputs.outputDirectory}/${originalFileName}.${newContainer}`;
+
+  await fs.rename(args.inputFileObj._id, outputPath);
+
   return {
-    outputFileObj: args.inputFileObj,
+    outputFileObj: {
+      _id: outputPath,
+    },
     outputNumber: 1,
     variables: args.variables,
   };

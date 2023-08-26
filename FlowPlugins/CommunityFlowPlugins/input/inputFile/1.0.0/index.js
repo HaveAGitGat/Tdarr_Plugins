@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Input File',
-    description: 'Transcode a video file using ffmpeg. GPU transcoding will be used if possible.',
+    description: 'Start the flow with an input file',
     style: {
         borderColor: 'pink',
     },

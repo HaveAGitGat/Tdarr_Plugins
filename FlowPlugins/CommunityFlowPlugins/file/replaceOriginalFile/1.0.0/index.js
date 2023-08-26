@@ -40,7 +40,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
-    description: 'Replace the origial file',
+    description: 'Replace the original file',
     style: {
         borderColor: 'green',
     },
@@ -48,23 +48,7 @@ var details = function () { return ({
     isStartPlugin: false,
     sidebarPosition: -1,
     icon: 'faArrowRight',
-    inputs: [
-        {
-            name: 'target_codec',
-            type: 'string',
-            defaultValue: 'hevc',
-            inputUI: {
-                type: 'dropdown',
-                options: [
-                    'hevc',
-                    // 'vp9',
-                    'h264',
-                    // 'vp8',
-                ],
-            },
-            tooltip: 'Specify the codec to use',
-        },
-    ],
+    inputs: [],
     outputs: [
         {
             number: 1,

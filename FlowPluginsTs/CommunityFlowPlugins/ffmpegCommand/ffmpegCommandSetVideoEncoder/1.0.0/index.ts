@@ -1,5 +1,6 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
+import { getEncoder } from '../../../../FlowHelpers/1.0.0/hardwareUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -7,7 +8,7 @@ import {
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 /* eslint-disable no-param-reassign */
-const details = () :IpluginDetails => ({
+const details = (): IpluginDetails => ({
   name: 'Set Video Encoder',
   description: 'Set the video encoder for all streams',
   style: {
@@ -19,7 +20,7 @@ const details = () :IpluginDetails => ({
   icon: '',
   inputs: [
     {
-      name: 'targetCodec',
+      name: 'outputCodec',
       type: 'string',
       defaultValue: 'hevc',
       inputUI: {
@@ -32,6 +33,61 @@ const details = () :IpluginDetails => ({
         ],
       },
       tooltip: 'Specify the codec to use',
+    },
+    {
+      name: 'ffmpegPreset',
+      type: 'string',
+      defaultValue: 'fast',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'veryslow',
+          'slower',
+          'slow',
+          'medium',
+          'fast',
+          'faster',
+          'veryfast',
+          'superfast',
+          'ultrafast',
+        ],
+      },
+      tooltip: 'Specify the codec to use',
+    },
+    {
+      name: 'ffmpegQuality',
+      type: 'number',
+      defaultValue: '25',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify the codec to use',
+    },
+    {
+      name: 'hardwareEncoding',
+      type: 'boolean',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Specify whether to use hardware encoding if available',
+    },
+    {
+      name: 'hardwareDecoding',
+      type: 'boolean',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Specify whether to use hardware decoding if available',
     },
     {
       name: 'forceEncoding',
@@ -56,19 +112,59 @@ const details = () :IpluginDetails => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
+const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  // @ts-expect-error type
-  args.variables.ffmpegCommand.streams.forEach((stream) => {
+  const hardwareDecoding = args.inputs.hardwareDecoding === true;
+  args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
+
+  for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
+    const stream = args.variables.ffmpegCommand.streams[i];
+
     if (stream.codec_type === 'video') {
-      // @ts-expect-error type
-      stream.targetCodec = args.inputs.targetCodec;
-      stream.forceEncoding = args.inputs.forceEncoding;
+      const targetCodec = String(args.inputs.outputCodec);
+      const ffmpegPreset = String(args.inputs.ffmpegPreset);
+      const ffmpegQuality = String(args.inputs.ffmpegQuality);
+      const forceEncoding = args.inputs.forceEncoding === true;
+      const hardwarEncoding = args.inputs.hardwareEncoding === true;
+
+      if (
+        forceEncoding
+        || stream.codec_name !== targetCodec
+      ) {
+        args.variables.ffmpegCommand.shouldProcess = true;
+
+        // eslint-disable-next-line no-await-in-loop
+        const encoderProperties = await getEncoder({
+          targetCodec,
+          hardwareEncoding: hardwarEncoding,
+          args,
+        });
+
+        stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
+
+        if (encoderProperties.isGpu) {
+          stream.outputArgs.push('-qp', ffmpegQuality);
+        } else {
+          stream.outputArgs.push('-crf', ffmpegQuality);
+        }
+
+        if (ffmpegPreset) {
+          stream.outputArgs.push('-preset', ffmpegPreset);
+        }
+
+        if (hardwareDecoding) {
+          stream.inputArgs.push(...encoderProperties.inputArgs);
+        }
+
+        if (encoderProperties.outputArgs) {
+          stream.outputArgs.push(...encoderProperties.outputArgs);
+        }
+      }
     }
-  });
+  }
 
   return {
     outputFileObj: args.inputFileObj,

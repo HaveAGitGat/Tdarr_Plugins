@@ -2,8 +2,16 @@ import { IFileObject, Istreams } from './synced/IFileObject';
 import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
-    type: 'dropdown' | 'text',
-    options: string[],
+    type: 'dropdown' | 'text' | 'textarea',
+    options?: string[],
+    style?:Record<string, unknown>,
+    onSelect?: {
+        'hevc': {
+          update: {
+            quality: '28',
+          },
+        }
+      },
 }
 
 export interface IpluginInputs {
@@ -43,18 +51,23 @@ export interface IupdateWorker {
 
 export interface IffmpegCommandStream extends Istreams {
     removed: boolean,
-    targetCodec: string,
-    args: string[],
+    forceEncoding: boolean,
+    inputArgs: string[],
+    outputArgs: string[],
 }
 
 export interface IffmpegCommand {
     inputFiles: string[],
     streams: IffmpegCommandStream[]
     container: string,
+    hardwareDecoding: boolean,
+    shouldProcess: boolean,
+    overallInputArguments: string[],
+    overallOuputArguments: string[],
 }
 
 export interface Ivariables {
-    ffmpegCommand?: IffmpegCommand
+    ffmpegCommand: IffmpegCommand
 }
 
 export interface IpluginOutputArgs {
@@ -63,7 +76,6 @@ export interface IpluginOutputArgs {
         _id: string,
     },
     variables: Ivariables
-
 }
 
 export interface IpluginInputArgs {
@@ -92,5 +104,16 @@ export interface IpluginInputArgs {
     lastSuccessfulRun: any,
     updateWorker: IupdateWorker,
     logFullCliOutput: boolean,
-    logOutcome:(outcome:string) => void,
+    logOutcome: (outcome: string) => void,
+    deps: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        fsextra: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        parseArgsStringToArgv: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        importFresh(path: string): any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        axiosMiddleware: (endpoint: string, data: Record<string, unknown>) => Promise<any>,
+        requireFromString: (pluginText: string, relativePath:string) => Record<string, unknown>,
+    },
 }

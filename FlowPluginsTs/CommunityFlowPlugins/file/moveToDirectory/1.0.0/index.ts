@@ -10,6 +10,7 @@ const details = ():IpluginDetails => ({
   description: 'Move working file to directory.',
   style: {
     borderColor: 'green',
+    opacity: 0.5,
   },
   tags: '',
   isStartPlugin: false,

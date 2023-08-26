@@ -32,7 +32,6 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  // @ts-expect-error type
   args.variables.ffmpegCommand.streams.forEach((stream) => {
     if (stream.codec_type === 'subtitle') {
       stream.removed = true;

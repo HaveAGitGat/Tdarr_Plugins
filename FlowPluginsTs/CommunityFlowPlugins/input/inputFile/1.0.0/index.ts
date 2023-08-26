@@ -7,7 +7,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
   name: 'Input File',
-  description: 'Transcode a video file using ffmpeg. GPU transcoding will be used if possible.',
+  description: 'Start the flow with an input file',
   style: {
     borderColor: 'pink',
   },

@@ -42,10 +42,18 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
     streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map((stream:Istreams) => ({
       ...stream,
       removed: false,
-      targetCodec: stream.codec_name,
-      args: [],
+      mapArgs: [
+        '-map',
+        `0:${stream.index}`,
+      ],
+      inputArgs: [],
+      outputArgs: [],
     })),
     container,
+    hardwareDecoding: false,
+    shouldProcess: false,
+    overallInputArguments: [],
+    overallOuputArguments: [],
   };
 
   args.variables.ffmpegCommand = ffmpegCommand;

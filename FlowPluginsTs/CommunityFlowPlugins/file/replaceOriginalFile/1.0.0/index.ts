@@ -7,7 +7,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
   name: 'Replace Original File',
-  description: 'Replace the origial file',
+  description: 'Replace the original file',
   style: {
     borderColor: 'green',
   },
@@ -15,23 +15,7 @@ const details = ():IpluginDetails => ({
   isStartPlugin: false,
   sidebarPosition: -1,
   icon: 'faArrowRight',
-  inputs: [
-    {
-      name: 'target_codec',
-      type: 'string',
-      defaultValue: 'hevc',
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'hevc',
-          // 'vp9',
-          'h264',
-          // 'vp8',
-        ],
-      },
-      tooltip: 'Specify the codec to use',
-    },
-  ],
+  inputs: [],
   outputs: [
     {
       number: 1,

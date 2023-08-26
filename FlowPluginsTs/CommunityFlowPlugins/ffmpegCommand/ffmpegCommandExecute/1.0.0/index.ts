@@ -1,9 +1,11 @@
 import {
+  IffmpegCommandStream,
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import { CLI } from '../../../../FlowHelpers/1.0.0/utils';
+import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
+import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -21,24 +23,41 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'File is 480p',
-    },
-    {
-      number: 2,
-      tooltip: 'File is 576p',
+      tooltip: 'Continue to next plugin',
     },
   ],
 });
 
-const getEncoder = (codec: string) => {
-  switch (codec) {
-    case 'h264':
-      return 'libx264';
-    case 'hevc':
-      return 'libx265';
-    default:
-      return codec;
+const getOuputStreamIndex = (streams: IffmpegCommandStream[], stream: IffmpegCommandStream): number => {
+  let index = -1;
+
+  for (let idx = 0; idx < streams.length; idx += 1) {
+    if (!stream.removed) {
+      index += 1;
+    }
+
+    if (streams[idx].index === stream.index) {
+      break;
+    }
   }
+
+  return index;
+};
+
+const getOuputStreamTypeIndex = (streams: IffmpegCommandStream[], stream: IffmpegCommandStream): number => {
+  let index = -1;
+
+  for (let idx = 0; idx < streams.length; idx += 1) {
+    if (!stream.removed && streams[idx].codec_type === stream.codec_type) {
+      index += 1;
+    }
+
+    if (streams[idx].index === stream.index) {
+      break;
+    }
+  }
+
+  return index;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -53,24 +72,47 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   cliArgs.push('-i');
   cliArgs.push(args.inputFileObj._id);
 
-  let shouldProcess = false;
+  const inputArgs: string[] = [];
+  let { shouldProcess, streams } = args.variables.ffmpegCommand;
 
-  // @ts-expect-error type
-  args.variables.ffmpegCommand.streams.forEach((stream) => {
-    if (!stream.removed) {
-      cliArgs.push('-map');
-      cliArgs.push(`0:${stream.index}`);
-      cliArgs.push(`-c:${stream.index}`);
-
-      args.jobLog(JSON.stringify({ stream }));
-      if (args.inputs.forceProcess || stream.codec_name !== stream.targetCodec) {
-        shouldProcess = true;
-        cliArgs.push(getEncoder(stream.targetCodec));
-      } else {
-        cliArgs.push('copy');
-      }
+  streams = streams.filter((stream) => {
+    if (stream.removed) {
+      shouldProcess = true;
     }
+    return !stream.removed;
   });
+
+  if (getContainer(args.inputFileObj._id) !== args.variables.ffmpegCommand.container) {
+    shouldProcess = true;
+  }
+
+  for (let i = 0; i < streams.length; i += 1) {
+    const stream = streams[i];
+
+    stream.outputArgs = stream.outputArgs.map((arg) => {
+      if (arg.includes('{outputIndex}')) {
+        // eslint-disable-next-line no-param-reassign
+        arg = arg.replace('{outputIndex}', String(getOuputStreamIndex(streams, stream)));
+      }
+
+      if (arg.includes('{outputTypeIndex}')) {
+        // eslint-disable-next-line no-param-reassign
+        arg = arg.replace('{outputTypeIndex}', String(getOuputStreamTypeIndex(streams, stream)));
+      }
+
+      return arg;
+    });
+
+    cliArgs.push(...stream.mapArgs);
+
+    if (stream.outputArgs.length === 0) {
+      cliArgs.push(`-c:${getOuputStreamIndex(streams, stream)}`, 'copy');
+    } else {
+      cliArgs.push(...stream.outputArgs);
+    }
+
+    inputArgs.push(...stream.inputArgs);
+  }
 
   if (!shouldProcess) {
     args.jobLog('No need to process file, already as required');
@@ -81,18 +123,22 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
   }
 
-  // @ts-expect-error type
-  const outputFilePath = `${args.workDir}/tempFile.${args.variables.ffmpegCommand.container}`;
-  cliArgs.push(outputFilePath);
+  const idx = cliArgs.indexOf('-i');
+  cliArgs.splice(idx, 0, ...inputArgs);
 
-  // @ts-expect-error type
-  args.deps.fsextra.ensureDirSync(args.workDir);
+  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${args.variables.ffmpegCommand.container}`;
+  cliArgs.push(outputFilePath);
 
   args.jobLog('Processing file');
   args.jobLog(JSON.stringify({
     cliArgs,
     outputFilePath,
   }));
+
+  args.updateWorker({
+    CLIType: args.ffmpegPath,
+    preset: cliArgs.join(' '),
+  });
 
   const cli = new CLI({
     cli: args.ffmpegPath,
@@ -106,10 +152,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   });
 
   const res = await cli.runCli();
-
-  if (!args.logFullCliOutput) {
-    args.jobLog(res.errorLogFull.slice(-1000).join(''));
-  }
 
   if (res.cliExitCode !== 0) {
     args.jobLog('Running FFmpeg failed');

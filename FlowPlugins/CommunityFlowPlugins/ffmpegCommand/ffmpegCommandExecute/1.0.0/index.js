@@ -35,9 +35,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var utils_1 = require("../../../../FlowHelpers/1.0.0/utils");
+var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Execute',
@@ -53,30 +63,40 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'File is 480p',
-        },
-        {
-            number: 2,
-            tooltip: 'File is 576p',
+            tooltip: 'Continue to next plugin',
         },
     ],
 }); };
 exports.details = details;
-var getEncoder = function (codec) {
-    switch (codec) {
-        case 'h264':
-            return 'libx264';
-        case 'hevc':
-            return 'libx265';
-        default:
-            return codec;
+var getOuputStreamIndex = function (streams, stream) {
+    var index = -1;
+    for (var idx = 0; idx < streams.length; idx += 1) {
+        if (!stream.removed) {
+            index += 1;
+        }
+        if (streams[idx].index === stream.index) {
+            break;
+        }
     }
+    return index;
+};
+var getOuputStreamTypeIndex = function (streams, stream) {
+    var index = -1;
+    for (var idx = 0; idx < streams.length; idx += 1) {
+        if (!stream.removed && streams[idx].codec_type === stream.codec_type) {
+            index += 1;
+        }
+        if (streams[idx].index === stream.index) {
+            break;
+        }
+    }
+    return index;
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, cliArgs, shouldProcess, outputFilePath, cli, res;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, cliArgs, inputArgs, _a, shouldProcess, streams, _loop_1, i, idx, outputFilePath, cli, res;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -85,23 +105,42 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 cliArgs.push('-y');
                 cliArgs.push('-i');
                 cliArgs.push(args.inputFileObj._id);
-                shouldProcess = false;
-                // @ts-expect-error type
-                args.variables.ffmpegCommand.streams.forEach(function (stream) {
-                    if (!stream.removed) {
-                        cliArgs.push('-map');
-                        cliArgs.push("0:".concat(stream.index));
-                        cliArgs.push("-c:".concat(stream.index));
-                        args.jobLog(JSON.stringify({ stream: stream }));
-                        if (args.inputs.forceProcess || stream.codec_name !== stream.targetCodec) {
-                            shouldProcess = true;
-                            cliArgs.push(getEncoder(stream.targetCodec));
-                        }
-                        else {
-                            cliArgs.push('copy');
-                        }
+                inputArgs = [];
+                _a = args.variables.ffmpegCommand, shouldProcess = _a.shouldProcess, streams = _a.streams;
+                streams = streams.filter(function (stream) {
+                    if (stream.removed) {
+                        shouldProcess = true;
                     }
+                    return !stream.removed;
                 });
+                if ((0, fileUtils_1.getContainer)(args.inputFileObj._id) !== args.variables.ffmpegCommand.container) {
+                    shouldProcess = true;
+                }
+                _loop_1 = function (i) {
+                    var stream = streams[i];
+                    stream.outputArgs = stream.outputArgs.map(function (arg) {
+                        if (arg.includes('{outputIndex}')) {
+                            // eslint-disable-next-line no-param-reassign
+                            arg = arg.replace('{outputIndex}', String(getOuputStreamIndex(streams, stream)));
+                        }
+                        if (arg.includes('{outputTypeIndex}')) {
+                            // eslint-disable-next-line no-param-reassign
+                            arg = arg.replace('{outputTypeIndex}', String(getOuputStreamTypeIndex(streams, stream)));
+                        }
+                        return arg;
+                    });
+                    cliArgs.push.apply(cliArgs, stream.mapArgs);
+                    if (stream.outputArgs.length === 0) {
+                        cliArgs.push("-c:".concat(getOuputStreamIndex(streams, stream)), 'copy');
+                    }
+                    else {
+                        cliArgs.push.apply(cliArgs, stream.outputArgs);
+                    }
+                    inputArgs.push.apply(inputArgs, stream.inputArgs);
+                };
+                for (i = 0; i < streams.length; i += 1) {
+                    _loop_1(i);
+                }
                 if (!shouldProcess) {
                     args.jobLog('No need to process file, already as required');
                     return [2 /*return*/, {
@@ -110,16 +149,20 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             variables: args.variables,
                         }];
                 }
-                outputFilePath = "".concat(args.workDir, "/tempFile.").concat(args.variables.ffmpegCommand.container);
+                idx = cliArgs.indexOf('-i');
+                cliArgs.splice.apply(cliArgs, __spreadArray([idx, 0], inputArgs, false));
+                outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(args.variables.ffmpegCommand.container);
                 cliArgs.push(outputFilePath);
-                // @ts-expect-error type
-                args.deps.fsextra.ensureDirSync(args.workDir);
                 args.jobLog('Processing file');
                 args.jobLog(JSON.stringify({
                     cliArgs: cliArgs,
                     outputFilePath: outputFilePath,
                 }));
-                cli = new utils_1.CLI({
+                args.updateWorker({
+                    CLIType: args.ffmpegPath,
+                    preset: cliArgs.join(' '),
+                });
+                cli = new cliUtils_1.CLI({
                     cli: args.ffmpegPath,
                     spawnArgs: cliArgs,
                     spawnOpts: {},
@@ -131,10 +174,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
-                res = _a.sent();
-                if (!args.logFullCliOutput) {
-                    args.jobLog(res.errorLogFull.slice(-1000).join(''));
-                }
+                res = _b.sent();
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running FFmpeg failed');
                     throw new Error('FFmpeg failed');

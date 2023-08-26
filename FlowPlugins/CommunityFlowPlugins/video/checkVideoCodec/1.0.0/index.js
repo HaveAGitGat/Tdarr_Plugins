@@ -47,12 +47,13 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var hasCodec = false;
-    // @ts-expect-error type
-    args.inputFileObj.ffProbeData.streams.forEach(function (stream) {
-        if (stream.codec_type === 'video' && stream.codec_name === args.inputs.codec) {
-            hasCodec = true;
-        }
-    });
+    if (args.inputFileObj.ffProbeData.streams) {
+        args.inputFileObj.ffProbeData.streams.forEach(function (stream) {
+            if (stream.codec_type === 'video' && stream.codec_name === args.inputs.codec) {
+                hasCodec = true;
+            }
+        });
+    }
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: hasCodec ? 1 : 2,

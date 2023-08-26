@@ -14,7 +14,7 @@ export interface Itags {
 }
 export interface Istreams {
   codec_name: string;
-  codec_type?: string,
+  codec_type: string,
   bit_rate?: number,
   channels?: number,
   tags?: Itags,
@@ -134,6 +134,7 @@ export interface ImediaInfo {
     'IsStreamable': string,
     'Encoded_Application': string,
     'Encoded_Library': string,
+     BitRate: number,
     'extra': {
       'ErrorDetectionType': string,
     }

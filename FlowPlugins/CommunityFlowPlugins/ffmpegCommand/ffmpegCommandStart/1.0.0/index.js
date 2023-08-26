@@ -42,8 +42,15 @@ var plugin = function (args) {
     var container = containerParts[containerParts.length - 1];
     var ffmpegCommand = {
         inputFiles: [],
-        streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map(function (stream) { return (__assign(__assign({}, stream), { removed: false, targetCodec: stream.codec_name, args: [] })); }),
+        streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map(function (stream) { return (__assign(__assign({}, stream), { removed: false, mapArgs: [
+                '-map',
+                "0:".concat(stream.index),
+            ], inputArgs: [], outputArgs: [] })); }),
         container: container,
+        hardwareDecoding: false,
+        shouldProcess: false,
+        overallInputArguments: [],
+        overallOuputArguments: [],
     };
     args.variables.ffmpegCommand = ffmpegCommand;
     return {

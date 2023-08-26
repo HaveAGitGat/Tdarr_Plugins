@@ -52,12 +52,13 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
   let hasCodec = false;
 
-  // @ts-expect-error type
-  args.inputFileObj.ffProbeData.streams.forEach((stream) => {
-    if (stream.codec_type === 'video' && stream.codec_name === args.inputs.codec) {
-      hasCodec = true;
-    }
-  });
+  if (args.inputFileObj.ffProbeData.streams) {
+    args.inputFileObj.ffProbeData.streams.forEach((stream) => {
+      if (stream.codec_type === 'video' && stream.codec_name === args.inputs.codec) {
+        hasCodec = true;
+      }
+    });
+  }
 
   return {
     outputFileObj: args.inputFileObj,

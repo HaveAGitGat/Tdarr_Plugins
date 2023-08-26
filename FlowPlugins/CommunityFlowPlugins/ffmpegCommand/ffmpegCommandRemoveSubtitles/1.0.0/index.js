@@ -27,7 +27,6 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    // @ts-expect-error type
     args.variables.ffmpegCommand.streams.forEach(function (stream) {
         if (stream.codec_type === 'subtitle') {
             stream.removed = true;

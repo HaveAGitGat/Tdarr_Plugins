@@ -41,8 +41,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    // @ts-expect-error type
-    args.variables.ffmpegCommand.container = args.inputs.container;
+    args.variables.ffmpegCommand.container = String(args.inputs.container);
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,
