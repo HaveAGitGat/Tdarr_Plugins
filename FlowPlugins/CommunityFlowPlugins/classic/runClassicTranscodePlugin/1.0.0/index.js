@@ -139,6 +139,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 4:
                 result = _d.sent();
                 args.jobLog(JSON.stringify(result, null, 2));
+                if (!result) {
+                    args.jobLog('No result from classic plugin. Continuing to next flow plugin.');
+                    return [2 /*return*/, {
+                            outputFileObj: args.inputFileObj,
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
                 // --- Backwards compatibility------------
                 if (result.handBrakeMode) {
                     result.handbrakeMode = result.handBrakeMode;

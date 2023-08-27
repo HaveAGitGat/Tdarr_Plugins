@@ -127,7 +127,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 4:
                 result = _a.sent();
                 args.jobLog(JSON.stringify(result, null, 2));
-                outputNumber = result.processFile ? 1 : 2;
+                outputNumber = (result === null || result === void 0 ? void 0 : result.processFile) ? 1 : 2;
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: outputNumber,

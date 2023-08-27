@@ -9,8 +9,9 @@ import { Istreams } from '../../../../FlowHelpers/1.0.0/interfaces/synced/IFileO
 
 /* eslint-disable no-param-reassign */
 const details = () :IpluginDetails => ({
-  name: 'Start',
-  description: 'Start FFmpeg Command',
+  name: 'Begin Command',
+  description: 'Begin creating the FFmpeg command for the current working file.'
+   + ' Should be used before any other FFmpeg command plugins.',
   style: {
     borderColor: 'green',
   },

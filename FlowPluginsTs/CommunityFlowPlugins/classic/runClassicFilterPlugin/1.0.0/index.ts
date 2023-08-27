@@ -100,7 +100,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(JSON.stringify(result, null, 2));
 
-  const outputNumber = result.processFile ? 1 : 2;
+  const outputNumber = result?.processFile ? 1 : 2;
 
   return {
     outputFileObj: args.inputFileObj,

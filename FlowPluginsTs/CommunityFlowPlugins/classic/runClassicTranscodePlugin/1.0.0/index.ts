@@ -103,6 +103,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(JSON.stringify(result, null, 2));
 
+  if (!result) {
+    args.jobLog('No result from classic plugin. Continuing to next flow plugin.');
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
+
   // --- Backwards compatibility------------
   if (result.handBrakeMode) {
     result.handbrakeMode = result.handBrakeMode;
