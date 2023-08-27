@@ -15,8 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 /* eslint-disable no-param-reassign */
 var details = function () { return ({
-    name: 'Start',
-    description: 'Start FFmpeg Command',
+    name: 'Begin Command',
+    description: 'Begin creating the FFmpeg command for the current working file.'
+        + ' Should be used before any other FFmpeg command plugins.',
     style: {
         borderColor: 'green',
     },
