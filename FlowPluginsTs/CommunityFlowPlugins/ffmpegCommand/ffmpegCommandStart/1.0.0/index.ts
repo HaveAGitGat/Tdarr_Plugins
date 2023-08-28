@@ -1,5 +1,6 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
+import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -16,7 +17,6 @@ const details = () :IpluginDetails => ({
     borderColor: 'green',
   },
   tags: 'video',
-
   isStartPlugin: false,
   sidebarPosition: 1,
   icon: '',
@@ -35,8 +35,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const containerParts = args.inputFileObj._id.split('.');
-  const container = containerParts[containerParts.length - 1];
+  const container = getContainer(args.inputFileObj._id);
 
   const ffmpegCommand = {
     inputFiles: [],
