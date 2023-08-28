@@ -43,19 +43,6 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify whether to keep the relative path',
     },
     {
-      name: 'copyToWorkDir',
-      type: 'boolean',
-      defaultValue: 'false',
-      inputUI: {
-        type: 'text',
-        options: [
-          'false',
-          'true',
-        ],
-      },
-      tooltip: 'Specify whether to copy to the working directory',
-    },
-    {
       name: 'makeWorkingFile',
       type: 'boolean',
       defaultValue: 'false',
@@ -84,7 +71,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const {
-    copyToWorkDir, keepRelativePath, makeWorkingFile,
+    keepRelativePath, makeWorkingFile,
   } = args.inputs;
 
   const outputDirectory = String(args.inputs.outputDirectory);
@@ -94,9 +81,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   let outputPath = '';
 
-  if (copyToWorkDir) {
-    outputPath = args.workDir;
-  } else if (keepRelativePath) {
+  if (keepRelativePath) {
     const subStem = getSubStem({
       inputPathStem: args.librarySettings.folder,
       inputPath: args.originalLibraryFile._id,
@@ -123,7 +108,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   let workingFile = args.inputFileObj._id;
 
-  if (makeWorkingFile || copyToWorkDir) {
+  if (makeWorkingFile) {
     workingFile = ouputFilePath;
   }
 

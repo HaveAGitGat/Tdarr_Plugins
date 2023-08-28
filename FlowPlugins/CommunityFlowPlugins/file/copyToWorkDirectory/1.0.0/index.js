@@ -45,8 +45,9 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var normJoinPath_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/normJoinPath"));
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Copy to Directory',
-    description: 'Copy the working file to a directory',
+    name: 'Copy to Working Directory',
+    description: 'Copy the working file to the working directory of the Tdarr worker. '
+        + 'Useful if you want to copy the file to the library cache before transcoding begins',
     style: {
         borderColor: 'green',
     },
@@ -54,43 +55,7 @@ var details = function () { return ({
     isStartPlugin: false,
     sidebarPosition: -1,
     icon: 'faArrowRight',
-    inputs: [
-        {
-            name: 'outputDirectory',
-            type: 'string',
-            defaultValue: '',
-            inputUI: {
-                type: 'directory',
-            },
-            tooltip: 'Specify ouput directory',
-        },
-        {
-            name: 'keepRelativePath',
-            type: 'boolean',
-            defaultValue: 'false',
-            inputUI: {
-                type: 'text',
-                options: [
-                    'false',
-                    'true',
-                ],
-            },
-            tooltip: 'Specify whether to keep the relative path',
-        },
-        {
-            name: 'makeWorkingFile',
-            type: 'boolean',
-            defaultValue: 'false',
-            inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
-            },
-            tooltip: 'Make the copied file the working file',
-        },
-    ],
+    inputs: [],
     outputs: [
         {
             number: 1,
@@ -101,34 +66,16 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, keepRelativePath, makeWorkingFile, outputDirectory, originalFileName, newContainer, outputPath, subStem, ouputFilePath, workingFile;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var lib, originalFileName, newContainer, outputPath, ouputFilePath;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                _a = args.inputs, keepRelativePath = _a.keepRelativePath, makeWorkingFile = _a.makeWorkingFile;
-                outputDirectory = String(args.inputs.outputDirectory);
                 originalFileName = (0, fileUtils_1.getFileName)(args.originalLibraryFile._id);
                 newContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                outputPath = '';
-                if (keepRelativePath) {
-                    subStem = (0, fileUtils_1.getSubStem)({
-                        inputPathStem: args.librarySettings.folder,
-                        inputPath: args.originalLibraryFile._id,
-                    });
-                    outputPath = (0, normJoinPath_1.default)({
-                        upath: args.deps.upath,
-                        paths: [
-                            outputDirectory,
-                            subStem,
-                        ],
-                    });
-                }
-                else {
-                    outputPath = outputDirectory;
-                }
+                outputPath = args.workDir;
                 ouputFilePath = (0, normJoinPath_1.default)({
                     upath: args.deps.upath,
                     paths: [
@@ -136,19 +83,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         "".concat(originalFileName, ".").concat(newContainer),
                     ],
                 });
-                workingFile = args.inputFileObj._id;
-                if (makeWorkingFile) {
-                    workingFile = ouputFilePath;
-                }
                 args.jobLog("Input path: ".concat(args.inputFileObj._id));
                 args.jobLog("Output path: ".concat(outputPath));
                 args.deps.fsextra.ensureDirSync(outputPath);
                 return [4 /*yield*/, fs_1.promises.copyFile(args.inputFileObj._id, ouputFilePath)];
             case 1:
-                _b.sent();
+                _a.sent();
                 return [2 /*return*/, {
                         outputFileObj: {
-                            _id: workingFile,
+                            _id: ouputFilePath,
                         },
                         outputNumber: 1,
                         variables: args.variables,
