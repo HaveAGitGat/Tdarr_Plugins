@@ -31,7 +31,6 @@ const getNewPath = (originalPath:string, tempPath:string) => {
   const originalPathParts = originalPath.split('.');
 
   originalPathParts[originalPathParts.length - 1] = container;
-
   return originalPathParts.join('.');
 };
 
@@ -41,6 +40,20 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
+
+  if (
+    args.inputFileObj._id === args.originalLibraryFile._id
+    && args.inputFileObj.file_size === args.originalLibraryFile.file_size
+  ) {
+    args.jobLog('File has not changed, no need to replace file');
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
+
+  args.jobLog('File has changed, replacing original file');
 
   const currentPath = args.inputFileObj._id;
   const newPath = getNewPath(args.originalLibraryFile._id, currentPath);
@@ -54,12 +67,17 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  fs.renameSync(currentPath, newPathTmp);
+  // delete original file
+  if (fs.existsSync(args.originalLibraryFile._id)) {
+    fs.unlinkSync(args.originalLibraryFile._id);
+  }
 
+  // delete temp file
   if (fs.existsSync(newPath)) {
     fs.unlinkSync(newPath);
   }
 
+  fs.renameSync(currentPath, newPathTmp);
   await new Promise((resolve) => setTimeout(resolve, 2000));
   fs.renameSync(newPathTmp, newPath);
 

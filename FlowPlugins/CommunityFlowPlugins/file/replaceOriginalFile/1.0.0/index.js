@@ -74,6 +74,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
+                if (args.inputFileObj._id === args.originalLibraryFile._id
+                    && args.inputFileObj.file_size === args.originalLibraryFile.file_size) {
+                    args.jobLog('File has not changed, no need to replace file');
+                    return [2 /*return*/, {
+                            outputFileObj: args.inputFileObj,
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
+                args.jobLog('File has changed, replacing original file');
                 currentPath = args.inputFileObj._id;
                 newPath = getNewPath(args.originalLibraryFile._id, currentPath);
                 newPathTmp = "".concat(newPath, ".tmp");
@@ -85,10 +95,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 1:
                 _a.sent();
-                fs.renameSync(currentPath, newPathTmp);
+                // delete original file
+                if (fs.existsSync(args.originalLibraryFile._id)) {
+                    fs.unlinkSync(args.originalLibraryFile._id);
+                }
+                // delete temp file
                 if (fs.existsSync(newPath)) {
                     fs.unlinkSync(newPath);
                 }
+                fs.renameSync(currentPath, newPathTmp);
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 2:
                 _a.sent();
