@@ -82,10 +82,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     return !stream.removed;
   });
 
-  if (getContainer(args.inputFileObj._id) !== args.variables.ffmpegCommand.container) {
-    shouldProcess = true;
-  }
-
   for (let i = 0; i < streams.length; i += 1) {
     const stream = streams[i];
 

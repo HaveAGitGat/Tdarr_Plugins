@@ -13,6 +13,7 @@ var __assign = (this && this.__assign) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint-disable no-param-reassign */
 var details = function () { return ({
     name: 'Begin Command',
@@ -39,8 +40,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    var containerParts = args.inputFileObj._id.split('.');
-    var container = containerParts[containerParts.length - 1];
+    var container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
     var ffmpegCommand = {
         inputFiles: [],
         streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map(function (stream) { return (__assign(__assign({}, stream), { removed: false, mapArgs: [

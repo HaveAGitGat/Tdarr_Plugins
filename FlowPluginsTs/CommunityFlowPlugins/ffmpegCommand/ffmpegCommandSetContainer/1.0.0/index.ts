@@ -1,5 +1,6 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
+import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -46,7 +47,12 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  args.variables.ffmpegCommand.container = String(args.inputs.container);
+  const newContainer = String(args.inputs.container);
+
+  if (getContainer(args.inputFileObj._id) !== args.inputs.container) {
+    args.variables.ffmpegCommand.container = newContainer;
+    args.variables.ffmpegCommand.shouldProcess = true;
+  }
 
   return {
     outputFileObj: args.inputFileObj,

@@ -47,7 +47,6 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
-var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Execute',
@@ -113,9 +112,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     }
                     return !stream.removed;
                 });
-                if ((0, fileUtils_1.getContainer)(args.inputFileObj._id) !== args.variables.ffmpegCommand.container) {
-                    shouldProcess = true;
-                }
                 _loop_1 = function (i) {
                     var stream = streams[i];
                     stream.outputArgs = stream.outputArgs.map(function (arg) {
