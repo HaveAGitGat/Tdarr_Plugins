@@ -5,6 +5,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
@@ -43,6 +44,7 @@ const details = ():IpluginDetails => ({
       inputUI: {
         type: 'dropdown',
         options: [
+          'original',
           'mkv',
           'mp4',
           'm4v',
@@ -70,7 +72,12 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const customArguments = String(args.inputs.customArguments);
-  const container = String(args.inputs.container);
+
+  let container = String(args.inputs.container);
+
+  if (container === 'original') {
+    container = getContainer(args.inputFileObj._id);
+  }
 
   const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
 
