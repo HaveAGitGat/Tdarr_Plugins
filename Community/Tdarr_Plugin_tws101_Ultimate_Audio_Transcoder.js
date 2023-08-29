@@ -10,8 +10,8 @@ const details = () => ({
   Description: `Choose the languages you want to keep, 8 tags, one of each will be kept.  Select codec, channel count, and bit rate. Choose to keep undefined and/or native language.
    Max lang tags would be 10 if both undefined and native are true.  If native language is set true, you will need a TVDB api key and a radarr or sonarr instance. `,
   //    Created by tws101
-  //    Release Version 1.91
-  Version: '1.91',
+  //    Release Version 1.92
+  Version: '1.92',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [
     {
@@ -822,13 +822,13 @@ function buildAudioConfiguration(inputs, file, logger, result, audioCodec, chann
     if (parseInt(highestChannelCount.channels) >= parseInt(channelCount)) {
       configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
       configuration.AddOutputSetting(
-        ` -c:a:${audioIdx} ${audioEncoder} -ac ${channelCount} -b:a ${inputs.bitrate} `,
+        ` -c:a:${audioIdx} ${audioEncoder} -ac:a:${audioIdx} ${channelCount} -b:a:${audioIdx} ${inputs.bitrate} `,
       );
       logger.AddError(`Creating ${lang} stream in ${audioEncoder}, ${channelCount} channels`);
     } else {
       configuration.AddInputSetting(`-map 0:${highestChannelCount.index}`);
       configuration.AddOutputSetting(
-        ` -c:a:${audioIdx} ${audioEncoder} -ac ${highestChannelCount.channels} -b:a ${inputs.bitrate} `,
+        ` -c:a:${audioIdx} ${audioEncoder} -ac:a:${audioIdx} ${highestChannelCount.channels} -b:a:${audioIdx} ${inputs.bitrate} `,
       );
       logger.AddError(`Creating ${lang} stream in ${audioEncoder}, ${highestChannelCount.channels} channels`);
     }
