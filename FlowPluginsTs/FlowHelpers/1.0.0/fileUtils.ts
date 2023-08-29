@@ -14,6 +14,12 @@ export const getFileName = (filePath: string): string => {
   return parts2.join('.');
 };
 
+export const getFileAbosluteDir = (filePath: string):string => {
+  const parts = filePath.split('/');
+  parts.pop();
+  return parts.join('/');
+};
+
 export const getFfType = (codecType: string): string => (codecType === 'video' ? 'v' : 'a');
 
 export const getSubStem = ({
@@ -91,4 +97,10 @@ export const moveFileAndValidate = async ({
       throw new Error(errMessage);
     }
   }
+};
+
+export const getPluginWorkDir = (args: IpluginInputArgs):string => {
+  const pluginWorkDir = `${args.workDir}/${new Date().getTime()}`;
+  args.deps.fsextra.ensureDirSync(pluginWorkDir);
+  return pluginWorkDir;
 };

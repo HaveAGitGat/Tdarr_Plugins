@@ -1,4 +1,6 @@
-import { moveFileAndValidate } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import {
+  getContainer, getFileAbosluteDir, getFileName, moveFileAndValidate,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -25,16 +27,6 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-const getNewPath = (originalPath: string, tempPath: string) => {
-  const tempPathParts = tempPath.split('.');
-  const container = tempPathParts[tempPathParts.length - 1];
-
-  const originalPathParts = originalPath.split('.');
-
-  originalPathParts[originalPathParts.length - 1] = container;
-  return originalPathParts.join('.');
-};
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const fs = require('fs');
@@ -57,7 +49,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('File has changed, replacing original file');
 
   const currentPath = args.inputFileObj._id;
-  const newPath = getNewPath(args.originalLibraryFile._id, currentPath);
+  const orignalFolder = getFileAbosluteDir(args.originalLibraryFile._id);
+  const fileName = getFileName(args.inputFileObj._id);
+  const container = getContainer(args.inputFileObj._id);
+
+  const newPath = `${orignalFolder}/${fileName}.${container}`;
   const newPathTmp = `${newPath}.tmp`;
 
   args.jobLog(JSON.stringify({
@@ -68,11 +64,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  // delete temp file
-  if (fs.existsSync(newPath)) {
-    fs.unlinkSync(newPath);
-  }
-
   await moveFileAndValidate({
     inputPath: currentPath,
     outputPath: newPathTmp,
@@ -80,7 +71,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   });
 
   // delete original file
-  if (fs.existsSync(args.originalLibraryFile._id)) {
+  if (
+    fs.existsSync(args.originalLibraryFile._id)
+    && args.originalLibraryFile._id !== currentPath
+  ) {
+    args.jobLog(`Deleting original file:${args.originalLibraryFile._id}`);
     fs.unlinkSync(args.originalLibraryFile._id);
   }
 

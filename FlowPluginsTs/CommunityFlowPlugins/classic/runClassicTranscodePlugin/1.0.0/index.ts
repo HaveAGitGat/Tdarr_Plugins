@@ -1,5 +1,5 @@
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -83,7 +83,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   }
 
   const container = getContainer(args.inputFileObj._id);
-  let cacheFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
+  let cacheFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
   const otherArguments = {
     handbrakePath: args.handbrakePath,

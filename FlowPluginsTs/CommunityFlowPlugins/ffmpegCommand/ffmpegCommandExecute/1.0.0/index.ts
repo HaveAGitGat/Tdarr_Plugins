@@ -5,6 +5,7 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
+import { getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -121,7 +122,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const idx = cliArgs.indexOf('-i');
   cliArgs.splice(idx, 0, ...inputArgs);
 
-  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${args.variables.ffmpegCommand.container}`;
+  const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}`
+  + `.${args.variables.ffmpegCommand.container}`;
+
   cliArgs.push(outputFilePath);
 
   args.jobLog('Processing file');
