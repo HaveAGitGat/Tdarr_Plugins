@@ -146,9 +146,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 parts.shift();
                 infoLine = parts.join(']');
                 infoLine = infoLine.split('\r\n').join('').split('\t').join('');
-                console.log({
-                    infoLine: infoLine,
-                });
                 loudNormValues = JSON.parse(infoLine);
                 args.jobLog("Loudnorm first pass values returned:  \n".concat(JSON.stringify(loudNormValues)));
                 normArgs2 = [
