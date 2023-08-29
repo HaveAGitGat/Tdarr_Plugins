@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var fs_1 = require("fs");
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'HandBrake Custom Arguments',
@@ -76,6 +77,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'dropdown',
                 options: [
+                    'original',
                     'mkv',
                     'mp4',
                     'm4v',
@@ -107,6 +109,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 customArguments = String(args.inputs.customArguments);
                 container = String(args.inputs.container);
+                if (container === 'original') {
+                    container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                }
                 outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
                 presetString = String(args.inputs.jsonPreset);
                 cliArgs = [
