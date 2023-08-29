@@ -36,7 +36,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'directory',
             },
-            tooltip: 'Specify directory to check. Leave blank to use working directory. Put below input plugin to check original file directory.',
+            tooltip: 'Specify directory to check. Leave blank to use working directory.'
+                + ' Put below Input File plugin to check original file directory.',
         },
     ],
     outputs: [

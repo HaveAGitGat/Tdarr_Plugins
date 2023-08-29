@@ -70,7 +70,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 outputDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
-                ouputFilePath = outputDir + '/' + fileName + '.' + container;
+                ouputFilePath = "".concat(outputDir, "/").concat(fileName, ".").concat(container);
                 return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
                         inputPath: args.inputFileObj._id,
                         outputPath: ouputFilePath,

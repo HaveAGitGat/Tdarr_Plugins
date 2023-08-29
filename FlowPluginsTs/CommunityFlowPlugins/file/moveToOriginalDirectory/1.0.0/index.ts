@@ -1,12 +1,11 @@
 import {
-  getContainer, getFileAbosluteDir, getFileName, getSubStem, moveFileAndValidate,
+  getContainer, getFileAbosluteDir, getFileName, moveFileAndValidate,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import normJoinPath from '../../../../FlowHelpers/1.0.0/normJoinPath';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
