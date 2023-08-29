@@ -10,7 +10,6 @@ const details = () :IpluginDetails => ({
   description: 'Convert HDR to SDR',
   style: {
     borderColor: '#6efefc',
-    opacity: 0.5,
   },
   tags: 'video',
   isStartPlugin: false,
@@ -30,6 +29,12 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
+
+  args.variables.ffmpegCommand.streams.forEach((stream) => {
+    if (stream.codec_type === 'video') {
+      stream.outputArgs.push('-vf', 'zscale=t=linear:npl=100,format=yuv420p');
+    }
+  });
 
   return {
     outputFileObj: args.inputFileObj,
