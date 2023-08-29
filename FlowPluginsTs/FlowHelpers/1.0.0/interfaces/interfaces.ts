@@ -114,8 +114,12 @@ export interface IpluginInputArgs {
         importFresh(path: string): any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axiosMiddleware: (endpoint: string, data: Record<string, unknown>) => Promise<any>,
-        requireFromString: (pluginText: string, relativePath:string) => Record<string, unknown>,
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        upath:any,
+        requireFromString: (pluginText: string, relativePath: string) => Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        upath: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        gracefulfs: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mvdir: any
     },
 }

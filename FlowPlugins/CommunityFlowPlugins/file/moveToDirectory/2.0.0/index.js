@@ -40,7 +40,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fs_1 = require("fs");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var normJoinPath_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/normJoinPath"));
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
@@ -126,7 +125,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.jobLog("Input path: ".concat(args.inputFileObj._id));
                 args.jobLog("Output path: ".concat(ouputFilePath));
                 args.deps.fsextra.ensureDirSync(outputPath);
-                return [4 /*yield*/, fs_1.promises.rename(args.inputFileObj._id, ouputFilePath)];
+                return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
+                        inputPath: args.inputFileObj._id,
+                        outputPath: ouputFilePath,
+                        args: args,
+                    })];
             case 1:
                 _a.sent();
                 return [2 /*return*/, {

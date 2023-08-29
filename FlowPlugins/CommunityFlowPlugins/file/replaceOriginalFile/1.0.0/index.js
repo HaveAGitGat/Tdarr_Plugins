@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
@@ -99,15 +100,27 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 if (fs.existsSync(newPath)) {
                     fs.unlinkSync(newPath);
                 }
-                fs.renameSync(currentPath, newPathTmp);
+                return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
+                        inputPath: currentPath,
+                        outputPath: newPathTmp,
+                        args: args,
+                    })];
+            case 2:
+                _a.sent();
                 // delete original file
                 if (fs.existsSync(args.originalLibraryFile._id)) {
                     fs.unlinkSync(args.originalLibraryFile._id);
                 }
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
-            case 2:
+            case 3:
                 _a.sent();
-                fs.renameSync(newPathTmp, newPath);
+                return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
+                        inputPath: newPathTmp,
+                        outputPath: newPath,
+                        args: args,
+                    })];
+            case 4:
+                _a.sent();
                 return [2 /*return*/, {
                         outputFileObj: {
                             _id: newPath,
