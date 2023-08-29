@@ -122,10 +122,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   let infoLine = parts.join(']');
   infoLine = infoLine.split('\r\n').join('').split('\t').join('');
 
-  console.log({
-    infoLine,
-  });
-
   const loudNormValues = JSON.parse(infoLine);
 
   args.jobLog(`Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`);
