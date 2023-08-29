@@ -1,3 +1,4 @@
+import { moveFileAndValidate } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -72,7 +73,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     fs.unlinkSync(newPath);
   }
 
-  fs.renameSync(currentPath, newPathTmp);
+  await moveFileAndValidate({
+    inputPath: currentPath,
+    outputPath: newPathTmp,
+    args,
+  });
 
   // delete original file
   if (fs.existsSync(args.originalLibraryFile._id)) {
@@ -80,7 +85,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
-  fs.renameSync(newPathTmp, newPath);
+
+  await moveFileAndValidate({
+    inputPath: newPathTmp,
+    outputPath: newPath,
+    args,
+  });
 
   return {
     outputFileObj: {

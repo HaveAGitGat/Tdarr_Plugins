@@ -1,5 +1,6 @@
-import { promises as fs } from 'fs';
-import { getContainer, getFileName, getSubStem } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import {
+  getContainer, getFileName, getSubStem, moveFileAndValidate,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -97,7 +98,13 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   args.jobLog(`Output path: ${ouputFilePath}`);
 
   args.deps.fsextra.ensureDirSync(outputPath);
-  await fs.rename(args.inputFileObj._id, ouputFilePath);
+
+  await moveFileAndValidate({
+    inputPath: args.inputFileObj._id,
+    outputPath: ouputFilePath,
+    args,
+
+  });
 
   return {
     outputFileObj: {
