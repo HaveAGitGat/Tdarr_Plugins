@@ -5,7 +5,6 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
