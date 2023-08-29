@@ -37,59 +37,19 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fs_1 = require("fs");
-var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'HandBrake Custom Arguments',
-    description: 'HandBrake Custom Arguments',
+    name: 'Move To Original Directory',
+    description: 'Move working file original directory.',
     style: {
         borderColor: 'green',
     },
     tags: '',
     isStartPlugin: false,
     sidebarPosition: -1,
-    icon: '',
-    inputs: [
-        {
-            name: 'customArguments',
-            type: 'string',
-            defaultValue: '-Z "Fast 1080p30" --all-subtitles',
-            inputUI: {
-                type: 'text',
-            },
-            tooltip: 'Specify HandBrake arguments',
-        },
-        {
-            name: 'jsonPreset',
-            type: 'string',
-            defaultValue: '',
-            inputUI: {
-                type: 'text',
-            },
-            tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
-        },
-        {
-            name: 'container',
-            type: 'string',
-            defaultValue: 'mkv',
-            inputUI: {
-                type: 'dropdown',
-                options: [
-                    'original',
-                    'mkv',
-                    'mp4',
-                    'm4v',
-                    'avi',
-                    'mov',
-                    'mpg',
-                    'mpeg',
-                ],
-            },
-            tooltip: 'Specify HandBrake arguments',
-        },
-    ],
+    icon: 'faArrowRight',
+    inputs: [],
     outputs: [
         {
             number: 1,
@@ -100,66 +60,27 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, customArguments, container, outputFilePath, presetString, cliArgs, presetPath, preset, cli, res;
+    var lib, fileName, container, outputDir, ouputFilePath;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                customArguments = String(args.inputs.customArguments);
-                container = String(args.inputs.container);
-                if (container === 'original') {
-                    container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                }
-                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
-                presetString = String(args.inputs.jsonPreset);
-                cliArgs = [
-                    '-i',
-                    "".concat(args.inputFileObj._id),
-                    '-o',
-                    "".concat(outputFilePath),
-                ];
-                presetPath = "".concat(args.workDir, "/preset.json");
-                if (!(presetString.trim() !== '')) return [3 /*break*/, 2];
-                preset = JSON.parse(presetString);
-                return [4 /*yield*/, fs_1.promises.writeFile(presetPath, JSON.stringify(preset, null, 2))];
+                fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
+                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                outputDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                ouputFilePath = "".concat(outputDir, "/").concat(fileName, ".").concat(container);
+                return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
+                        inputPath: args.inputFileObj._id,
+                        outputPath: ouputFilePath,
+                        args: args,
+                    })];
             case 1:
                 _a.sent();
-                cliArgs.push('--preset-import-file');
-                cliArgs.push(presetPath);
-                cliArgs.push('-Z');
-                cliArgs.push(preset.PresetList[0].PresetName);
-                return [3 /*break*/, 3];
-            case 2:
-                cliArgs.push.apply(cliArgs, args.deps.parseArgsStringToArgv(customArguments, '', ''));
-                _a.label = 3;
-            case 3:
-                args.updateWorker({
-                    CLIType: args.handbrakePath,
-                    preset: cliArgs.join(' '),
-                });
-                cli = new cliUtils_1.CLI({
-                    cli: args.handbrakePath,
-                    spawnArgs: cliArgs,
-                    spawnOpts: {},
-                    jobLog: args.jobLog,
-                    outputFilePath: outputFilePath,
-                    inputFileObj: args.inputFileObj,
-                    logFullCliOutput: args.logFullCliOutput,
-                    updateWorker: args.updateWorker,
-                });
-                return [4 /*yield*/, cli.runCli()];
-            case 4:
-                res = _a.sent();
-                if (res.cliExitCode !== 0) {
-                    args.jobLog('Running HandBrake failed');
-                    throw new Error('Running HandBrake failed');
-                }
-                args.logOutcome('tSuc');
                 return [2 /*return*/, {
                         outputFileObj: {
-                            _id: outputFilePath,
+                            _id: ouputFilePath,
                         },
                         outputNumber: 1,
                         variables: args.variables,

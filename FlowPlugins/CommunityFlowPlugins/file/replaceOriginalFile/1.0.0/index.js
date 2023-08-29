@@ -58,16 +58,9 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getNewPath = function (originalPath, tempPath) {
-    var tempPathParts = tempPath.split('.');
-    var container = tempPathParts[tempPathParts.length - 1];
-    var originalPathParts = originalPath.split('.');
-    originalPathParts[originalPathParts.length - 1] = container;
-    return originalPathParts.join('.');
-};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var fs, lib, currentPath, newPath, newPathTmp;
+    var fs, lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -86,7 +79,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 args.jobLog('File has changed, replacing original file');
                 currentPath = args.inputFileObj._id;
-                newPath = getNewPath(args.originalLibraryFile._id, currentPath);
+                orignalFolder = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
+                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                newPath = "".concat(orignalFolder, "/").concat(fileName, ".").concat(container);
                 newPathTmp = "".concat(newPath, ".tmp");
                 args.jobLog(JSON.stringify({
                     currentPath: currentPath,
@@ -96,10 +92,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 1:
                 _a.sent();
-                // delete temp file
-                if (fs.existsSync(newPath)) {
-                    fs.unlinkSync(newPath);
-                }
                 return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
                         inputPath: currentPath,
                         outputPath: newPathTmp,
@@ -108,7 +100,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 2:
                 _a.sent();
                 // delete original file
-                if (fs.existsSync(args.originalLibraryFile._id)) {
+                if (fs.existsSync(args.originalLibraryFile._id)
+                    && args.originalLibraryFile._id !== currentPath) {
+                    args.jobLog("Deleting original file:".concat(args.originalLibraryFile._id));
                     fs.unlinkSync(args.originalLibraryFile._id);
                 }
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];

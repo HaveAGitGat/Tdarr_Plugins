@@ -47,6 +47,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Execute',
@@ -147,7 +148,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 idx = cliArgs.indexOf('-i');
                 cliArgs.splice.apply(cliArgs, __spreadArray([idx, 0], inputArgs, false));
-                outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(args.variables.ffmpegCommand.container);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
+                    + ".".concat(args.variables.ffmpegCommand.container);
                 cliArgs.push(outputFilePath);
                 args.jobLog('Processing file');
                 args.jobLog(JSON.stringify({

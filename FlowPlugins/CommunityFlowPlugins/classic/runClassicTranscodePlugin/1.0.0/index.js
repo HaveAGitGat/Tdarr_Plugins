@@ -121,7 +121,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         + 'Please use the Run Classic Filter Flow Plugin plugin instead.');
                 }
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                cacheFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
+                cacheFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 otherArguments = {
                     handbrakePath: args.handbrakePath,
                     ffmpegPath: args.ffmpegPath,
