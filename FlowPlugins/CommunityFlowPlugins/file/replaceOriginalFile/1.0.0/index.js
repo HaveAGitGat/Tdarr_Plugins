@@ -95,15 +95,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 1:
                 _a.sent();
-                // delete original file
-                if (fs.existsSync(args.originalLibraryFile._id)) {
-                    fs.unlinkSync(args.originalLibraryFile._id);
-                }
                 // delete temp file
                 if (fs.existsSync(newPath)) {
                     fs.unlinkSync(newPath);
                 }
                 fs.renameSync(currentPath, newPathTmp);
+                // delete original file
+                if (fs.existsSync(args.originalLibraryFile._id)) {
+                    fs.unlinkSync(args.originalLibraryFile._id);
+                }
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 2:
                 _a.sent();

@@ -5,7 +5,7 @@ import {
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-const details = ():IpluginDetails => ({
+const details = (): IpluginDetails => ({
   name: 'Replace Original File',
   description: 'Replace the original file',
   style: {
@@ -24,7 +24,7 @@ const details = ():IpluginDetails => ({
   ],
 });
 
-const getNewPath = (originalPath:string, tempPath:string) => {
+const getNewPath = (originalPath: string, tempPath: string) => {
   const tempPathParts = tempPath.split('.');
   const container = tempPathParts[tempPathParts.length - 1];
 
@@ -35,7 +35,7 @@ const getNewPath = (originalPath:string, tempPath:string) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
+const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const fs = require('fs');
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -67,17 +67,18 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  // delete original file
-  if (fs.existsSync(args.originalLibraryFile._id)) {
-    fs.unlinkSync(args.originalLibraryFile._id);
-  }
-
   // delete temp file
   if (fs.existsSync(newPath)) {
     fs.unlinkSync(newPath);
   }
 
   fs.renameSync(currentPath, newPathTmp);
+
+  // delete original file
+  if (fs.existsSync(args.originalLibraryFile._id)) {
+    fs.unlinkSync(args.originalLibraryFile._id);
+  }
+
   await new Promise((resolve) => setTimeout(resolve, 2000));
   fs.renameSync(newPathTmp, newPath);
 
