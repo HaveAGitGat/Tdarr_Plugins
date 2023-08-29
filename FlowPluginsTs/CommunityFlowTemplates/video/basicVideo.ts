@@ -1,4 +1,9 @@
-const details = () => ({
+/* eslint-disable no-template-curly-in-string */
+/* eslint-disable import/prefer-default-export */
+
+import { IflowTemplate } from '../../FlowHelpers/1.0.0/interfaces/interfaces';
+
+const details = () :IflowTemplate => ({
   name: 'Basic HEVC Video Flow',
   description: 'Basic HEVC Video Flow',
   tags: 'video',
@@ -148,4 +153,6 @@ const details = () => ({
   ],
 });
 
-module.exports.details = details;
+export {
+  details,
+};

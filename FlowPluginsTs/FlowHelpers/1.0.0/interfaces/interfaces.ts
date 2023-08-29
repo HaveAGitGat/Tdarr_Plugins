@@ -123,3 +123,13 @@ export interface IpluginInputArgs {
         mvdir: any
     },
 }
+
+export interface IflowTemplate {
+    name: string,
+    description: string,
+    tags: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    flowPlugins:any[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    flowEdges: any[],
+}

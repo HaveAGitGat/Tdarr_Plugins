@@ -1,4 +1,8 @@
 "use strict";
+/* eslint-disable no-template-curly-in-string */
+/* eslint-disable import/prefer-default-export */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.details = void 0;
 var details = function () { return ({
     name: 'Basic HEVC Video Flow',
     description: 'Basic HEVC Video Flow',
@@ -148,4 +152,4 @@ var details = function () { return ({
         },
     ],
 }); };
-module.exports.details = details;
+exports.details = details;
