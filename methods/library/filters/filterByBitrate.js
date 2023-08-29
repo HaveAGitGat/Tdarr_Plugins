@@ -1,4 +1,4 @@
-function filterByBitrate(file, lowerBound, upperBound) {
+const filterByBitrate = (file, lowerBound, upperBound) => {
   try {
     if (
       file.bit_rate >= lowerBound
@@ -22,6 +22,6 @@ function filterByBitrate(file, lowerBound, upperBound) {
     };
     return response;
   }
-}
+};
 
 module.exports = filterByBitrate;

@@ -46,7 +46,7 @@ const run = async (tests) => {
           testOutput = test.outputModify(testOutput);
         }
 
-        if (test.error && test.error.shouldThrow) {
+        if (test?.error?.shouldThrow) {
           if (errorEncountered !== false) {
             // eslint-disable-next-line no-console
             console.log(errorEncountered);
@@ -54,6 +54,8 @@ const run = async (tests) => {
           } else {
             throw new Error('Expected plugin error but none was thrown!');
           }
+        } else if (!test?.error?.shouldThrow && errorEncountered !== false) {
+          throw new Error(`Unexpected plugin error!${errorEncountered}`);
         } else {
           chai.assert.deepEqual(testOutput, expectedOutput);
         }

@@ -37,6 +37,7 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
+      preset: '',
       container: '.mkv',
     },
   },
@@ -48,11 +49,40 @@ const tests = [
       otherArguments: {},
     },
     output: {
+      processFile: true,
+      infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 3058 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 3058 \n'
+        + 'Minimum = 2140 \n'
+        + 'Maximum = 3975 \n'
+        + 'File is not h264. Transcoding. \n',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      preset: ',-map 0 -c:v h264_nvenc -preset fast -crf 23 -b:v 3058k -minrate 2140k -maxrate 3975k -bufsize 3058k -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ',
+      container: '.mkv',
+    },
+  },
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        delete file.ffProbeData.streams[0].duration;
+        delete file.ffProbeData.format.duration;
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {},
+      otherArguments: {},
+    },
+    output: {
       processFile: false,
       infoLog: 'Target bitrate could not be calculated. Skipping this plugin. \n',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
+      preset: '',
       container: '.mkv',
     },
   },
@@ -79,8 +109,8 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
+      preset: ',-map 0 -c:v h264_nvenc -preset fast -crf 23 -b:v 1526k -minrate 1068k -maxrate 1983k -bufsize 1526k -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ',
       container: '.mkv',
-      preset: 'undefined,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film -b:v 1526k -minrate 1068k -maxrate 1983k -bufsize 1526k -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ',
     },
   },
   {
@@ -98,9 +128,10 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
+      preset: '',
       container: '.mp4',
     },
   },
 ];
 
-run(tests);
+void run(tests);

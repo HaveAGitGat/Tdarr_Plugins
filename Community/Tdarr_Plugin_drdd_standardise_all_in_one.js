@@ -46,7 +46,7 @@ const details = () => {
       {
         name: "wanted_subtitle_languages",
         type: 'string',
-        defaultValue: 'eng,fre',
+        defaultValue: '',
         inputUI: {
           type: 'text',
         },
@@ -411,11 +411,11 @@ function buildVideoConfiguration(inputs, file, logger) {
 
 //#endregion
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   var response = {
     container: ".mkv",
