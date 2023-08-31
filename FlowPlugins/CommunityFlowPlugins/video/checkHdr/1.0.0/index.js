@@ -27,18 +27,24 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
+    var _a, _b;
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var isHdr = false;
-    for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
-        var stream = args.variables.ffmpegCommand.streams[i];
-        if (stream.codec_type === 'video'
-            && stream.transfer_characteristics === 'smpte2084'
-            && stream.color_primaries === 'bt2020'
-            && stream.color_range === 'tv') {
-            isHdr = true;
+    if (Array.isArray((_b = (_a = args === null || args === void 0 ? void 0 : args.inputFileObj) === null || _a === void 0 ? void 0 : _a.ffProbeData) === null || _b === void 0 ? void 0 : _b.streams)) {
+        for (var i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
+            var stream = args.inputFileObj.ffProbeData.streams[i];
+            if (stream.codec_type === 'video'
+                && stream.transfer_characteristics === 'smpte2084'
+                && stream.color_primaries === 'bt2020'
+                && stream.color_range === 'tv') {
+                isHdr = true;
+            }
         }
+    }
+    else {
+        throw new Error('File has not stream data');
     }
     return {
         outputFileObj: args.inputFileObj,
