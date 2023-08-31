@@ -27,15 +27,21 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
+    var _a, _b;
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var is10Bit = false;
-    for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
-        var stream = args.variables.ffmpegCommand.streams[i];
-        if (stream.codec_type === 'video' && stream.bits_per_raw_sample === 10) {
-            is10Bit = true;
+    if (Array.isArray((_b = (_a = args === null || args === void 0 ? void 0 : args.inputFileObj) === null || _a === void 0 ? void 0 : _a.ffProbeData) === null || _b === void 0 ? void 0 : _b.streams)) {
+        for (var i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
+            var stream = args.inputFileObj.ffProbeData.streams[i];
+            if (stream.codec_type === 'video' && stream.bits_per_raw_sample === 10) {
+                is10Bit = true;
+            }
         }
+    }
+    else {
+        throw new Error('File has not stream data');
     }
     return {
         outputFileObj: args.inputFileObj,

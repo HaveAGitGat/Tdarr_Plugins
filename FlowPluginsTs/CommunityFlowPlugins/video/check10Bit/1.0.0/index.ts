@@ -36,11 +36,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let is10Bit = false;
 
-  for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
-    const stream = args.variables.ffmpegCommand.streams[i];
-    if (stream.codec_type === 'video' && stream.bits_per_raw_sample === 10) {
-      is10Bit = true;
+  if (Array.isArray(args?.inputFileObj?.ffProbeData?.streams)) {
+    for (let i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
+      const stream = args.inputFileObj.ffProbeData.streams[i];
+      if (stream.codec_type === 'video' && stream.bits_per_raw_sample === 10) {
+        is10Bit = true;
+      }
     }
+  } else {
+    throw new Error('File has not stream data');
   }
 
   return {
