@@ -1,5 +1,6 @@
 /* eslint-disable */
 // tdarrSkipTest
+module.exports.dependencies = ['@cospired/i18n-iso-languages'];
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Add_Subs_to_mkv',
   Stage: 'Pre-processing',
@@ -9,8 +10,8 @@ const details = () => ({
   Description: ` Add Subtitles of chosen language tag to MKV. One tag only, Source files must be MKV and SRT.  All files must be in the same directory.
   Naming must be source.mkv and source.eng.srt where source is the same name and eng is the chosen language. If source.eng.srt is not found source.en.srt will be used instead.`,
   //    Created by tws101
-  //    Release Version 1.30
-  Version: '1.30',
+  //    Release Version 1.31
+  Version: '1.31',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [
     {
