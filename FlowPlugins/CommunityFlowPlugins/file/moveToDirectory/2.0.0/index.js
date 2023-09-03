@@ -51,6 +51,8 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faArrowRight',
     inputs: [
@@ -124,6 +126,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 args.jobLog("Input path: ".concat(args.inputFileObj._id));
                 args.jobLog("Output path: ".concat(ouputFilePath));
+                if (args.inputFileObj._id === ouputFilePath) {
+                    args.jobLog('Input and output path are the same, skipping move.');
+                    return [2 /*return*/, {
+                            outputFileObj: {
+                                _id: args.inputFileObj._id,
+                            },
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
                 args.deps.fsextra.ensureDirSync(outputPath);
                 return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
                         inputPath: args.inputFileObj._id,

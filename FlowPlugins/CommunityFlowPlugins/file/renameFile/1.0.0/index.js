@@ -47,6 +47,8 @@ var details = function () { return ({
     },
     tags: 'video',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
@@ -85,6 +87,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 newName = newName.replace(/\${container}/g, (0, fileUtils_1.getContainer)(args.inputFileObj._id));
                 fileDir = (0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id);
                 newPath = "".concat(fileDir, "/").concat(newName);
+                if (args.inputFileObj._id === newPath) {
+                    args.jobLog('Input and output path are the same, skipping rename.');
+                    return [2 /*return*/, {
+                            outputFileObj: {
+                                _id: args.inputFileObj._id,
+                            },
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
                 return [4 /*yield*/, (0, fileUtils_1.moveFileAndValidate)({
                         inputPath: args.inputFileObj._id,
                         outputPath: newPath,

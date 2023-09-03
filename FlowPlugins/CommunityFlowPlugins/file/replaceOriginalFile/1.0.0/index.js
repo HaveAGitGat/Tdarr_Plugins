@@ -41,12 +41,14 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
-    description: 'Replace the original file',
+    description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
     style: {
         borderColor: 'green',
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faArrowRight',
     inputs: [],

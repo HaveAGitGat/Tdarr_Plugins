@@ -10,6 +10,8 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: true,
+    pType: 'start',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [],
