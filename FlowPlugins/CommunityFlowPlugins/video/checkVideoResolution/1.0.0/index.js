@@ -60,9 +60,38 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
+    var outputNumber = 9;
+    switch (args.inputFileObj.video_resolution) {
+        case '480p':
+            outputNumber = 1;
+            break;
+        case '576p':
+            outputNumber = 2;
+            break;
+        case '720p':
+            outputNumber = 3;
+            break;
+        case '1080p':
+            outputNumber = 4;
+            break;
+        case '1440p':
+            outputNumber = 5;
+            break;
+        case '4KUHD':
+            outputNumber = 6;
+            break;
+        case 'DCI4K':
+            outputNumber = 7;
+            break;
+        case '8KUHD':
+            outputNumber = 8;
+            break;
+        default:
+            outputNumber = 9;
+    }
     return {
         outputFileObj: args.inputFileObj,
-        outputNumber: 1,
+        outputNumber: outputNumber,
         variables: args.variables,
     };
 };
