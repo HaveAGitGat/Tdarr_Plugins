@@ -6,13 +6,15 @@ import {
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
-  name: 'Check HDR',
+  name: 'Check HDR Video',
   description: 'Check if video is HDR',
   style: {
     borderColor: 'orange',
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faQuestion',
   inputs: [],

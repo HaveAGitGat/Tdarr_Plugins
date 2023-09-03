@@ -16,6 +16,8 @@ const details = (): IpluginDetails => ({
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
@@ -53,6 +55,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const fileDir = getFileAbosluteDir(args.inputFileObj._id);
   const newPath = `${fileDir}/${newName}`;
+
+  if (args.inputFileObj._id === newPath) {
+    args.jobLog('Input and output path are the same, skipping rename.');
+
+    return {
+      outputFileObj: {
+        _id: args.inputFileObj._id,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
 
   await moveFileAndValidate({
     inputPath: args.inputFileObj._id,

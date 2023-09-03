@@ -17,6 +17,8 @@ const details = ():IpluginDetails => ({
   tags: '',
 
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faArrowRight',
   inputs: [],
@@ -39,6 +41,18 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const outputDir = getFileAbosluteDir(args.originalLibraryFile._id);
 
   const ouputFilePath = `${outputDir}/${fileName}.${container}`;
+
+  if (args.inputFileObj._id === ouputFilePath) {
+    args.jobLog('Input and output path are the same, skipping move.');
+
+    return {
+      outputFileObj: {
+        _id: args.inputFileObj._id,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
 
   await moveFileAndValidate({
     inputPath: args.inputFileObj._id,

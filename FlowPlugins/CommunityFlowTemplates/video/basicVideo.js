@@ -6,7 +6,7 @@ exports.details = void 0;
 var details = function () { return ({
     name: 'Basic HEVC Video Flow',
     description: 'Basic HEVC Video Flow',
-    tags: 'video',
+    tags: '',
     flowPlugins: [
         {
             name: 'Input File',
@@ -93,8 +93,6 @@ var details = function () { return ({
             target: '91b7IrsEc',
             targetHandle: null,
             id: 'HhF4rw2DZ',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: '91b7IrsEc',
@@ -102,8 +100,6 @@ var details = function () { return ({
             target: '4Swd6qzvc',
             targetHandle: null,
             id: 'jJizyFUcr',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: '4Swd6qzvc',
@@ -111,8 +107,6 @@ var details = function () { return ({
             target: '8B_6pRd_U',
             targetHandle: null,
             id: '3Df7Xoy93',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: '450g167D8',
@@ -120,8 +114,6 @@ var details = function () { return ({
             target: '4fkfOyR3l',
             targetHandle: null,
             id: 'rE5Dsh9KM',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: '91b7IrsEc',
@@ -129,8 +121,6 @@ var details = function () { return ({
             target: '4fkfOyR3l',
             targetHandle: null,
             id: 'W2nVG7ts5',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: '8B_6pRd_U',
@@ -138,8 +128,6 @@ var details = function () { return ({
             target: 'TtKXi3Q7h',
             targetHandle: null,
             id: 'epqtLsPuG',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'TtKXi3Q7h',
@@ -147,8 +135,6 @@ var details = function () { return ({
             target: '450g167D8',
             targetHandle: null,
             id: 'ljOeP0cAZ',
-            animated: true,
-            type: 'smoothstep',
         },
     ],
 }); };

@@ -24,13 +24,22 @@ export interface IpluginInputs {
 
 export interface IpluginDetails {
     name: string,
+    nameUI?:{
+        type: 'text' | 'textarea',
+        style?:Record<string, unknown>,
+    }
     description: string,
     style: {
         borderColor: string,
         opacity?: number,
+        borderRadius?: number | string,
+        width?: number | string,
+        height?: number | string,
+        backgroundColor?: string,
     },
     tags: string,
     isStartPlugin: boolean,
+    pType: 'start' | 'onFlowError' | '',
     sidebarPosition: number,
     icon: string,
     inputs: IpluginInputs[],
@@ -39,6 +48,7 @@ export interface IpluginDetails {
         number: number,
         tooltip: string,
     }[],
+    requiresVersion: string,
 }
 
 export interface Ilog {
@@ -120,7 +130,9 @@ export interface IpluginInputArgs {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         gracefulfs: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        mvdir: any
+        mvdir: any,
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        axios: any,
     },
 }
 

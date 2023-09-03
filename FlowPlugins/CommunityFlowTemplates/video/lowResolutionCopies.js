@@ -6,7 +6,7 @@ exports.details = void 0;
 var details = function () { return ({
     name: 'Create Low Resolution Video Copies',
     description: 'Create Low Resolution Video Copies',
-    tags: 'video',
+    tags: '',
     flowPlugins: [
         {
             name: 'Input File',
@@ -77,13 +77,13 @@ var details = function () { return ({
             sourceRepo: 'Community',
             pluginName: 'checkFileNameIncludes',
             version: '1.0.0',
+            inputsDB: {
+                terms: '_720p,_480p',
+            },
             id: 'wRipuaq4G',
             position: {
                 x: 763.9976994431687,
                 y: 198.97576654117708,
-            },
-            inputsDB: {
-                terms: '_720p,_480p',
             },
         },
         {
@@ -138,13 +138,13 @@ var details = function () { return ({
             sourceRepo: 'Community',
             pluginName: 'ffmpegCommandSetVideoEncoder',
             version: '1.0.0',
+            inputsDB: {
+                forceEncoding: 'true',
+            },
             id: 'wcmBN2N02',
             position: {
                 x: 1171.0819612214827,
                 y: 257.19366435734827,
-            },
-            inputsDB: {
-                forceEncoding: 'true',
             },
         },
         {
@@ -185,13 +185,13 @@ var details = function () { return ({
             sourceRepo: 'Community',
             pluginName: 'ffmpegCommandSetVdeoResolution',
             version: '1.0.0',
+            inputsDB: {
+                targetResolution: '480p',
+            },
             id: 'dzFEwECXB',
             position: {
                 x: 1396.1961096759603,
                 y: 309.9727302535869,
-            },
-            inputsDB: {
-                targetResolution: '480p',
             },
         },
         {
@@ -199,13 +199,13 @@ var details = function () { return ({
             sourceRepo: 'Community',
             pluginName: 'ffmpegCommandSetVideoEncoder',
             version: '1.0.0',
+            inputsDB: {
+                forceEncoding: 'true',
+            },
             id: '_EynbvgSl',
             position: {
                 x: 1396.1961096759603,
                 y: 214.35898180146438,
-            },
-            inputsDB: {
-                forceEncoding: 'true',
             },
         },
         {
@@ -213,13 +213,13 @@ var details = function () { return ({
             sourceRepo: 'Community',
             pluginName: 'ffmpegCommandSetVdeoResolution',
             version: '1.0.0',
+            inputsDB: {
+                targetResolution: '720p',
+            },
             id: 'CMm7MlE7g',
             position: {
                 x: 1169.6624226114702,
                 y: 336.82482287402803,
-            },
-            inputsDB: {
-                targetResolution: '720p',
             },
         },
     ],
@@ -230,8 +230,6 @@ var details = function () { return ({
             target: 'wRipuaq4G',
             targetHandle: null,
             id: 'IE_oGhETB',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'wRipuaq4G',
@@ -239,8 +237,6 @@ var details = function () { return ({
             target: '1pj9oSg5G',
             targetHandle: null,
             id: 'QR6uGNUhE',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'wRipuaq4G',
@@ -248,8 +244,6 @@ var details = function () { return ({
             target: 'VyNRD3YjM',
             targetHandle: null,
             id: 'sh_kstv0D',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'uDC6XT1Jy',
@@ -257,8 +251,6 @@ var details = function () { return ({
             target: '1pj9oSg5G',
             targetHandle: null,
             id: 'G5jl85ijr',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'VyNRD3YjM',
@@ -266,8 +258,6 @@ var details = function () { return ({
             target: 'uDC6XT1Jy',
             targetHandle: null,
             id: 'DmUL9DS8q',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'VpCD-7LZJ',
@@ -275,8 +265,6 @@ var details = function () { return ({
             target: 'mFRK-Z9WC',
             targetHandle: null,
             id: 'ap4YXAxy3',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'cTKbaB8nT',
@@ -284,8 +272,6 @@ var details = function () { return ({
             target: 'mFRK-Z9WC',
             targetHandle: null,
             id: 'i9fr5J5pL',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'mFRK-Z9WC',
@@ -293,8 +279,6 @@ var details = function () { return ({
             target: 'oD4u5PY9T',
             targetHandle: null,
             id: 'KUw59S_Zl',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'oD4u5PY9T',
@@ -302,8 +286,6 @@ var details = function () { return ({
             target: 'wRipuaq4G',
             targetHandle: null,
             id: 'HlM4E6eV8',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'tmUd79-Fb',
@@ -311,9 +293,6 @@ var details = function () { return ({
             target: 'cTKbaB8nT',
             targetHandle: null,
             id: 'iJLmmoDLp',
-            animated: true,
-            type: 'smoothstep',
-            selected: false,
         },
         {
             source: 'uDC6XT1Jy',
@@ -321,8 +300,6 @@ var details = function () { return ({
             target: 'FSG9AOX5c',
             targetHandle: null,
             id: 'iRTrU8utq',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'dzFEwECXB',
@@ -330,8 +307,6 @@ var details = function () { return ({
             target: 'gbY0xIJnB',
             targetHandle: null,
             id: 'A5cyCu_kx',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'Jn6dcKd3i',
@@ -339,8 +314,6 @@ var details = function () { return ({
             target: '_EynbvgSl',
             targetHandle: null,
             id: '1HajidLz-',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: '_EynbvgSl',
@@ -348,8 +321,6 @@ var details = function () { return ({
             target: 'dzFEwECXB',
             targetHandle: null,
             id: 'vEESYeSsL',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'VyNRD3YjM',
@@ -357,8 +328,6 @@ var details = function () { return ({
             target: 'Jn6dcKd3i',
             targetHandle: null,
             id: 'q8zd_qCSU',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'gbY0xIJnB',
@@ -366,8 +335,6 @@ var details = function () { return ({
             target: 'VpCD-7LZJ',
             targetHandle: null,
             id: 'leYMQdxHw',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'FSG9AOX5c',
@@ -375,8 +342,6 @@ var details = function () { return ({
             target: 'wcmBN2N02',
             targetHandle: null,
             id: 'Dl5MCSqQM',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'wcmBN2N02',
@@ -384,8 +349,6 @@ var details = function () { return ({
             target: 'CMm7MlE7g',
             targetHandle: null,
             id: 'GIpbjomC8',
-            animated: true,
-            type: 'smoothstep',
         },
         {
             source: 'CMm7MlE7g',
@@ -393,8 +356,6 @@ var details = function () { return ({
             target: 'tmUd79-Fb',
             targetHandle: null,
             id: 'AxR9R10MY',
-            animated: true,
-            type: 'smoothstep',
         },
     ],
 }); };
