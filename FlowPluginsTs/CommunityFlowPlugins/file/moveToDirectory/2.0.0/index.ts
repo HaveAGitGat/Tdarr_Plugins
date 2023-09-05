@@ -37,7 +37,7 @@ const details = ():IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
         options: [
           'false',
           'true',

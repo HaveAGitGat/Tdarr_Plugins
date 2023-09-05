@@ -110,6 +110,21 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         + 'Operation: Filter. This classic plugin has Operation: ').concat(classicPlugin.details().Operation)
                         + 'Please use the Run Classic Transcode Flow Plugin plugin instead.');
                 }
+                if (!Array.isArray(classicPlugin.dependencies)) return [3 /*break*/, 7];
+                if (!args.installClassicPluginDeps) return [3 /*break*/, 5];
+                args.jobLog("Installing dependencies for ".concat(pluginSourceId));
+                return [4 /*yield*/, args.installClassicPluginDeps(classicPlugin.dependencies)];
+            case 4:
+                _a.sent();
+                return [3 /*break*/, 6];
+            case 5:
+                args.jobLog("Not installing dependencies for ".concat(pluginSourceId, ", please update Tdarr"));
+                _a.label = 6;
+            case 6: return [3 /*break*/, 8];
+            case 7:
+                args.jobLog("No depedencies to install for ".concat(pluginSourceId));
+                _a.label = 8;
+            case 8:
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 cacheFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 otherArguments = {
@@ -126,7 +141,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     job: args.job,
                 };
                 return [4 /*yield*/, classicPlugin.plugin(args.inputFileObj, args.librarySettings, args.inputs, otherArguments)];
-            case 4:
+            case 9:
                 result = _a.sent();
                 args.jobLog(JSON.stringify(result, null, 2));
                 outputNumber = (result === null || result === void 0 ? void 0 : result.processFile) ? 1 : 2;

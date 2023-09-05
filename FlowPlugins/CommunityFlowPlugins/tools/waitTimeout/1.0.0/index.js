@@ -35,62 +35,44 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fs_1 = require("fs");
-var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
-var normJoinPath_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/normJoinPath"));
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Copy to Directory',
-    description: 'Copy the working file to a directory',
+    name: 'Wait',
+    description: 'Wait for a specified amount of time before continuing to the next plugin',
     style: {
-        borderColor: 'green',
+        borderColor: 'yellow',
     },
     tags: '',
     isStartPlugin: false,
     pType: '',
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
-    icon: 'faArrowRight',
+    icon: 'faClock',
     inputs: [
         {
-            name: 'outputDirectory',
+            name: 'amount',
             type: 'string',
-            defaultValue: '',
+            defaultValue: '1',
             inputUI: {
-                type: 'directory',
+                type: 'text',
             },
-            tooltip: 'Specify ouput directory',
+            tooltip: 'Specify the amount of time to wait',
         },
         {
-            name: 'keepRelativePath',
-            type: 'boolean',
-            defaultValue: 'false',
+            name: 'unit',
+            type: 'string',
+            defaultValue: 'seconds',
             inputUI: {
                 type: 'dropdown',
                 options: [
-                    'false',
-                    'true',
+                    'seconds',
+                    'minutes',
+                    'hours',
                 ],
             },
-            tooltip: 'Specify whether to keep the relative path',
-        },
-        {
-            name: 'makeWorkingFile',
-            type: 'boolean',
-            defaultValue: 'false',
-            inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
-            },
-            tooltip: 'Make the copied file the working file',
+            tooltip: 'Specify the unit of time to wait',
         },
     ],
     outputs: [
@@ -103,65 +85,45 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, keepRelativePath, makeWorkingFile, outputDirectory, originalFileName, newContainer, outputPath, subStem, ouputFilePath, workingFile;
+    var lib, _a, amount, unit, amountNum, multiplier, waitTime, finished, logWait;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                _a = args.inputs, keepRelativePath = _a.keepRelativePath, makeWorkingFile = _a.makeWorkingFile;
-                outputDirectory = String(args.inputs.outputDirectory);
-                originalFileName = (0, fileUtils_1.getFileName)(args.originalLibraryFile._id);
-                newContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                outputPath = '';
-                if (keepRelativePath) {
-                    subStem = (0, fileUtils_1.getSubStem)({
-                        inputPathStem: args.librarySettings.folder,
-                        inputPath: args.originalLibraryFile._id,
-                    });
-                    outputPath = (0, normJoinPath_1.default)({
-                        upath: args.deps.upath,
-                        paths: [
-                            outputDirectory,
-                            subStem,
-                        ],
-                    });
+                _a = args.inputs, amount = _a.amount, unit = _a.unit;
+                amountNum = Number(amount);
+                if (Number.isNaN(amountNum)) {
+                    throw new Error('Amount must be a number');
                 }
-                else {
-                    outputPath = outputDirectory;
+                multiplier = 1;
+                if (unit === 'seconds') {
+                    multiplier = 1000;
                 }
-                ouputFilePath = (0, normJoinPath_1.default)({
-                    upath: args.deps.upath,
-                    paths: [
-                        outputPath,
-                        "".concat(originalFileName, ".").concat(newContainer),
-                    ],
-                });
-                workingFile = args.inputFileObj._id;
-                if (makeWorkingFile) {
-                    workingFile = ouputFilePath;
+                else if (unit === 'minutes') {
+                    multiplier = 60000;
                 }
-                args.jobLog("Input path: ".concat(args.inputFileObj._id));
-                args.jobLog("Output path: ".concat(outputPath));
-                if (args.inputFileObj._id === ouputFilePath) {
-                    args.jobLog('Input and output path are the same, skipping copy.');
-                    return [2 /*return*/, {
-                            outputFileObj: {
-                                _id: args.inputFileObj._id,
-                            },
-                            outputNumber: 1,
-                            variables: args.variables,
-                        }];
+                else if (unit === 'hours') {
+                    multiplier = 3600000;
                 }
-                args.deps.fsextra.ensureDirSync(outputPath);
-                return [4 /*yield*/, fs_1.promises.copyFile(args.inputFileObj._id, ouputFilePath)];
+                waitTime = amountNum * multiplier;
+                args.jobLog("Waiting for ".concat(amount, " ").concat(unit));
+                args.jobLog("Waiting for ".concat(waitTime, " milliseconds"));
+                finished = false;
+                logWait = function () {
+                    if (!finished) {
+                        args.jobLog('Waiting...');
+                        setTimeout(logWait, 5000);
+                    }
+                };
+                logWait();
+                return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, waitTime); })];
             case 1:
                 _b.sent();
+                finished = true;
                 return [2 /*return*/, {
-                        outputFileObj: {
-                            _id: workingFile,
-                        },
+                        outputFileObj: args.inputFileObj,
                         outputNumber: 1,
                         variables: args.variables,
                     }];

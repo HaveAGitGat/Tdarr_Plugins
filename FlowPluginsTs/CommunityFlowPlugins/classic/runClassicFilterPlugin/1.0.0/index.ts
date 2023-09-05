@@ -81,6 +81,17 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     );
   }
 
+  if (Array.isArray(classicPlugin.dependencies)) {
+    if (args.installClassicPluginDeps) {
+      args.jobLog(`Installing dependencies for ${pluginSourceId}`);
+      await args.installClassicPluginDeps(classicPlugin.dependencies);
+    } else {
+      args.jobLog(`Not installing dependencies for ${pluginSourceId}, please update Tdarr`);
+    }
+  } else {
+    args.jobLog(`No depedencies to install for ${pluginSourceId}`);
+  }
+
   const container = getContainer(args.inputFileObj._id);
   const cacheFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
