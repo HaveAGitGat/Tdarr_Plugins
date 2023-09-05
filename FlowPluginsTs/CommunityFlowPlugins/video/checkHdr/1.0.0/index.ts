@@ -43,7 +43,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       const stream = args.inputFileObj.ffProbeData.streams[i];
       if (
         stream.codec_type === 'video'
-        && stream.transfer_characteristics === 'smpte2084'
+        && stream.color_transfer === 'smpte2084'
         && stream.color_primaries === 'bt2020'
         && stream.color_range === 'tv'
       ) {
