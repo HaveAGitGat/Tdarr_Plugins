@@ -134,6 +134,7 @@ export interface IpluginInputArgs {
          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axios: any,
     },
+    installClassicPluginDeps: (deps: string[]) => void,
 }
 
 export interface IflowTemplate {
