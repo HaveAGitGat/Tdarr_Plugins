@@ -70,7 +70,7 @@ var details = function () { return ({
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'text',
+                type: 'dropdown',
                 options: [
                     'false',
                     'true',
