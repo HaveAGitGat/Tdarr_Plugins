@@ -9,8 +9,8 @@ const details = () => ({
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true.
   Option to remove invalid data streams that ffmpeg does not suppport `,
   //    Created by tws101
-  //    Release Version 1.40
-  Version: '1.40',
+  //    Release Version 1.41
+  Version: '1.41',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -24,7 +24,7 @@ const details = () => ({
           'true',
         ],
       },
-      tooltip: 'This will remove: MJPEG, PNG & GIF.  Recommended ',
+      tooltip: 'This will remove: MJPEG, PNG, BMP, & GIF.  Recommended ',
     },
     {
       name: 'remove_invalid_data',
@@ -150,6 +150,7 @@ function checkAbort(inputs, file, logger) {
           file.ffProbeData.streams[i].codec_name === 'mjpeg'
           || file.ffProbeData.streams[i].codec_name === 'png'
           || file.ffProbeData.streams[i].codec_name === 'gif'
+          || file.ffProbeData.streams[i].codec_name === 'bmp'
         ) {
           allGood = false;
           logger.AddError('Image format detected removing');
@@ -252,6 +253,7 @@ function buildVideoConfiguration(inputs, file, logger) {
       stream.codec_name === 'mjpeg'
       || stream.codec_name === 'png'
       || stream.codec_name === 'gif'
+      || stream.codec_name === 'bmp'
     ) {
       configuration.AddOutputSetting(` -map -0:v:${id} `);
     }
