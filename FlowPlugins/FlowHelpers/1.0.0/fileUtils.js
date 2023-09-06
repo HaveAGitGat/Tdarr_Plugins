@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
+exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
 var fs_1 = require("fs");
 var getContainer = function (filePath) {
     var parts = filePath.split('.');
@@ -152,3 +152,41 @@ var getPluginWorkDir = function (args) {
     return pluginWorkDir;
 };
 exports.getPluginWorkDir = getPluginWorkDir;
+var getScanTypes = function (pluginsTextRaw) {
+    var scanTypes = {
+        exifToolScan: true,
+        mediaInfoScan: false,
+        closedCaptionScan: false,
+    };
+    var scannerTypes = [
+        // needed for frame and duration data for ffmpeg
+        // {
+        //   type: 'exifToolScan',
+        //   terms: [
+        //     'meta',
+        //   ],
+        // },
+        {
+            type: 'mediaInfoScan',
+            terms: [
+                'mediaInfo',
+            ],
+        },
+        {
+            type: 'closedCaptionScan',
+            terms: [
+                'hasClosedCaptions',
+            ],
+        },
+    ];
+    var text = pluginsTextRaw.join('');
+    scannerTypes.forEach(function (scanner) {
+        scanner.terms.forEach(function (term) {
+            if (text.includes(term)) {
+                scanTypes[scanner.type] = true;
+            }
+        });
+    });
+    return scanTypes;
+};
+exports.getScanTypes = getScanTypes;

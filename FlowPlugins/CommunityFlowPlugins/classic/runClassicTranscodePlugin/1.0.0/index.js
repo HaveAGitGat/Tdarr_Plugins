@@ -46,6 +46,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fs_1 = require("fs");
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
@@ -88,7 +89,7 @@ var replaceContainer = function (filePath, container) {
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, lib, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, res_1, container, cacheFilePath, otherArguments, result, cliPath_1, customArgs, isCustomConfig, presetSplit, workerCommand, cliPath, cli, res;
+    var path, lib, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, pluginSrcStr, res_1, container, cacheFilePath, otherArguments, scanTypes, pluginInputFileObj, result, cliPath_1, customArgs, isCustomConfig, presetSplit, workerCommand, cliPath, cli, res;
     var _a, _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -103,40 +104,45 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 pluginId = parts[1];
                 relativePluginPath = "../../../../../".concat(pluginSource, "/").concat(pluginId, ".js");
                 absolutePath = path.resolve(__dirname, relativePluginPath);
-                if (!(pluginSource === 'Community')) return [3 /*break*/, 1];
+                pluginSrcStr = '';
+                if (!(pluginSource === 'Community')) return [3 /*break*/, 2];
                 classicPlugin = args.deps.importFresh(relativePluginPath);
-                return [3 /*break*/, 3];
-            case 1: return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/read-plugin', {
+                return [4 /*yield*/, fs_1.promises.readFile(absolutePath, 'utf8')];
+            case 1:
+                pluginSrcStr = _d.sent();
+                return [3 /*break*/, 4];
+            case 2: return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/read-plugin', {
                     plugin: {
                         id: pluginId,
                         source: pluginSource,
                     },
                 })];
-            case 2:
+            case 3:
                 res_1 = _d.sent();
                 classicPlugin = args.deps.requireFromString(res_1.pluginRaw, absolutePath);
-                _d.label = 3;
-            case 3:
+                pluginSrcStr = res_1.pluginRaw;
+                _d.label = 4;
+            case 4:
                 if (classicPlugin.details().Operation === 'Filter') {
                     throw new Error("".concat('This plugin is meant for classic plugins that have '
                         + 'Operation: Transcode. This classic plugin has Operation: ').concat(classicPlugin.details().Operation)
                         + 'Please use the Run Classic Filter Flow Plugin plugin instead.');
                 }
-                if (!Array.isArray(classicPlugin.dependencies)) return [3 /*break*/, 7];
-                if (!args.installClassicPluginDeps) return [3 /*break*/, 5];
+                if (!Array.isArray(classicPlugin.dependencies)) return [3 /*break*/, 8];
+                if (!args.installClassicPluginDeps) return [3 /*break*/, 6];
                 args.jobLog("Installing dependencies for ".concat(pluginSourceId));
                 return [4 /*yield*/, args.installClassicPluginDeps(classicPlugin.dependencies)];
-            case 4:
-                _d.sent();
-                return [3 /*break*/, 6];
             case 5:
+                _d.sent();
+                return [3 /*break*/, 7];
+            case 6:
                 args.jobLog("Not installing dependencies for ".concat(pluginSourceId, ", please update Tdarr"));
-                _d.label = 6;
-            case 6: return [3 /*break*/, 8];
-            case 7:
-                args.jobLog("No depedencies to install for ".concat(pluginSourceId));
-                _d.label = 8;
+                _d.label = 7;
+            case 7: return [3 /*break*/, 9];
             case 8:
+                args.jobLog("No depedencies to install for ".concat(pluginSourceId));
+                _d.label = 9;
+            case 9:
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 cacheFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 otherArguments = {
@@ -152,8 +158,20 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     cacheFilePath: cacheFilePath,
                     job: args.job,
                 };
-                return [4 /*yield*/, classicPlugin.plugin(args.inputFileObj, args.librarySettings, args.inputs, otherArguments)];
-            case 9:
+                scanTypes = (0, fileUtils_1.getScanTypes)([pluginSrcStr]);
+                return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/scan-individual-file', {
+                        file: {
+                            _id: args.inputFileObj._id,
+                            file: args.inputFileObj.file,
+                            DB: args.inputFileObj.DB,
+                            footprintId: args.inputFileObj.footprintId,
+                        },
+                        scanTypes: scanTypes,
+                    })];
+            case 10:
+                pluginInputFileObj = _d.sent();
+                return [4 /*yield*/, classicPlugin.plugin(pluginInputFileObj, args.librarySettings, args.inputs, otherArguments)];
+            case 11:
                 result = _d.sent();
                 args.jobLog(JSON.stringify(result, null, 2));
                 if (!result) {
@@ -267,7 +285,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     updateWorker: args.updateWorker,
                 });
                 return [4 /*yield*/, cli.runCli()];
-            case 10:
+            case 12:
                 res = _d.sent();
                 if (res.cliExitCode !== 0) {
                     args.jobLog("Running ".concat(cliPath, " failed"));
