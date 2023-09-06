@@ -38,7 +38,7 @@ const details = () => ({
     {
       name: 'target_bitrate_1080p',
       type: 'number',
-      defaultValue: 2500,
+      defaultValue: 4000,
       inputUI: {
         type: 'text',
       },
@@ -47,7 +47,7 @@ const details = () => ({
     {
       name: 'target_bitrate_4KUHD',
       type: 'number',
-      defaultValue: 5000,
+      defaultValue: 8000,
       inputUI: {
         type: 'text',
       },
@@ -96,7 +96,7 @@ const details = () => ({
 	  {
       name: 'hevc_1080p_filter_bitrate',
       type: 'number',
-      defaultValue: 3500,
+      defaultValue: 5000,
       inputUI: {
         type: 'text',
       },
@@ -105,7 +105,7 @@ const details = () => ({
 	  {
       name: 'hevc_filter_bitrate_4KUHD',
       type: 'number',
-      defaultValue: 7000,
+      defaultValue: 10000,
       inputUI: {
         type: 'text',
       },

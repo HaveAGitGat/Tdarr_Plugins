@@ -17,7 +17,7 @@ const details = () => ({
     {
       name: 'target_bitrate_480p576p',
       type: 'number',
-      defaultValue: 700,
+      defaultValue: 750,
       inputUI: {
         type: 'text',
       },
@@ -26,7 +26,7 @@ const details = () => ({
     {
       name: 'target_bitrate_720p',
       type: 'number',
-      defaultValue: 1400,
+      defaultValue: 1500,
       inputUI: {
         type: 'text',
       },
@@ -35,7 +35,7 @@ const details = () => ({
     {
       name: 'target_bitrate_1080p',
       type: 'number',
-      defaultValue: 1750,
+      defaultValue: 3000,
       inputUI: {
         type: 'text',
       },
@@ -44,7 +44,7 @@ const details = () => ({
     {
       name: 'target_bitrate_4KUHD',
       type: 'number',
-      defaultValue: 3500,
+      defaultValue: 6000,
       inputUI: {
         type: 'text',
       },
@@ -75,7 +75,7 @@ const details = () => ({
     {
       name: 'av1_480p_576p_filter_bitrate',
       type: 'number',
-      defaultValue: 1700,
+      defaultValue: 1750,
       inputUI: {
         type: 'text',
       },
@@ -84,7 +84,7 @@ const details = () => ({
     {
       name: 'av1_720p_filter_bitrate',
       type: 'number',
-      defaultValue: 2400,
+      defaultValue: 2500,
       inputUI: {
         type: 'text',
       },
@@ -93,7 +93,7 @@ const details = () => ({
     {
       name: 'av1_1080p_filter_bitrate',
       type: 'number',
-      defaultValue: 2750,
+      defaultValue: 4000,
       inputUI: {
         type: 'text',
       },
@@ -102,7 +102,7 @@ const details = () => ({
     {
       name: 'av1_filter_bitrate_4KUHD',
       type: 'number',
-      defaultValue: 4400,
+      defaultValue: 8000,
       inputUI: {
         type: 'text',
       },
