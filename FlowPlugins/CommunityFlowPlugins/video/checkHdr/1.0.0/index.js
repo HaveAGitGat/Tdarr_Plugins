@@ -38,7 +38,7 @@ var plugin = function (args) {
         for (var i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
             var stream = args.inputFileObj.ffProbeData.streams[i];
             if (stream.codec_type === 'video'
-                && stream.transfer_characteristics === 'smpte2084'
+                && stream.color_transfer === 'smpte2084'
                 && stream.color_primaries === 'bt2020'
                 && stream.color_range === 'tv') {
                 isHdr = true;
