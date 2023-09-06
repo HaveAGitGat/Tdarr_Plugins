@@ -1,4 +1,7 @@
-import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { promises as fs } from 'fs';
+import {
+  getContainer, getFileName, getPluginWorkDir, getScanTypes,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -58,8 +61,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const absolutePath = path.resolve(__dirname, relativePluginPath);
 
   let classicPlugin;
+  let pluginSrcStr = '';
   if (pluginSource === 'Community') {
     classicPlugin = args.deps.importFresh(relativePluginPath);
+    pluginSrcStr = await fs.readFile(absolutePath, 'utf8');
   } else {
     // eslint-disable-next-line no-await-in-loop
     const res = await args.deps.axiosMiddleware('api/v2/read-plugin', {
@@ -70,6 +75,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     });
 
     classicPlugin = args.deps.requireFromString(res.pluginRaw, absolutePath);
+    pluginSrcStr = res.pluginRaw;
   }
 
   if (classicPlugin.details().Operation !== 'Filter') {
@@ -109,7 +115,24 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     job: args.job,
   };
 
-  const result = await classicPlugin.plugin(args.inputFileObj, args.librarySettings, args.inputs, otherArguments);
+  const scanTypes = getScanTypes([pluginSrcStr]);
+
+  const pluginInputFileObj = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
+    file: {
+      _id: args.inputFileObj._id,
+      file: args.inputFileObj.file,
+      DB: args.inputFileObj.DB,
+      footprintId: args.inputFileObj.footprintId,
+    },
+    scanTypes,
+  });
+
+  const result = await classicPlugin.plugin(
+    pluginInputFileObj,
+    args.librarySettings,
+    args.inputs,
+    otherArguments,
+  );
 
   args.jobLog(JSON.stringify(result, null, 2));
 
