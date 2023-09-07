@@ -9,8 +9,8 @@ const details = () => ({
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true.
   Option to remove invalid data streams that ffmpeg does not suppport `,
   //    Created by tws101
-  //    Release Version 1.41
-  Version: '1.41',
+  //    Release Version 1.50
+  Version: '1.50',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -129,6 +129,23 @@ class Configurator {
 // #region Plugin Methods
 
 /**
+ * Loops over the file streams and executes the given method on
+ * each stream when the matching codec_type is found.
+ * @param {Object} file the file.
+ * @param {string} type the typeo of stream.
+ * @param {function} method the method to call.
+ */
+function loopOverStreamsOfType(file, type, method) {
+  let id = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
+      method(file.ffProbeData.streams[i], id);
+      id++;
+    }
+  }
+}
+
+/**
  * Abort Section 
  */
 function checkAbort(inputs, file, logger) {
@@ -144,30 +161,28 @@ function checkAbort(inputs, file, logger) {
   let allGood = true;
 
   if (inputs.remove_images === true) {
-    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
-        if (
-          file.ffProbeData.streams[i].codec_name === 'mjpeg'
-          || file.ffProbeData.streams[i].codec_name === 'png'
-          || file.ffProbeData.streams[i].codec_name === 'gif'
-          || file.ffProbeData.streams[i].codec_name === 'bmp'
-        ) {
-          allGood = false;
-          logger.AddError('Image format detected removing');
-        }
+    function imageRemovalCheck(stream, id) {
+      if (
+        stream.codec_name === 'mjpeg'
+        || stream.codec_name === 'png'
+        || stream.codec_name === 'gif'
+        || stream.codec_name === 'bmp'
+      ) {
+        allGood = false;
+        logger.AddError('Image format detected removing');
       }
     }
+    loopOverStreamsOfType(file, 'video', imageRemovalCheck);
   }
 
   if (inputs.remove_invalid_data === true) {
-    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'data') {
-        if (!file.ffProbeData.streams[i].codec_name) {
-          allGood = false;
-          logger.AddError('Invalid data stream detected removing');
-        }
+    function invalidDataCheck(stream, id) {
+      if (!stream.codec_name && stream.codec_tag_string === 'tmcd') {
+        allGood = false;
+        logger.AddError('Invalid data stream detected removing');
       }
     }
+    loopOverStreamsOfType(file, 'data', invalidDataCheck);
   }
 
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -178,14 +193,12 @@ function checkAbort(inputs, file, logger) {
           logger.AddError('Video not first.');
         }
       }
-
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
         if (subtitleIdx !== 0) {
           allGood = false;
           logger.AddError('Audio not second.');
         }
         audioIdx += 1;
-
         if (file.ffProbeData.streams[i].channels === 1) {
           if (audio2Idx !== 0 || audio6Idx !== 0 || audio8Idx !== 0) {
             allGood = false;
@@ -206,12 +219,10 @@ function checkAbort(inputs, file, logger) {
           }
           audio6Idx += 1;
         }
-
         if (file.ffProbeData.streams[i].channels === 8) {
           audio8Idx += 1;
         }
       }
-
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle') {
         subtitleIdx += 1;
       }
@@ -226,29 +237,12 @@ function checkAbort(inputs, file, logger) {
 }
 
 /**
- * Loops over the file streams and executes the given method on
- * each stream when the matching codec_type is found.
- * @param {Object} file the file.
- * @param {string} type the typeo of stream.
- * @param {function} method the method to call.
- */
-function loopOverStreamsOfType(file, type, method) {
-  let id = 0;
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
-      method(file.ffProbeData.streams[i], id);
-      id++;
-    }
-  }
-}
-
-/**
  * Video    Map ALL  "-map 0"   Map Video  "-map 0:v"    Copy Video  "-c:v copy"
  */
 function buildVideoConfiguration(inputs, file, logger) {
   const configuration = new Configurator(['-map 0:v']);
 
-  function imageremoval(stream, id) {
+  function imageRemoval(stream, id) {
     if (
       stream.codec_name === 'mjpeg'
       || stream.codec_name === 'png'
@@ -260,7 +254,7 @@ function buildVideoConfiguration(inputs, file, logger) {
   }
 
   if (inputs.remove_images === true) {
-    loopOverStreamsOfType(file, 'video', imageremoval);
+    loopOverStreamsOfType(file, 'video', imageRemoval);
   }
 
   return configuration;
@@ -272,28 +266,28 @@ function buildVideoConfiguration(inputs, file, logger) {
 function buildAudioConfiguration(inputs, file, logger) {
   const configuration = new Configurator(['']);
 
-  function orderaudiostreams1ch(stream, id) {
+  function orderAudioStreams1Channel(stream, id) {
     try {
       if (stream.channels === 1) {
         configuration.AddOutputSetting(` -map 0:a:${id} `);
       }
     } catch (err) {}
   }
-  function orderaudiostreams2ch(stream, id) {
+  function orderAudioStreams2Channel(stream, id) {
     try {
       if (stream.channels === 2) {
         configuration.AddOutputSetting(` -map 0:a:${id} `);
       }
     } catch (err) {}
   }
-  function orderaudiostreams6ch(stream, id) {
+  function orderAudioStreams6Channel(stream, id) {
     try {
       if (stream.channels === 6) {
         configuration.AddOutputSetting(` -map 0:a:${id} `);
       }
     } catch (err) {}
   }
-  function orderaudiostreams8ch(stream, id) {
+  function orderAudioStreams8Channel(stream, id) {
     try {
       if (stream.channels === 8) {
         configuration.AddOutputSetting(` -map 0:a:${id} `);
@@ -301,10 +295,10 @@ function buildAudioConfiguration(inputs, file, logger) {
     } catch (err) {}
   }
 
-  loopOverStreamsOfType(file, 'audio', orderaudiostreams1ch);
-  loopOverStreamsOfType(file, 'audio', orderaudiostreams2ch);
-  loopOverStreamsOfType(file, 'audio', orderaudiostreams6ch);
-  loopOverStreamsOfType(file, 'audio', orderaudiostreams8ch);
+  loopOverStreamsOfType(file, 'audio', orderAudioStreams1Channel);
+  loopOverStreamsOfType(file, 'audio', orderAudioStreams2Channel);
+  loopOverStreamsOfType(file, 'audio', orderAudioStreams6Channel);
+  loopOverStreamsOfType(file, 'audio', orderAudioStreams8Channel);
 
   return configuration;
 }
