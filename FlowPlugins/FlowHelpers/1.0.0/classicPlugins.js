@@ -41,8 +41,9 @@ var fs_1 = require("fs");
 var fileUtils_1 = require("./fileUtils");
 var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, void 0, function () {
     var path, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, pluginSrcStr, res, container, cacheFilePath, otherArguments, scanTypes, pluginInputFileObj, result;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 path = require('path');
                 pluginSourceId = String(args.inputs.pluginSourceId);
@@ -56,7 +57,7 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
                 classicPlugin = args.deps.importFresh(relativePluginPath);
                 return [4 /*yield*/, fs_1.promises.readFile(absolutePath, 'utf8')];
             case 1:
-                pluginSrcStr = _a.sent();
+                pluginSrcStr = _b.sent();
                 return [3 /*break*/, 4];
             case 2: return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/read-plugin', {
                     plugin: {
@@ -65,10 +66,10 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
                     },
                 })];
             case 3:
-                res = _a.sent();
+                res = _b.sent();
                 classicPlugin = args.deps.requireFromString(res.pluginRaw, absolutePath);
                 pluginSrcStr = res.pluginRaw;
-                _a.label = 4;
+                _b.label = 4;
             case 4:
                 if (type === 'filter' && classicPlugin.details().Operation !== 'Filter') {
                     throw new Error("".concat('This plugin is meant for classic plugins that have '
@@ -85,15 +86,15 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
                 args.jobLog("Installing dependencies for ".concat(pluginSourceId));
                 return [4 /*yield*/, args.installClassicPluginDeps(classicPlugin.dependencies)];
             case 5:
-                _a.sent();
+                _b.sent();
                 return [3 /*break*/, 7];
             case 6:
                 args.jobLog("Not installing dependencies for ".concat(pluginSourceId, ", please update Tdarr"));
-                _a.label = 7;
+                _b.label = 7;
             case 7: return [3 /*break*/, 9];
             case 8:
                 args.jobLog("No depedencies to install for ".concat(pluginSourceId));
-                _a.label = 9;
+                _b.label = 9;
             case 9:
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 cacheFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
@@ -121,10 +122,17 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
                         scanTypes: scanTypes,
                     })];
             case 10:
-                pluginInputFileObj = _a.sent();
+                pluginInputFileObj = _b.sent();
                 return [4 /*yield*/, classicPlugin.plugin(pluginInputFileObj, args.librarySettings, args.inputs, otherArguments)];
             case 11:
-                result = _a.sent();
+                result = _b.sent();
+                if (((_a = result === null || result === void 0 ? void 0 : result.file) === null || _a === void 0 ? void 0 : _a._id) && args.inputFileObj._id !== result.file._id) {
+                    // eslint-disable-next-line no-param-reassign
+                    args.inputFileObj._id = result.file._id;
+                    // eslint-disable-next-line no-param-reassign
+                    args.inputFileObj.file = result.file.file;
+                    args.jobLog("File ID changed from ".concat(args.inputFileObj._id, " to ").concat(result.file._id));
+                }
                 return [2 /*return*/, {
                         result: result,
                         cacheFilePath: cacheFilePath,
