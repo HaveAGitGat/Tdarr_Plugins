@@ -77,14 +77,21 @@ var plugin = function (args) {
         greaterThanBits *= 1000000;
         lessThanBits *= 1000000;
     }
+    var hasVideoBitrate = false;
     if ((_b = (_a = args.inputFileObj) === null || _a === void 0 ? void 0 : _a.mediaInfo) === null || _b === void 0 ? void 0 : _b.track) {
         args.inputFileObj.mediaInfo.track.forEach(function (stream) {
             if (stream['@type'] === 'video') {
+                if (stream.BitRate) {
+                    hasVideoBitrate = true;
+                }
                 if (stream.BitRate >= greaterThanBits && stream.BitRate <= lessThanBits) {
                     isWithinRange = true;
                 }
             }
         });
+    }
+    if (!hasVideoBitrate) {
+        throw new Error('Video bitrate not found');
     }
     return {
         outputFileObj: args.inputFileObj,

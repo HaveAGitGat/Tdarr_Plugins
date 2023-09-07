@@ -82,14 +82,23 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     lessThanBits *= 1000000;
   }
 
+  let hasVideoBitrate = false;
+
   if (args.inputFileObj?.mediaInfo?.track) {
     args.inputFileObj.mediaInfo.track.forEach((stream) => {
       if (stream['@type'] === 'video') {
+        if (stream.BitRate) {
+          hasVideoBitrate = true;
+        }
         if (stream.BitRate >= greaterThanBits && stream.BitRate <= lessThanBits) {
           isWithinRange = true;
         }
       }
     });
+  }
+
+  if (!hasVideoBitrate) {
+    throw new Error('Video bitrate not found');
   }
 
   return {
