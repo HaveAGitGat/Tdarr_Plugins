@@ -22,7 +22,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Variable to check',
+            tooltip: 'Variable to check. For example args.librarySettings._id',
         },
         {
             name: 'condition',
