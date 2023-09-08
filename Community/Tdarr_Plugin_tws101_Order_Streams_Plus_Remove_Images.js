@@ -9,8 +9,8 @@ const details = () => ({
   Description: ` Put stream in order video, audio by channel count less to more, then subtitles.  Option remove image formats, MJPEG, PNG & GIF, recommended leave true.
   Option to remove invalid data streams that ffmpeg does not suppport `,
   //    Created by tws101
-  //    Release Version 1.50
-  Version: '1.50',
+  //    Release Version 1.51
+  Version: '1.51',
   Tags: 'pre-processing,configurable,ffmpeg',
   Inputs: [
     {
@@ -266,39 +266,21 @@ function buildVideoConfiguration(inputs, file, logger) {
 function buildAudioConfiguration(inputs, file, logger) {
   const configuration = new Configurator(['']);
 
-  function orderAudioStreams1Channel(stream, id) {
-    try {
-      if (stream.channels === 1) {
-        configuration.AddOutputSetting(` -map 0:a:${id} `);
-      }
-    } catch (err) {}
-  }
-  function orderAudioStreams2Channel(stream, id) {
-    try {
-      if (stream.channels === 2) {
-        configuration.AddOutputSetting(` -map 0:a:${id} `);
-      }
-    } catch (err) {}
-  }
-  function orderAudioStreams6Channel(stream, id) {
-    try {
-      if (stream.channels === 6) {
-        configuration.AddOutputSetting(` -map 0:a:${id} `);
-      }
-    } catch (err) {}
-  }
-  function orderAudioStreams8Channel(stream, id) {
-    try {
-      if (stream.channels === 8) {
-        configuration.AddOutputSetting(` -map 0:a:${id} `);
-      }
-    } catch (err) {}
+  function orderAudioStreams(channelCount) {
+    function subOrderAudioStreams(stream, id) {
+      try {
+        if (stream.channels === channelCount) {
+          configuration.AddOutputSetting(` -map 0:a:${id} `);
+        }
+      } catch (err) {}
+    }
+    loopOverStreamsOfType(file, 'audio', subOrderAudioStreams);
   }
 
-  loopOverStreamsOfType(file, 'audio', orderAudioStreams1Channel);
-  loopOverStreamsOfType(file, 'audio', orderAudioStreams2Channel);
-  loopOverStreamsOfType(file, 'audio', orderAudioStreams6Channel);
-  loopOverStreamsOfType(file, 'audio', orderAudioStreams8Channel);
+  orderAudioStreams(1);
+  orderAudioStreams(2);
+  orderAudioStreams(6);
+  orderAudioStreams(8);
 
   return configuration;
 }
