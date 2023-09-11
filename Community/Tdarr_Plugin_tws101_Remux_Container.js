@@ -8,8 +8,8 @@ const details = () => ({
   Operation: 'Transcode',
   Description: ' The input file will be remuxed into MKV or MP4. Force conform is recommended, this will remove incompatible items from the new container. ',
   //    Created by tws101
-  //    Release Version 1.20
-  Version: '1.20',
+  //    Release Version 1.21
+  Version: '1.21',
   Tags: 'pre-processing,ffmpeg,video only,configurable',
   Inputs: [
     {
@@ -171,7 +171,7 @@ function buildVideoConfiguration(inputs, file, logger) {
   }
 
   // If Container .ts or .avi set genpts to fix unknown timestamp
-  if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi') {
+  if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi' || file.container.toLowerCase() === 'mpg' || file.container.toLowerCase() === 'mpeg') {
     configuration.AddInputSetting(' -fflags +genpts');
   }
 
