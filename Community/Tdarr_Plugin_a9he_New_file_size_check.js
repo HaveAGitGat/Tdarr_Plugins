@@ -17,7 +17,7 @@ const details = () => ({
       },
       tooltip:
         `Enter the upper bound % size for the new file. For example, if '110' is entered, 
-        then if the new file size is 11% larger than the original, an error will be given.`,
+        then if the new file size is greater than 110% the size of the original, an error will be given.`,
     },
     {
       name: 'lowerBound',
