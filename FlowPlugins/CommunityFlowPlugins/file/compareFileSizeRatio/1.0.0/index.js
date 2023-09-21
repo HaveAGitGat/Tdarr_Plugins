@@ -22,7 +22,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Specify lower bound. Default value is 40% so new file size must be at least 40% of original file size.',
+            tooltip: 'Specify lower bound. '
+                + 'Default value is 40% so new file size must be at least 40% of original file size.',
         },
         {
             name: 'lessThan',
@@ -31,7 +32,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Specify upper bound. Default value is 110% so new file size must be at most 110% of original file size.',
+            tooltip: 'Specify upper bound.'
+                + ' Default value is 110% so new file size must be at most 110% of original file size.',
         },
     ],
     outputs: [
