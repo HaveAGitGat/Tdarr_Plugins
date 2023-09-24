@@ -86,9 +86,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   if (args.inputFileObj?.mediaInfo?.track) {
     args.inputFileObj.mediaInfo.track.forEach((stream) => {
-      if (stream['@type'] === 'video') {
+      if (stream['@type'].toLowerCase() === 'video') {
         if (stream.BitRate) {
           hasVideoBitrate = true;
+          args.jobLog(`Found video bitrate: ${stream.BitRate}`);
         }
         if (stream.BitRate >= greaterThanBits && stream.BitRate <= lessThanBits) {
           isWithinRange = true;

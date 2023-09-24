@@ -80,9 +80,10 @@ var plugin = function (args) {
     var hasVideoBitrate = false;
     if ((_b = (_a = args.inputFileObj) === null || _a === void 0 ? void 0 : _a.mediaInfo) === null || _b === void 0 ? void 0 : _b.track) {
         args.inputFileObj.mediaInfo.track.forEach(function (stream) {
-            if (stream['@type'] === 'video') {
+            if (stream['@type'].toLowerCase() === 'video') {
                 if (stream.BitRate) {
                     hasVideoBitrate = true;
+                    args.jobLog("Found video bitrate: ".concat(stream.BitRate));
                 }
                 if (stream.BitRate >= greaterThanBits && stream.BitRate <= lessThanBits) {
                     isWithinRange = true;
