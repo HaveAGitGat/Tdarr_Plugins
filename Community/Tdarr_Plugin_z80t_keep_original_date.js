@@ -60,17 +60,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   try {
     log('Changing date...');
 
+    const { mtimeMs } = otherArguments.originalLibraryFile.statSync;
     if (os.platform() === 'win32') {
       fs.utimes(
         file._id,
         new Date().getTime() / 1000,
-        otherArguments.originalLibraryFile.statSync.mtimeMs / 1000,
-        () => {
-          log('Error updating modified date');
+        mtimeMs / 1000,
+        (err) => {
+          if (err) {
+            log('Error updating modified date');
+          }
         },
       );
     } else {
-      touch.sync(file._id, { mtimeMs: otherArguments.originalLibraryFile.statSync.mtimeMs, force: true });
+      touch.sync(file._id, { mtimeMs, force: true });
     }
 
     log('Done.');
