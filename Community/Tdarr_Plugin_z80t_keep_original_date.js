@@ -40,6 +40,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const touch = require('touch');
+  const os = require('os');
+  const fs = require('fs');
 
   const log = (msg) => {
     if (inputs.log === true) {
@@ -57,7 +59,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   try {
     log('Changing date...');
-    touch.sync(file._id, { mtimeMs: otherArguments.originalLibraryFile.statSync.mtimeMs, force: true });
+
+    const { mtimeMs } = otherArguments.originalLibraryFile.statSync;
+    if (os.platform() === 'win32') {
+      fs.utimes(
+        file._id,
+        new Date().getTime() / 1000,
+        mtimeMs / 1000,
+        (err) => {
+          if (err) {
+            log('Error updating modified date');
+          }
+        },
+      );
+    } else {
+      touch.sync(file._id, { mtimeMs, force: true });
+    }
+
     log('Done.');
     responseData.infoLog += 'File timestamps updated or match original file\n';
     return responseData;
