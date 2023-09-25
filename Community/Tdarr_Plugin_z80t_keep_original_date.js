@@ -57,7 +57,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   try {
     log('Changing date...');
-    touch.sync(file._id, { time: Date.parse(otherArguments.originalLibraryFile.statSync.mtime), force: true });
+    touch.sync(file._id, { mtimeMs: otherArguments.originalLibraryFile.statSync.mtimeMs, force: true });
     log('Done.');
     responseData.infoLog += 'File timestamps updated or match original file\n';
     return responseData;
