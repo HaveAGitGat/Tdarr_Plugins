@@ -1,7 +1,8 @@
 /* eslint-disable max-len */
 
+// tdarrSkipTest
 const details = () => ({
-  id: 'Tdarr_Plugin_rename_based_on_codec_schadi',
+  id: 'Tdarr_Plugin_scha_rename_based_on_codec_schadi',
   Stage: 'Post-processing',
   Name: 'Rename based on codec Video and Audio',
   Type: 'Video',
