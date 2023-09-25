@@ -1,10 +1,14 @@
 /* eslint-disable max-len */
 
+const fs = require('fs');
+const path = require('path');
+const loadDefaultValues = require('../methods/loadDefaultValues');
+
 const details = () => ({
   id: 'Tdarr_Plugin_rename_based_on_codec_schadi',
   Stage: 'Post-processing',
   Name: 'Rename based on codec Video and Audio',
-  Type: 'Video',
+  Type: 'Video_Audio',
   Operation: 'Transcode',
   Description: `
     If the filename contains a codec information like h264, av1 or similar for video and AC3, AAC or trueHD \n\n
@@ -49,7 +53,7 @@ const details = () => ({
     },
     {
       name: 'additional_extensions',
-      type: 'string',
+      type: 'text',
       defaultValue: '.nfo,.srt',
       inputUI: {
         type: 'text',
@@ -63,13 +67,8 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-  const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
-
-  const fs = require('fs');
-  const path = require('path');
-
+  // eslint-disable-next-line no-param-reassign
+  inputs = loadDefaultValues(inputs, details);
   const fileNameOld = file._id;
 
   const response = {
