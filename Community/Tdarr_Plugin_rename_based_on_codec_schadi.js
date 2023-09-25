@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+
 const fs = require('fs');
 const path = require('path');
 const loadDefaultValues = require('../methods/loadDefaultValues');
@@ -11,7 +13,7 @@ const details = () => ({
   Description: `
     If the filename contains a codec information like h264, av1 or similar for video and AC3, AAC or trueHD \n\n
     the plugin will read the codec info from the file and rename it accordingly. \n\n
-    It also takes care off addiotnal files deffined in the input Option.	\n\n`,
+    It also takes care off addiotnal files deffined in the input Option.\n\n`,
   Version: '1.00',
   Tags: 'post-processing',
   Inputs: [
@@ -53,7 +55,7 @@ const details = () => ({
       name: 'additional_extensions',
       type: 'text',
       defaultValue: '.nfo,.srt',
-		        inputUI: {
+      inputUI: {
         type: 'text',
       },
       tooltip: `Additional file extensions to rename (comma-separated).
@@ -63,7 +65,9 @@ const details = () => ({
   ],
 });
 
+// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
+  // eslint-disable-next-line no-param-reassign
   inputs = loadDefaultValues(inputs, details);
   const fileNameOld = file._id;
 
@@ -71,8 +75,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     file,
     removeFromDB: false,
     updateDB: true,
-	  infoLog: '',
-	  processFile: false,
+    infoLog: '',
+    processFile: false,
   };
 
   const codecMap = {
@@ -92,7 +96,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     x265: 'h265',
     h264: 'h264',
     h265: 'h265',
-    dts: 'DTS-X',
+    // dts: 'DTS-X',
     'dts-hd ma': 'DTS-HD MA',
     'dts-es': 'DTS-HD ES',
     'dts-hd hra': 'DTS-HD HRA',
@@ -114,7 +118,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     if (videoCodec in codecMap) {
       const renamedCodec = codecMap[videoCodec];
+      // eslint-disable-next-line no-param-reassign
       file._id = file._id.replace(videoCodecRegex, renamedCodec);
+      // eslint-disable-next-line no-param-reassign
       file.file = file.file.replace(videoCodecRegex, renamedCodec);
     }
   }
@@ -127,7 +133,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     if (audioCodec in codecMap) {
       const renamedCodec = codecMap[audioCodec];
+      // eslint-disable-next-line no-param-reassign
       file._id = file._id.replace(audioCodecRegex, renamedCodec);
+      // eslint-disable-next-line no-param-reassign
       file.file = file.file.replace(audioCodecRegex, renamedCodec);
     }
   }
@@ -166,7 +174,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         });
 
         response.infoLog += `${directoryPath}/${supportFile} renamed to ${directoryPath}/${renamedFileWithBothCodecs}\n`;
-        additionalFilesCount++; // Increment the count for each additional file found
+        additionalFilesCount += 1; // Increment the count for each additional file found
       }
     });
 
