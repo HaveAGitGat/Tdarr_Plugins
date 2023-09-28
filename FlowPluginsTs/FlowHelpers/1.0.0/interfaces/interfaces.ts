@@ -77,7 +77,8 @@ export interface IffmpegCommand {
 }
 
 export interface Ivariables {
-    ffmpegCommand: IffmpegCommand
+    ffmpegCommand: IffmpegCommand,
+    flowFailed: boolean,
 }
 
 export interface IpluginOutputArgs {
@@ -133,8 +134,11 @@ export interface IpluginInputArgs {
         mvdir: any,
          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axios: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        crudTransDBN: (collection: string, mode: string, docID: string, obj: any)=> any,
     },
-    installClassicPluginDeps: (deps: string[]) => void,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    installClassicPluginDeps: (deps: string[]) => Promise<any>,
 }
 
 export interface IflowTemplate {
