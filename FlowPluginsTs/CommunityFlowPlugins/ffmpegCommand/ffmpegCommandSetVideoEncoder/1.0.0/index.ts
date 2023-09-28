@@ -32,6 +32,7 @@ const details = (): IpluginDetails => ({
           // 'vp9',
           'h264',
           // 'vp8',
+          'av1',
         ],
       },
       tooltip: 'Specify codec of the output file',
@@ -153,7 +154,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           stream.outputArgs.push('-crf', ffmpegQuality);
         }
 
-        if (ffmpegPreset) {
+        if (targetCodec !== 'av1' && ffmpegPreset) {
           stream.outputArgs.push('-preset', ffmpegPreset);
         }
 

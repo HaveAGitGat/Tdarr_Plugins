@@ -154,6 +154,9 @@ var encoderFilter = function (encoder, targetCodec) {
     if (targetCodec === 'h264' && encoder.includes('h264')) {
         return true;
     }
+    if (targetCodec === 'av1' && encoder.includes('av1')) {
+        return true;
+    }
     return false;
 };
 var getEncoder = function (_a) {
@@ -165,7 +168,7 @@ var getEncoder = function (_a) {
                 case 0:
                     if (!(args.workerType
                         && args.workerType.includes('gpu')
-                        && hardwareEncoding && (targetCodec === 'hevc' || targetCodec === 'h264'))) return [3 /*break*/, 5];
+                        && hardwareEncoding && (['hevc', 'h264', 'av1'].includes(targetCodec)))) return [3 /*break*/, 5];
                     gpuEncoders = [
                         {
                             encoder: 'hevc_nvenc',
@@ -218,6 +221,7 @@ var getEncoder = function (_a) {
                             outputArgs: [],
                             filter: '',
                         },
+                        // h264
                         {
                             encoder: 'h264_nvenc',
                             enabled: false,
@@ -255,8 +259,38 @@ var getEncoder = function (_a) {
                             outputArgs: [],
                             filter: '',
                         },
+                        // av1
+                        {
+                            encoder: 'av1_nvenc',
+                            enabled: false,
+                            inputArgs: [],
+                            outputArgs: [],
+                            filter: '',
+                        },
+                        {
+                            encoder: 'av1_amf',
+                            enabled: false,
+                            inputArgs: [],
+                            outputArgs: [],
+                            filter: '',
+                        },
+                        {
+                            encoder: 'av1_vaapi',
+                            enabled: false,
+                            inputArgs: [],
+                            outputArgs: [],
+                            filter: '',
+                        },
+                        {
+                            encoder: 'av1_qsv',
+                            enabled: false,
+                            inputArgs: [],
+                            outputArgs: [],
+                            filter: '',
+                        },
                     ];
                     filteredGpuEncoders = gpuEncoders.filter(function (device) { return encoderFilter(device.encoder, targetCodec); });
+                    args.jobLog(JSON.stringify({ filteredGpuEncoders: filteredGpuEncoders }));
                     _i = 0, filteredGpuEncoders_1 = filteredGpuEncoders;
                     _c.label = 1;
                 case 1:
@@ -279,19 +313,21 @@ var getEncoder = function (_a) {
                     return [3 /*break*/, 1];
                 case 4:
                     enabledDevices = gpuEncoders.filter(function (device) { return device.enabled === true; });
+                    args.jobLog(JSON.stringify({ enabledDevices: enabledDevices }));
                     if (enabledDevices.length > 0) {
                         if (enabledDevices[0].encoder.includes('nvenc')) {
                             res = (0, exports.getBestNvencDevice)({
                                 args: args,
                                 nvencDevice: enabledDevices[0],
                             });
-                            return [2 /*return*/, __assign(__assign({}, res), { isGpu: true })];
+                            return [2 /*return*/, __assign(__assign({}, res), { isGpu: true, enabledDevices: enabledDevices })];
                         }
                         return [2 /*return*/, {
                                 encoder: enabledDevices[0].encoder,
                                 inputArgs: enabledDevices[0].inputArgs,
                                 outputArgs: enabledDevices[0].outputArgs,
                                 isGpu: true,
+                                enabledDevices: enabledDevices,
                             }];
                     }
                     _c.label = 5;
@@ -302,6 +338,7 @@ var getEncoder = function (_a) {
                                 inputArgs: [],
                                 outputArgs: [],
                                 isGpu: false,
+                                enabledDevices: [],
                             }];
                     }
                     if (targetCodec === 'h264') {
@@ -310,6 +347,16 @@ var getEncoder = function (_a) {
                                 inputArgs: [],
                                 outputArgs: [],
                                 isGpu: false,
+                                enabledDevices: [],
+                            }];
+                    }
+                    if (targetCodec === 'av1') {
+                        return [2 /*return*/, {
+                                encoder: 'libsvtav1',
+                                inputArgs: [],
+                                outputArgs: [],
+                                isGpu: false,
+                                enabledDevices: [],
                             }];
                     }
                     return [2 /*return*/, {
@@ -317,6 +364,7 @@ var getEncoder = function (_a) {
                             inputArgs: [],
                             outputArgs: [],
                             isGpu: false,
+                            enabledDevices: [],
                         }];
             }
         });

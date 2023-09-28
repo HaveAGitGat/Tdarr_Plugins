@@ -64,6 +64,7 @@ var details = function () { return ({
                     // 'vp9',
                     'h264',
                     // 'vp8',
+                    'av1',
                 ],
             },
             tooltip: 'Specify codec of the output file',
@@ -185,7 +186,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 else {
                     stream.outputArgs.push('-crf', ffmpegQuality);
                 }
-                if (ffmpegPreset) {
+                if (targetCodec !== 'av1' && ffmpegPreset) {
                     stream.outputArgs.push('-preset', ffmpegPreset);
                 }
                 if (hardwareDecoding) {
