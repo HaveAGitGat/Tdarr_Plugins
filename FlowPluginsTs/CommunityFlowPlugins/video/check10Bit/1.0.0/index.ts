@@ -41,7 +41,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   if (Array.isArray(args?.inputFileObj?.ffProbeData?.streams)) {
     for (let i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
       const stream = args.inputFileObj.ffProbeData.streams[i];
-      if (stream.codec_type === 'video' && stream.bits_per_raw_sample === 10) {
+      if (
+        stream.codec_type === 'video'
+        && (
+          stream.bits_per_raw_sample === 10
+          || stream.pix_fmt === 'yuv420p10le'
+        )
+      ) {
         is10Bit = true;
       }
     }
