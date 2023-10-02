@@ -69,6 +69,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const encoderProperties = await getEncoder({
     targetCodec: 'hevc',
     hardwareEncoding: true,
+    hardwareType: 'auto',
     args,
   });
 

@@ -94,6 +94,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
                         targetCodec: 'hevc',
                         hardwareEncoding: true,
+                        hardwareType: 'auto',
                         args: args,
                     })];
             case 1:

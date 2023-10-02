@@ -112,6 +112,22 @@ var details = function () { return ({
             tooltip: 'Specify whether to use hardware encoding if available',
         },
         {
+            name: 'hardwareType',
+            type: 'string',
+            defaultValue: 'auto',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'auto',
+                    'nvenc',
+                    'qsv',
+                    'vaapi',
+                    'videotoolbox',
+                ],
+            },
+            tooltip: 'Specify codec of the output file',
+        },
+        {
             name: 'hardwareDecoding',
             type: 'boolean',
             defaultValue: 'true',
@@ -148,7 +164,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, i, stream, targetCodec, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
+    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -157,6 +173,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 hardwareDecoding = args.inputs.hardwareDecoding === true;
+                hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
                 i = 0;
                 _c.label = 1;
@@ -175,6 +192,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
                         targetCodec: targetCodec,
                         hardwareEncoding: hardwarEncoding,
+                        hardwareType: hardwareType,
                         args: args,
                     })];
             case 2:
