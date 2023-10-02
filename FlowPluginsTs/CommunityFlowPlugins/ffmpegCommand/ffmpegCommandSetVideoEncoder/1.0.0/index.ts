@@ -80,6 +80,22 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify whether to use hardware encoding if available',
     },
     {
+      name: 'hardwareType',
+      type: 'string',
+      defaultValue: 'auto',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'auto',
+          'nvenc',
+          'qsv',
+          'vaapi',
+          'videotoolbox',
+        ],
+      },
+      tooltip: 'Specify codec of the output file',
+    },
+    {
       name: 'hardwareDecoding',
       type: 'boolean',
       defaultValue: 'true',
@@ -121,6 +137,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const hardwareDecoding = args.inputs.hardwareDecoding === true;
+  const hardwareType = String(args.inputs.hardwareType);
   args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
 
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
@@ -143,6 +160,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         const encoderProperties = await getEncoder({
           targetCodec,
           hardwareEncoding: hardwarEncoding,
+          hardwareType,
           args,
         });
 

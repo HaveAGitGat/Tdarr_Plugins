@@ -160,9 +160,9 @@ var encoderFilter = function (encoder, targetCodec) {
     return false;
 };
 var getEncoder = function (_a) {
-    var targetCodec = _a.targetCodec, hardwareEncoding = _a.hardwareEncoding, args = _a.args;
+    var targetCodec = _a.targetCodec, hardwareEncoding = _a.hardwareEncoding, hardwareType = _a.hardwareType, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
-        var gpuEncoders, filteredGpuEncoders, _i, filteredGpuEncoders_1, gpuEncoder, _b, enabledDevices, res;
+        var gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _b, enabledDevices, res;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
@@ -290,6 +290,13 @@ var getEncoder = function (_a) {
                         },
                     ];
                     filteredGpuEncoders = gpuEncoders.filter(function (device) { return encoderFilter(device.encoder, targetCodec); });
+                    if (hardwareEncoding && hardwareType !== 'auto') {
+                        idx = filteredGpuEncoders.findIndex(function (device) { return device.encoder.includes(hardwareType); });
+                        if (idx === -1) {
+                            throw new Error("Could not find encoder ".concat(targetCodec, " for hardware ").concat(hardwareType));
+                        }
+                        return [2 /*return*/, __assign(__assign({}, filteredGpuEncoders[idx]), { isGpu: true, enabledDevices: [] })];
+                    }
                     args.jobLog(JSON.stringify({ filteredGpuEncoders: filteredGpuEncoders }));
                     _i = 0, filteredGpuEncoders_1 = filteredGpuEncoders;
                     _c.label = 1;
@@ -312,7 +319,7 @@ var getEncoder = function (_a) {
                     _i++;
                     return [3 /*break*/, 1];
                 case 4:
-                    enabledDevices = gpuEncoders.filter(function (device) { return device.enabled === true; });
+                    enabledDevices = filteredGpuEncoders.filter(function (device) { return device.enabled === true; });
                     args.jobLog(JSON.stringify({ enabledDevices: enabledDevices }));
                     if (enabledDevices.length > 0) {
                         if (enabledDevices[0].encoder.includes('nvenc')) {

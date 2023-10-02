@@ -112,7 +112,7 @@ export const getBestNvencDevice = ({
   return nvencDevice;
 };
 
-const encoderFilter = (encoder:string, targetCodec:string) => {
+const encoderFilter = (encoder: string, targetCodec: string) => {
   if (targetCodec === 'hevc' && (encoder.includes('hevc') || encoder.includes('h265'))) {
     return true;
   } if (targetCodec === 'h264' && encoder.includes('h264')) {
@@ -124,21 +124,25 @@ const encoderFilter = (encoder:string, targetCodec:string) => {
   return false;
 };
 
-export const getEncoder = async ({
-  targetCodec,
-  hardwareEncoding,
-  args,
-}: {
-  targetCodec: string,
-  hardwareEncoding: boolean,
-  args: IpluginInputArgs,
-}): Promise<{
+export interface IgetEncoder {
   encoder: string,
   inputArgs: string[],
   outputArgs: string[],
   isGpu: boolean,
   enabledDevices: IgpuEncoder[],
-}> => {
+}
+
+export const getEncoder = async ({
+  targetCodec,
+  hardwareEncoding,
+  hardwareType,
+  args,
+}: {
+  targetCodec: string,
+  hardwareEncoding: boolean,
+  hardwareType: string,
+  args: IpluginInputArgs,
+}): Promise<IgetEncoder> => {
   if (
     args.workerType
     && args.workerType.includes('gpu')
@@ -268,6 +272,20 @@ export const getEncoder = async ({
 
     const filteredGpuEncoders = gpuEncoders.filter((device) => encoderFilter(device.encoder, targetCodec));
 
+    if (hardwareEncoding && hardwareType !== 'auto') {
+      const idx = filteredGpuEncoders.findIndex((device) => device.encoder.includes(hardwareType));
+
+      if (idx === -1) {
+        throw new Error(`Could not find encoder ${targetCodec} for hardware ${hardwareType}`);
+      }
+
+      return {
+        ...filteredGpuEncoders[idx],
+        isGpu: true,
+        enabledDevices: [],
+      };
+    }
+
     args.jobLog(JSON.stringify({ filteredGpuEncoders }));
 
     // eslint-disable-next-line no-restricted-syntax
@@ -281,7 +299,7 @@ export const getEncoder = async ({
       });
     }
 
-    const enabledDevices = gpuEncoders.filter((device) => device.enabled === true);
+    const enabledDevices = filteredGpuEncoders.filter((device) => device.enabled === true);
 
     args.jobLog(JSON.stringify({ enabledDevices }));
 
