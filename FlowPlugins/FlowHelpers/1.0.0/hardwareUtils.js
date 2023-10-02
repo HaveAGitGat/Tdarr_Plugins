@@ -188,6 +188,16 @@ var getEncoder = function (_a) {
                             filter: '',
                         },
                         {
+                            encoder: 'hevc_qsv',
+                            enabled: false,
+                            inputArgs: [
+                                '-hwaccel',
+                                'qsv',
+                            ],
+                            outputArgs: [],
+                            filter: '',
+                        },
+                        {
                             encoder: 'hevc_vaapi',
                             inputArgs: [
                                 '-hwaccel',
@@ -200,16 +210,6 @@ var getEncoder = function (_a) {
                             outputArgs: [],
                             enabled: false,
                             filter: '-vf format=nv12,hwupload',
-                        },
-                        {
-                            encoder: 'hevc_qsv',
-                            enabled: false,
-                            inputArgs: [
-                                '-hwaccel',
-                                'qsv',
-                            ],
-                            outputArgs: [],
-                            filter: '',
                         },
                         {
                             encoder: 'hevc_videotoolbox',
@@ -275,14 +275,14 @@ var getEncoder = function (_a) {
                             filter: '',
                         },
                         {
-                            encoder: 'av1_vaapi',
+                            encoder: 'av1_qsv',
                             enabled: false,
                             inputArgs: [],
                             outputArgs: [],
                             filter: '',
                         },
                         {
-                            encoder: 'av1_qsv',
+                            encoder: 'av1_vaapi',
                             enabled: false,
                             inputArgs: [],
                             outputArgs: [],
