@@ -57,7 +57,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let hasSpecifiedChannelCount = false;
 
-  args.jobLog(`Checking for ${channelCount} channels`)
+  args.jobLog(`Checking for ${channelCount} channels`);
 
   if (Array.isArray(args?.inputFileObj?.ffProbeData?.streams)) {
     for (let i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
