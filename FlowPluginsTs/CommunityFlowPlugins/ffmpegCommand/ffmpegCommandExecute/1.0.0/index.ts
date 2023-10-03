@@ -74,7 +74,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   cliArgs.push('-i');
   cliArgs.push(args.inputFileObj._id);
 
-  const inputArgs: string[] = [];
+  const inputArgs: string[] = [
+    ...args.variables.ffmpegCommand.overallInputArguments,
+  ];
   let { shouldProcess, streams } = args.variables.ffmpegCommand;
 
   streams = streams.filter((stream) => {
@@ -123,6 +125,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const idx = cliArgs.indexOf('-i');
   cliArgs.splice(idx, 0, ...inputArgs);
+  cliArgs.push(...args.variables.ffmpegCommand.overallOuputArguments);
 
   const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}`
   + `.${args.variables.ffmpegCommand.container}`;

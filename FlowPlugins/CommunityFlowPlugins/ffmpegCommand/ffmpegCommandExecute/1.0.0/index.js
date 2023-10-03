@@ -107,7 +107,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 cliArgs.push('-y');
                 cliArgs.push('-i');
                 cliArgs.push(args.inputFileObj._id);
-                inputArgs = [];
+                inputArgs = __spreadArray([], args.variables.ffmpegCommand.overallInputArguments, true);
                 _a = args.variables.ffmpegCommand, shouldProcess = _a.shouldProcess, streams = _a.streams;
                 streams = streams.filter(function (stream) {
                     if (stream.removed) {
@@ -150,6 +150,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 idx = cliArgs.indexOf('-i');
                 cliArgs.splice.apply(cliArgs, __spreadArray([idx, 0], inputArgs, false));
+                cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.overallOuputArguments);
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
                     + ".".concat(args.variables.ffmpegCommand.container);
                 cliArgs.push(outputFilePath);
