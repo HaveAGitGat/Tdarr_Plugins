@@ -143,7 +143,7 @@ var details = function () { return ({
         {
             name: 'forceEncoding',
             type: 'boolean',
-            defaultValue: 'false',
+            defaultValue: 'true',
             inputUI: {
                 type: 'dropdown',
                 options: [
