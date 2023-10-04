@@ -15,8 +15,7 @@ const details = () => ({
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
-  Inputs: [
-    {
+  Inputs: [{
       name: 'Url_Protocol',
       type: 'string',
       defaultValue: 'http',
@@ -116,8 +115,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const port = inputs.Radarr_Port;
   const APIKey = inputs.Radarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
-  var term = "";
-  var termUri = "";
+  let term = "";
+  let termUri = "";
   const APIPathLookup = '/api/v3/movie/lookup';
   const APIPathCommand = '/api/v3/command';
   const APICommand = 'RefreshMovie';
@@ -128,14 +127,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Select connection type
-  var connection_type = null;
+  let connection_type = null;
   try {
-    if(SSL == "http") {
+    if (SSL == "http") {
       connection_type = http
     } else {
       connection_type = https
     }
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed to compare SSL string. Error: ${e}`);
     connection_type = http
   }
@@ -145,7 +144,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     term = file.file.split('/');
     term = term[term.length - 2];
     termUri = encodeURI(term);
-  } catch(e){
+  } catch (e) {
     console.log(`Failed to split file name. Error: '${e}'.\n`)
     response.infoLog += `\nFailed to split file name. Error: '${e}'.`;
     return response
@@ -156,9 +155,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
-  var url1_body = "";
-  var url2 = ``;
-  var MovieID = 0;
+  let url1_body = "";
+  let url2 = ``;
+  let MovieID = 0;
 
   // API call to search for Movie ID using the folder name
   try {
@@ -168,11 +167,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function(chunk) {
+        res.on("data", function (chunk) {
           url1_body += chunk;
         });
 
-        res.on('end', function() {
+        res.on('end', function () {
           resolve();
         });
 
@@ -182,7 +181,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         resolve();
       });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -193,7 +192,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     const APIresponse = JSON.parse(url1_body);
     MovieID = APIresponse[0].id;
     url2 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed make JSON payload. Error: '${e}'.`);
     response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
     return response;
@@ -206,21 +205,21 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       axios.post(url2, {
-        name: APICommand,
-        movieIds: [MovieID]
-      })
-      .then(function (res) {
-        console.log(`Got status code '${res.status}'.`)
-        response.infoLog += `\n☑ Got status code '${res.status}'.`;
-        resolve();
-      })
-      .catch(function (error) {
-        console.log(`Got error: ${error}`)
-        response.infoLog += `\nGot error: ${error}`;
-        resolve();
-      });       
+          name: APICommand,
+          movieIds: [MovieID]
+        })
+        .then(function (res) {
+          console.log(`Got status code '${res.status}'.`)
+          response.infoLog += `\n☑ Got status code '${res.status}'.`;
+          resolve();
+        })
+        .catch(function (error) {
+          console.log(`Got error: ${error}`)
+          response.infoLog += `\nGot error: ${error}`;
+          resolve();
+        });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -229,7 +228,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Sleep for set amount of time
   console.log(`Sleeping '${sleepInterval}' ms.`);
   response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
-  await new Promise((resolve) => { 
+  await new Promise((resolve) => {
     setTimeout(() => {
       resolve();
     }, sleepInterval);

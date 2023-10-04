@@ -9,16 +9,14 @@ const details = () => ({
   `,
   Version: '1.00',
   Tags: 'action',
-  Inputs: [
-    {
+  Inputs: [{
       name: 'codecTypeFilter',
       type: 'string',
       defaultValue: 'subtitle',
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter values of the stream codec type to process. Nothing/empty input means all types of streams will 
+      tooltip: `Enter values of the stream codec type to process. Nothing/empty input means all types of streams will 
         be inspected for processing. For example, if removing by codec_name on video streams, enter video:
         
         \\nExample:\\n
@@ -32,8 +30,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter one stream property to check for values.
+      tooltip: `Enter one stream property to check for values.
         
         \\nExample:\\n
         codec_name
@@ -46,8 +43,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
+      tooltip: `Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
         
         \\nExample:\\n
         ac3,aac
@@ -60,8 +56,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip:
-        `Enter one or more properties to check for its existance. If the property is missing or null, 
+      tooltip: `Enter one or more properties to check for its existance. If the property is missing or null, 
         the stream will be removed. Useful for fixing corrupt streams. For example, if codec_name 
         is missing, the stream will be removed:
         
@@ -117,8 +112,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       try {
         // Skip if the codec_type is filtered out
         if (
-          codecTypeFilter.length !== 0
-          && !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))) {
+          codecTypeFilter.length !== 0 &&
+          !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))) {
           continue;
         }
 
@@ -130,8 +125,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           is ${file.ffProbeData.streams[i][removeIfPropertyMissing[j]]} \n`;
 
           if (
-            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined'
-            || file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
+            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined' ||
+            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
             emptyValue = true;
             response.infoLog += ` Removing stream ${i} which is has ${removeIfPropertyMissing[j]} missing`;
             break;
@@ -145,11 +140,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
           // Log the old message if the reason is not empty values
           if (!emptyValue) {
-            response.infoLog += ` Removing stream ${i} which is has ${propertyToCheck} or`
-            + ` of ${file.ffProbeData.streams[i][propertyToCheck]} \n`;
+            response.infoLog += ` Removing stream ${i} which is has ${propertyToCheck} or` +
+              ` of ${file.ffProbeData.streams[i][propertyToCheck]} \n`;
           }
-          streamToRemove = true;
 
+          streamToRemove = true;
         }
       } catch (err) {
         response.infoLog += ` Error reading stream ${i} ${propertyToCheck} \n`;

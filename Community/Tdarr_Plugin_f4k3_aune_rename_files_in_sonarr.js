@@ -15,8 +15,7 @@ const details = () => ({
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
-  Inputs: [
-    {
+  Inputs: [{
       name: 'Url_Protocol',
       type: 'string',
       defaultValue: 'http',
@@ -123,9 +122,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const APIKey = inputs.Sonarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
   const regex = '(S[0-9]{1,4}E[0-9]{1,2})';
-  var seasonEpisodeMatch = "";
-  var term = "";
-  var termUri = "";
+  let seasonEpisodeMatch = "";
+  let term = "";
+  let termUri = "";
   const APIPathLookup = '/api/v3/series/lookup';
   const APIPathEpisodefile = '/api/v3/episodefile';
   const APIPathCommand = '/api/v3/command';
@@ -137,14 +136,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Select connection type
-  var connection_type = null;
+  let connection_type = null;
   try {
-    if(SSL == "http") {
+    if (SSL == "http") {
       connection_type = http
     } else {
       connection_type = https
     }
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed to compare SSL string. Error: ${e}`);
     connection_type = http
   }
@@ -156,15 +155,15 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     termUri = encodeURI(term);
 
     // Use Regex to find SXXXXEXX part of file name and save it
-    var seasonEpisodeMatch_tmp = file.file.toString().match(regex)
-    if(seasonEpisodeMatch_tmp == null) {
+    let seasonEpisodeMatch_tmp = file.file.toString().match(regex)
+    if (seasonEpisodeMatch_tmp == null) {
       console.log(`Failed to find SXXEXX in filename.`)
       response.infoLog += `\nFailed to find SXXEXX in filename.`;
       return response
     } else {
       seasonEpisodeMatch = seasonEpisodeMatch_tmp[0];
     }
-  } catch(e){
+  } catch (e) {
     console.log(`Failed to split file name or find episode nr. Error: '${e}'.`)
     response.infoLog += `\nFailed to split file name or find episode nr. Error: '${e}'.`;
     return response
@@ -178,11 +177,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Define variables to look for Series ID
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
-  var url2 = ``;
-  var url3 = ``;
-  var SeriesID = 0;
-  var url1_body = "";
-  var url2_body = "";
+  let url2 = ``;
+  let url3 = ``;
+  let SeriesID = 0;
+  let url1_body = "";
+  let url2_body = "";
 
   // API call to search for folder name to get Series ID
   try {
@@ -192,11 +191,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function(chunk) {
+        res.on("data", function (chunk) {
           url1_body += chunk;
         });
 
-        res.on('end', function() {
+        res.on('end', function () {
           resolve();
         });
 
@@ -206,7 +205,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         resolve();
       });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -218,14 +217,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     SeriesID = APIresponse[0].id;
     url2 = `${SSL}://${IP}:${port}${APIPathEpisodefile}?seriesId=${SeriesID}&includeImages=false&apikey=${APIKey}`;
     url3 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed make JSON payload. Error: '${e}'.`);
     response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
     return response;
   }
 
   // Create array variable for Episode IDs
-  var fileArray = [];
+  let fileArray = [];
 
   console.log(`Searching for episode files for show '${SeriesID}'.`)
   response.infoLog += `\nSearching for episode files for show '${SeriesID}'.`;
@@ -238,11 +237,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function(chunk) {
+        res.on("data", function (chunk) {
           url2_body += chunk;
         });
 
-        res.on('end', function() {
+        res.on('end', function () {
           resolve();
         });
 
@@ -252,7 +251,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         resolve();
       });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -261,11 +260,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Parse API response of episode files. Find the episode ID which matches the episode name of the file
   try {
     const APIresponse2 = JSON.parse(url2_body);
-    for(var i = 0; i < APIresponse2.length; i++) {
+    for (let i = 0; i < APIresponse2.length; i++) {
       try {
-        var tmp_match = APIresponse2[i].path.toString().match(regex)
-        var tmp_match2 = tmp_match[0]
-        if(tmp_match2 == seasonEpisodeMatch) {
+        let tmp_match = APIresponse2[i].path.toString().match(regex)
+        let tmp_match2 = tmp_match[0]
+        if (tmp_match2 == seasonEpisodeMatch) {
           fileArray.push(APIresponse2[i].id)
         }
       } catch {
@@ -274,7 +273,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
     console.log(`Found '${fileArray.length}' files for series.`);
     response.infoLog += `\nFound '${fileArray.length}' files for series.`;
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed process episodes. Error: '${e}'.`);
     response.infoLog += `\nFailed process episodes. Error: '${e}'.`;
     return response;
@@ -287,22 +286,22 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       axios.post(url3, {
-        name: APICommand,
-        seriesId: SeriesID,
-        files: fileArray
-      })
-      .then(function (res) {
-        console.log(`Got status code '${res.status}'.`)
-        response.infoLog += `\n☑ Got status code '${res.status}'.`;
-        resolve();
-      })
-      .catch(function (error) {
-        console.log(`Got error: ${error}`)
-        response.infoLog += `\nGot error: ${error}`;
-        resolve();
-      });       
+          name: APICommand,
+          seriesId: SeriesID,
+          files: fileArray
+        })
+        .then(function (res) {
+          console.log(`Got status code '${res.status}'.`)
+          response.infoLog += `\n☑ Got status code '${res.status}'.`;
+          resolve();
+        })
+        .catch(function (error) {
+          console.log(`Got error: ${error}`)
+          response.infoLog += `\nGot error: ${error}`;
+          resolve();
+        });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;

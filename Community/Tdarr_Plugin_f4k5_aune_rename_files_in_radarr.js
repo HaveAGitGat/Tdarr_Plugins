@@ -15,8 +15,7 @@ const details = () => ({
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
-  Inputs: [
-    {
+  Inputs: [{
       name: 'Url_Protocol',
       type: 'string',
       defaultValue: 'http',
@@ -117,8 +116,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const APIKey = inputs.Radarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
   const regex = '(S[0-9]{1,4}E[0-9]{1,2})';
-  var term = "";
-  var termUri = "";
+  let term = "";
+  let termUri = "";
   const APIPathLookup = '/api/v3/movie/lookup';
   const APIPathMoviefile = '/api/v3/moviefile';
   const APIPathCommand = '/api/v3/command';
@@ -130,14 +129,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Select connection type
-  var connection_type = null;
+  let connection_type = null;
   try {
-    if(SSL == "http") {
+    if (SSL == "http") {
       connection_type = http
     } else {
       connection_type = https
     }
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed to compare SSL string. Error: ${e}`);
     connection_type = http
   }
@@ -147,7 +146,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     term = file.file.split('/');
     term = term[term.length - 2];
     termUri = encodeURI(term);
-  } catch(e){
+  } catch (e) {
     console.log(`Failed to split file name. Error: '${e}'.`)
     response.infoLog += `\nFailed to split file name. Error: '${e}'.`;
     return response
@@ -158,11 +157,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Define variables to look for Movie ID
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
-  var url2 = ``;
-  var url3 = ``;
-  var MovieID = 0;
-  var url1_body = "";
-  var url2_body = "";
+  let url2 = ``;
+  let url3 = ``;
+  let MovieID = 0;
+  let url1_body = "";
+  let url2_body = "";
 
   // API call to search for folder name to get Movie ID
   try {
@@ -172,11 +171,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function(chunk) {
+        res.on("data", function (chunk) {
           url1_body += chunk;
         });
 
-        res.on('end', function() {
+        res.on('end', function () {
           resolve();
         });
 
@@ -186,7 +185,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         resolve();
       });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -198,14 +197,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     MovieID = APIresponse[0].id;
     url2 = `${SSL}://${IP}:${port}${APIPathMoviefile}?movieId=${MovieID}&includeImages=false&apikey=${APIKey}`;
     url3 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed make JSON payload. Error: '${e}'.`);
     response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
     return response;
   }
 
   // Create array variable for Movie file IDs
-  var fileArray = [];
+  let fileArray = [];
 
   console.log(`Searching for Movie file IDs for movie '${MovieID}'.`)
   response.infoLog += `\nSearching for Movie file IDs for movie '${MovieID}'.`;
@@ -218,11 +217,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function(chunk) {
+        res.on("data", function (chunk) {
           url2_body += chunk;
         });
 
-        res.on('end', function() {
+        res.on('end', function () {
           resolve();
         });
 
@@ -232,7 +231,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         resolve();
       });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -241,7 +240,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Parse API response of movie files IDs. Find the movie file ID
   try {
     const APIresponse2 = JSON.parse(url2_body);
-    for(var i = 0; i < APIresponse2.length; i++) {
+    for (let i = 0; i < APIresponse2.length; i++) {
       try {
         fileArray.push(APIresponse2[i].id)
       } catch {
@@ -250,7 +249,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
     console.log(`Found '${fileArray.length}' files for movie.`);
     response.infoLog += `\nFound '${fileArray.length}' files for movie.`;
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed process episodes. Error: '${e}'.`);
     response.infoLog += `\nFailed process episodes. Error: '${e}'.`;
     return response;
@@ -263,22 +262,22 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       axios.post(url3, {
-        name: APICommand,
-        movieId: MovieID,
-        files: fileArray
-      })
-      .then(function (res) {
-        console.log(`Got status code '${res.status}'.`)
-        response.infoLog += `\n☑ Got status code '${res.status}'.`;
-        resolve();
-      })
-      .catch(function (error) {
-        console.log(`Got error: ${error}`)
-        response.infoLog += `\nGot error: ${error}`;
-        resolve();
-      });       
+          name: APICommand,
+          movieId: MovieID,
+          files: fileArray
+        })
+        .then(function (res) {
+          console.log(`Got status code '${res.status}'.`)
+          response.infoLog += `\n☑ Got status code '${res.status}'.`;
+          resolve();
+        })
+        .catch(function (error) {
+          console.log(`Got error: ${error}`)
+          response.infoLog += `\nGot error: ${error}`;
+          resolve();
+        });
     });
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed API call. Error: '${e}'.`);
     response.infoLog += `\nFailed API call. Error: '${e}'.`;
     return response;
@@ -287,7 +286,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Sleep for set amount of time
   console.log(`Sleeping '${sleepInterval}' ms.`);
   response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
-  await new Promise((resolve) => { 
+  await new Promise((resolve) => {
     setTimeout(() => {
       resolve();
     }, sleepInterval);
