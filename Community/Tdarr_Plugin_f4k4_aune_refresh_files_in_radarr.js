@@ -16,74 +16,74 @@ const details = () => ({
   Tags: '3rd party,post-processing,configurable',
 
   Inputs: [{
-      name: 'Url_Protocol',
-      type: 'string',
-      defaultValue: 'http',
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'http',
-          'https',
-        ],
-      },
-      tooltip: `
+    name: 'Url_Protocol',
+    type: 'string',
+    defaultValue: 'http',
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'http',
+        'https',
+      ],
+    },
+    tooltip: `
                Specified the type of request to make, http:// or https://
                \\nExample:\\n
                http
                \\nExample:\\n
                https`,
+  },
+  {
+    name: 'Url_Radarr',
+    type: 'string',
+    defaultValue: 'localhost',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'Url_Radarr',
-      type: 'string',
-      defaultValue: 'localhost',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `
+    tooltip: `
                Enter the IP address/URL Tdarr uses to reach Radarr.
                \\nExample:\\n
                192.168.0.10
                \\nExample:\\n
                subdomain.domain.tld`,
+  },
+  {
+    name: 'Radarr_Port',
+    type: 'number',
+    defaultValue: 7878,
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'Radarr_Port',
-      type: 'number',
-      defaultValue: 7878,
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `
+    tooltip: `
                The port required to access Radarr
                \\nExample:\\n
                7878`,
+  },
+  {
+    name: 'Radarr_APIKey',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'Radarr_APIKey',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `
+    tooltip: `
                Enter the Radarr API key. \\n
                You can find it within Radarr at /settings/general. \\n\\n
                \\nExample:\\n
                3ff1ae1c39a2a2a397315e15266dea48`,
+  },
+  {
+    name: 'After_Sleep',
+    type: 'number',
+    defaultValue: 0,
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'After_Sleep',
-      type: 'number',
-      defaultValue: 0,
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `
+    tooltip: `
                How many ms should Tdarr sleep to wait for Radarr to finish afterward? \\n
                \\nExample:\\n
                1000`,
-    },
+  },
   ],
 });
 
@@ -205,9 +205,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       axios.post(url2, {
-          name: APICommand,
-          movieIds: [MovieID]
-        })
+        name: APICommand,
+        movieIds: [MovieID]
+      })
         .then(function (res) {
           console.log(`Got status code '${res.status}'.`)
           response.infoLog += `\n☑ Got status code '${res.status}'.`;

@@ -10,60 +10,60 @@ const details = () => ({
   Version: '1.00',
   Tags: 'action',
   Inputs: [{
-      name: 'codecTypeFilter',
-      type: 'string',
-      defaultValue: 'subtitle',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Enter values of the stream codec type to process. Nothing/empty input means all types of streams will 
+    name: 'codecTypeFilter',
+    type: 'string',
+    defaultValue: 'subtitle',
+    inputUI: {
+      type: 'text',
+    },
+    tooltip: `Enter values of the stream codec type to process. Nothing/empty input means all types of streams will 
         be inspected for processing. For example, if removing by codec_name on video streams, enter video:
         
         \\nExample:\\n
         video,subtitle,audio
         `,
+  },
+  {
+    name: 'propertyToCheck',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'propertyToCheck',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Enter one stream property to check for values.
+    tooltip: `Enter one stream property to check for values.
         
         \\nExample:\\n
         codec_name
         `,
+  },
+  {
+    name: 'valuesToRemove',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'valuesToRemove',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
+    tooltip: `Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
         
         \\nExample:\\n
         ac3,aac
         `,
+  },
+  {
+    name: 'removeIfPropertyMissing',
+    type: 'string',
+    defaultValue: '',
+    inputUI: {
+      type: 'text',
     },
-    {
-      name: 'removeIfPropertyMissing',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Enter one or more properties to check for its existance. If the property is missing or null, 
+    tooltip: `Enter one or more properties to check for its existance. If the property is missing or null, 
         the stream will be removed. Useful for fixing corrupt streams. For example, if codec_name 
         is missing, the stream will be removed:
         
         \\nExample:\\n
         codec_name
         `,
-    },
+  },
   ],
 });
 
