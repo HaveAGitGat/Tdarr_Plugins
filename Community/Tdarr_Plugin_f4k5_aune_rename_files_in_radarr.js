@@ -11,7 +11,8 @@ const details = () => ({
   Name: 'Rename files in Radarr',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Renames the files in the current movie in Radarr according to naming format. This is done using the Radarr API. To do this action it needs the Movie ID. This code attempts to retrieve the Movie ID by using the folder name of the movie.`,
+  Description: `Renames the files in the current movie in Radarr according to naming format. This is done using the Radarr API. 
+  To do this action it needs the Movie ID. This code attempts to retrieve the Movie ID by using the folder name of the movie.`,
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -98,7 +99,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: 'Rename Radarr files starting.',
   };
 
-  //console.log("Rename Radarr files starting.")
+  //console.log('Rename Radarr files starting.')
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -107,7 +108,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const https = require('https');
   const axios = require('axios');
 
-  //console.log("Loaded required packages.")
+  //console.log('Loaded required packages.')
 
   // Defines variables
   const SSL = inputs.Url_Protocol;
@@ -116,8 +117,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const APIKey = inputs.Radarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
   const regex = '(S[0-9]{1,4}E[0-9]{1,2})';
-  let term = "";
-  let termUri = "";
+  let term = '';
+  let termUri = '';
   const APIPathLookup = '/api/v3/movie/lookup';
   const APIPathMoviefile = '/api/v3/moviefile';
   const APIPathCommand = '/api/v3/command';
@@ -131,14 +132,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Select connection type
   let connection_type = null;
   try {
-    if (SSL == "http") {
-      connection_type = http
+    if (SSL == 'http') {
+      connection_type = http;
     } else {
-      connection_type = https
+      connection_type = https;
     }
   } catch (e) {
     //console.log(`Failed to compare SSL string. Error: ${e}`);
-    connection_type = http
+    connection_type = http;
   }
 
   // Try to split file path to retrieve movie folder name
@@ -160,25 +161,23 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let url2 = ``;
   let url3 = ``;
   let MovieID = 0;
-  let url1_body = "";
-  let url2_body = "";
+  let url1_body = '';
+  let url2_body = '';
 
   // API call to search for folder name to get Movie ID
   try {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
-
         //console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function (chunk) {
+        res.on('data', function (chunk) {
           url1_body += chunk;
         });
 
         res.on('end', function () {
           resolve();
         });
-
       }).on('error', (e) => {
         //console.log(`Failed to search for movie. Error: '${e}'.`)
         response.infoLog += `\\nFailed to search for movie. Error: '${e}'.`;
@@ -213,11 +212,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       connection_type.get(url2, (res) => {
-
         //console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function (chunk) {
+        res.on('data', function (chunk) {
           url2_body += chunk;
         });
 

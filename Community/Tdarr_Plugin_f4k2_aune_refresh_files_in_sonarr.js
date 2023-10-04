@@ -137,14 +137,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Select connection type
   let connection_type = null;
   try {
-    if (SSL == 'http') {
-      connection_type = http
+    if (SSL === 'http') {
+      connection_type = http;
     } else {
-      connection_type = https
+      connection_type = https;
     }
   } catch (e) {
     //console.log(`Failed to compare SSL string. Error: ${e}`);
-    connection_type = http
+    connection_type = http;
   }
 
   // Try to split file path to retrieve series folder name
@@ -155,7 +155,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } catch (e) {
     //console.log(`Failed to split file name. Error: '${e}'.\\n`);
     response.infoLog += `\\nFailed to split file name. Error: '${e}'.`;
-    return response
+    return response;
   }
 
   //console.log(`Searching for series '${term}'.`);
@@ -164,7 +164,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
   let url1_body = '';
-  let url2 = ``;
+  let url2 = '';
   let SeriesID = 0;
 
   // API call to search for Series ID using the folder name
@@ -181,7 +181,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         res.on('end', function () {
           resolve();
         });
-
       }).on('error', (e) => {
         //console.log(`Failed to search for series. Error: '${e}'.`);
         response.infoLog += `\\nFailed to search for series. Error: '${e}'.`;

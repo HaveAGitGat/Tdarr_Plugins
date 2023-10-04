@@ -11,7 +11,9 @@ const details = () => ({
   Name: 'Rename files in Sonarr',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Renames the files in the current show in Sonarr according to naming format. This is done using the Sonarr API. To do this action it needs the Show ID. This code attempts to retrieve the Show ID by using the folder name of the series. To rename the correct file we need the season and episode number. To find this SXXEXX needs to be present in the file name.`,
+  Description: `Renames the files in the current show in Sonarr according to naming format. This is done using the Sonarr API. 
+  To do this action it needs the Show ID. This code attempts to retrieve the Show ID by using the folder name of the series. 
+  To rename the correct file we need the season and episode number. To find this SXXEXX needs to be present in the file name.`,
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -95,7 +97,6 @@ function sleep(ms) {
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
-
   const response = {
     file,
     removeFromDB: false,
@@ -104,7 +105,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: 'Rename Sonarr files starting.',
   };
 
-  //console.log("Rename Sonarr files starting.")
+  //console.log('Rename Sonarr files starting.')
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -113,7 +114,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const https = require('https');
   const axios = require('axios');
 
-  //console.log("Loaded required packages.")
+  //console.log('Loaded required packages.')
 
   // Defines variables
   const SSL = inputs.Url_Protocol;
@@ -122,9 +123,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const APIKey = inputs.Sonarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
   const regex = '(S[0-9]{1,4}E[0-9]{1,2})';
-  let seasonEpisodeMatch = "";
-  let term = "";
-  let termUri = "";
+  let seasonEpisodeMatch = '';
+  let term = '';
+  let termUri = '';
   const APIPathLookup = '/api/v3/series/lookup';
   const APIPathEpisodefile = '/api/v3/episodefile';
   const APIPathCommand = '/api/v3/command';
@@ -138,14 +139,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Select connection type
   let connection_type = null;
   try {
-    if (SSL == "http") {
-      connection_type = http
+    if (SSL === 'http') {
+      connection_type = http;
     } else {
-      connection_type = https
+      connection_type = https;
     }
   } catch (e) {
     //console.log(`Failed to compare SSL string. Error: ${e}`);
-    connection_type = http
+    connection_type = http;
   }
 
   // Try to split file path to retrieve series folder name and season-episode number
@@ -180,18 +181,17 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let url2 = ``;
   let url3 = ``;
   let SeriesID = 0;
-  let url1_body = "";
-  let url2_body = "";
+  let url1_body = '';
+  let url2_body = '';
 
   // API call to search for folder name to get Series ID
   try {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
-
         //console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function (chunk) {
+        res.on('data', function (chunk) {
           url1_body += chunk;
         });
 
@@ -233,11 +233,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       connection_type.get(url2, (res) => {
-
         //console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function (chunk) {
+        res.on('data', function (chunk) {
           url2_body += chunk;
         });
 

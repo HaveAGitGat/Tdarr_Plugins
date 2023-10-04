@@ -89,7 +89,6 @@ const details = () => ({
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
-
   const response = {
     file,
     removeFromDB: false,
@@ -98,7 +97,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: 'Refresh Radarr files starting.',
   };
 
-  //console.log("Refresh Radarr files starting.")
+  //console.log('Refresh Radarr files starting.')
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -107,7 +106,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const https = require('https');
   const axios = require('axios');
 
-  //console.log("Loaded required packages.")
+  //console.log('Loaded required packages.')
 
   // Create variables
   const SSL = inputs.Url_Protocol;
@@ -115,8 +114,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const port = inputs.Radarr_Port;
   const APIKey = inputs.Radarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
-  let term = "";
-  let termUri = "";
+  let term = '';
+  let termUri = '';
   const APIPathLookup = '/api/v3/movie/lookup';
   const APIPathCommand = '/api/v3/command';
   const APICommand = 'RefreshMovie';
@@ -129,14 +128,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Select connection type
   let connection_type = null;
   try {
-    if (SSL == "http") {
-      connection_type = http
+    if (SSL == 'http') {
+      connection_type = http;
     } else {
-      connection_type = https
+      connection_type = https;
     }
   } catch (e) {
     //console.log(`Failed to compare SSL string. Error: ${e}`);
-    connection_type = http
+    connection_type = http;
   }
 
   // Try to split file path to retrieve movie folder name
@@ -155,19 +154,18 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
-  let url1_body = "";
-  let url2 = ``;
+  let url1_body = '';
+  let url2 = '';
   let MovieID = 0;
 
   // API call to search for Movie ID using the folder name
   try {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
-
         //console.log(`Got status code '${res.statusCode}'.`)
         response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
-        res.on("data", function (chunk) {
+        res.on('data', function (chunk) {
           url1_body += chunk;
         });
 
