@@ -116,10 +116,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
       try {
         // Skip if the codec_type is filtered out
-        if(
-          codecTypeFilter.length !== 0 && 
-          !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))
-        ) {
+        if (
+          codecTypeFilter.length !== 0
+          && !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))) {
           continue;
         }
 
@@ -130,7 +129,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           response.infoLog += `DEBUG: stream ${i} property for ${removeIfPropertyMissing[j]}
           is ${file.ffProbeData.streams[i][removeIfPropertyMissing[j]]} \n`;
 
-          if (file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined' || file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
+          if (
+            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined'
+            || file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
             emptyValue = true;
             response.infoLog += ` Removing stream ${i} which is has ${removeIfPropertyMissing[j]} missing`;
             break;
