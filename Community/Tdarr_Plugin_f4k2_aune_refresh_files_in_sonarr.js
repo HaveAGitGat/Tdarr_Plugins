@@ -6,12 +6,12 @@ module.exports.dependencies = [
 
 // tdarrSkipTest
 const details = () => ({
-  id: 'Tdarr_Plugin_f4k2_refresh_files_in_sonarr',
+  id: 'Tdarr_Plugin_f4k2_aune_refresh_files_in_sonarr',
   Stage: 'Post-processing',
   Name: 'Refresh files in Sonarr',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Refreshes folder containing the current show in Sonarr so files are mapped properly. It retrieves the showID by using the folder name of the series.`,
+  Description: `Refreshes folder containing the current show in Sonarr so files are mapped properly. This is done using the Sonarr API. To do this action it needs the Show ID. This code attempts to retrieve the Show ID by using the folder name of the series.`,
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -116,6 +116,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   console.log("Loaded required packages.")
 
+  // Create variables
   const SSL = inputs.Url_Protocol;
   const IP = inputs.Url_Sonarr;
   const port = inputs.Sonarr_Port;
@@ -127,10 +128,12 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const APIPathCommand = '/api/v3/command';
   const APICommand = 'RefreshSeries';
 
+  // Check variables are given
   if (!SSL || !IP || !APIKey || !port) {
     throw new Error('All fields are required.');
   }
 
+  // Select connection type
   var connection_type = null;
   try {
     if(SSL == "http") {
@@ -143,6 +146,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     connection_type = http
   }
 
+  // Try to split file path to retrieve series folder name
   try {
     term = file.file.split('/');
     term = term[term.length - 3];
@@ -156,11 +160,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   console.log(`Searching for series '${term}'.`)
   response.infoLog += `\nSearching for series '${term}'.`;
 
+  // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
   var url1_body = "";
   var url2 = ``;
   var SeriesID = 0;
 
+  // API call to search for Series ID using the folder name
   try {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
@@ -188,6 +194,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  // Parse API response and save the Series ID
   try {
     const APIresponse = JSON.parse(url1_body);
     SeriesID = APIresponse[0].id;
@@ -201,6 +208,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   console.log(`Refreshing series '${SeriesID}'.`);
   response.infoLog += `\nRefreshing series '${SeriesID}'.`;
 
+  // API request to send a command to refresh the files for the found Series ID
   try {
     await new Promise((resolve) => {
       axios.post(url2, {
@@ -224,6 +232,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  // Sleep for set amount of time
   console.log(`Sleeping '${sleepInterval}' ms.`);
   response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
   await sleep(sleepInterval);

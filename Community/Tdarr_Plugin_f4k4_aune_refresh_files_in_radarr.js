@@ -6,12 +6,12 @@ module.exports.dependencies = [
 
 // tdarrSkipTest
 const details = () => ({
-  id: 'Tdarr_Plugin_f4k3_rename_files_in_sonarr',
+  id: 'Tdarr_Plugin_f4k4_aune_refresh_files_in_radarr',
   Stage: 'Post-processing',
-  Name: 'Rename files in Sonarr',
+  Name: 'Refresh files in Radarr',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `Renames the files in the current show in Sonarr. It retrieves the showID by using the folder name of the series.`,
+  Description: `Refreshes folder containing the current movie in Radarr so files are mapped properly. This is done using the Radarr API. To do this action it needs the Movie ID. This code attempts to retrieve the Movie ID by using the folder name of the movie.`,
   Version: '1.0',
   Tags: '3rd party,post-processing,configurable',
 
@@ -35,41 +35,41 @@ const details = () => ({
                https`,
     },
     {
-      name: 'Url_Sonarr',
+      name: 'Url_Radarr',
       type: 'string',
       defaultValue: 'localhost',
       inputUI: {
         type: 'text',
       },
       tooltip: `
-               Enter the IP address/URL Tdarr uses to reach Sonarr.
+               Enter the IP address/URL Tdarr uses to reach Radarr.
                \\nExample:\\n
                192.168.0.10
                \\nExample:\\n
                subdomain.domain.tld`,
     },
     {
-      name: 'Sonarr_Port',
+      name: 'Radarr_Port',
       type: 'number',
-      defaultValue: 8989,
+      defaultValue: 7878,
       inputUI: {
         type: 'text',
       },
       tooltip: `
-               The port required to access Sonarr
+               The port required to access Radarr
                \\nExample:\\n
-               8989`,
+               7878`,
     },
     {
-      name: 'Sonarr_APIKey',
+      name: 'Radarr_APIKey',
       type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
       },
       tooltip: `
-               Enter the Sonarr API key. \\n
-               You can find it within Sonarr at /settings/general. \\n\\n
+               Enter the Radarr API key. \\n
+               You can find it within Radarr at /settings/general. \\n\\n
                \\nExample:\\n
                3ff1ae1c39a2a2a397315e15266dea48`,
     },
@@ -81,18 +81,12 @@ const details = () => ({
         type: 'text',
       },
       tooltip: `
-               How many ms should Tdarr sleep to wait for Sonarr to finish afterward? \\n
+               How many ms should Tdarr sleep to wait for Radarr to finish afterward? \\n
                \\nExample:\\n
                1000`,
     },
   ],
 });
-
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 // eslint-disable-next-line no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
@@ -102,10 +96,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     removeFromDB: false,
     updateDB: false,
     processFile: false,
-    infoLog: 'Rename Sonarr files starting.',
+    infoLog: 'Refresh Radarr files starting.',
   };
 
-  console.log("Rename Sonarr files starting.")
+  console.log("Refresh Radarr files starting.")
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -116,22 +110,24 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   console.log("Loaded required packages.")
 
+  // Create variables
   const SSL = inputs.Url_Protocol;
-  const IP = inputs.Url_Sonarr;
-  const port = inputs.Sonarr_Port;
-  const APIKey = inputs.Sonarr_APIKey;
+  const IP = inputs.Url_Radarr;
+  const port = inputs.Radarr_Port;
+  const APIKey = inputs.Radarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
   var term = "";
   var termUri = "";
-  const APIPathLookup = '/api/v3/series/lookup';
-  const APIPathEpisodefile = '/api/v3/episodefile';
+  const APIPathLookup = '/api/v3/movie/lookup';
   const APIPathCommand = '/api/v3/command';
-  const APICommand = 'RenameFiles';
+  const APICommand = 'RefreshMovie';
 
+  // Check variables are given
   if (!SSL || !IP || !APIKey || !port) {
     throw new Error('All fields are required.');
   }
 
+  // Select connection type
   var connection_type = null;
   try {
     if(SSL == "http") {
@@ -144,9 +140,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     connection_type = http
   }
 
+  // Try to split file path to retrieve movie folder name
   try {
     term = file.file.split('/');
-    term = term[term.length - 3];
+    term = term[term.length - 2];
     termUri = encodeURI(term);
   } catch(e){
     console.log(`Failed to split file name. Error: '${e}'.\n`)
@@ -154,16 +151,16 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response
   }
 
-  console.log(`Searching for series '${term}'.`)
-  response.infoLog += `\nSearching for series '${term}'.`;
+  console.log(`Searching for movie '${term}'.`)
+  response.infoLog += `\nSearching for movie '${term}'.`;
 
+  // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
-  var url2 = ``;
-  var url3 = ``;
-  var SeriesID = 0;
   var url1_body = "";
-  var url2_body = "";
+  var url2 = ``;
+  var MovieID = 0;
 
+  // API call to search for Movie ID using the folder name
   try {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
@@ -180,8 +177,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         });
 
       }).on('error', (e) => {
-        console.log(`Failed to search for series. Error: '${e}'.`)
-        response.infoLog += `\nFailed to search for series. Error: '${e}'.`;
+        console.log(`Failed to search for movie. Error: '${e}'.`)
+        response.infoLog += `\nFailed to search for movie. Error: '${e}'.`;
         resolve();
       });
     });
@@ -191,71 +188,26 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  // Parse API response and save the Movie ID
   try {
     const APIresponse = JSON.parse(url1_body);
-    SeriesID = APIresponse[0].id;
-    url2 = `${SSL}://${IP}:${port}${APIPathEpisodefile}?seriesId=${SeriesID}&includeImages=false&apikey=${APIKey}`;
-    url3 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
+    MovieID = APIresponse[0].id;
+    url2 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
   } catch(e) {
     console.log(`Failed make JSON payload. Error: '${e}'.`);
     response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
     return response;
   }
 
-  var fileArray = [];
+  console.log(`Refreshing movie '${MovieID}'.`);
+  response.infoLog += `\nRefreshing movie '${MovieID}'.`;
 
-  console.log(`Searching for episode files for show '${SeriesID}'.`)
-  response.infoLog += `\nSearching for episode files for show '${SeriesID}'.`;
-
+  // API request to send a command to refresh the files for the found Movie ID
   try {
     await new Promise((resolve) => {
-      connection_type.get(url2, (res) => {
-
-        console.log(`Got status code '${res.statusCode}'.`)
-        response.infoLog += `\nGot status code '${res.statusCode}'.`;
-
-        res.on("data", function(chunk) {
-          url2_body += chunk;
-        });
-
-        res.on('end', function() {
-          resolve();
-        });
-
-      }).on('error', (e) => {
-        console.log(`Failed to search for files for series. Error: '${e}'.`)
-        response.infoLog += `\nFailed to search for files for series. Error: '${e}'.`;
-        resolve();
-      });
-    });
-  } catch(e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
-    return response;
-  }
-
-  try {
-    const APIresponse2 = JSON.parse(url2_body);
-    for(var i = 0; i < APIresponse2.length; i++) {
-      fileArray.push(APIresponse2[i].id)
-    }
-    console.log(`Found '${fileArray.length}' files for series.`);
-    response.infoLog += `\nFound '${fileArray.length}' files for series.`;
-  } catch(e) {
-    console.log(`Failed process episodes. Error: '${e}'.`);
-    response.infoLog += `\nFailed process episodes. Error: '${e}'.`;
-    return response;
-  }
-
-  console.log(`Renaming files for series '${SeriesID}'.`);
-  response.infoLog += `\nRenaming files for series '${SeriesID}'.`;
-
-  try {
-    await new Promise((resolve) => {
-      axios.post(url3, {
+      axios.post(url2, {
         name: APICommand,
-        seriesId: SeriesID,
-        files: fileArray
+        movieIds: [MovieID]
       })
       .then(function (res) {
         console.log(`Got status code '${res.status}'.`)
@@ -274,9 +226,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  // Sleep for set amount of time
   console.log(`Sleeping '${sleepInterval}' ms.`);
   response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
-  await sleep(sleepInterval);
+  await new Promise((resolve) => { 
+    setTimeout(() => {
+      resolve();
+    }, sleepInterval);
+  });
 
   return response;
 };
