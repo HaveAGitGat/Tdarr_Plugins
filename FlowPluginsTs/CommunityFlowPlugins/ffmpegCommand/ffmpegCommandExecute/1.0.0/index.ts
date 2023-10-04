@@ -5,6 +5,7 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
+import { getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -16,6 +17,8 @@ const details = (): IpluginDetails => ({
   tags: 'video',
 
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: 2,
   icon: 'faPlay',
   inputs: [],
@@ -71,7 +74,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   cliArgs.push('-i');
   cliArgs.push(args.inputFileObj._id);
 
-  const inputArgs: string[] = [];
+  const inputArgs: string[] = [
+    ...args.variables.ffmpegCommand.overallInputArguments,
+  ];
   let { shouldProcess, streams } = args.variables.ffmpegCommand;
 
   streams = streams.filter((stream) => {
@@ -120,8 +125,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const idx = cliArgs.indexOf('-i');
   cliArgs.splice(idx, 0, ...inputArgs);
+  cliArgs.push(...args.variables.ffmpegCommand.overallOuputArguments);
 
-  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${args.variables.ffmpegCommand.container}`;
+  const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}`
+  + `.${args.variables.ffmpegCommand.container}`;
+
   cliArgs.push(outputFilePath);
 
   args.jobLog('Processing file');

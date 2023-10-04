@@ -14,6 +14,12 @@ export const getFileName = (filePath: string): string => {
   return parts2.join('.');
 };
 
+export const getFileAbosluteDir = (filePath: string):string => {
+  const parts = filePath.split('/');
+  parts.pop();
+  return parts.join('/');
+};
+
 export const getFfType = (codecType: string): string => (codecType === 'video' ? 'v' : 'a');
 
 export const getSubStem = ({
@@ -91,4 +97,57 @@ export const moveFileAndValidate = async ({
       throw new Error(errMessage);
     }
   }
+};
+
+export const getPluginWorkDir = (args: IpluginInputArgs):string => {
+  const pluginWorkDir = `${args.workDir}/${new Date().getTime()}`;
+  args.deps.fsextra.ensureDirSync(pluginWorkDir);
+  return pluginWorkDir;
+};
+
+export interface IscanTypes {
+  mediaInfoScan: boolean,
+  exifToolScan: boolean,
+  closedCaptionScan: boolean,
+  [index: string]: boolean,
+}
+
+export const getScanTypes = (pluginsTextRaw: string[]): IscanTypes => {
+  const scanTypes: IscanTypes = {
+    exifToolScan: true,
+    mediaInfoScan: false,
+    closedCaptionScan: false,
+  };
+  const scannerTypes = [
+    // needed for frame and duration data for ffmpeg
+    // {
+    //   type: 'exifToolScan',
+    //   terms: [
+    //     'meta',
+    //   ],
+    // },
+    {
+      type: 'mediaInfoScan',
+      terms: [
+        'mediaInfo',
+      ],
+    },
+    {
+      type: 'closedCaptionScan',
+      terms: [
+        'hasClosedCaptions',
+      ],
+    },
+  ];
+
+  const text = pluginsTextRaw.join('');
+
+  scannerTypes.forEach((scanner) => {
+    scanner.terms.forEach((term) => {
+      if (text.includes(term)) {
+        scanTypes[scanner.type] = true;
+      }
+    });
+  });
+  return scanTypes;
 };

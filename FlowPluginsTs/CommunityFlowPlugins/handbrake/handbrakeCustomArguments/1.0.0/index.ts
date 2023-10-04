@@ -5,7 +5,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
@@ -16,6 +16,8 @@ const details = ():IpluginDetails => ({
   },
   tags: '',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
@@ -79,7 +81,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     container = getContainer(args.inputFileObj._id);
   }
 
-  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
+  const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
   const presetString = String(args.inputs.jsonPreset);
 

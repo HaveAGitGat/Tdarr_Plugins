@@ -606,7 +606,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // With this set we also disable hardware decode for compatibility later
   if (inputs.enable_10bit === true) {
     main10 = true;
-    extraArguments += '-profile:v main10 -pix_fmt p010le ';
+    extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le ';
     response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
   }
 

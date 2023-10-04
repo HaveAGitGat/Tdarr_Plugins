@@ -1,7 +1,12 @@
-const details = () => ({
+/* eslint-disable no-template-curly-in-string */
+/* eslint-disable import/prefer-default-export */
+
+import { IflowTemplate } from '../../FlowHelpers/1.0.0/interfaces/interfaces';
+
+const details = () :IflowTemplate => ({
   name: 'Basic HEVC Video Flow',
   description: 'Basic HEVC Video Flow',
-  tags: 'video',
+  tags: '',
   flowPlugins: [
     {
       name: 'Input File',
@@ -88,8 +93,6 @@ const details = () => ({
       target: '91b7IrsEc',
       targetHandle: null,
       id: 'HhF4rw2DZ',
-      animated: true,
-      type: 'smoothstep',
     },
     {
       source: '91b7IrsEc',
@@ -97,8 +100,6 @@ const details = () => ({
       target: '4Swd6qzvc',
       targetHandle: null,
       id: 'jJizyFUcr',
-      animated: true,
-      type: 'smoothstep',
     },
     {
       source: '4Swd6qzvc',
@@ -106,8 +107,6 @@ const details = () => ({
       target: '8B_6pRd_U',
       targetHandle: null,
       id: '3Df7Xoy93',
-      animated: true,
-      type: 'smoothstep',
     },
     {
       source: '450g167D8',
@@ -115,8 +114,6 @@ const details = () => ({
       target: '4fkfOyR3l',
       targetHandle: null,
       id: 'rE5Dsh9KM',
-      animated: true,
-      type: 'smoothstep',
     },
     {
       source: '91b7IrsEc',
@@ -124,8 +121,6 @@ const details = () => ({
       target: '4fkfOyR3l',
       targetHandle: null,
       id: 'W2nVG7ts5',
-      animated: true,
-      type: 'smoothstep',
     },
     {
       source: '8B_6pRd_U',
@@ -133,8 +128,6 @@ const details = () => ({
       target: 'TtKXi3Q7h',
       targetHandle: null,
       id: 'epqtLsPuG',
-      animated: true,
-      type: 'smoothstep',
     },
     {
       source: 'TtKXi3Q7h',
@@ -142,10 +135,10 @@ const details = () => ({
       target: '450g167D8',
       targetHandle: null,
       id: 'ljOeP0cAZ',
-      animated: true,
-      type: 'smoothstep',
     },
   ],
 });
 
-module.exports.details = details;
+export {
+  details,
+};

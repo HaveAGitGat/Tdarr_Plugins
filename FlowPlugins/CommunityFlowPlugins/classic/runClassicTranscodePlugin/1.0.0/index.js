@@ -47,7 +47,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
-var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var classicPlugins_1 = require("../../../../FlowHelpers/1.0.0/classicPlugins");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Run Classic Transcode Plugin',
@@ -57,6 +57,8 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
@@ -86,58 +88,19 @@ var replaceContainer = function (filePath, container) {
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, lib, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, res_1, container, cacheFilePath, otherArguments, result, cliPath_1, customArgs, isCustomConfig, presetSplit, workerCommand, cliPath, cli, res;
+    var lib, outcome, result, absolutePath, cacheFilePath, cliPath_1, customArgs, isCustomConfig, presetSplit, workerCommand, cliPath, cli, res;
     var _a, _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
             case 0:
-                path = require('path');
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                pluginSourceId = String(args.inputs.pluginSourceId);
-                parts = pluginSourceId.split(':');
-                pluginSource = parts[0];
-                pluginId = parts[1];
-                relativePluginPath = "../../../../../".concat(pluginSource, "/").concat(pluginId, ".js");
-                absolutePath = path.resolve(__dirname, relativePluginPath);
-                if (!(pluginSource === 'Community')) return [3 /*break*/, 1];
-                classicPlugin = args.deps.importFresh(relativePluginPath);
-                return [3 /*break*/, 3];
-            case 1: return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/read-plugin', {
-                    plugin: {
-                        id: pluginId,
-                        source: pluginSource,
-                    },
-                })];
-            case 2:
-                res_1 = _d.sent();
-                classicPlugin = args.deps.requireFromString(res_1.pluginRaw, absolutePath);
-                _d.label = 3;
-            case 3:
-                if (classicPlugin.details().Operation === 'Filter') {
-                    throw new Error("".concat('This plugin is meant for classic plugins that have '
-                        + 'Operation: Transcode. This classic plugin has Operation: ').concat(classicPlugin.details().Operation)
-                        + 'Please use the Run Classic Filter Flow Plugin plugin instead.');
-                }
-                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                cacheFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
-                otherArguments = {
-                    handbrakePath: args.handbrakePath,
-                    ffmpegPath: args.ffmpegPath,
-                    mkvpropeditPath: args.mkvpropeditPath,
-                    originalLibraryFile: args.originalLibraryFile,
-                    nodeHardwareType: args.nodeHardwareType,
-                    pluginCycle: 0,
-                    workerType: args.workerType,
-                    version: args.config.version,
-                    platform_arch_isdocker: args.platform_arch_isdocker,
-                    cacheFilePath: cacheFilePath,
-                    job: args.job,
-                };
-                return [4 /*yield*/, classicPlugin.plugin(args.inputFileObj, args.librarySettings, args.inputs, otherArguments)];
-            case 4:
-                result = _d.sent();
+                return [4 /*yield*/, (0, classicPlugins_1.runClassicPlugin)(args, 'transcode')];
+            case 1:
+                outcome = _d.sent();
+                result = outcome.result, absolutePath = outcome.absolutePath;
+                cacheFilePath = outcome.cacheFilePath;
                 args.jobLog(JSON.stringify(result, null, 2));
                 if (!result) {
                     args.jobLog('No result from classic plugin. Continuing to next flow plugin.');
@@ -190,11 +153,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 customArgs = (_b = result === null || result === void 0 ? void 0 : result.custom) === null || _b === void 0 ? void 0 : _b.args;
                 isCustomConfig = (Array.isArray(customArgs) && customArgs.length > 0)
-                    || (typeof customArgs === 'string' && customArgs.length > 0);
+                    || (typeof customArgs === 'string'
+                        // @ts-expect-error length
+                        && customArgs.length
+                            > 0);
                 if (!isCustomConfig) {
                     cacheFilePath = replaceContainer(cacheFilePath, result.container);
                 }
                 else {
+                    // @ts-expect-error type
                     cacheFilePath = result.custom.outputPath;
                 }
                 if (result.preset.includes('<io>')) {
@@ -206,6 +173,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 workerCommand = [];
                 cliPath = '';
                 if (isCustomConfig) {
+                    // @ts-expect-error cliPath
                     cliPath = (_c = result === null || result === void 0 ? void 0 : result.custom) === null || _c === void 0 ? void 0 : _c.cliPath;
                     if (Array.isArray(customArgs)) {
                         workerCommand = customArgs;
@@ -250,7 +218,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     updateWorker: args.updateWorker,
                 });
                 return [4 /*yield*/, cli.runCli()];
-            case 5:
+            case 2:
                 res = _d.sent();
                 if (res.cliExitCode !== 0) {
                     args.jobLog("Running ".concat(cliPath, " failed"));

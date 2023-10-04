@@ -48,6 +48,8 @@ var details = function () { return ({
     },
     tags: 'video',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
@@ -100,7 +102,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lra = args.inputs.lra;
                 tp = args.inputs.tp;
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 normArgs1 = [
                     '-i',
                     args.inputFileObj._id,

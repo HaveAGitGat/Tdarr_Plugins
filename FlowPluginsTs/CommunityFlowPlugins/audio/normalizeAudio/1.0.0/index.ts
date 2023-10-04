@@ -1,5 +1,5 @@
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -15,6 +15,8 @@ const details = (): IpluginDetails => ({
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
@@ -69,7 +71,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { tp } = args.inputs;
 
   const container = getContainer(args.inputFileObj._id);
-  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
+  const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
   const normArgs1: string[] = [
     '-i',

@@ -7,16 +7,37 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () :IpluginDetails => ({
   name: 'Custom Arguments',
-  description: 'Custom Arguments',
+  description: 'Set FFmpeg custome input and output arguments',
   style: {
     borderColor: '#6efefc',
-    opacity: 0.5,
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
-  inputs: [],
+  inputs: [
+    {
+      name: 'inputArguments',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify input arguments',
+    },
+
+    {
+      name: 'outputArguments',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify output arguments',
+    },
+  ],
   outputs: [
     {
       number: 1,
@@ -30,6 +51,17 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
+
+  const inputArguments = String(args.inputs.inputArguments);
+  const outputArguments = String(args.inputs.outputArguments);
+
+  if (inputArguments) {
+    args.variables.ffmpegCommand.overallInputArguments.push(...inputArguments.split(' '));
+  }
+
+  if (outputArguments) {
+    args.variables.ffmpegCommand.overallOuputArguments.push(...outputArguments.split(' '));
+  }
 
   return {
     outputFileObj: args.inputFileObj,

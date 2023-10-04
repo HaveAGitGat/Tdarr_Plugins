@@ -18,6 +18,8 @@ const details = (): IpluginDetails => ({
   tags: '',
 
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faArrowRight',
   inputs: [],
@@ -50,6 +52,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(`Input path: ${args.inputFileObj._id}`);
   args.jobLog(`Output path: ${outputPath}`);
+
+  if (args.inputFileObj._id === ouputFilePath) {
+    args.jobLog('Input and output path are the same, skipping copy.');
+
+    return {
+      outputFileObj: {
+        _id: args.inputFileObj._id,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
 
   args.deps.fsextra.ensureDirSync(outputPath);
 

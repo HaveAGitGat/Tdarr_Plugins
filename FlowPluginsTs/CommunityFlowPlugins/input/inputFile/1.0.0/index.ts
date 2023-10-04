@@ -12,8 +12,9 @@ const details = ():IpluginDetails => ({
     borderColor: 'pink',
   },
   tags: '',
-
   isStartPlugin: true,
+  pType: 'start',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [],

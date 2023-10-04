@@ -49,6 +49,8 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
@@ -112,7 +114,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 if (container === 'original') {
                     container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 }
-                outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 presetString = String(args.inputs.jsonPreset);
                 cliArgs = [
                     '-i',

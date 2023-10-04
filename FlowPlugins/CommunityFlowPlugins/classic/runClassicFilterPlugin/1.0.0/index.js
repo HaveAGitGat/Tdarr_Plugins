@@ -37,7 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var classicPlugins_1 = require("../../../../FlowHelpers/1.0.0/classicPlugins");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Run Classic Filter Plugin',
@@ -47,6 +47,8 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faQuestion',
     inputs: [
@@ -75,57 +77,17 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, lib, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, res, container, cacheFilePath, otherArguments, result, outputNumber;
+    var lib, outcome, result, outputNumber;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                path = require('path');
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                pluginSourceId = String(args.inputs.pluginSourceId);
-                parts = pluginSourceId.split(':');
-                pluginSource = parts[0];
-                pluginId = parts[1];
-                relativePluginPath = "../../../../../".concat(pluginSource, "/").concat(pluginId, ".js");
-                absolutePath = path.resolve(__dirname, relativePluginPath);
-                if (!(pluginSource === 'Community')) return [3 /*break*/, 1];
-                classicPlugin = args.deps.importFresh(relativePluginPath);
-                return [3 /*break*/, 3];
-            case 1: return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/read-plugin', {
-                    plugin: {
-                        id: pluginId,
-                        source: pluginSource,
-                    },
-                })];
-            case 2:
-                res = _a.sent();
-                classicPlugin = args.deps.requireFromString(res.pluginRaw, absolutePath);
-                _a.label = 3;
-            case 3:
-                if (classicPlugin.details().Operation !== 'Filter') {
-                    throw new Error("".concat('This plugin is meant for classic plugins that have '
-                        + 'Operation: Filter. This classic plugin has Operation: ').concat(classicPlugin.details().Operation)
-                        + 'Please use the Run Classic Transcode Flow Plugin plugin instead.');
-                }
-                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                cacheFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
-                otherArguments = {
-                    handbrakePath: args.handbrakePath,
-                    ffmpegPath: args.ffmpegPath,
-                    mkvpropeditPath: args.mkvpropeditPath,
-                    originalLibraryFile: args.originalLibraryFile,
-                    nodeHardwareType: args.nodeHardwareType,
-                    pluginCycle: 0,
-                    workerType: args.workerType,
-                    version: args.config.version,
-                    platform_arch_isdocker: args.platform_arch_isdocker,
-                    cacheFilePath: cacheFilePath,
-                    job: args.job,
-                };
-                return [4 /*yield*/, classicPlugin.plugin(args.inputFileObj, args.librarySettings, args.inputs, otherArguments)];
-            case 4:
-                result = _a.sent();
+                return [4 /*yield*/, (0, classicPlugins_1.runClassicPlugin)(args, 'filter')];
+            case 1:
+                outcome = _a.sent();
+                result = outcome.result;
                 args.jobLog(JSON.stringify(result, null, 2));
                 outputNumber = (result === null || result === void 0 ? void 0 : result.processFile) ? 1 : 2;
                 return [2 /*return*/, {

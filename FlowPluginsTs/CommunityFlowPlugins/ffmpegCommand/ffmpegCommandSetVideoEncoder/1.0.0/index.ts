@@ -16,6 +16,8 @@ const details = (): IpluginDetails => ({
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
@@ -30,6 +32,7 @@ const details = (): IpluginDetails => ({
           // 'vp9',
           'h264',
           // 'vp8',
+          'av1',
         ],
       },
       tooltip: 'Specify codec of the output file',
@@ -77,6 +80,22 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify whether to use hardware encoding if available',
     },
     {
+      name: 'hardwareType',
+      type: 'string',
+      defaultValue: 'auto',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'auto',
+          'nvenc',
+          'qsv',
+          'vaapi',
+          'videotoolbox',
+        ],
+      },
+      tooltip: 'Specify codec of the output file',
+    },
+    {
       name: 'hardwareDecoding',
       type: 'boolean',
       defaultValue: 'true',
@@ -92,7 +111,7 @@ const details = (): IpluginDetails => ({
     {
       name: 'forceEncoding',
       type: 'boolean',
-      defaultValue: 'false',
+      defaultValue: 'true',
       inputUI: {
         type: 'dropdown',
         options: [
@@ -118,6 +137,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const hardwareDecoding = args.inputs.hardwareDecoding === true;
+  const hardwareType = String(args.inputs.hardwareType);
   args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
 
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
@@ -140,6 +160,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         const encoderProperties = await getEncoder({
           targetCodec,
           hardwareEncoding: hardwarEncoding,
+          hardwareType,
           args,
         });
 
@@ -151,7 +172,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           stream.outputArgs.push('-crf', ffmpegQuality);
         }
 
-        if (ffmpegPreset) {
+        if (targetCodec !== 'av1' && ffmpegPreset) {
           stream.outputArgs.push('-preset', ffmpegPreset);
         }
 

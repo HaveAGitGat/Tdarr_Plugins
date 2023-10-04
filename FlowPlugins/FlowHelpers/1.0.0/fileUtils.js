@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.moveFileAndValidate = exports.getSubStem = exports.getFfType = exports.getFileName = exports.getContainer = void 0;
+exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
 var fs_1 = require("fs");
 var getContainer = function (filePath) {
     var parts = filePath.split('.');
@@ -51,6 +51,12 @@ var getFileName = function (filePath) {
     return parts2.join('.');
 };
 exports.getFileName = getFileName;
+var getFileAbosluteDir = function (filePath) {
+    var parts = filePath.split('/');
+    parts.pop();
+    return parts.join('/');
+};
+exports.getFileAbosluteDir = getFileAbosluteDir;
 var getFfType = function (codecType) { return (codecType === 'video' ? 'v' : 'a'); };
 exports.getFfType = getFfType;
 var getSubStem = function (_a) {
@@ -140,3 +146,47 @@ var moveFileAndValidate = function (_a) {
     });
 };
 exports.moveFileAndValidate = moveFileAndValidate;
+var getPluginWorkDir = function (args) {
+    var pluginWorkDir = "".concat(args.workDir, "/").concat(new Date().getTime());
+    args.deps.fsextra.ensureDirSync(pluginWorkDir);
+    return pluginWorkDir;
+};
+exports.getPluginWorkDir = getPluginWorkDir;
+var getScanTypes = function (pluginsTextRaw) {
+    var scanTypes = {
+        exifToolScan: true,
+        mediaInfoScan: false,
+        closedCaptionScan: false,
+    };
+    var scannerTypes = [
+        // needed for frame and duration data for ffmpeg
+        // {
+        //   type: 'exifToolScan',
+        //   terms: [
+        //     'meta',
+        //   ],
+        // },
+        {
+            type: 'mediaInfoScan',
+            terms: [
+                'mediaInfo',
+            ],
+        },
+        {
+            type: 'closedCaptionScan',
+            terms: [
+                'hasClosedCaptions',
+            ],
+        },
+    ];
+    var text = pluginsTextRaw.join('');
+    scannerTypes.forEach(function (scanner) {
+        scanner.terms.forEach(function (term) {
+            if (text.includes(term)) {
+                scanTypes[scanner.type] = true;
+            }
+        });
+    });
+    return scanTypes;
+};
+exports.getScanTypes = getScanTypes;

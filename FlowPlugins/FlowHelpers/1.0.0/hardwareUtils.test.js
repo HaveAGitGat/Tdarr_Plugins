@@ -44,6 +44,7 @@ var run = function () { return __awaiter(void 0, void 0, void 0, function () {
             case 0: return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
                     targetCodec: 'h264',
                     hardwareEncoding: true,
+                    hardwareType: 'auto',
                     // @ts-expect-error type
                     args: {
                         workerType: 'transcodegpu',
