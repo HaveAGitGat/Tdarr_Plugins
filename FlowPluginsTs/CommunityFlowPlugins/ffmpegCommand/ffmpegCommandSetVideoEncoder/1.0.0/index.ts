@@ -111,7 +111,7 @@ const details = (): IpluginDetails => ({
     {
       name: 'forceEncoding',
       type: 'boolean',
-      defaultValue: 'false',
+      defaultValue: 'true',
       inputUI: {
         type: 'dropdown',
         options: [
