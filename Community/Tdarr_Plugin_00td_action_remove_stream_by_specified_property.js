@@ -18,8 +18,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        `Enter values of the stream codec type to process. Nothing/empty input means all types of streams will be inspected for processing.
-        For example, if removing by codec_name on video streams, enter video:
+        `Enter values of the stream codec type to process. Nothing/empty input means all types of streams will 
+        be inspected for processing. For example, if removing by codec_name on video streams, enter video:
         
         \\nExample:\\n
         video,subtitle,audio
@@ -61,8 +61,9 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        `Enter one or more properties to check for its existance. If the property is missing or null, the stream will be removed.
-        Useful for fixing corrupt streams. For example, if codec_name is missing, the stream will be removed:
+        `Enter one or more properties to check for its existance. If the property is missing or null, 
+        the stream will be removed. Useful for fixing corrupt streams. For example, if codec_name 
+        is missing, the stream will be removed:
         
         \\nExample:\\n
         codec_name
@@ -115,7 +116,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
       try {
         // Skip if the codec_type is filtered out
-        if(codecTypeFilter.length != 0 && !codecTypeFilter.includes(String(file.ffProbeData.streams[i]['codec_type']))) {
+        if(
+          codecTypeFilter.length !== 0 && 
+          !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))
+        ) {
           continue;
         }
 
@@ -129,7 +133,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           if (file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined' || file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
             emptyValue = true;
             response.infoLog += ` Removing stream ${i} which is has ${removeIfPropertyMissing[j]} missing`;
-            break
+            break;
           }
         }
 
@@ -139,11 +143,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           response.preset += ` -map -0:${i} `;
 
           // Log the old message if the reason is not empty values
-          if(!emptyValue) {
+          if (!emptyValue) {
             response.infoLog += ` Removing stream ${i} which is has ${propertyToCheck} or`
             + ` of ${file.ffProbeData.streams[i][propertyToCheck]} \n`;
           }
-
           streamToRemove = true;
 
         }
