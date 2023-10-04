@@ -104,7 +104,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: 'Rename Sonarr files starting.',
   };
 
-  console.log("Rename Sonarr files starting.")
+  //console.log("Rename Sonarr files starting.")
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -113,7 +113,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const https = require('https');
   const axios = require('axios');
 
-  console.log("Loaded required packages.")
+  //console.log("Loaded required packages.")
 
   // Defines variables
   const SSL = inputs.Url_Protocol;
@@ -144,7 +144,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       connection_type = https
     }
   } catch (e) {
-    console.log(`Failed to compare SSL string. Error: ${e}`);
+    //console.log(`Failed to compare SSL string. Error: ${e}`);
     connection_type = http
   }
 
@@ -157,23 +157,23 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     // Use Regex to find SXXXXEXX part of file name and save it
     let seasonEpisodeMatch_tmp = file.file.toString().match(regex)
     if (seasonEpisodeMatch_tmp == null) {
-      console.log(`Failed to find SXXEXX in filename.`)
-      response.infoLog += `\nFailed to find SXXEXX in filename.`;
+      //console.log(`Failed to find SXXEXX in filename.`)
+      response.infoLog += `\\nFailed to find SXXEXX in filename.`;
       return response
     } else {
       seasonEpisodeMatch = seasonEpisodeMatch_tmp[0];
     }
   } catch (e) {
-    console.log(`Failed to split file name or find episode nr. Error: '${e}'.`)
-    response.infoLog += `\nFailed to split file name or find episode nr. Error: '${e}'.`;
+    //console.log(`Failed to split file name or find episode nr. Error: '${e}'.`)
+    response.infoLog += `\\nFailed to split file name or find episode nr. Error: '${e}'.`;
     return response
   }
 
-  console.log(`Landed on '${seasonEpisodeMatch}'.`)
-  response.infoLog += `\nLanded on '${seasonEpisodeMatch}'.`;
+  //console.log(`Landed on '${seasonEpisodeMatch}'.`)
+  response.infoLog += `\\nLanded on '${seasonEpisodeMatch}'.`;
 
-  console.log(`Searching for series '${term}'.`)
-  response.infoLog += `\nSearching for series '${term}'.`;
+  //console.log(`Searching for series '${term}'.`)
+  response.infoLog += `\\nSearching for series '${term}'.`;
 
   // Define variables to look for Series ID
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
@@ -188,8 +188,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
 
-        console.log(`Got status code '${res.statusCode}'.`)
-        response.infoLog += `\nGot status code '${res.statusCode}'.`;
+        //console.log(`Got status code '${res.statusCode}'.`)
+        response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
         res.on("data", function (chunk) {
           url1_body += chunk;
@@ -200,14 +200,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         });
 
       }).on('error', (e) => {
-        console.log(`Failed to search for series. Error: '${e}'.`)
-        response.infoLog += `\nFailed to search for series. Error: '${e}'.`;
+        //console.log(`Failed to search for series. Error: '${e}'.`)
+        response.infoLog += `\\nFailed to search for series. Error: '${e}'.`;
         resolve();
       });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    //console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
@@ -218,24 +218,24 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     url2 = `${SSL}://${IP}:${port}${APIPathEpisodefile}?seriesId=${SeriesID}&includeImages=false&apikey=${APIKey}`;
     url3 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
   } catch (e) {
-    console.log(`Failed make JSON payload. Error: '${e}'.`);
-    response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
+    //console.log(`Failed make JSON payload. Error: '${e}'.`);
+    response.infoLog += `\\nFailed make JSON payload. Error: '${e}'.`;
     return response;
   }
 
   // Create array variable for Episode IDs
   let fileArray = [];
 
-  console.log(`Searching for episode files for show '${SeriesID}'.`)
-  response.infoLog += `\nSearching for episode files for show '${SeriesID}'.`;
+  //console.log(`Searching for episode files for show '${SeriesID}'.`)
+  response.infoLog += `\\nSearching for episode files for show '${SeriesID}'.`;
 
   // API call to find Episode IDs for Series ID
   try {
     await new Promise((resolve) => {
       connection_type.get(url2, (res) => {
 
-        console.log(`Got status code '${res.statusCode}'.`)
-        response.infoLog += `\nGot status code '${res.statusCode}'.`;
+        //console.log(`Got status code '${res.statusCode}'.`)
+        response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
         res.on("data", function (chunk) {
           url2_body += chunk;
@@ -246,14 +246,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         });
 
       }).on('error', (e) => {
-        console.log(`Failed to search for files for series. Error: '${e}'.`)
-        response.infoLog += `\nFailed to search for files for series. Error: '${e}'.`;
+        //console.log(`Failed to search for files for series. Error: '${e}'.`)
+        response.infoLog += `\\nFailed to search for files for series. Error: '${e}'.`;
         resolve();
       });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    //console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
@@ -271,16 +271,16 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         continue;
       }
     }
-    console.log(`Found '${fileArray.length}' files for series.`);
-    response.infoLog += `\nFound '${fileArray.length}' files for series.`;
+    //console.log(`Found '${fileArray.length}' files for series.`);
+    response.infoLog += `\\nFound '${fileArray.length}' files for series.`;
   } catch (e) {
-    console.log(`Failed process episodes. Error: '${e}'.`);
-    response.infoLog += `\nFailed process episodes. Error: '${e}'.`;
+    //console.log(`Failed process episodes. Error: '${e}'.`);
+    response.infoLog += `\\nFailed process episodes. Error: '${e}'.`;
     return response;
   }
 
-  console.log(`Renaming files for series '${SeriesID}'.`);
-  response.infoLog += `\nRenaming files for series '${SeriesID}'.`;
+  //console.log(`Renaming files for series '${SeriesID}'.`);
+  response.infoLog += `\\nRenaming files for series '${SeriesID}'.`;
 
   // API call to rename the found Episode IDs for the Series ID
   try {
@@ -291,25 +291,25 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         files: fileArray
       })
         .then(function (res) {
-          console.log(`Got status code '${res.status}'.`)
-          response.infoLog += `\n☑ Got status code '${res.status}'.`;
+          //console.log(`Got status code '${res.status}'.`)
+          response.infoLog += `\\n☑ Got status code '${res.status}'.`;
           resolve();
         })
         .catch(function (error) {
-          console.log(`Got error: ${error}`)
-          response.infoLog += `\nGot error: ${error}`;
+          //console.log(`Got error: ${error}`)
+          response.infoLog += `\\nGot error: ${error}`;
           resolve();
         });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    //console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
   // Sleep for set amount of time
-  console.log(`Sleeping '${sleepInterval}' ms.`);
-  response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
+  //console.log(`Sleeping '${sleepInterval}' ms.`);
+  response.infoLog += `\\nSleeping '${sleepInterval}' ms.`;
   await sleep(sleepInterval);
 
   return response;

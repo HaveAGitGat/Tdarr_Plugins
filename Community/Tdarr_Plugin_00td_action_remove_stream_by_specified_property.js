@@ -112,8 +112,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       try {
         // Skip if the codec_type is filtered out
         if (
-          codecTypeFilter.length !== 0 &&
-          !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))) {
+          codecTypeFilter.length !== 0
+          && !codecTypeFilter.includes(String(file.ffProbeData.streams[i].codec_type))) {
           continue;
         }
 
@@ -125,8 +125,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           is ${file.ffProbeData.streams[i][removeIfPropertyMissing[j]]} \n`;
 
           if (
-            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined' ||
-            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
+            file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === 'undefined'
+            || file.ffProbeData.streams[i][removeIfPropertyMissing[j]] === null) {
             emptyValue = true;
             response.infoLog += ` Removing stream ${i} which is has ${removeIfPropertyMissing[j]} missing`;
             break;
@@ -140,8 +140,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
           // Log the old message if the reason is not empty values
           if (!emptyValue) {
-            response.infoLog += ` Removing stream ${i} which is has ${propertyToCheck} or` +
-              ` of ${file.ffProbeData.streams[i][propertyToCheck]} \n`;
+            response.infoLog += ` Removing stream ${i} which is has ${propertyToCheck} or`
+            + ` of ${file.ffProbeData.streams[i][propertyToCheck]} \n`;
           }
 
           streamToRemove = true;

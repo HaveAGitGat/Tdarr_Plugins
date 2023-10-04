@@ -98,7 +98,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: 'Refresh Radarr files starting.',
   };
 
-  console.log("Refresh Radarr files starting.")
+  //console.log("Refresh Radarr files starting.")
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -107,7 +107,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const https = require('https');
   const axios = require('axios');
 
-  console.log("Loaded required packages.")
+  //console.log("Loaded required packages.")
 
   // Create variables
   const SSL = inputs.Url_Protocol;
@@ -135,7 +135,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       connection_type = https
     }
   } catch (e) {
-    console.log(`Failed to compare SSL string. Error: ${e}`);
+    //console.log(`Failed to compare SSL string. Error: ${e}`);
     connection_type = http
   }
 
@@ -145,13 +145,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     term = term[term.length - 2];
     termUri = encodeURI(term);
   } catch (e) {
-    console.log(`Failed to split file name. Error: '${e}'.\n`)
-    response.infoLog += `\nFailed to split file name. Error: '${e}'.`;
+    //console.log(`Failed to split file name. Error: '${e}'.\\n`)
+    response.infoLog += `\\nFailed to split file name. Error: '${e}'.`;
     return response
   }
 
-  console.log(`Searching for movie '${term}'.`)
-  response.infoLog += `\nSearching for movie '${term}'.`;
+  //console.log(`Searching for movie '${term}'.`)
+  response.infoLog += `\\nSearching for movie '${term}'.`;
 
   // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
@@ -164,8 +164,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
 
-        console.log(`Got status code '${res.statusCode}'.`)
-        response.infoLog += `\nGot status code '${res.statusCode}'.`;
+        //console.log(`Got status code '${res.statusCode}'.`)
+        response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
         res.on("data", function (chunk) {
           url1_body += chunk;
@@ -176,14 +176,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         });
 
       }).on('error', (e) => {
-        console.log(`Failed to search for movie. Error: '${e}'.`)
-        response.infoLog += `\nFailed to search for movie. Error: '${e}'.`;
+        //console.log(`Failed to search for movie. Error: '${e}'.`)
+        response.infoLog += `\\nFailed to search for movie. Error: '${e}'.`;
         resolve();
       });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    //console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
@@ -193,13 +193,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     MovieID = APIresponse[0].id;
     url2 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
   } catch (e) {
-    console.log(`Failed make JSON payload. Error: '${e}'.`);
-    response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
+    //console.log(`Failed make JSON payload. Error: '${e}'.`);
+    response.infoLog += `\\nFailed make JSON payload. Error: '${e}'.`;
     return response;
   }
 
-  console.log(`Refreshing movie '${MovieID}'.`);
-  response.infoLog += `\nRefreshing movie '${MovieID}'.`;
+  //console.log(`Refreshing movie '${MovieID}'.`);
+  response.infoLog += `\\nRefreshing movie '${MovieID}'.`;
 
   // API request to send a command to refresh the files for the found Movie ID
   try {
@@ -209,25 +209,25 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         movieIds: [MovieID]
       })
         .then(function (res) {
-          console.log(`Got status code '${res.status}'.`)
-          response.infoLog += `\n☑ Got status code '${res.status}'.`;
+          //console.log(`Got status code '${res.status}'.`)
+          response.infoLog += `\\n☑ Got status code '${res.status}'.`;
           resolve();
         })
         .catch(function (error) {
-          console.log(`Got error: ${error}`)
-          response.infoLog += `\nGot error: ${error}`;
+          //console.log(`Got error: ${error}`)
+          response.infoLog += `\\nGot error: ${error}`;
           resolve();
         });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    //console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
   // Sleep for set amount of time
-  console.log(`Sleeping '${sleepInterval}' ms.`);
-  response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
+  //console.log(`Sleeping '${sleepInterval}' ms.`);
+  response.infoLog += `\\nSleeping '${sleepInterval}' ms.`;
   await new Promise((resolve) => {
     setTimeout(() => {
       resolve();

@@ -106,7 +106,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     infoLog: 'Refresh Sonarr files starting.',
   };
 
-  console.log("Refresh Sonarr files starting.")
+  //console.log('Refresh Sonarr files starting.');
 
   const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
@@ -115,7 +115,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const https = require('https');
   const axios = require('axios');
 
-  console.log("Loaded required packages.")
+  //console.log('Loaded required packages.');
 
   // Create variables
   const SSL = inputs.Url_Protocol;
@@ -123,8 +123,8 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const port = inputs.Sonarr_Port;
   const APIKey = inputs.Sonarr_APIKey;
   const sleepInterval = inputs.After_Sleep;
-  let term = "";
-  let termUri = "";
+  let term = '';
+  let termUri = '';
   const APIPathLookup = '/api/v3/series/lookup';
   const APIPathCommand = '/api/v3/command';
   const APICommand = 'RefreshSeries';
@@ -137,13 +137,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // Select connection type
   let connection_type = null;
   try {
-    if (SSL == "http") {
+    if (SSL == 'http') {
       connection_type = http
     } else {
       connection_type = https
     }
   } catch (e) {
-    console.log(`Failed to compare SSL string. Error: ${e}`);
+    //console.log(`Failed to compare SSL string. Error: ${e}`);
     connection_type = http
   }
 
@@ -153,17 +153,17 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     term = term[term.length - 3];
     termUri = encodeURI(term);
   } catch (e) {
-    console.log(`Failed to split file name. Error: '${e}'.\n`)
-    response.infoLog += `\nFailed to split file name. Error: '${e}'.`;
+    //console.log(`Failed to split file name. Error: '${e}'.\\n`);
+    response.infoLog += `\\nFailed to split file name. Error: '${e}'.`;
     return response
   }
 
-  console.log(`Searching for series '${term}'.`)
-  response.infoLog += `\nSearching for series '${term}'.`;
+  //console.log(`Searching for series '${term}'.`);
+  response.infoLog += `\\nSearching for series '${term}'.`;
 
   // Create variables for API call
   const url1 = `${SSL}://${IP}:${port}${APIPathLookup}?term=${termUri}&apikey=${APIKey}`;
-  let url1_body = "";
+  let url1_body = '';
   let url2 = ``;
   let SeriesID = 0;
 
@@ -171,11 +171,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await new Promise((resolve) => {
       connection_type.get(url1, (res) => {
+        //console.log(`Got status code '${res.statusCode}'.`);
+        response.infoLog += `\\nGot status code '${res.statusCode}'.`;
 
-        console.log(`Got status code '${res.statusCode}'.`)
-        response.infoLog += `\nGot status code '${res.statusCode}'.`;
-
-        res.on("data", function (chunk) {
+        res.on('data', function (chunk) {
           url1_body += chunk;
         });
 
@@ -184,14 +183,14 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         });
 
       }).on('error', (e) => {
-        console.log(`Failed to search for series. Error: '${e}'.`)
-        response.infoLog += `\nFailed to search for series. Error: '${e}'.`;
+        //console.log(`Failed to search for series. Error: '${e}'.`);
+        response.infoLog += `\\nFailed to search for series. Error: '${e}'.`;
         resolve();
       });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    //console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
@@ -201,41 +200,41 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     SeriesID = APIresponse[0].id;
     url2 = `${SSL}://${IP}:${port}${APIPathCommand}?apikey=${APIKey}`;
   } catch (e) {
-    console.log(`Failed make JSON payload. Error: '${e}'.`);
-    response.infoLog += `\nFailed make JSON payload. Error: '${e}'.`;
+    //console.log(`Failed make JSON payload. Error: '${e}'.`);
+    response.infoLog += `\\nFailed make JSON payload. Error: '${e}'.`;
     return response;
   }
 
-  console.log(`Refreshing series '${SeriesID}'.`);
-  response.infoLog += `\nRefreshing series '${SeriesID}'.`;
+  //console.log(`Refreshing series '${SeriesID}'.`);
+  response.infoLog += `\\nRefreshing series '${SeriesID}'.`;
 
   // API request to send a command to refresh the files for the found Series ID
   try {
     await new Promise((resolve) => {
       axios.post(url2, {
         name: APICommand,
-        seriesId: SeriesID
+        seriesId: SeriesID,
       })
         .then(function (res) {
-          console.log(`Got status code '${res.status}'.`)
-          response.infoLog += `\n☑ Got status code '${res.status}'.`;
+          //console.log(`Got status code '${res.status}'.`);
+          response.infoLog += `\\n☑ Got status code '${res.status}'.`;
           resolve();
         })
         .catch(function (error) {
-          console.log(`Got error: ${error}`)
-          response.infoLog += `\nGot error: ${error}`;
+          //console.log(`Got error: ${error}`);
+          response.infoLog += `\\nGot error: ${error}`;
           resolve();
         });
     });
   } catch (e) {
-    console.log(`Failed API call. Error: '${e}'.`);
-    response.infoLog += `\nFailed API call. Error: '${e}'.`;
+    // console.log(`Failed API call. Error: '${e}'.`);
+    response.infoLog += `\\nFailed API call. Error: '${e}'.`;
     return response;
   }
 
   // Sleep for set amount of time
-  console.log(`Sleeping '${sleepInterval}' ms.`);
-  response.infoLog += `\nSleeping '${sleepInterval}' ms.`;
+  // console.log(`Sleeping '${sleepInterval}' ms.`);
+  response.infoLog += `\\nSleeping '${sleepInterval}' ms.`;
   await sleep(sleepInterval);
 
   return response;
