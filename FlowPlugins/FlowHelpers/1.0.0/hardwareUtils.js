@@ -49,7 +49,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEncoder = exports.getBestNvencDevice = exports.hasEncoder = void 0;
 var hasEncoder = function (_a) {
-    var ffmpegPath = _a.ffmpegPath, encoder = _a.encoder, inputArgs = _a.inputArgs, filter = _a.filter;
+    var ffmpegPath = _a.ffmpegPath, encoder = _a.encoder, inputArgs = _a.inputArgs, filter = _a.filter, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
         var exec, isEnabled, err_1;
         return __generator(this, function (_b) {
@@ -64,6 +64,8 @@ var hasEncoder = function (_a) {
                             var command = "".concat(ffmpegPath, " ").concat(inputArgs.join(' ') || '', " -f lavfi -i color=c=black:s=256x256:d=1:r=30")
                                 + " ".concat(filter || '')
                                 + " -c:v ".concat(encoder, " -f null /dev/null");
+                            args.jobLog("Checking for encoder ".concat(encoder, " with command:"));
+                            args.jobLog(command);
                             exec(command, function (
                             // eslint-disable-next-line
                             error) {
@@ -76,6 +78,7 @@ var hasEncoder = function (_a) {
                         })];
                 case 2:
                     isEnabled = _b.sent();
+                    args.jobLog("Encoder ".concat(encoder, " is ").concat(isEnabled ? 'enabled' : 'disabled'));
                     return [3 /*break*/, 4];
                 case 3:
                     err_1 = _b.sent();
@@ -310,6 +313,7 @@ var getEncoder = function (_a) {
                             encoder: gpuEncoder.encoder,
                             inputArgs: gpuEncoder.inputArgs,
                             filter: gpuEncoder.filter,
+                            args: args,
                         })];
                 case 2:
                     // eslint-disable-next-line no-await-in-loop

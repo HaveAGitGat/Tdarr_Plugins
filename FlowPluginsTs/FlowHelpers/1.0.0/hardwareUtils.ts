@@ -5,11 +5,13 @@ export const hasEncoder = async ({
   encoder,
   inputArgs,
   filter,
+  args,
 }: {
   ffmpegPath: string,
   encoder: string,
   inputArgs: string[],
   filter: string,
+  args: IpluginInputArgs,
 }): Promise<boolean> => {
   const { exec } = require('child_process');
   let isEnabled = false;
@@ -18,6 +20,10 @@ export const hasEncoder = async ({
       const command = `${ffmpegPath} ${inputArgs.join(' ') || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
         + ` ${filter || ''}`
         + ` -c:v ${encoder} -f null /dev/null`;
+
+      args.jobLog(`Checking for encoder ${encoder} with command:`);
+      args.jobLog(command);
+
       exec(command, (
         // eslint-disable-next-line
         error: any,
@@ -31,6 +37,8 @@ export const hasEncoder = async ({
         resolve(true);
       });
     });
+
+    args.jobLog(`Encoder ${encoder} is ${isEnabled ? 'enabled' : 'disabled'}`);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.log(err);
@@ -296,6 +304,7 @@ export const getEncoder = async ({
         encoder: gpuEncoder.encoder,
         inputArgs: gpuEncoder.inputArgs,
         filter: gpuEncoder.filter,
+        args,
       });
     }
 
