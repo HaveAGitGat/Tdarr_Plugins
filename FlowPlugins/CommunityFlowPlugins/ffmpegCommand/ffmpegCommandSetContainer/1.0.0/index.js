@@ -59,7 +59,7 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var newContainer = String(args.inputs.container);
     var forceConform = args.inputs.forceConform;
-    if ((0, fileUtils_1.getContainer)(args.inputFileObj._id) !== args.inputs.container) {
+    if ((0, fileUtils_1.getContainer)(args.inputFileObj._id) !== newContainer) {
         args.variables.ffmpegCommand.container = newContainer;
         args.variables.ffmpegCommand.shouldProcess = true;
         if (forceConform === true) {

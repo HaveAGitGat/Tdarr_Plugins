@@ -69,7 +69,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const newContainer = String(args.inputs.container);
   const { forceConform } = args.inputs;
 
-  if (getContainer(args.inputFileObj._id) !== args.inputs.container) {
+  if (getContainer(args.inputFileObj._id) !== newContainer) {
     args.variables.ffmpegCommand.container = newContainer;
     args.variables.ffmpegCommand.shouldProcess = true;
 
