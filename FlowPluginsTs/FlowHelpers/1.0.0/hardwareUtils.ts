@@ -1,15 +1,18 @@
+import os from 'os';
 import { IpluginInputArgs } from './interfaces/interfaces';
 
 export const hasEncoder = async ({
   ffmpegPath,
   encoder,
   inputArgs,
+  outputArgs,
   filter,
   args,
 }: {
   ffmpegPath: string,
   encoder: string,
   inputArgs: string[],
+  outputArgs: string[],
   filter: string,
   args: IpluginInputArgs,
 }): Promise<boolean> => {
@@ -19,7 +22,7 @@ export const hasEncoder = async ({
     isEnabled = await new Promise((resolve) => {
       const command = `${ffmpegPath} ${inputArgs.join(' ') || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
         + ` ${filter || ''}`
-        + ` -c:v ${encoder} -f null /dev/null`;
+        + ` -c:v ${encoder} ${outputArgs.join(' ') || ''} -f null /dev/null`;
 
       args.jobLog(`Checking for encoder ${encoder} with command:`);
       args.jobLog(command);
@@ -180,7 +183,9 @@ export const getEncoder = async ({
           '-hwaccel',
           'qsv',
         ],
-        outputArgs: [],
+        outputArgs: [
+          ...(os.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []),
+        ],
         filter: '',
       },
       {
@@ -303,6 +308,7 @@ export const getEncoder = async ({
         ffmpegPath: args.ffmpegPath,
         encoder: gpuEncoder.encoder,
         inputArgs: gpuEncoder.inputArgs,
+        outputArgs: gpuEncoder.outputArgs,
         filter: gpuEncoder.filter,
         args,
       });
