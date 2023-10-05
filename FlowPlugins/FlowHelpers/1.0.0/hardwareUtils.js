@@ -46,10 +46,23 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEncoder = exports.getBestNvencDevice = exports.hasEncoder = void 0;
+var os_1 = __importDefault(require("os"));
 var hasEncoder = function (_a) {
-    var ffmpegPath = _a.ffmpegPath, encoder = _a.encoder, inputArgs = _a.inputArgs, filter = _a.filter, args = _a.args;
+    var ffmpegPath = _a.ffmpegPath, encoder = _a.encoder, inputArgs = _a.inputArgs, outputArgs = _a.outputArgs, filter = _a.filter, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
         var exec, isEnabled, err_1;
         return __generator(this, function (_b) {
@@ -63,7 +76,7 @@ var hasEncoder = function (_a) {
                     return [4 /*yield*/, new Promise(function (resolve) {
                             var command = "".concat(ffmpegPath, " ").concat(inputArgs.join(' ') || '', " -f lavfi -i color=c=black:s=256x256:d=1:r=30")
                                 + " ".concat(filter || '')
-                                + " -c:v ".concat(encoder, " -f null /dev/null");
+                                + " -c:v ".concat(encoder, " ").concat(outputArgs.join(' ') || '', " -f null /dev/null");
                             args.jobLog("Checking for encoder ".concat(encoder, " with command:"));
                             args.jobLog(command);
                             exec(command, function (
@@ -197,7 +210,7 @@ var getEncoder = function (_a) {
                                 '-hwaccel',
                                 'qsv',
                             ],
-                            outputArgs: [],
+                            outputArgs: __spreadArray([], (os_1.default.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []), true),
                             filter: '',
                         },
                         {
@@ -312,6 +325,7 @@ var getEncoder = function (_a) {
                             ffmpegPath: args.ffmpegPath,
                             encoder: gpuEncoder.encoder,
                             inputArgs: gpuEncoder.inputArgs,
+                            outputArgs: gpuEncoder.outputArgs,
                             filter: gpuEncoder.filter,
                             args: args,
                         })];
