@@ -74,10 +74,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   cliArgs.push('-i');
   cliArgs.push(args.inputFileObj._id);
 
+  let { shouldProcess, streams } = args.variables.ffmpegCommand;
+
+  if (args.variables.ffmpegCommand.overallInputArguments.length > 0) {
+    shouldProcess = true;
+  }
+
   const inputArgs: string[] = [
     ...args.variables.ffmpegCommand.overallInputArguments,
   ];
-  let { shouldProcess, streams } = args.variables.ffmpegCommand;
 
   streams = streams.filter((stream) => {
     if (stream.removed) {
@@ -114,6 +119,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     inputArgs.push(...stream.inputArgs);
   }
 
+  const idx = cliArgs.indexOf('-i');
+  cliArgs.splice(idx, 0, ...inputArgs);
+
+  if (args.variables.ffmpegCommand.overallOuputArguments.length > 0) {
+    cliArgs.push(...args.variables.ffmpegCommand.overallOuputArguments);
+    shouldProcess = true;
+  }
+
   if (!shouldProcess) {
     args.jobLog('No need to process file, already as required');
     return {
@@ -122,10 +135,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       variables: args.variables,
     };
   }
-
-  const idx = cliArgs.indexOf('-i');
-  cliArgs.splice(idx, 0, ...inputArgs);
-  cliArgs.push(...args.variables.ffmpegCommand.overallOuputArguments);
 
   const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}`
   + `.${args.variables.ffmpegCommand.container}`;
