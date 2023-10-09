@@ -45,8 +45,9 @@ var plugin = function (args) {
         outputNumber = 1; // One video stream
     }
     else if (videoStreams > 1) {
-        outputNumber = 3; // More than one video stream
+        outputNumber = 2; // More than one video stream
     }
+    args.jobLog("Number of video streams: ".concat(videoStreams));
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: outputNumber,

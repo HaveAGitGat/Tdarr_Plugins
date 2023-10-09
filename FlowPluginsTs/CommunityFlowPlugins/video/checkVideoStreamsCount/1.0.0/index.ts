@@ -54,6 +54,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     outputNumber = 2; // More than one video stream
   }
 
+  args.jobLog(`Number of video streams: ${videoStreams}`);
+
   return {
     outputFileObj: args.inputFileObj,
     outputNumber,
