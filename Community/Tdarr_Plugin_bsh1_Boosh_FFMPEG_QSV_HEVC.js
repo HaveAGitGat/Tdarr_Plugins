@@ -731,20 +731,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // HW ACCEL FLAGS
   // Account for different OS
-  switch (os.platform()) {
-    case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
-      response.preset += '-hwaccel videotoolbox';
-      break;
-    case 'linux': // Linux - Full device, should fix child_device_type warnings
-      response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
+  if (main10 === false) {
+    // On testing it seems the below will automatically enable hardware decoding which causes issues...
+    switch (os.platform()) {
+      case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
+        response.preset += '-hwaccel videotoolbox';
+        break;
+      case 'linux': // Linux - Full device, should fix child_device_type warnings
+        response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
       -init_hw_device qsv:hw_any,child_device_type=vaapi `;
-      break;
-    case 'win32': // Windows - Full device, should fix child_device_type warnings
-      response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
+        break;
+      case 'win32': // Windows - Full device, should fix child_device_type warnings
+        response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
       -init_hw_device qsv:hw_any,child_device_type=d3d11va `;
-      break;
-    default:
-      response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
+        break;
+      default:
+        response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
+    }
   }
 
   // DECODE FLAGS
