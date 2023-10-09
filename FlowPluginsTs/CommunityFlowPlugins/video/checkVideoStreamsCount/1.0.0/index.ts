@@ -6,8 +6,8 @@ import {
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
-  name: 'Check Multiple Video Streams',
-  description: 'This plugin checks if an input file has more than one video stream.',
+  name: 'Check Video Streams Count',
+  description: 'This plugin checks if the number of video streams is 1 or more.',
   style: {
     borderColor: 'orange',
   },
@@ -36,8 +36,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  let outputNumber = 2; // Default to 'Special case' (> 1 video tracks)
-
   const { ffProbeData } = args.inputFileObj;
 
   if (!ffProbeData || !ffProbeData.streams) {
@@ -46,8 +44,14 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const videoStreams = ffProbeData.streams.filter((stream) => stream.codec_type === 'video').length;
 
-  if (videoStreams === 1) {
-    outputNumber = 1; // 'Success' (has exactly one video stream)
+  let outputNumber = 1; // Default to one video stream
+
+  if (videoStreams === 0) {
+    throw new Error('No video streams found in file.');
+  } else if (videoStreams === 1) {
+    outputNumber = 1; // One video stream
+  } else if (videoStreams > 1) {
+    outputNumber = 2; // More than one video stream
   }
 
   return {
