@@ -329,6 +329,7 @@ let extraArguments = '';
 let bitrateSettings = '';
 let inflatedCutoff = 0;
 let main10 = false;
+let high10 = false;
 let videoBR = 0;
 
 // Finds the first video stream and get video bitrate
@@ -602,14 +603,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // Are we encoding to 10 bit? If so enable correct profile & pixel format.
-  // With this set we also disable hardware decode for compatibility later
-  if (inputs.enable_10bit === true) {
-    main10 = true;
-    extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le ';
-    response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
-  }
-
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     // Check if stream is a video.
@@ -700,19 +693,30 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         }
       }
 
-      // If files are already 10bit then disable hardware decode to avoid problems with encode
-      // 10 bit from source file should be retained without extra arguments.
-      if (file.ffProbeData.streams[i].profile === 'High 10'
-        || file.ffProbeData.streams[i].profile === 'Main 10'
-        || file.ffProbeData.streams[i].bits_per_raw_sample === '10') {
+      // On testing I've found files in the High10 profile don't play nice with hw decoding so mark these
+      if (file.ffProbeData.streams[i].profile === 'High 10') {
+        high10 = true;
+        response.infoLog += 'Input file is 10bit using High10. Disabling hardware decoding to avoid problems. \n';
+      }
+      // If files are 10 bit or the enable_10bit setting is used mark to enable Main10.
+      if (file.ffProbeData.streams[i].profile === 'Main 10' || file.ffProbeData.streams[i].bits_per_raw_sample === '10'
+        || inputs.enable_10bit === true) {
         main10 = true;
-        response.infoLog += 'Input file is 10bit. Disabling hardware decoding to avoid problems. \n';
       }
 
       // Increment video index. Needed to keep track of video id in case there is more than one video track.
       // (i.e png or mjpeg which we would remove at the start of the loop)
       videoIdx += 1;
     }
+  }
+
+  // Are we encoding to 10 bit? If so enable correct profile & pixel format.
+  if (high10 === true) { // This is used if we have High10 files. SW decode and use standard -pix_fmt p010le
+    extraArguments += '-profile:v main10 -pix_fmt p010le ';
+    response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
+  } else if (main10 === true) { // Pixel formate method when using HW decode
+    extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le ';
+    response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
   }
 
   // Set bitrateSettings variable using bitrate information calculated earlier.
@@ -729,10 +733,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // -fflags +genpts should regenerate timestamps if they end up missing...
   response.preset = '-fflags +genpts ';
 
-  // HW ACCEL FLAGS
+  // HW ACCEL FLAGS - I think these are good practice but are they necessary?
   // Account for different OS
-  if (main10 === false) {
-    // On testing it seems the below will automatically enable hardware decoding which causes issues...
+  if (high10 === false) {
+    // Seems incoming High10 files don't play nice decoding so use software decode
     switch (os.platform()) {
       case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
         response.preset += '-hwaccel videotoolbox';
@@ -752,7 +756,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // DECODE FLAGS
   if (os.platform() !== 'darwin') {
-    if (main10 === false) { // Don't enable if 10bit is on - Seems to cause issues, may need different decode flags
+    if (high10 === false) { // Don't enable for High10
       switch (file.video_codec_name) {
         case 'mpeg2':
           response.preset += '-c:v mpeg2_qsv';
