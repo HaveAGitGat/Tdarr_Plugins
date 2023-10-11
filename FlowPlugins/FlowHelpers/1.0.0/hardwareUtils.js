@@ -64,30 +64,62 @@ var os_1 = __importDefault(require("os"));
 var hasEncoder = function (_a) {
     var ffmpegPath = _a.ffmpegPath, encoder = _a.encoder, inputArgs = _a.inputArgs, outputArgs = _a.outputArgs, filter = _a.filter, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
-        var exec, isEnabled, err_1;
+        var spawn, isEnabled, commandArr_1, err_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    exec = require('child_process').exec;
+                    spawn = require('child_process').spawn;
                     isEnabled = false;
                     _b.label = 1;
                 case 1:
                     _b.trys.push([1, 3, , 4]);
+                    commandArr_1 = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], inputArgs, true), [
+                        '-f',
+                        'lavfi',
+                        '-i',
+                        'color=c=black:s=256x256:d=1:r=30'
+                    ], false), (filter ? filter.split(' ') : []), true), [
+                        '-c:v',
+                        encoder
+                    ], false), outputArgs, true), [
+                        '-f',
+                        'null',
+                        '/dev/null',
+                    ], false);
+                    args.jobLog("Checking for encoder ".concat(encoder, " with command:"));
+                    args.jobLog(ffmpegPath + ' ' + commandArr_1.join(' '));
                     return [4 /*yield*/, new Promise(function (resolve) {
-                            var command = "".concat(ffmpegPath, " ").concat(inputArgs.join(' ') || '', " -f lavfi -i color=c=black:s=256x256:d=1:r=30")
-                                + " ".concat(filter || '')
-                                + " -c:v ".concat(encoder, " ").concat(outputArgs.join(' ') || '', " -f null /dev/null");
-                            args.jobLog("Checking for encoder ".concat(encoder, " with command:"));
-                            args.jobLog(command);
-                            exec(command, function (
-                            // eslint-disable-next-line
-                            error) {
-                                if (error) {
-                                    resolve(false);
-                                    return;
-                                }
-                                resolve(true);
-                            });
+                            var error = function () {
+                                resolve(false);
+                            };
+                            var stderr = '';
+                            try {
+                                var thread = spawn(ffmpegPath, commandArr_1);
+                                thread.on('error', function () {
+                                    // catches execution error (bad file)
+                                    error();
+                                });
+                                thread.stdout.on('data', function (data) {
+                                    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+                                    stderr += data;
+                                });
+                                thread.stderr.on('data', function (data) {
+                                    // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+                                    stderr += data;
+                                });
+                                thread.on('close', function (code) {
+                                    if (code !== 0) {
+                                        error();
+                                    }
+                                    else {
+                                        resolve(true);
+                                    }
+                                });
+                            }
+                            catch (err) {
+                                // catches execution error (no file)
+                                error();
+                            }
                         })];
                 case 2:
                     isEnabled = _b.sent();
