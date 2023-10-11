@@ -86,7 +86,6 @@ Audio:  (Only one audio stream is used!!)
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile',
   Stage: 'Pre-processing',
@@ -130,7 +129,7 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
   }, {
     name: 'Target_Framerate',
     type: 'number',
-    defaultValue: 25,
+    defaultValue: 30,
     inputUI: {
       type: 'text',
     },
@@ -184,7 +183,8 @@ how it works **this does a lot** and is 1 of 2 routines you should to run **Part
     inputUI: {
       type: 'text',
     },
-    tooltip: 'Desired Audio Codec, if you change this it might require code changes.',
+    tooltip: `Desired Audio Codec, if you change this it might require code changes.
+                    \\nMust follow ISO-639-2 3 letter format. https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes`,
   }, {
     name: 'Target_Audio_Language',
     type: 'string',
@@ -232,11 +232,11 @@ const findMediaInfoItem = (file, index) => {
   return -1;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line global-require
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
+  // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
 
   const response = {
@@ -280,7 +280,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Audio
   const targetAudioCodec = inputs.Target_Audio_Codec;
-  const targetAudioLanguage = inputs.Target_Audio_Language;
+  const targetAudioLanguage = inputs.Target_Audio_Language.split(',');
   const targetAudioBitratePerChannel = inputs.Target_Audio_Bitrate_Per_Channel;
   const targetAudioChannels = inputs.Target_Audio_Channels;
 
@@ -337,6 +337,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       try {
         proc.execSync(`mkvpropedit --add-track-statistics-tags "${currentFileName}"`);
+        response.processFile = true;
         return response;
       } catch (err) {
         response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
@@ -352,6 +353,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let videoNewWidth = 0;
   let bolSource10bit = false;
   let bolTranscodeSoftwareDecode = false;
+  let bolSoftwareTranscodeOpt = false;
 
   let audioNewChannels = 0;
   let bolTranscodeAudio = false;
@@ -396,15 +398,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           streamBR = file.mediaInfo.track[MILoc].extra.FromStats_BitRate * 1;
         }
 
-        let duration = 0;
-        if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
-          duration = parseFloat(file.ffProbeData?.format?.duration);
-        } else {
-          duration = file.meta.Duration;
-        }
-
         response.infoLog
-          += `Video stream ${i}:${Math.floor(duration / 60)}:`
+          += `Video stream ${i}:${Math.floor(file.meta.Duration / 60)}:`
           + `${file.ffProbeData.streams[i].codec_name}${(bolSource10bit) ? '(10)' : ''}`;
         response.infoLog += `:${streamWidth}x${streamHeight}x${streamFPS}:${streamBR}bps \n`;
 
@@ -442,9 +437,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         audioBitrate = file.mediaInfo.track[findMediaInfoItem(file, i)].extra.FromStats_BitRate * 1;
       }
 
-      if (
-        file.ffProbeData.streams[i].tags !== undefined
-        && file.ffProbeData.streams[i].tags.language === targetAudioLanguage
+      if (file.ffProbeData.streams[i].tags !== undefined
+          && (file.ffProbeData.streams[i].tags?.language === undefined
+              || targetAudioLanguage.indexOf(file.ffProbeData.streams[i].tags.language.toLowerCase()) >= 0)
       ) {
         response.infoLog
           += `Audio stream ${i}:${targetAudioLanguage}`
@@ -716,6 +711,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
 
       let strChangeVideoRateString = '';
+      // bolChangeFrameRateVideo=false;
       if (bolChangeFrameRateVideo) {
         // Used to change the framerate to the target framerate
         strChangeVideoRateString = `fps=${targetFrameRate},`;
@@ -741,13 +737,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             strFormat += ',';
           }
           // Used to make it sure the software decode is in the proper pixel format
-          strFormat += 'nv12|vaapi';
+          strFormat += 'nv12|vaapi,hwupload';
+          bolSoftwareTranscodeOpt = true;
         }
         if (strFormat.length > 0) {
           strFormat += ',';
         }
-        // Used to make it use software decode if necessary
-        strFormat += 'hwupload';
+        if (!bolSoftwareTranscodeOpt) {
+          // Used to make it use software decode if necessary
+          strFormat += 'nv12,hwupload';
+        }
       }
 
       if (strFormat.length > 0) {
