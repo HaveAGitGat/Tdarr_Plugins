@@ -229,7 +229,8 @@ var CLI = /** @class */ (function () {
                         return [4 /*yield*/, new Promise(function (resolve) {
                                 try {
                                     var opts = _this.config.spawnOpts || {};
-                                    var thread = childProcess.spawn(_this.config.cli, _this.config.spawnArgs, opts);
+                                    var spawnArgs = _this.config.spawnArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
+                                    var thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
                                     thread.stdout.on('data', function (data) {
                                         // eslint-disable-next-line no-console
                                         // console.log(data.toString());

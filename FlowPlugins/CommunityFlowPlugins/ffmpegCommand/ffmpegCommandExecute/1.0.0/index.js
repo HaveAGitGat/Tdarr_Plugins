@@ -96,7 +96,7 @@ var getOuputStreamTypeIndex = function (streams, stream) {
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, cli, res;
+    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -160,18 +160,19 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
                     + ".".concat(args.variables.ffmpegCommand.container);
                 cliArgs.push(outputFilePath);
+                spawnArgs = cliArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
                 args.jobLog('Processing file');
                 args.jobLog(JSON.stringify({
-                    cliArgs: cliArgs,
+                    spawnArgs: spawnArgs,
                     outputFilePath: outputFilePath,
                 }));
                 args.updateWorker({
                     CLIType: args.ffmpegPath,
-                    preset: cliArgs.join(' '),
+                    preset: spawnArgs.join(' '),
                 });
                 cli = new cliUtils_1.CLI({
                     cli: args.ffmpegPath,
-                    spawnArgs: cliArgs,
+                    spawnArgs: spawnArgs,
                     spawnOpts: {},
                     jobLog: args.jobLog,
                     outputFilePath: outputFilePath,

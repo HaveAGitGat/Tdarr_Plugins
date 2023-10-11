@@ -244,7 +244,8 @@ class CLI {
     const cliExitCode: number = await new Promise((resolve) => {
       try {
         const opts = this.config.spawnOpts || {};
-        const thread = childProcess.spawn(this.config.cli, this.config.spawnArgs, opts);
+        const spawnArgs = this.config.spawnArgs.map((row) => row.trim()).filter((row) => row !== '');
+        const thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
 
         thread.stdout.on('data', (data: string) => {
           // eslint-disable-next-line no-console

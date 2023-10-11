@@ -87,7 +87,7 @@ var hasEncoder = function (_a) {
                         '/dev/null',
                     ], false);
                     args.jobLog("Checking for encoder ".concat(encoder, " with command:"));
-                    args.jobLog(ffmpegPath + ' ' + commandArr_1.join(' '));
+                    args.jobLog("".concat(ffmpegPath, " ").concat(commandArr_1.join(' ')));
                     return [4 /*yield*/, new Promise(function (resolve) {
                             var error = function () {
                                 resolve(false);

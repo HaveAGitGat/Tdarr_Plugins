@@ -141,20 +141,22 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   cliArgs.push(outputFilePath);
 
+  const spawnArgs = cliArgs.map((row) => row.trim()).filter((row) => row !== '');
+
   args.jobLog('Processing file');
   args.jobLog(JSON.stringify({
-    cliArgs,
+    spawnArgs,
     outputFilePath,
   }));
 
   args.updateWorker({
     CLIType: args.ffmpegPath,
-    preset: cliArgs.join(' '),
+    preset: spawnArgs.join(' '),
   });
 
   const cli = new CLI({
     cli: args.ffmpegPath,
-    spawnArgs: cliArgs,
+    spawnArgs,
     spawnOpts: {},
     jobLog: args.jobLog,
     outputFilePath,
