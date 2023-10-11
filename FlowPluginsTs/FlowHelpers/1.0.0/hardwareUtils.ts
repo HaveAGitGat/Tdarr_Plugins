@@ -16,29 +16,61 @@ export const hasEncoder = async ({
   filter: string,
   args: IpluginInputArgs,
 }): Promise<boolean> => {
-  const { exec } = require('child_process');
+  const { spawn } = require('child_process');
   let isEnabled = false;
   try {
+    const commandArr = [
+      ...inputArgs,
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=black:s=256x256:d=1:r=30',
+      ...(filter ? filter.split(' ') : []),
+      '-c:v',
+      encoder,
+      ...outputArgs,
+      '-f',
+      'null',
+      '/dev/null',
+    ];
+
+    args.jobLog(`Checking for encoder ${encoder} with command:`);
+    args.jobLog(`${ffmpegPath} ${commandArr.join(' ')}`);
+
     isEnabled = await new Promise((resolve) => {
-      const command = `${ffmpegPath} ${inputArgs.join(' ') || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
-        + ` ${filter || ''}`
-        + ` -c:v ${encoder} ${outputArgs.join(' ') || ''} -f null /dev/null`;
+      const error = () => {
+        resolve(false);
+      };
+      let stderr = '';
 
-      args.jobLog(`Checking for encoder ${encoder} with command:`);
-      args.jobLog(command);
+      try {
+        const thread = spawn(ffmpegPath, commandArr);
+        thread.on('error', () => {
+          // catches execution error (bad file)
+          error();
+        });
 
-      exec(command, (
-        // eslint-disable-next-line
-        error: any,
-        // stdout,
-        // stderr,
-      ) => {
-        if (error) {
-          resolve(false);
-          return;
-        }
-        resolve(true);
-      });
+        thread.stdout.on('data', (data: string) => {
+          // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+          stderr += data;
+        });
+
+        thread.stderr.on('data', (data: string) => {
+          // eslint-disable-next-line  @typescript-eslint/no-unused-vars
+          stderr += data;
+        });
+
+        thread.on('close', (code: number) => {
+          if (code !== 0) {
+            error();
+          } else {
+            resolve(true);
+          }
+        });
+      } catch (err) {
+        // catches execution error (no file)
+        error();
+      }
     });
 
     args.jobLog(`Encoder ${encoder} is ${isEnabled ? 'enabled' : 'disabled'}`);
