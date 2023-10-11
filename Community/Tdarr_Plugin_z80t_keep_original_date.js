@@ -60,11 +60,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   try {
     log('Changing date...');
 
-    const { mtimeMs } = otherArguments.originalLibraryFile.statSync;
+    const { mtimeMs, ctimeMs } = otherArguments.originalLibraryFile.statSync;
     if (os.platform() === 'win32') {
       fs.utimes(
         file._id,
-        new Date().getTime() / 1000,
+        ctimeMs / 1000,
         mtimeMs / 1000,
         (err) => {
           if (err) {
