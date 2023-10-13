@@ -113,7 +113,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
 
     const res = await args.deps.axios(requestConfig);
-    const seriesId = res.data.data.series.id;
+    const seriesId = res.data.series.id;
 
     const requestConfig2 = {
       method: 'post',
