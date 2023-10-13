@@ -76,7 +76,12 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Input your arr host here. Example: http://192.168.1.1:7878',
+            tooltip: 'Input your arr host here.'
+                + '\\nExample:\\n'
+                + 'http://192.168.1.1:7878\\n'
+                + 'http://192.168.1.1:8989\\n'
+                + 'https://radarr.domain.com\\n'
+                + 'https://sonarr.domain.com\\n',
         },
     ],
     outputs: [
@@ -141,7 +146,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, args.deps.axios(requestConfig)];
             case 4:
                 res = _b.sent();
-                seriesId = res.data.data.series.id;
+                seriesId = res.data.series.id;
                 requestConfig2 = {
                     method: 'post',
                     url: "".concat(arrHost, "/api/v3/command"),
