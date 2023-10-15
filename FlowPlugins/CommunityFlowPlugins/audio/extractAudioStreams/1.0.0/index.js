@@ -37,67 +37,162 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+/* eslint-disable linebreak-style */
+/* eslint-disable indent */
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var mapVideoContainerToAudio = function (container) {
+    switch (container) {
+        case 'mkv':
+            return 'mka';
+        case 'mp4':
+            return 'm4a';
+        case 'avi':
+            return 'wav';
+        case 'mov':
+            return 'm4a';
+        case 'mpeg':
+        case 'mpg':
+            return 'mp3';
+        default:
+            return 'mka';
+    }
+};
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Extract / transcode audio streams',
+    name: 'Extract audio streams',
     description: 'This plugin extracts an audio track from a given file.',
     style: {
-        borderColor: 'orange',
+        borderColor: 'green',
     },
-    tags: 'video',
+    tags: 'audio',
     isStartPlugin: false,
     pType: '',
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
-    icon: 'faQuestion',
-    inputs: [],
+    icon: '',
+    inputs: [
+        {
+            name: 'preferredMainCodec',
+            type: 'string',
+            defaultValue: 'dts',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'dts',
+                    'ac3',
+                    'eac3',
+                    'aac',
+                ],
+            },
+            tooltip: 'Specify preferred main codec',
+        },
+        {
+            name: 'preferredFallbackCodec',
+            type: 'string',
+            defaultValue: 'eac3',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'dts',
+                    'ac3',
+                    'eac3',
+                    'aac',
+                ],
+            },
+            tooltip: 'Specify preferred fallback codec',
+        },
+        {
+            name: 'preferredResultCodec',
+            type: 'string',
+            defaultValue: 'eac3',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'dts',
+                    'ac3',
+                    'eac3',
+                    'aac',
+                ],
+            },
+            tooltip: 'Specify preferred result codec',
+        },
+        {
+            name: 'maxChannels',
+            type: 'number',
+            defaultValue: '6',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: 'Specify the maximum amount of channels.',
+        },
+    ],
     outputs: [
         {
             number: 1,
-            tooltip: 'Single audio stream extracted.',
+            tooltip: 'Audio stream extracted.',
         },
         {
             number: 2,
-            tooltip: 'Multiple audio streams detected',
-        },
-        {
-            number: 3,
-            tooltip: 'File does not have an audio stream',
+            tooltip: 'No audio stream extracted.',
         },
     ],
 }); };
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, outputNumber, ffProbeData, dtsStreams, fallbackStreams, outputFilePath, cliArgs, bestDTSStream, cli, res;
+    var lib, preferredMainCodec, preferredFallbackCodec, preferredResultCodec, maxChannels, cliArgs, outputNumber, ffProbeData, videoContainer, audioContainer, outputFileName, outputFilePath, audioStreams, preferredStreams, audioStream, preferredStream, fallbackStreams, fallbackStream, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                outputNumber = 0;
+                preferredMainCodec = String(args.inputs.preferredMainCodec);
+                preferredFallbackCodec = String(args.inputs.preferredFallbackCodec);
+                preferredResultCodec = String(args.inputs.preferredResultCodec);
+                maxChannels = Number(args.inputs.maxChannels);
+                cliArgs = [];
+                outputNumber = 2;
                 ffProbeData = args.inputFileObj.ffProbeData;
                 if (!ffProbeData || !ffProbeData.streams) {
                     throw new Error('ffProbeData or ffProbeData.streams is not available.');
                 }
-                dtsStreams = ffProbeData.streams.filter(function (stream) { return stream.codec_type === 'audio' && stream.codec_name === 'dts'; });
-                fallbackStreams = ffProbeData.streams.filter(function (stream) { return stream.codec_type === 'audio' && (stream.codec_name === 'eac3' || stream.codec_name === 'ac3'); });
-                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj.filePath), ".mka");
-                cliArgs = [];
-                if (!(dtsStreams.length > 0 && fallbackStreams.length === 0)) return [3 /*break*/, 2];
-                bestDTSStream = dtsStreams[0];
-                outputNumber = 1;
-                // eslint-disable-next-line max-len
-                cliArgs.push('-i', "".concat(args.inputFileObj.filePath), '-map', "0:a:".concat(bestDTSStream.index), '-c:a', 'eac3', '-ac', "".concat(bestDTSStream.channels), 'output.mka');
-                args.updateWorker({
-                    CLIType: 'ffmpeg',
-                    preset: cliArgs.join(' '),
+                videoContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                audioContainer = mapVideoContainerToAudio(videoContainer);
+                outputFileName = "".concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(audioContainer);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat(outputFileName);
+                audioStreams = ffProbeData.streams.filter(function (stream) {
+                    var _a;
+                    return stream.codec_type === 'audio'
+                        && !/commentary/i.test(((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.title) || '');
                 });
+                preferredStreams = audioStreams.filter(function (stream) { return stream.codec_name === preferredMainCodec; });
+                if (preferredStreams.length > 0) {
+                    preferredStream = preferredStreams[0];
+                    audioStream = preferredStream;
+                    outputNumber = 1;
+                }
+                else {
+                    fallbackStreams = audioStreams.filter(function (stream) { return (stream.codec_name === preferredFallbackCodec); });
+                    if (fallbackStreams.length > 0) {
+                        fallbackStream = fallbackStreams[0];
+                        audioStream = fallbackStream;
+                        outputNumber = 1;
+                    }
+                    else {
+                        // Exit here if nothing was found
+                        return [2 /*return*/, {
+                                outputFileObj: args.inputFileObj,
+                                outputNumber: outputNumber,
+                                variables: args.variables,
+                            }];
+                    }
+                }
+                // // eslint-disable-next-line max-len
+                cliArgs.push('-y', '-i', "".concat(args.inputFileObj._id), '-map', "0:a:".concat(audioStream.index - 1), '-c:a', preferredResultCodec, '-ac', "".concat(Math.min(maxChannels, Number(audioStream.channels))), "".concat(outputFilePath));
                 cli = new cliUtils_1.CLI({
-                    cli: 'ffmpeg',
+                    cli: args.ffmpegPath,
                     spawnArgs: cliArgs,
                     spawnOpts: {},
                     jobLog: args.jobLog,
@@ -113,16 +208,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args.jobLog('Running FFmpeg failed');
                     throw new Error('Running FFmpeg failed');
                 }
+                args.logOutcome('tSuc');
                 return [2 /*return*/, {
-                        outputFileObj: args.inputFileObj,
-                        outputNumber: outputNumber,
+                        outputFileObj: {
+                            _id: outputFilePath,
+                        },
+                        outputNumber: 1,
                         variables: args.variables,
                     }];
-            case 2: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: outputNumber,
-                    variables: args.variables,
-                }];
         }
     });
 }); };
