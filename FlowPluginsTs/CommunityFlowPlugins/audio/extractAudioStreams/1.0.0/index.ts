@@ -95,6 +95,22 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify the maximum amount of channels.',
     },
+    {
+      name: 'skipFileIfCodecExists',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          '',
+          'dts',
+          'ac3',
+          'eac3',
+          'aac',
+        ],
+      },
+      tooltip: 'Do not process the file if this codec is present.',
+    },
   ],
   outputs: [
     {
@@ -103,7 +119,11 @@ const details = (): IpluginDetails => ({
     },
     {
       number: 2,
-      tooltip: 'No audio stream extracted.',
+      tooltip: 'No audio stream extraction needed (Skipped).',
+    },
+    {
+      number: 3,
+      tooltip: 'No audio stream extracted (Could not find preferred or fallback codec).',
     },
   ],
 });
@@ -118,10 +138,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const preferredFallbackCodec = String(args.inputs.preferredFallbackCodec);
   const preferredResultCodec = String(args.inputs.preferredResultCodec);
   const maxChannels = Number(args.inputs.maxChannels);
+  const skipFileIfCodecExists = String(args.inputs.skipFileIfCodecExists);
 
   const cliArgs: string[] = [];
 
-  let outputNumber = 2;
   const { ffProbeData } = args.inputFileObj;
 
   if (!ffProbeData || !ffProbeData.streams) {
@@ -142,6 +162,21 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     && !/commentary/i.test(stream.tags?.title || ''),
   );
 
+  // Check if we should skip the file
+  if (skipFileIfCodecExists !== '') {
+    const skipStreams = audioStreams.filter(
+      (stream: Istreams) => stream.codec_name === skipFileIfCodecExists,
+    );
+    if (skipStreams.length > 0) {
+      // Exit here since we want to skip processing
+      return {
+        outputFileObj: args.inputFileObj,
+        outputNumber: 2,
+        variables: args.variables,
+      };
+    }
+  }
+
   // Try to get the preferred stream first.
   const preferredStreams = audioStreams.filter(
     (stream: Istreams) => stream.codec_name === preferredMainCodec,
@@ -152,7 +187,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   if (preferredStreams.length > 0) {
     const preferredStream = preferredStreams[0];
     audioStream = preferredStream;
-    outputNumber = 1;
   } else {
     // Getting the preferred stream failed, let's check for an alternative.
     const fallbackStreams = audioStreams.filter(
@@ -161,12 +195,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     if (fallbackStreams.length > 0) {
         const fallbackStream = fallbackStreams[0];
         audioStream = fallbackStream;
-        outputNumber = 1;
     } else {
       // Exit here if nothing was found
       return {
         outputFileObj: args.inputFileObj,
-        outputNumber,
+        outputNumber: 3,
         variables: args.variables,
       };
     }
@@ -191,38 +224,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     spawnArgs,
     outputFilePath,
   }));
-
-  // ---------------------------------------------- Handbrake progress test starts here
-  // // let container = String(args.inputs.container);
-  // // if (container === 'original') {
-  // //   container = getContainer(args.inputFileObj._id);
-  // // }
-  // // const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
-
-  // cliArgs.push(
-  //   '-i',
-  //   `${args.inputFileObj._id}`,
-  //   '-o',
-  //   `${outputFilePath}`,
-  // );
-
-  // args.updateWorker({
-  //   CLIType: args.handbrakePath,
-  //   preset: cliArgs.join(' '),
-  // });
-
-  // const cli = new CLI({
-  //   cli: args.handbrakePath,
-  //   spawnArgs: cliArgs,
-  //   spawnOpts: {},
-  //   jobLog: args.jobLog,
-  //   outputFilePath,
-  //   inputFileObj: args.inputFileObj,
-  //   logFullCliOutput: args.logFullCliOutput,
-  //   updateWorker: args.updateWorker,
-  // });
-
-  // ---------------------------------------------- Handbrake progress test ends here
 
   args.updateWorker({
     CLIType: args.ffmpegPath,

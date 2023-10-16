@@ -60,7 +60,7 @@ var mapVideoContainerToAudio = function (container) {
 };
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Extract audio streams',
+    name: 'Extract audio stream',
     description: 'This plugin extracts an audio track from a given file.',
     style: {
         borderColor: 'green',
@@ -126,6 +126,22 @@ var details = function () { return ({
             },
             tooltip: 'Specify the maximum amount of channels.',
         },
+        {
+            name: 'skipFileIfCodecExists',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    '',
+                    'dts',
+                    'ac3',
+                    'eac3',
+                    'aac',
+                ],
+            },
+            tooltip: 'Do not process the file if this codec is present.',
+        },
     ],
     outputs: [
         {
@@ -134,14 +150,18 @@ var details = function () { return ({
         },
         {
             number: 2,
-            tooltip: 'No audio stream extracted.',
+            tooltip: 'No audio stream extraction needed (Skipped).',
+        },
+        {
+            number: 3,
+            tooltip: 'No audio stream extracted (Could not find preferred or fallback codec).',
         },
     ],
 }); };
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, preferredMainCodec, preferredFallbackCodec, preferredResultCodec, maxChannels, cliArgs, outputNumber, ffProbeData, videoContainer, audioContainer, outputFileName, outputFilePath, audioStreams, preferredStreams, audioStream, preferredStream, fallbackStreams, fallbackStream, cli, res;
+    var lib, preferredMainCodec, preferredFallbackCodec, preferredResultCodec, maxChannels, skipFileIfCodecExists, cliArgs, ffProbeData, videoContainer, audioContainer, outputFileName, outputFilePath, audioStreams, skipStreams, preferredStreams, audioStream, preferredStream, fallbackStreams, fallbackStream, spawnArgs, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -152,8 +172,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 preferredFallbackCodec = String(args.inputs.preferredFallbackCodec);
                 preferredResultCodec = String(args.inputs.preferredResultCodec);
                 maxChannels = Number(args.inputs.maxChannels);
+                skipFileIfCodecExists = String(args.inputs.skipFileIfCodecExists);
                 cliArgs = [];
-                outputNumber = 2;
                 ffProbeData = args.inputFileObj.ffProbeData;
                 if (!ffProbeData || !ffProbeData.streams) {
                     throw new Error('ffProbeData or ffProbeData.streams is not available.');
@@ -167,30 +187,49 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     return stream.codec_type === 'audio'
                         && !/commentary/i.test(((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.title) || '');
                 });
+                // Check if we should skip the file
+                if (skipFileIfCodecExists !== '') {
+                    skipStreams = audioStreams.filter(function (stream) { return stream.codec_name === skipFileIfCodecExists; });
+                    if (skipStreams.length > 0) {
+                        // Exit here since we want to skip processing
+                        return [2 /*return*/, {
+                                outputFileObj: args.inputFileObj,
+                                outputNumber: 2,
+                                variables: args.variables,
+                            }];
+                    }
+                }
                 preferredStreams = audioStreams.filter(function (stream) { return stream.codec_name === preferredMainCodec; });
                 if (preferredStreams.length > 0) {
                     preferredStream = preferredStreams[0];
                     audioStream = preferredStream;
-                    outputNumber = 1;
                 }
                 else {
                     fallbackStreams = audioStreams.filter(function (stream) { return (stream.codec_name === preferredFallbackCodec); });
                     if (fallbackStreams.length > 0) {
                         fallbackStream = fallbackStreams[0];
                         audioStream = fallbackStream;
-                        outputNumber = 1;
                     }
                     else {
                         // Exit here if nothing was found
                         return [2 /*return*/, {
                                 outputFileObj: args.inputFileObj,
-                                outputNumber: outputNumber,
+                                outputNumber: 3,
                                 variables: args.variables,
                             }];
                     }
                 }
-                // // eslint-disable-next-line max-len
                 cliArgs.push('-y', '-i', "".concat(args.inputFileObj._id), '-map', "0:a:".concat(audioStream.index - 1), '-c:a', preferredResultCodec, '-ac', "".concat(Math.min(maxChannels, Number(audioStream.channels))), "".concat(outputFilePath));
+                spawnArgs = cliArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
+                args.jobLog('Processing file');
+                args.jobLog(JSON.stringify({
+                    spawnArgs: spawnArgs,
+                    outputFilePath: outputFilePath,
+                }));
+                args.updateWorker({
+                    CLIType: args.ffmpegPath,
+                    preset: cliArgs.join(' '),
+                });
                 cli = new cliUtils_1.CLI({
                     cli: args.ffmpegPath,
                     spawnArgs: cliArgs,
