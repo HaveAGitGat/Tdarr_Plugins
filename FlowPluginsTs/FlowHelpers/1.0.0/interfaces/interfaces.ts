@@ -136,6 +136,12 @@ export interface IpluginInputArgs {
         axios: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         crudTransDBN: (collection: string, mode: string, docID: string, obj: any)=> any,
+        configVars:{
+            config:{
+                serverIP: string,
+                serverPort: string,
+            }
+        }
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     installClassicPluginDeps: (deps: string[]) => Promise<any>,
