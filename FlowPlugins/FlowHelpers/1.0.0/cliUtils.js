@@ -197,7 +197,7 @@ var CLI = /** @class */ (function () {
                         fps: fps,
                     });
                 }
-                if (shouldUpdate === true && percentage > 0) {
+                if (percentage > 0) {
                     _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,

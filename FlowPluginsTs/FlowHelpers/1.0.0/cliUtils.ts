@@ -212,7 +212,7 @@ class CLI {
         });
       }
 
-      if (shouldUpdate === true && percentage > 0) {
+      if (percentage > 0) {
         this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
