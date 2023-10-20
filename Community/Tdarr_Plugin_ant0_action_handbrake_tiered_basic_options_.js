@@ -219,7 +219,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
     if (file.video_resolution === '480p') {
       actualHandbrakePreset = 'Gmail Medium 5 Minutes 480p30';
-      //        actualHandbrakePreset = 'Gmail Small 10 Minutes 288p30';
+      //actualHandbrakePreset = 'Gmail Small 10 Minutes 288p30';
     }
   }
   if (inputs.handbrakePreset === 'Vimeo YouTube HQ') {
@@ -267,8 +267,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       actualHandbrakePreset = 'Apple 2160p60 4K HEVC Surround';
     }
     if (file.video_resolution === '1080p') {
-      actualHandbrakePreset = 'Apple 1080p60 Surround';
-      //        actualHandbrakePreset = 'Apple 1080p30 Surround';
+      //actualHandbrakePreset = 'Apple 1080p60 Surround';
+      actualHandbrakePreset = 'Apple 1080p30 Surround';
     }
     if (file.video_resolution === '720p') {
       actualHandbrakePreset = 'Apple 720p30 Surround';
@@ -292,8 +292,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.video_resolution === '720p'
         || file.video_resolution === '576p'
         || file.video_resolution === '480p') {
-      actualHandbrakePreset = 'Chromecast 1080p60 Surround';
-    //    actualHandbrakePreset = 'Chromecast 1080p30 Surround';
+      //actualHandbrakePreset = 'Chromecast 1080p60 Surround';
+      actualHandbrakePreset = 'Chromecast 1080p30 Surround';
     }
   }
   if (inputs.handbrakePreset === 'Amazon Fire') {
