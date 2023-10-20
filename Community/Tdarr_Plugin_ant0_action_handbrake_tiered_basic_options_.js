@@ -14,7 +14,7 @@ const details = () => ({
     {
       name: 'handbrakePreset',
       type: 'string',
-      defaultValue: 'Very Fast 1080p30',
+      defaultValue: 'Very Fast',
       inputUI: {
         type: 'dropdown',
         options: [
@@ -460,7 +460,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.video_resolution === 'Other') {
       actualHandbrakePreset = 'Production Proxy 1080p';
     }
-    if (file.video_resolution === '576p' || file.video_resolution === '480p') {
+    if (file.video_resolution === '576p' || 
+        file.video_resolution === '480p') {
       actualHandbrakePreset = 'Production Proxy 540p';
     }
   }
