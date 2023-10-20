@@ -89,7 +89,7 @@ const details = () => ({
     {
       name: 'keepAllAudio',
       type: 'boolean',
-      defaultValue: true,
+      defaultValue: false,
       inputUI: {
         type: 'dropdown',
         options: [
