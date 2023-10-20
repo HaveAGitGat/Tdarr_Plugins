@@ -7,14 +7,11 @@ const tests = [
       file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {},
-      file: {
-        video_resolution: '1080p'
-      },
       otherArguments: {},
     },
     output: {
       processFile: true,
-      preset: '-Z "Very Fast 1080p30" -e x265 --all-subtitles',
+      preset: '-Z "Very Fast 720p30" -e x265 --all-subtitles',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: false,
@@ -35,14 +32,11 @@ const tests = [
         keepAllAudio: 'true',
         container: 'mp4',
       },
-      file: {
-        video_resolution: '576p'
-      },
       otherArguments: {},
     },
     output: {
       processFile: true,
-      preset: '-Z "Fast 576p25" -e nvenc_h265 --all-subtitles --all-audio',
+      preset: '-Z "Fast 720p30" -e nvenc_h265 --all-subtitles --all-audio',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: false,
@@ -63,14 +57,11 @@ const tests = [
         keepAllAudio: 'false',
         container: 'mov',
       },
-      file: {
-        video_resolution: '576p'
-      },
       otherArguments: {},
     },
     output: {
       processFile: true,
-      preset: '-Z "Fast 576p25" -e nvenc_h265',
+      preset: '-Z "Fast 720p30" -e nvenc_h265',
       container: '.mov',
       handBrakeMode: false,
       FFmpegMode: false,
