@@ -219,7 +219,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
     if (file.video_resolution === '480p') {
       actualHandbrakePreset = 'Gmail Medium 5 Minutes 480p30';
-      //actualHandbrakePreset = 'Gmail Small 10 Minutes 288p30';
+      // actualHandbrakePreset = 'Gmail Small 10 Minutes 288p30';
     }
   }
   if (inputs.handbrakePreset === 'Vimeo YouTube HQ') {
@@ -267,7 +267,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       actualHandbrakePreset = 'Apple 2160p60 4K HEVC Surround';
     }
     if (file.video_resolution === '1080p') {
-      //actualHandbrakePreset = 'Apple 1080p60 Surround';
+      // actualHandbrakePreset = 'Apple 1080p60 Surround';
       actualHandbrakePreset = 'Apple 1080p30 Surround';
     }
     if (file.video_resolution === '720p') {
@@ -292,7 +292,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.video_resolution === '720p'
         || file.video_resolution === '576p'
         || file.video_resolution === '480p') {
-      //actualHandbrakePreset = 'Chromecast 1080p60 Surround';
+      // actualHandbrakePreset = 'Chromecast 1080p60 Surround';
       actualHandbrakePreset = 'Chromecast 1080p30 Surround';
     }
   }
@@ -460,14 +460,24 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         || file.video_resolution === 'Other') {
       actualHandbrakePreset = 'Production Proxy 1080p';
     }
-    if (file.video_resolution === '576p' || 
-        file.video_resolution === '480p') {
+    if (file.video_resolution === '576p'
+        || file.video_resolution === '480p') {
       actualHandbrakePreset = 'Production Proxy 540p';
     }
   }
 
   const keepSubs = inputs.keepSubtitles === true ? ' --all-subtitles' : '';
-  const keepAllAudio = inputs.keepAllAudio === true ? ' --all-audio' : '';
+  let keepAllAudio;
+  if (inputs.container === 'mkv') {
+    if (inputs.keepAllAudio === true) {
+      keepAllAudio = ' --all-audio --aencoder copy --audio-copy-mask aac,ac3,truehd,dts,dtshd,mp2,mp3,flac';
+      keepAllAudio += ' --audio-fallback ac3';
+    } else {
+      keepAllAudio = '';
+    }
+  } else {
+    keepAllAudio = inputs.keepAllAudio === true ? ' --all-audio' : '';
+  }
 
   response.preset = `-Z "${actualHandbrakePreset}" -e ${inputs.videoEncoder}${keepSubs}${keepAllAudio}`;
   response.container = `.${inputs.container}`;
