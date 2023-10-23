@@ -51,7 +51,7 @@ var getFFmpegVar = function (_a) {
 };
 exports.getFFmpegVar = getFFmpegVar;
 var getFFmpegPercentage = function (_a) {
-    var f = _a.f, fc = _a.fc, vf = _a.vf, d = _a.d;
+    var time = _a.time, f = _a.f, fc = _a.fc, vf = _a.vf, d = _a.d;
     var frameCount01 = fc;
     var VideoFrameRate = vf;
     var Duration = d;
@@ -60,14 +60,19 @@ var getFFmpegPercentage = function (_a) {
     frameCount01 = Math.ceil(frameCount01);
     VideoFrameRate = Math.ceil(VideoFrameRate);
     Duration = Math.ceil(Duration);
-    if (frameCount01 > 0) {
-        perc = ((frame / frameCount01) * 100);
+    if (frame > 0) {
+        if (frameCount01 > 0) {
+            perc = ((frame / frameCount01) * 100);
+        }
+        else if (VideoFrameRate > 0 && Duration > 0) {
+            perc = ((frame / (VideoFrameRate * Duration)) * 100);
+        }
+        else {
+            perc = (frame);
+        }
     }
-    else if (VideoFrameRate > 0 && Duration > 0) {
-        perc = ((frame / (VideoFrameRate * Duration)) * 100);
-    }
-    else {
-        perc = (frame);
+    else if (time > 0 && Duration > 0) {
+        perc = ((time / Duration) * 100);
     }
     var percString = perc.toFixed(2);
     // eslint-disable-next-line no-restricted-globals
@@ -84,32 +89,44 @@ var ffmpegParser = function (_a) {
     }
     var percentage = 0;
     if (str.length >= 6) {
-        var n = str.indexOf('fps');
-        if (n >= 6) {
-            // get frame
-            var frame = getFFmpegVar({
-                str: str,
-                variable: 'frame',
-            });
-            var frameRate = videoFrameRate || 0;
-            var duration = 0;
-            if (ffprobeDuration
-                && parseFloat(ffprobeDuration) > 0) {
-                duration = parseFloat(ffprobeDuration);
+        var frame = getFFmpegVar({
+            str: str,
+            variable: 'frame',
+        });
+        var time = 0;
+        // get time
+        var timeStr = getFFmpegVar({
+            str: str,
+            variable: 'time',
+        });
+        if (timeStr) {
+            var timeArr = timeStr.split(':');
+            if (timeArr.length === 3) {
+                var hours = parseInt(timeArr[0], 10);
+                var minutes = parseInt(timeArr[1], 10);
+                var seconds = parseInt(timeArr[2], 10);
+                time = (hours * 3600) + (minutes * 60) + seconds;
             }
-            else if (metaDuration) {
-                duration = metaDuration;
-            }
-            var per = getFFmpegPercentage({
-                f: frame,
-                fc: frameCount,
-                vf: frameRate,
-                d: duration,
-            });
-            var outputNum = Number(per);
-            if (outputNum > 0) {
-                percentage = outputNum;
-            }
+        }
+        var frameRate = videoFrameRate || 0;
+        var duration = 0;
+        if (ffprobeDuration
+            && parseFloat(ffprobeDuration) > 0) {
+            duration = parseFloat(ffprobeDuration);
+        }
+        else if (metaDuration) {
+            duration = metaDuration;
+        }
+        var per = getFFmpegPercentage({
+            time: time,
+            f: frame,
+            fc: frameCount,
+            vf: frameRate,
+            d: duration,
+        });
+        var outputNum = Number(per);
+        if (outputNum > 0) {
+            percentage = outputNum;
         }
     }
     return percentage;
