@@ -86,7 +86,6 @@ Audio:  (Only one audio stream is used!!)
 /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 */
 
-
 const details = () => ({
   id: 'Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile',
   Stage: 'Pre-processing',
@@ -326,17 +325,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     } else {
       const statsThres = Date.parse(new Date(new Date().setDate(new Date().getDate() - intStatsDays)).toISOString());
 
-    if (inputs.test === true) {
-      response.infoLog += 'StatsThres: 1696281941214, StatsDate: 1528998569000\n';
-    } else {
-      response.infoLog += `StatsThres: ${statsThres}, StatsDate: ${datStats}\n`;
-    }
+      if (inputs.test === true) {
+        response.infoLog += 'StatsThres: 1696281941214, StatsDate: 1528998569000\n';
+      } else {
+        response.infoLog += `StatsThres: ${statsThres}, StatsDate: ${datStats}\n`;
+      }
       if (datStats >= statsThres) {
         bolStatsAreCurrent = true;
       }
     }
-    //No longer needed if updating stats in Tdarr
-    //if (!bolStatsAreCurrent) {
+    // No longer needed if updating stats in Tdarr
+    // if (!bolStatsAreCurrent) {
     //  response.infoLog += 'Stats need to be updated! \n';
 
     //  try {
@@ -345,7 +344,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     //  } catch (err) {
     //    response.infoLog += 'Error Updating Status Probably Bad file, A remux will probably fix, will continue\n';
     //  }
-    //}
+    // }
   }
 
   // Logic Controls
@@ -793,7 +792,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (inputs.test === true) {
-    strFFcmd += ` -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE=2023-10-12T00:00:49.483Z `;
+    strFFcmd += ' -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE=2023-10-12T00:00:49.483Z ';
   } else {
     strFFcmd += ` -map_metadata:g -1 -metadata JBDONEVERSION=1 -metadata JBDONEDATE=${new Date().toISOString()} `;
   }
