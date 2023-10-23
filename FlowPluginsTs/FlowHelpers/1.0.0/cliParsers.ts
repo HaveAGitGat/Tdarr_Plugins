@@ -66,12 +66,13 @@ const getFFmpegVar = ({
 };
 
 const getFFmpegPercentage = ({
+  time,
   f,
   fc,
   vf,
   d,
 }: {
-
+  time: number,
   f: string, fc: number, vf: number, d: number
 }): number => {
   let frameCount01: number = fc;
@@ -85,12 +86,16 @@ const getFFmpegPercentage = ({
   VideoFrameRate = Math.ceil(VideoFrameRate);
   Duration = Math.ceil(Duration);
 
-  if (frameCount01 > 0) {
-    perc = ((frame / frameCount01) * 100);
-  } else if (VideoFrameRate > 0 && Duration > 0) {
-    perc = ((frame / (VideoFrameRate * Duration)) * 100);
-  } else {
-    perc = (frame);
+  if (frame > 0) {
+    if (frameCount01 > 0) {
+      perc = ((frame / frameCount01) * 100);
+    } else if (VideoFrameRate > 0 && Duration > 0) {
+      perc = ((frame / (VideoFrameRate * Duration)) * 100);
+    } else {
+      perc = (frame);
+    }
+  } else if (time > 0 && Duration > 0) {
+    perc = ((time / Duration) * 100);
   }
 
   const percString = perc.toFixed(2);
@@ -124,40 +129,54 @@ const ffmpegParser = ({
 
   let percentage = 0;
   if (str.length >= 6) {
-    const n = str.indexOf('fps');
+    const frame = getFFmpegVar({
+      str,
+      variable: 'frame',
+    });
 
-    if (n >= 6) {
-      // get frame
-      const frame = getFFmpegVar({
-        str,
-        variable: 'frame',
-      });
+    let time = 0;
 
-      const frameRate = videoFrameRate || 0;
-      let duration = 0;
+    // get time
+    const timeStr = getFFmpegVar({
+      str,
+      variable: 'time',
+    });
 
-      if (
-        ffprobeDuration
+    if (timeStr) {
+      const timeArr = timeStr.split(':');
+      if (timeArr.length === 3) {
+        const hours = parseInt(timeArr[0], 10);
+        const minutes = parseInt(timeArr[1], 10);
+        const seconds = parseInt(timeArr[2], 10);
+        time = (hours * 3600) + (minutes * 60) + seconds;
+      }
+    }
+
+    const frameRate = videoFrameRate || 0;
+    let duration = 0;
+
+    if (
+      ffprobeDuration
         && parseFloat(ffprobeDuration) > 0
-      ) {
-        duration = parseFloat(ffprobeDuration);
-      } else if (metaDuration) {
-        duration = metaDuration;
-      }
+    ) {
+      duration = parseFloat(ffprobeDuration);
+    } else if (metaDuration) {
+      duration = metaDuration;
+    }
 
-      const per = getFFmpegPercentage(
-        {
-          f: frame,
-          fc: frameCount,
-          vf: frameRate,
-          d: duration,
-        },
-      );
+    const per = getFFmpegPercentage(
+      {
+        time,
+        f: frame,
+        fc: frameCount,
+        vf: frameRate,
+        d: duration,
+      },
+    );
 
-      const outputNum = Number(per);
-      if (outputNum > 0) {
-        percentage = outputNum;
-      }
+    const outputNum = Number(per);
+    if (outputNum > 0) {
+      percentage = outputNum;
     }
   }
 
