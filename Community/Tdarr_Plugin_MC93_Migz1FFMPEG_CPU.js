@@ -18,14 +18,17 @@ const details = () => ({
     inputUI: {
       type: 'text',
     },
-    tooltip: `Specify output container of file.
+    tooltip: `Specify output container of file. Use 'original' wihout quotes to keep original container.
                   \\n Ensure that all stream types you may have are supported by your chosen container.
                   \\n mkv is recommended.
                     \\nExample:\\n
                     mkv
 
                     \\nExample:\\n
-                    mp4`,
+                    mp4
+                                        
+                    \\nExample:\\n
+                    original`,
   },
   {
     name: 'bitrate_cutoff',
@@ -85,10 +88,10 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
@@ -107,7 +110,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.processFile = false;
     return response;
   }
-  response.container = `.${inputs.container}`;
+
+  if (inputs.container === 'original') {
+    // eslint-disable-next-line no-param-reassign
+    inputs.container = `${file.container}`;
+    response.container = `.${file.container}`;
+  } else {
+    response.container = `.${inputs.container}`;
+  }
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
@@ -118,7 +128,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Check if duration info is filled, if so times it by 0.0166667 to get time in minutes.
   // If not filled then get duration of stream 0 and do the same.
-  if (typeof file.meta.Duration !== 'undefined') {
+  if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+    duration = parseFloat(file.ffProbeData?.format?.duration) * 0.0166667;
+  } else if (typeof file.meta.Duration !== 'undefined') {
     duration = file.meta.Duration * 0.0166667;
   } else {
     duration = file.ffProbeData.streams[0].duration * 0.0166667;

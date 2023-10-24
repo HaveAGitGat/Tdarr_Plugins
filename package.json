@@ -9,16 +9,21 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@types/node": "^20.5.1",
+    "@typescript-eslint/eslint-plugin": "^4.14.1",
+    "@typescript-eslint/parser": "^4.14.1",
     "chai": "^4.3.6",
     "eslint": "^7.14.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jsx-a11y": "^6.4.1"
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-prefer-arrow-functions": "^3.1.4",
+    "eslint_d": "^11.1.1"
   },
   "scripts": {
     "test": "node ./tests/runTests.js",
-    "lint": "eslint Community methods examples tests --ext js",
-    "lint:fix": "eslint Community methods examples tests --ext js --fix",
+    "lint": "eslint_d FlowPluginsTs Community methods examples tests --ext js,ts",
+    "lint:fix": "eslint_d FlowPluginsTs Community methods examples tests --ext js,ts --fix",
     "checkPlugins": "node ./tests/checkPlugins.js"
   },
   "repository": {

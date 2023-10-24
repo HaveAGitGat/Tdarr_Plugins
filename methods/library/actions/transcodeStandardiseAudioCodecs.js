@@ -1,4 +1,4 @@
-module.exports = function transcodeStandardiseAudioCodecs(file, audioEncoder) {
+module.exports = (file, audioEncoder) => {
   // Function required responses
   // preset
   // processFile

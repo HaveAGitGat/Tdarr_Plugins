@@ -8,7 +8,7 @@ jobs:
   build:
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
         os:
           [
             ["ubuntu-20.04"],
@@ -28,7 +28,8 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm i    
+    - run: npm i
+    - run: npm i -g typescript && tsc  
     - run: npm run checkPlugins
     - run: npm run lint
     - run: npm run test

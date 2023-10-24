@@ -122,6 +122,34 @@ const tests = [
   },
   {
     input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'original',
+        enable_10bit: 'true',
+        force_conform: 'true',
+        bitrate_cutoff: '1000',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: ',-map 0 -c:v libx265 -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -pix_fmt p010le ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 7866 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 3933 \n'
+        + 'Minimum = 2753 \n'
+        + 'Maximum = 5112 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.mkv',
+    },
+  },
+  {
+    input: {
       file: _.cloneDeep(require('../sampleData/media/sampleH265_1.json')),
       librarySettings: {},
       inputs: {
@@ -142,4 +170,4 @@ const tests = [
   },
 ];
 
-run(tests);
+void run(tests);

@@ -7,7 +7,7 @@ const childProcess = require('child_process');
 const filenames = fs.readdirSync(`${process.cwd()}/Community`).reverse();
 
 const errorsEncountered = [];
-const run = async () => {
+const run = () => {
   const pluginsToRun = [];
   for (let i = 0; i < filenames.length; i += 1) {
     const filename = filenames[i];
@@ -74,4 +74,4 @@ const run = async () => {
   }
 };
 
-run();
+void run();

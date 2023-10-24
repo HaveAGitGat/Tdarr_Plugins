@@ -103,11 +103,11 @@ const details = () => {
   }
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
     const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   var transcode = 0 //if this var changes to 1 the file will be transcoded
   var subcli = `-c:s copy`
