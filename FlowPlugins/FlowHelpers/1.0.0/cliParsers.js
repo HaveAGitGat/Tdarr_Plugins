@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.editreadyParser = exports.getFFmpegVar = exports.getFFmpegPercentage = exports.ffmpegParser = exports.handbrakeParser = void 0;
 var handbrakeParser = function (_a) {
-    var str = _a.str;
+    var str = _a.str, hbPass = _a.hbPass;
     if (typeof str !== 'string') {
         return 0;
     }
@@ -19,13 +19,13 @@ var handbrakeParser = function (_a) {
         var outputNum = Number(output);
         if (outputNum > 0) {
             percentage = outputNum;
+            if (hbPass === 1) {
+                percentage /= 2;
+            }
+            else if (hbPass === 2) {
+                percentage = 50 + (percentage / 2);
+            }
         }
-    }
-    if (str.includes('task 1 of 2')) {
-        percentage /= 2;
-    }
-    else if (str.includes('task 2 of 2')) {
-        percentage = 50 + (percentage / 2);
     }
     return percentage;
 };

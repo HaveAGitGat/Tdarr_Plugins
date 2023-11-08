@@ -85,6 +85,8 @@ class CLI {
 
   lastProgCheck = 0;
 
+  hbPass = 0;
+
   constructor(config: Iconfig) {
     this.config = config;
   }
@@ -163,9 +165,17 @@ class CLI {
     }
 
     if (this.config.cli.toLowerCase().includes('handbrake')) {
+      if (str.includes('task 1 of 2')) {
+        this.hbPass = 1;
+      } else if (str.includes('task 2 of 2')) {
+        this.hbPass = 2;
+      }
+
       const percentage = handbrakeParser({
         str,
+        hbPass: this.hbPass,
       });
+
       if (percentage > 0) {
         this.updateETA(percentage);
         this.config.updateWorker({

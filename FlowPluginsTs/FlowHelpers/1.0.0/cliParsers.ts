@@ -1,8 +1,10 @@
 const handbrakeParser = ({
   str,
+  hbPass,
 }:
   {
-    str: string
+    str: string,
+    hbPass: number
   }): number => {
   if (typeof str !== 'string') {
     return 0;
@@ -25,13 +27,13 @@ const handbrakeParser = ({
     const outputNum = Number(output);
     if (outputNum > 0) {
       percentage = outputNum;
-    }
-  }
 
-  if (str.includes('task 1 of 2')) {
-    percentage /= 2;
-  } else if (str.includes('task 2 of 2')) {
-    percentage = 50 + (percentage / 2);
+      if (hbPass === 1) {
+        percentage /= 2;
+      } else if (hbPass === 2) {
+        percentage = 50 + (percentage / 2);
+      }
+    }
   }
 
   return percentage;
