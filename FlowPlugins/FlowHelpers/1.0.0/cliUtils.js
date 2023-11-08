@@ -92,6 +92,7 @@ var CLI = /** @class */ (function () {
         this.oldEstSize = 0;
         this.oldProgress = 0;
         this.lastProgCheck = 0;
+        this.hbPass = 0;
         this.updateETA = function (perc) {
             if (perc > 0) {
                 if (_this.lastProgCheck === 0) {
@@ -154,8 +155,15 @@ var CLI = /** @class */ (function () {
                 _this.config.jobLog(str);
             }
             if (_this.config.cli.toLowerCase().includes('handbrake')) {
+                if (str.includes('task 1 of 2')) {
+                    _this.hbPass = 1;
+                }
+                else if (str.includes('task 2 of 2')) {
+                    _this.hbPass = 2;
+                }
                 var percentage = (0, cliParsers_1.handbrakeParser)({
                     str: str,
+                    hbPass: _this.hbPass,
                 });
                 if (percentage > 0) {
                     _this.updateETA(percentage);
