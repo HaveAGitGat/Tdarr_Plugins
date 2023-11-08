@@ -28,6 +28,12 @@ const handbrakeParser = ({
     }
   }
 
+  if (str.includes('task 1 of 2')) {
+    percentage /= 2;
+  } else if (str.includes('task 2 of 2')) {
+    percentage = 50 + (percentage / 2);
+  }
+
   return percentage;
 };
 
