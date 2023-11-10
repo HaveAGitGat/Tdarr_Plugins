@@ -23,9 +23,18 @@ var details = function () { return ({
                 type: 'dropdown',
                 options: [
                     'hevc',
+                    'av1',
                     'vp9',
                     'h264',
                     'vp8',
+                    'wmv2',
+                    'wmv3',
+                    'mpeg4',
+                    'mpeg2video',
+                    'mjpeg',
+                    'flv',
+                    'mpeg4',
+                    'theora'
                 ],
             },
             tooltip: 'Specify the codec check for',
