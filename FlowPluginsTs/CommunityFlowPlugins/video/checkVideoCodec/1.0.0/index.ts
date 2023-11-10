@@ -26,6 +26,7 @@ const details = ():IpluginDetails => ({
         type: 'dropdown',
         options: [
           'hevc',
+          'av1',
           'vp9',
           'h264',
           'vp8',
