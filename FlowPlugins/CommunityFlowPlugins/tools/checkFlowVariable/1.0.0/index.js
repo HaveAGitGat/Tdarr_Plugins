@@ -64,7 +64,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    var variable = String(args.inputs.variable);
+    var variable = String(args.inputs.variable).trim();
     var condition = String(args.inputs.condition);
     var value = String(args.inputs.value);
     // variable could be e.g. args.librarySettings._id or args.inputFileObj._id
