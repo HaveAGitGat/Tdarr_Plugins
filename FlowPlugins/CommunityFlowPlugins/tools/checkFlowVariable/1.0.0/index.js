@@ -22,7 +22,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Variable to check. For example args.librarySettings._id',
+            tooltip: "Variable to check. For example , \n      \n      \\nExample\\n\n      args.librarySettings._id\n      \n      \\nExample\\n\n      args.inputFileObj._id\n\n      \\nExample\\n\n      args.userVariables.library.test\n\n      \\nExample\\n\n      args.userVariables.global.test\n      ",
         },
         {
             name: 'condition',

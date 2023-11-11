@@ -25,7 +25,20 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Variable to check. For example args.librarySettings._id',
+      tooltip: `Variable to check. For example , 
+      
+      \\nExample\\n
+      args.librarySettings._id
+      
+      \\nExample\\n
+      args.inputFileObj._id
+
+      \\nExample\\n
+      args.userVariables.library.test
+
+      \\nExample\\n
+      args.userVariables.global.test
+      `,
     },
     {
       name: 'condition',
