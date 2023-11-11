@@ -30,7 +30,7 @@ const details = (): IpluginDetails => ({
     {
       name: 'condition',
       type: 'string',
-      defaultValue: '',
+      defaultValue: '==',
       inputUI: {
         type: 'dropdown',
         options: [

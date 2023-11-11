@@ -27,7 +27,7 @@ var details = function () { return ({
         {
             name: 'condition',
             type: 'string',
-            defaultValue: '',
+            defaultValue: '==',
             inputUI: {
                 type: 'dropdown',
                 options: [
