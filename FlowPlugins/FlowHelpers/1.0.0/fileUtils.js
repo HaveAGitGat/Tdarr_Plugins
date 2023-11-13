@@ -117,6 +117,10 @@ var moveFileAndValidate = function (_a) {
                     return [3 /*break*/, 6];
                 case 6:
                     if (!(!res1 || inputSize !== outputSize)) return [3 /*break*/, 9];
+                    if (inputSize !== outputSize) {
+                        args.jobLog("File sizes do not match, input: ".concat(inputSize, " ")
+                            + "does not equal  output: ".concat(outputSize));
+                    }
                     args.jobLog("Attempt 1  failed: Moving file from ".concat(inputPath, " to ").concat(outputPath));
                     args.jobLog("Attempt 2: Moving file from ".concat(inputPath, " to ").concat(outputPath));
                     return [4 /*yield*/, new Promise(function (resolve) {
@@ -135,6 +139,10 @@ var moveFileAndValidate = function (_a) {
                 case 8:
                     outputSize = _b.sent();
                     if (!res2 || inputSize !== outputSize) {
+                        if (inputSize !== outputSize) {
+                            args.jobLog("File sizes do not match, input: ".concat(inputSize, " ")
+                                + "does not equal  output: ".concat(outputSize));
+                        }
                         errMessage = "Failed to move file from ".concat(inputPath, " to ").concat(outputPath, ", check errors above");
                         args.jobLog(errMessage);
                         throw new Error(errMessage);
