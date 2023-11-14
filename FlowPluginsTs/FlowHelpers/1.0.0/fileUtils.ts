@@ -36,7 +36,7 @@ export const getSubStem = ({
   return parts.join('/');
 };
 
-const getFileSize = async (file:string):Promise<number> => {
+export const getFileSize = async (file:string):Promise<number> => {
   const stats = await fs.stat(file);
   const { size } = stats;
   return size;

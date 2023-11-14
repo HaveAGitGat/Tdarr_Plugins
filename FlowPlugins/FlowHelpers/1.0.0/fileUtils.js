@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
+exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
 var fs_1 = require("fs");
 var getContainer = function (filePath) {
     var parts = filePath.split('.');
@@ -79,13 +79,14 @@ var getFileSize = function (file) { return __awaiter(void 0, void 0, void 0, fun
         }
     });
 }); };
+exports.getFileSize = getFileSize;
 var moveFileAndValidate = function (_a) {
     var inputPath = _a.inputPath, outputPath = _a.outputPath, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
         var inputSize, res1, outputSize, err_1, res2, errMessage;
         return __generator(this, function (_b) {
             switch (_b.label) {
-                case 0: return [4 /*yield*/, getFileSize(inputPath)];
+                case 0: return [4 /*yield*/, (0, exports.getFileSize)(inputPath)];
                 case 1:
                     inputSize = _b.sent();
                     args.jobLog("Attempt 1: Moving file from ".concat(inputPath, " to ").concat(outputPath));
@@ -107,7 +108,7 @@ var moveFileAndValidate = function (_a) {
                     _b.label = 3;
                 case 3:
                     _b.trys.push([3, 5, , 6]);
-                    return [4 /*yield*/, getFileSize(outputPath)];
+                    return [4 /*yield*/, (0, exports.getFileSize)(outputPath)];
                 case 4:
                     outputSize = _b.sent();
                     return [3 /*break*/, 6];
@@ -135,7 +136,7 @@ var moveFileAndValidate = function (_a) {
                         })];
                 case 7:
                     res2 = _b.sent();
-                    return [4 /*yield*/, getFileSize(outputPath)];
+                    return [4 /*yield*/, (0, exports.getFileSize)(outputPath)];
                 case 8:
                     outputSize = _b.sent();
                     if (!res2 || inputSize !== outputSize) {

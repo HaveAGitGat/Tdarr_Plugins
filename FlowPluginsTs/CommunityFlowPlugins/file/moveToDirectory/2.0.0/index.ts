@@ -1,5 +1,6 @@
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileName, getSubStem, moveFileAndValidate,
+  getContainer, getFileName, getSubStem,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -113,11 +114,11 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   args.deps.fsextra.ensureDirSync(outputPath);
 
-  await moveFileAndValidate({
-    inputPath: args.inputFileObj._id,
-    outputPath: ouputFilePath,
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: args.inputFileObj._id,
+    destinationPath: ouputFilePath,
     args,
-
   });
 
   return {
