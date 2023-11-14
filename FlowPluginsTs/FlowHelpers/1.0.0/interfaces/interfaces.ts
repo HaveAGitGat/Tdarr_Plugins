@@ -132,7 +132,9 @@ export interface IpluginInputArgs {
         gracefulfs: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mvdir: any,
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ncp: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axios: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         crudTransDBN: (collection: string, mode: string, docID: string, obj: any)=> any,

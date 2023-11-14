@@ -1,5 +1,6 @@
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileAbosluteDir, getFileName, moveFileAndValidate,
+  getContainer, getFileAbosluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -68,9 +69,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
   }
 
-  await moveFileAndValidate({
-    inputPath: args.inputFileObj._id,
-    outputPath: newPath,
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: args.inputFileObj._id,
+    destinationPath: newPath,
     args,
   });
 
