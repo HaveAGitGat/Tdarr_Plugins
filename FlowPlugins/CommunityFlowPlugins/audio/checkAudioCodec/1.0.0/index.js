@@ -65,6 +65,7 @@ var plugin = function (args) {
             }
         });
     }
+    // auto build test
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: hasCodec ? 1 : 2,

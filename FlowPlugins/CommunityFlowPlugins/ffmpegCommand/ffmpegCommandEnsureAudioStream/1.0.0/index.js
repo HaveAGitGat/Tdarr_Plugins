@@ -27,6 +27,7 @@ var details = function () { return ({
                     'eac3',
                     'dca',
                     'flac',
+                    'libopus',
                     'mp2',
                     'libmp3lame',
                     'truehd',
@@ -147,6 +148,9 @@ var plugin = function (args) {
     }
     if (audioEncoder === 'libmp3lame') {
         audioCodec = 'mp3';
+    }
+    if (audioEncoder === 'libopus') {
+        audioCodec = 'opus';
     }
     var addedOrExists = attemptMakeStream({
         args: args,
