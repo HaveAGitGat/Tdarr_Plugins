@@ -248,7 +248,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const currentFileName = file._id; // .replace(/'/g, "'\"'\"'");
+  // const currentFileName = file._id; // .replace(/'/g, "'\"'\"'");
 
   // Settings
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,8 +285,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   /// ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-  const proc = require('child_process');
-  let bolStatsAreCurrent = false;
+  // let bolStatsAreCurrent = false;
 
   if (file.fileMedium !== 'video') {
     response.processFile = false;
@@ -320,7 +319,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       response.infoLog += `JBDate: ${JBDate}, StatsDate: ${datStats}\n`;
       if (datStats >= JBDate) {
-        bolStatsAreCurrent = true;
+        // bolStatsAreCurrent = true;
       }
     } else {
       const statsThres = Date.parse(new Date(new Date().setDate(new Date().getDate() - intStatsDays)).toISOString());
@@ -331,7 +330,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.infoLog += `StatsThres: ${statsThres}, StatsDate: ${datStats}\n`;
       }
       if (datStats >= statsThres) {
-        bolStatsAreCurrent = true;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // bolStatsAreCurrent = true;
       }
     }
     // No longer needed if updating stats in Tdarr
