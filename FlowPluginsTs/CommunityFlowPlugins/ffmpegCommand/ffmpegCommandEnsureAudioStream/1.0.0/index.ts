@@ -31,6 +31,7 @@ const details = (): IpluginDetails => ({
           'eac3',
           'dca',
           'flac',
+          'libopus',
           'mp2',
           'libmp3lame',
           'truehd',
@@ -190,6 +191,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   if (audioEncoder === 'libmp3lame') {
     audioCodec = 'mp3';
+  }
+
+  if (audioEncoder === 'libopus') {
+    audioCodec = 'opus';
   }
 
   const addedOrExists = attemptMakeStream({
