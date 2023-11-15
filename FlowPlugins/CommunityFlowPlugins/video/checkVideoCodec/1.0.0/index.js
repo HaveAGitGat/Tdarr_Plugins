@@ -33,8 +33,7 @@ var details = function () { return ({
                     'mpeg2video',
                     'mjpeg',
                     'flv',
-                    'mpeg4',
-                    'theora'
+                    'theora',
                 ],
             },
             tooltip: 'Specify the codec check for',
