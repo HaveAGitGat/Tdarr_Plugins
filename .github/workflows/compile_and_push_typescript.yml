@@ -1,0 +1,30 @@
+name: Compile and push typescript
+
+on:
+  pull_request:
+  push:
+    branches:
+      - auto_build_test
+
+jobs:
+  auto-build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the changed files back to the repository.
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+  
+    - uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+    - run: npm i -g typescript && rm -rdf ./FlowPlugins && tsc
+
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: Apply auto-build changes
