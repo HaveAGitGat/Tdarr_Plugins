@@ -71,6 +71,8 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
     });
   }
 
+  // auto build test
+
   return {
     outputFileObj: args.inputFileObj,
     outputNumber: hasCodec ? 1 : 2,
