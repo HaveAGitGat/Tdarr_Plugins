@@ -12,8 +12,8 @@ jobs:
         os:
           [
             ["ubuntu-20.04"],
-            ["windows-2019"],
-            ["macos-11.0"],
+            # ["windows-2019"],
+            # ["macos-11.0"],
           ]
     runs-on: ${{ matrix.os }}
 
@@ -55,3 +55,7 @@ jobs:
         node-version: '18.x'
 
     - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc
+
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: Apply auto-build changes
