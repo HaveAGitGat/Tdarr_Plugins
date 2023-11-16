@@ -2,19 +2,37 @@ import { IFileObject, Istreams } from './synced/IFileObject';
 import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
-    type: 'dropdown' | 'text' | 'textarea' | 'directory',
+    type: 'dropdown' | 'text' | 'textarea' | 'directory' | 'slider',
     options?: string[],
-    style?:Record<string, unknown>,
+    sliderOptions?: {max: number, min: number, }
+    style?: Record<string, unknown>,
     onSelect?: {
-        'hevc': {
-          update: {
-            quality: '28',
-          },
+        [index: string]: {
+            [index: string]: string,
         }
-      },
+    },
+    displayConditions?: {
+        // if logic is 'AND' then all sets must be true for element to be displayed
+        // if logic is 'OR' then at least one set must be true for element to be displayed
+        logic: 'AND' | 'OR',
+        sets: {
+            // if logic is 'AND' then all inputs conditions must be true for set to be true
+            // if logic is 'OR' then at least one input condition must be true for set to be true
+            logic: 'OR' | 'AND',
+            inputs: {
+                // the name of the input to check
+                name: string,
+                // the value to check against
+                value: string,
+                // the condition to check against
+                condition: '===' | '!==' | '>' | '>=' | '<' | '<=' | 'includes' | 'notIncludes',
+            }[],
+        }[]
+    },
 }
 
 export interface IpluginInputs {
+    label?: string,
     name: string,
     type: 'string' | 'boolean' | 'number',
     defaultValue: string,
@@ -24,9 +42,9 @@ export interface IpluginInputs {
 
 export interface IpluginDetails {
     name: string,
-    nameUI?:{
+    nameUI?: {
         type: 'text' | 'textarea',
-        style?:Record<string, unknown>,
+        style?: Record<string, unknown>,
     }
     description: string,
     style: {
@@ -79,6 +97,7 @@ export interface IffmpegCommand {
 export interface Ivariables {
     ffmpegCommand: IffmpegCommand,
     flowFailed: boolean,
+    inFlow: Record<string, string>,
 }
 
 export interface IpluginOutputArgs {
@@ -86,7 +105,7 @@ export interface IpluginOutputArgs {
     outputFileObj: {
         _id: string,
     },
-    variables: Ivariables
+    variables: Ivariables,
 }
 
 export interface IpluginInputArgs {
@@ -137,9 +156,9 @@ export interface IpluginInputArgs {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axios: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        crudTransDBN: (collection: string, mode: string, docID: string, obj: any)=> any,
-        configVars:{
-            config:{
+        crudTransDBN: (collection: string, mode: string, docID: string, obj: any) => any,
+        configVars: {
+            config: {
                 serverIP: string,
                 serverPort: string,
             }
@@ -154,7 +173,7 @@ export interface IflowTemplate {
     description: string,
     tags: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    flowPlugins:any[],
+    flowPlugins: any[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     flowEdges: any[],
 }
