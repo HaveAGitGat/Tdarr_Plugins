@@ -106,6 +106,7 @@ var tryMove = function (_a) {
         });
     });
 };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var tryMvdir = function (_a) {
     var sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, sourceFileSize = _a.sourceFileSize, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
@@ -250,7 +251,7 @@ var cleanSourceFile = function (_a) {
 var fileMoveOrCopy = function (_a) {
     var operation = _a.operation, sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
-        var sourceFileSize, moved, mvdird, ncpd, copied;
+        var sourceFileSize, moved, ncpd, copied;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -259,7 +260,7 @@ var fileMoveOrCopy = function (_a) {
                 case 1:
                     sourceFileSize = _b.sent();
                     args.jobLog("".concat(sourceFileSize));
-                    if (!(operation === 'move')) return [3 /*break*/, 4];
+                    if (!(operation === 'move')) return [3 /*break*/, 3];
                     return [4 /*yield*/, tryMove({
                             sourcePath: sourcePath,
                             destinationPath: destinationPath,
@@ -271,56 +272,55 @@ var fileMoveOrCopy = function (_a) {
                     if (moved) {
                         return [2 /*return*/, true];
                     }
-                    return [4 /*yield*/, tryMvdir({
-                            sourcePath: sourcePath,
-                            destinationPath: destinationPath,
-                            args: args,
-                            sourceFileSize: sourceFileSize,
-                        })];
-                case 3:
-                    mvdird = _b.sent();
-                    if (mvdird) {
-                        return [2 /*return*/, true];
-                    }
+                    // disable: https://github.com/HaveAGitGat/Tdarr/issues/885
+                    // const mvdird = await tryMvdir({
+                    //   sourcePath,
+                    //   destinationPath,
+                    //   args,
+                    //   sourceFileSize,
+                    // });
+                    // if (mvdird) {
+                    //   return true;
+                    // }
                     args.jobLog('Failed to move file, trying copy');
-                    _b.label = 4;
-                case 4: return [4 /*yield*/, tyNcp({
+                    _b.label = 3;
+                case 3: return [4 /*yield*/, tyNcp({
                         sourcePath: sourcePath,
                         destinationPath: destinationPath,
                         args: args,
                         sourceFileSize: sourceFileSize,
                     })];
-                case 5:
+                case 4:
                     ncpd = _b.sent();
-                    if (!ncpd) return [3 /*break*/, 8];
-                    if (!(operation === 'move')) return [3 /*break*/, 7];
+                    if (!ncpd) return [3 /*break*/, 7];
+                    if (!(operation === 'move')) return [3 /*break*/, 6];
                     return [4 /*yield*/, cleanSourceFile({
                             args: args,
                             sourcePath: sourcePath,
                         })];
-                case 6:
+                case 5:
                     _b.sent();
-                    _b.label = 7;
-                case 7: return [2 /*return*/, true];
-                case 8: return [4 /*yield*/, tryNormalCopy({
+                    _b.label = 6;
+                case 6: return [2 /*return*/, true];
+                case 7: return [4 /*yield*/, tryNormalCopy({
                         sourcePath: sourcePath,
                         destinationPath: destinationPath,
                         args: args,
                         sourceFileSize: sourceFileSize,
                     })];
-                case 9:
+                case 8:
                     copied = _b.sent();
-                    if (!copied) return [3 /*break*/, 12];
-                    if (!(operation === 'move')) return [3 /*break*/, 11];
+                    if (!copied) return [3 /*break*/, 11];
+                    if (!(operation === 'move')) return [3 /*break*/, 10];
                     return [4 /*yield*/, cleanSourceFile({
                             args: args,
                             sourcePath: sourcePath,
                         })];
-                case 10:
+                case 9:
                     _b.sent();
-                    _b.label = 11;
-                case 11: return [2 /*return*/, true];
-                case 12: throw new Error("Failed to ".concat(operation, " file"));
+                    _b.label = 10;
+                case 10: return [2 /*return*/, true];
+                case 11: throw new Error("Failed to ".concat(operation, " file"));
             }
         });
     });
