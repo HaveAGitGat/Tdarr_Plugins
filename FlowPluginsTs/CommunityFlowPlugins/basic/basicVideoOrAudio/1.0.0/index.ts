@@ -10,7 +10,7 @@ import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHel
 const details = (): IpluginDetails => ({
   name: 'Basic Video or Audio Settings',
   description: `Basic Video or Audio settings designed to replicate
-   the \'Basic Video\' or \'Basic Audio \' settings in the library settings
+   the Basic Video or Basic Audio  settings in the library settings
    `,
   style: {
     borderColor: 'green',
