@@ -68,7 +68,9 @@ const details = () :IflowTemplate => ({
       },
     },
     {
-      name: "By default this flow will replace the original file. If you'd like to move the file to an output directory and delete the original file then connect the 'Basic Video or Audio Settings' plugin to the 'Move To Directory'",
+      name: `By default this flow will replace the original file. If you'd like to move the
+ file to an output directory and delete the original file then connect the 'Basic Video or Audio
+ Settings' plugin to the 'Move To Directory'`,
       sourceRepo: 'Community',
       pluginName: 'comment',
       version: '1.0.0',
