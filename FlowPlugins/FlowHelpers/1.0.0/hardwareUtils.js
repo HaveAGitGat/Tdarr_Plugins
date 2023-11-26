@@ -210,13 +210,14 @@ var encoderFilter = function (encoder, targetCodec) {
 var getEncoder = function (_a) {
     var targetCodec = _a.targetCodec, hardwareEncoding = _a.hardwareEncoding, hardwareType = _a.hardwareType, args = _a.args;
     return __awaiter(void 0, void 0, void 0, function () {
-        var gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _b, enabledDevices, res;
+        var supportedGpuEncoders, gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _b, enabledDevices, res;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
+                    supportedGpuEncoders = ['hevc', 'h264', 'av1'];
                     if (!(args.workerType
                         && args.workerType.includes('gpu')
-                        && hardwareEncoding && (['hevc', 'h264', 'av1'].includes(targetCodec)))) return [3 /*break*/, 5];
+                        && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec)))) return [3 /*break*/, 5];
                     gpuEncoders = [
                         {
                             encoder: 'hevc_nvenc',
@@ -387,8 +388,19 @@ var getEncoder = function (_a) {
                                 enabledDevices: enabledDevices,
                             }];
                     }
-                    _c.label = 5;
+                    return [3 /*break*/, 6];
                 case 5:
+                    if (!hardwareEncoding) {
+                        args.jobLog('Hardware encoding is disabled in plugin input options');
+                    }
+                    if (!args.workerType || !args.workerType.includes('gpu')) {
+                        args.jobLog('Worker type is not GPU');
+                    }
+                    if (!supportedGpuEncoders.includes(targetCodec)) {
+                        args.jobLog("Target codec ".concat(targetCodec, " is not supported for GPU encoding"));
+                    }
+                    _c.label = 6;
+                case 6:
                     if (targetCodec === 'hevc') {
                         return [2 /*return*/, {
                                 encoder: 'libx265',
