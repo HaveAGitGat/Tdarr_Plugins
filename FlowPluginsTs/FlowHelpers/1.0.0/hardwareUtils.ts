@@ -186,10 +186,12 @@ export const getEncoder = async ({
   hardwareType: string,
   args: IpluginInputArgs,
 }): Promise<IgetEncoder> => {
+  const supportedGpuEncoders = ['hevc', 'h264', 'av1'];
+
   if (
     args.workerType
     && args.workerType.includes('gpu')
-    && hardwareEncoding && (['hevc', 'h264', 'av1'].includes(targetCodec))) {
+    && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec))) {
     const gpuEncoders: IgpuEncoder[] = [
       {
         encoder: 'hevc_nvenc',
@@ -370,6 +372,18 @@ export const getEncoder = async ({
         isGpu: true,
         enabledDevices,
       };
+    }
+  } else {
+    if (!hardwareEncoding) {
+      args.jobLog('Hardware encoding is disabled in plugin input options');
+    }
+
+    if (!args.workerType || !args.workerType.includes('gpu')) {
+      args.jobLog('Worker type is not GPU');
+    }
+
+    if (!supportedGpuEncoders.includes(targetCodec)) {
+      args.jobLog(`Target codec ${targetCodec} is not supported for GPU encoding`);
     }
   }
 
