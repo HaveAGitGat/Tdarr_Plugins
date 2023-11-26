@@ -68,6 +68,7 @@ const tryMove = async ({
   return true;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const tryMvdir = async ({
   sourcePath,
   destinationPath,
@@ -219,16 +220,17 @@ const fileMoveOrCopy = async ({
       return true;
     }
 
-    const mvdird = await tryMvdir({
-      sourcePath,
-      destinationPath,
-      args,
-      sourceFileSize,
-    });
+    // disable: https://github.com/HaveAGitGat/Tdarr/issues/885
+    // const mvdird = await tryMvdir({
+    //   sourcePath,
+    //   destinationPath,
+    //   args,
+    //   sourceFileSize,
+    // });
 
-    if (mvdird) {
-      return true;
-    }
+    // if (mvdird) {
+    //   return true;
+    // }
 
     args.jobLog('Failed to move file, trying copy');
   }
