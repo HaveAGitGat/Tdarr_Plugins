@@ -32,7 +32,7 @@ export interface IpluginInputUi {
 }
 
 export interface IpluginInputs {
-    label?: string,
+    label: string,
     name: string,
     type: 'string' | 'boolean' | 'number',
     defaultValue: string,

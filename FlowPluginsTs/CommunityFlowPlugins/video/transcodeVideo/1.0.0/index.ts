@@ -21,6 +21,7 @@ const details = ():IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Target Codec',
       name: 'target_codec',
       type: 'string',
       defaultValue: 'hevc',

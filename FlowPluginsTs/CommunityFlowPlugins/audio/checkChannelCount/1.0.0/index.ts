@@ -19,6 +19,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Channel Count',
       name: 'channelCount',
       type: 'number',
       defaultValue: '2',

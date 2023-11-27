@@ -19,6 +19,7 @@ const details = ():IpluginDetails => ({
   icon: 'faArrowRight',
   inputs: [
     {
+      label: 'Flow ID',
       name: 'flowId',
       type: 'string',
       defaultValue: '',

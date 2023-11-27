@@ -22,6 +22,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Output Codec',
       name: 'outputCodec',
       type: 'string',
       defaultValue: 'hevc',
@@ -38,6 +39,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify codec of the output file',
     },
     {
+      label: 'FFmpeg Preset',
       name: 'ffmpegPreset',
       type: 'string',
       defaultValue: 'fast',
@@ -58,6 +60,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify ffmpeg preset',
     },
     {
+      label: 'FFmpeg Quality',
       name: 'ffmpegQuality',
       type: 'number',
       defaultValue: '25',
@@ -67,6 +70,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify ffmpeg quality',
     },
     {
+      label: 'Hardware Encoding',
       name: 'hardwareEncoding',
       type: 'boolean',
       defaultValue: 'true',
@@ -80,6 +84,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify whether to use hardware encoding if available',
     },
     {
+      label: 'Hardware Type',
       name: 'hardwareType',
       type: 'string',
       defaultValue: 'auto',
@@ -96,6 +101,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify codec of the output file',
     },
     {
+      label: 'Hardware Decoding',
       name: 'hardwareDecoding',
       type: 'boolean',
       defaultValue: 'true',
@@ -109,6 +115,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify whether to use hardware decoding if available',
     },
     {
+      label: 'Force Encoding',
       name: 'forceEncoding',
       type: 'boolean',
       defaultValue: 'true',
