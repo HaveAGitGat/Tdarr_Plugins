@@ -62,7 +62,7 @@ var details = function () { return ({
             label: 'Source Directory',
             name: 'sourceDirectory',
             type: 'string',
-            defaultValue: 'original',
+            defaultValue: 'originalDirectory',
             inputUI: {
                 type: 'dropdown',
                 options: [
@@ -76,7 +76,7 @@ var details = function () { return ({
             label: 'Copy or Move',
             name: 'copyOrMove',
             type: 'string',
-            defaultValue: 'original',
+            defaultValue: 'copy',
             inputUI: {
                 type: 'dropdown',
                 options: [
