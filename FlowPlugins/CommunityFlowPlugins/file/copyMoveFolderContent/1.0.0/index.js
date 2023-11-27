@@ -108,7 +108,7 @@ var details = function () { return ({
                     'true',
                 ],
             },
-            tooltip: "Specify whether to keep the relative path",
+            tooltip: 'Specify whether to keep the relative path',
         },
         {
             label: 'All Files?',
