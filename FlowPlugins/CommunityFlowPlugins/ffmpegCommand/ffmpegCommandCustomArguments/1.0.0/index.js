@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Input Arguments',
             name: 'inputArguments',
             type: 'string',
             defaultValue: '',
@@ -25,6 +26,7 @@ var details = function () { return ({
             tooltip: 'Specify input arguments',
         },
         {
+            label: 'Output Arguments',
             name: 'outputArguments',
             type: 'string',
             defaultValue: '',

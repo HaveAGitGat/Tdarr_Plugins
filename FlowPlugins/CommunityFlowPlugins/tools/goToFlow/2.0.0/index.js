@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faArrowRight',
     inputs: [
         {
+            label: 'Flow ID',
             name: 'flowId',
             type: 'string',
             defaultValue: '',
@@ -26,6 +27,7 @@ var details = function () { return ({
             tooltip: 'Specify flow ID to go to',
         },
         {
+            label: 'Plugin ID',
             name: 'pluginId',
             type: 'string',
             defaultValue: 'start',

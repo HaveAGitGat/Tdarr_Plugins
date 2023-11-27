@@ -18,6 +18,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Container',
             name: 'container',
             type: 'string',
             defaultValue: 'mkv',
@@ -31,6 +32,7 @@ var details = function () { return ({
             tooltip: 'Specify the container to use',
         },
         {
+            label: 'Force Conform',
             name: 'forceConform',
             type: 'boolean',
             defaultValue: 'false',

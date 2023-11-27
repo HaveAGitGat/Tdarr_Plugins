@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Codec',
             name: 'codec',
             type: 'string',
             defaultValue: 'hevc',

@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Property To Check',
             name: 'propertyToCheck',
             type: 'string',
             defaultValue: 'codec_name',
@@ -25,6 +26,7 @@ var details = function () { return ({
             tooltip: "\n        Enter one stream property to check.\n        \n        \\nExample:\\n\n        codec_name\n\n        \\nExample:\\n\n        tags.language\n        ",
         },
         {
+            label: 'Values To Remove',
             name: 'valuesToRemove',
             type: 'string',
             defaultValue: 'aac',
@@ -34,6 +36,7 @@ var details = function () { return ({
             tooltip: "\n        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:\n        \n        \\nExample:\\n\n        ac3,aac\n        ",
         },
         {
+            label: 'Condition',
             name: 'condition',
             type: 'string',
             defaultValue: 'includes',

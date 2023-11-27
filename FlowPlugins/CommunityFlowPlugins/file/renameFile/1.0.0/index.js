@@ -57,6 +57,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'File Rename',
             name: 'fileRename',
             type: 'string',
             // eslint-disable-next-line no-template-curly-in-string

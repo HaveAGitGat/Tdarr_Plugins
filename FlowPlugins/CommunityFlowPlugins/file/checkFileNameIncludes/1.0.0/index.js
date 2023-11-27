@@ -17,6 +17,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Terms',
             name: 'terms',
             type: 'string',
             // eslint-disable-next-line no-template-curly-in-string
