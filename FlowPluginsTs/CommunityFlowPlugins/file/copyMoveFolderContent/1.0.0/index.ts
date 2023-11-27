@@ -30,7 +30,7 @@ Useful if, for example, you want to move things like subtitle files or cover art
       label: 'Source Directory',
       name: 'sourceDirectory',
       type: 'string',
-      defaultValue: 'original',
+      defaultValue: 'originalDirectory',
       inputUI: {
         type: 'dropdown',
         options: [
@@ -44,7 +44,7 @@ Useful if, for example, you want to move things like subtitle files or cover art
       label: 'Copy or Move',
       name: 'copyOrMove',
       type: 'string',
-      defaultValue: 'original',
+      defaultValue: 'copy',
       inputUI: {
         type: 'dropdown',
         options: [
