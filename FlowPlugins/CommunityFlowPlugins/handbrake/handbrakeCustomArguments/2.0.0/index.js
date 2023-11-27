@@ -50,10 +50,24 @@ var details = function () { return ({
     tags: '',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.11.01',
+    requiresVersion: '2.14.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
+        {
+            label: 'Use JSON Preset',
+            name: 'useJsonPreset',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'false',
+                    'true',
+                ],
+            },
+            tooltip: 'Specify whether to use a JSON preset or not',
+        },
         {
             label: 'Custom Arguments',
             name: 'customArguments',
@@ -61,18 +75,51 @@ var details = function () { return ({
             defaultValue: '-Z "Fast 1080p30" --all-subtitles',
             inputUI: {
                 type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'useJsonPreset',
+                                    value: 'true',
+                                    condition: '!==',
+                                },
+                            ],
+                        },
+                    ],
+                },
             },
             tooltip: 'Specify HandBrake arguments',
         },
         {
-            label: 'JSON Preset',
+            label: 'Paste Contents of .json File Here',
             name: 'jsonPreset',
             type: 'string',
             defaultValue: '',
             inputUI: {
-                type: 'text',
+                type: 'textarea',
+                style: {
+                    height: '100px',
+                },
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'useJsonPreset',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
             },
-            tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
+            tooltip: 'Paste a HandBrake JSON preset here.',
         },
         {
             label: 'Container',
@@ -105,7 +152,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, customArguments, container, outputFilePath, presetString, cliArgs, presetPath, preset, cli, res;
+    var lib, customArguments, useJsonPreset, presetString, container, outputFilePath, cliArgs, presetPath, preset, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -113,12 +160,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 customArguments = String(args.inputs.customArguments);
+                useJsonPreset = args.inputs.useJsonPreset;
+                presetString = String(args.inputs.jsonPreset);
                 container = String(args.inputs.container);
                 if (container === 'original') {
                     container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 }
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
-                presetString = String(args.inputs.jsonPreset);
                 cliArgs = [
                     '-i',
                     "".concat(args.inputFileObj._id),
@@ -126,7 +174,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     "".concat(outputFilePath),
                 ];
                 presetPath = "".concat(args.workDir, "/preset.json");
-                if (!(presetString.trim() !== '')) return [3 /*break*/, 2];
+                if (!useJsonPreset) return [3 /*break*/, 2];
                 preset = JSON.parse(presetString);
                 return [4 /*yield*/, fs_1.promises.writeFile(presetPath, JSON.stringify(preset, null, 2))];
             case 1:

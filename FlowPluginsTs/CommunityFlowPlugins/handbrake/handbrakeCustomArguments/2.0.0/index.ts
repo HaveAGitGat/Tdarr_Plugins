@@ -8,7 +8,7 @@ import {
 import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
-const details = ():IpluginDetails => ({
+const details = (): IpluginDetails => ({
   name: 'HandBrake Custom Arguments',
   description: 'HandBrake Custom Arguments',
   style: {
@@ -17,10 +17,24 @@ const details = ():IpluginDetails => ({
   tags: '',
   isStartPlugin: false,
   pType: '',
-  requiresVersion: '2.11.01',
+  requiresVersion: '2.14.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
+    {
+      label: 'Use JSON Preset',
+      name: 'useJsonPreset',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: 'Specify whether to use a JSON preset or not',
+    },
     {
       label: 'Custom Arguments',
       name: 'customArguments',
@@ -28,18 +42,51 @@ const details = ():IpluginDetails => ({
       defaultValue: '-Z "Fast 1080p30" --all-subtitles',
       inputUI: {
         type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'useJsonPreset',
+                  value: 'true',
+                  condition: '!==',
+                },
+              ],
+            },
+          ],
+        },
       },
       tooltip: 'Specify HandBrake arguments',
     },
     {
-      label: 'JSON Preset',
+      label: 'Paste Contents of .json File Here',
       name: 'jsonPreset',
       type: 'string',
       defaultValue: '',
       inputUI: {
-        type: 'text',
+        type: 'textarea',
+        style: {
+          height: '100px',
+        },
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'useJsonPreset',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
       },
-      tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
+      tooltip: 'Paste a HandBrake JSON preset here.',
     },
     {
       label: 'Container',
@@ -71,12 +118,14 @@ const details = ():IpluginDetails => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
+const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const customArguments = String(args.inputs.customArguments);
+  const { useJsonPreset } = args.inputs;
+  const presetString = String(args.inputs.jsonPreset);
 
   let container = String(args.inputs.container);
 
@@ -85,8 +134,6 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   }
 
   const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
-
-  const presetString = String(args.inputs.jsonPreset);
 
   const cliArgs = [
     '-i',
@@ -97,7 +144,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const presetPath = `${args.workDir}/preset.json`;
 
-  if (presetString.trim() !== '') {
+  if (useJsonPreset) {
     const preset = JSON.parse(presetString);
     await fs.writeFile(presetPath, JSON.stringify(preset, null, 2));
     cliArgs.push('--preset-import-file');
