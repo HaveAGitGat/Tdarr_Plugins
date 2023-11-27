@@ -21,6 +21,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Plugin Source ID',
       name: 'pluginSourceId',
       type: 'string',
       defaultValue: 'Community:Tdarr_Plugin_MC93_Migz1FFMPEG',

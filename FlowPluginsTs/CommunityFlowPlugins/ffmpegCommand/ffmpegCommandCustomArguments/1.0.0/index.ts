@@ -19,6 +19,7 @@ const details = () :IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Input Arguments',
       name: 'inputArguments',
       type: 'string',
       defaultValue: '',
@@ -29,6 +30,7 @@ const details = () :IpluginDetails => ({
     },
 
     {
+      label: 'Output Arguments',
       name: 'outputArguments',
       type: 'string',
       defaultValue: '',

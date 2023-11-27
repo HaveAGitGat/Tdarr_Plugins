@@ -19,6 +19,7 @@ const details = (): IpluginDetails => ({
   icon: 'faClock',
   inputs: [
     {
+      label: 'Amount',
       name: 'amount',
       type: 'string',
       defaultValue: '1',
@@ -28,6 +29,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify the amount of time to wait',
     },
     {
+      label: 'Unit',
       name: 'unit',
       type: 'string',
       defaultValue: 'seconds',

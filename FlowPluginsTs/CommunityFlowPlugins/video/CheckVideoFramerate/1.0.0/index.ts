@@ -19,6 +19,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Greater Than',
       name: 'greaterThan',
       type: 'number',
       defaultValue: '0',
@@ -28,6 +29,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify lower bound of fps',
     },
     {
+      label: 'Less Than',
       name: 'lessThan',
       type: 'number',
       defaultValue: '60',

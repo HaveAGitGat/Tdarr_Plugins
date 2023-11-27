@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Variable',
             name: 'variable',
             type: 'string',
             defaultValue: '',
@@ -25,6 +26,7 @@ var details = function () { return ({
             tooltip: "Variable to check. For example , \n      \n      \\nExample\\n\n      args.librarySettings._id\n      \n      \\nExample\\n\n      args.inputFileObj._id\n\n      \\nExample\\n\n      args.userVariables.library.test\n\n      \\nExample\\n\n      args.userVariables.global.test\n      ",
         },
         {
+            label: 'Condition',
             name: 'condition',
             type: 'string',
             defaultValue: '==',
@@ -38,6 +40,7 @@ var details = function () { return ({
             tooltip: 'Check condition',
         },
         {
+            label: 'Value',
             name: 'value',
             type: 'string',
             defaultValue: '',

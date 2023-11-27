@@ -58,6 +58,7 @@ var details = function () { return ({
     icon: 'faArrowRight',
     inputs: [
         {
+            label: 'Output Directory',
             name: 'outputDirectory',
             type: 'string',
             defaultValue: '',
@@ -67,6 +68,7 @@ var details = function () { return ({
             tooltip: 'Specify ouput directory',
         },
         {
+            label: 'Keep Relative Path',
             name: 'keepRelativePath',
             type: 'boolean',
             defaultValue: 'false',

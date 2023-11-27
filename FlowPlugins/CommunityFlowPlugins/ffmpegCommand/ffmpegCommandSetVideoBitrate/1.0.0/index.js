@@ -17,6 +17,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Bitrate',
             name: 'bitrate',
             type: 'string',
             defaultValue: '5000',

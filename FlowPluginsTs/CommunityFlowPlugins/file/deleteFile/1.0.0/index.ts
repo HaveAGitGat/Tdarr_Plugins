@@ -20,6 +20,7 @@ const details = (): IpluginDetails => ({
   icon: 'faTrash',
   inputs: [
     {
+      label: 'File To Delete',
       name: 'fileToDelete',
       type: 'string',
       defaultValue: 'workingFile',

@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faArrowRight',
     inputs: [
         {
+            label: 'Flow ID',
             name: 'flowId',
             type: 'string',
             defaultValue: '',

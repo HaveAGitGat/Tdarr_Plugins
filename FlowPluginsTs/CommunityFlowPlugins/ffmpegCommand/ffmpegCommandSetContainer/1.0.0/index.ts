@@ -22,6 +22,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Container',
       name: 'container',
       type: 'string',
       defaultValue: 'mkv',
@@ -35,6 +36,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify the container to use',
     },
     {
+      label: 'Force Conform',
       name: 'forceConform',
       type: 'boolean',
       defaultValue: 'false',

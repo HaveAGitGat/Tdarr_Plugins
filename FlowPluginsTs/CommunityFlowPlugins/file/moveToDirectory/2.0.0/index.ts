@@ -25,6 +25,7 @@ const details = ():IpluginDetails => ({
   icon: 'faArrowRight',
   inputs: [
     {
+      label: 'Output Directory',
       name: 'outputDirectory',
       type: 'string',
       defaultValue: '',
@@ -34,6 +35,7 @@ const details = ():IpluginDetails => ({
       tooltip: 'Specify ouput directory',
     },
     {
+      label: 'Keep Relative Path',
       name: 'keepRelativePath',
       type: 'boolean',
       defaultValue: 'false',

@@ -17,6 +17,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Framerate',
             name: 'framerate',
             type: 'number',
             defaultValue: '30',

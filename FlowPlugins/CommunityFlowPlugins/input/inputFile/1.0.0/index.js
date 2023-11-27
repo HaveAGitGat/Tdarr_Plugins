@@ -54,6 +54,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'File Access Checks',
             name: 'fileAccessChecks',
             type: 'boolean',
             defaultValue: 'false',
@@ -67,6 +68,7 @@ var details = function () { return ({
             tooltip: 'Will check if input file and cache are readable and writable',
         },
         {
+            label: 'Pause Node If Access Checks Fail',
             name: 'pauseNodeIfAccessChecksFail',
             type: 'boolean',
             defaultValue: 'false',

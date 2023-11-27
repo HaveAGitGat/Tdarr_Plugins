@@ -20,6 +20,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Extensions',
       name: 'extensions',
       type: 'string',
       defaultValue: 'mkv,mp4',

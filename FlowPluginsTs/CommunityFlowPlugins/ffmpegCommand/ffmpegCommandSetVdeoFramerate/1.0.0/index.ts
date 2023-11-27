@@ -20,6 +20,7 @@ const details = () :IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Framerate',
       name: 'framerate',
       type: 'number',
       defaultValue: '30',

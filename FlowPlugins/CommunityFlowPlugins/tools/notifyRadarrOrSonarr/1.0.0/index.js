@@ -51,6 +51,7 @@ var details = function () { return ({
     icon: 'faBell',
     inputs: [
         {
+            label: 'Arr',
             name: 'arr',
             type: 'string',
             defaultValue: 'radarr',
@@ -61,6 +62,7 @@ var details = function () { return ({
             tooltip: 'Specify which arr to use',
         },
         {
+            label: 'Arr API Key',
             name: 'arr_api_key',
             type: 'string',
             defaultValue: '',
@@ -70,6 +72,7 @@ var details = function () { return ({
             tooltip: 'Input your arr api key here',
         },
         {
+            label: 'Arr Host',
             name: 'arr_host',
             type: 'string',
             defaultValue: 'http://192.168.1.1:7878',

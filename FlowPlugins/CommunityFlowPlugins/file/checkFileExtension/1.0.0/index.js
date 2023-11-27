@@ -17,6 +17,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Extensions',
             name: 'extensions',
             type: 'string',
             defaultValue: 'mkv,mp4',

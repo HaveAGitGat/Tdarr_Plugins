@@ -21,6 +21,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Process Order',
       name: 'processOrder',
       type: 'string',
       defaultValue: 'codecs,channels,languages,streamTypes',
@@ -38,6 +39,7 @@ The default order is suitable for most people.
         `,
     },
     {
+      label: 'Languages',
       name: 'languages',
       type: 'string',
       defaultValue: '',
@@ -51,6 +53,7 @@ The default order is suitable for most people.
         `,
     },
     {
+      label: 'Channels',
       name: 'channels',
       type: 'string',
       defaultValue: '7.1,5.1,2,1',
@@ -64,6 +67,7 @@ The default order is suitable for most people.
           7.1,5.1,2,1`,
     },
     {
+      label: 'Codecs',
       name: 'codecs',
       type: 'string',
       defaultValue: '',
@@ -77,6 +81,7 @@ The default order is suitable for most people.
           aac,ac3`,
     },
     {
+      label: 'Stream Types',
       name: 'streamTypes',
       type: 'string',
       defaultValue: 'video,audio,subtitle',

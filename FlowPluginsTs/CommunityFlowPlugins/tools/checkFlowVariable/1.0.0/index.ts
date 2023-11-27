@@ -19,6 +19,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Variable',
       name: 'variable',
       type: 'string',
       defaultValue: '',
@@ -41,6 +42,7 @@ const details = (): IpluginDetails => ({
       `,
     },
     {
+      label: 'Condition',
       name: 'condition',
       type: 'string',
       defaultValue: '==',
@@ -55,6 +57,7 @@ const details = (): IpluginDetails => ({
     },
 
     {
+      label: 'Value',
       name: 'value',
       type: 'string',
       defaultValue: '',
