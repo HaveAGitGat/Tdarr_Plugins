@@ -103,6 +103,45 @@ var details = function () { return ({
             },
             tooltip: 'Specify the audio bitrate for newly added channels',
         },
+        {
+            label: 'Enable Samplerate',
+            name: 'enableSamplerate',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'false',
+                    'true',
+                ],
+            },
+            tooltip: 'Toggle whether to enable setting audio samplerate',
+        },
+        {
+            label: 'Samplerate',
+            name: 'samplerate',
+            type: 'string',
+            defaultValue: '48k',
+            inputUI: {
+                type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'enableSamplerate',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Specify the audio samplerate for newly added channels',
+        },
     ],
     outputs: [
         {
@@ -120,7 +159,11 @@ var getHighest = function (first, second) {
     return second;
 };
 var attemptMakeStream = function (_a) {
-    var args = _a.args, langTag = _a.langTag, streams = _a.streams, audioCodec = _a.audioCodec, audioEncoder = _a.audioEncoder, wantedChannelCount = _a.wantedChannelCount, enableBitrate = _a.enableBitrate, bitrate = _a.bitrate;
+    var args = _a.args, langTag = _a.langTag, streams = _a.streams, audioCodec = _a.audioCodec, audioEncoder = _a.audioEncoder, wantedChannelCount = _a.wantedChannelCount;
+    var enableBitrate = Boolean(args.inputs.enableBitrate);
+    var bitrate = String(args.inputs.bitrate);
+    var enableSamplerate = Boolean(args.inputs.enableSamplerate);
+    var samplerate = String(args.inputs.samplerate);
     var langMatch = function (stream) {
         var _a;
         return ((langTag === 'und'
@@ -175,6 +218,9 @@ var attemptMakeStream = function (_a) {
         var ffType = (0, fileUtils_1.getFfType)(streamCopy.codec_type);
         streamCopy.outputArgs.push("-b:".concat(ffType, ":{outputTypeIndex}"), "".concat(bitrate));
     }
+    if (enableSamplerate) {
+        streamCopy.outputArgs.push('-ar', "".concat(samplerate));
+    }
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     streams.push(streamCopy);
@@ -188,8 +234,6 @@ var plugin = function (args) {
     var audioEncoder = String(args.inputs.audioEncoder);
     var langTag = String(args.inputs.language).toLowerCase();
     var wantedChannelCount = Number(args.inputs.channels);
-    var enableBitrate = Boolean(args.inputs.enableBitrate);
-    var bitrate = String(args.inputs.bitrate);
     var streams = args.variables.ffmpegCommand.streams;
     var audioCodec = audioEncoder;
     if (audioEncoder === 'dca') {
@@ -208,8 +252,6 @@ var plugin = function (args) {
         audioCodec: audioCodec,
         audioEncoder: audioEncoder,
         wantedChannelCount: wantedChannelCount,
-        enableBitrate: enableBitrate,
-        bitrate: bitrate,
     });
     if (!addedOrExists) {
         attemptMakeStream({
@@ -219,8 +261,6 @@ var plugin = function (args) {
             audioCodec: audioCodec,
             audioEncoder: audioEncoder,
             wantedChannelCount: wantedChannelCount,
-            enableBitrate: enableBitrate,
-            bitrate: bitrate,
         });
     }
     return {
