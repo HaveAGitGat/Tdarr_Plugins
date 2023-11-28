@@ -112,6 +112,47 @@ const details = (): IpluginDetails => ({
       tooltip:
         'Specify the audio bitrate for newly added channels',
     },
+    {
+      label: 'Enable Samplerate',
+      name: 'enableSamplerate',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip:
+        'Toggle whether to enable setting audio samplerate',
+    },
+    {
+      label: 'Samplerate',
+      name: 'samplerate',
+      type: 'string',
+      defaultValue: '48k',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'enableSamplerate',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip:
+        'Specify the audio samplerate for newly added channels',
+    },
   ],
   outputs: [
     {
@@ -136,8 +177,6 @@ const attemptMakeStream = ({
   audioCodec,
   audioEncoder,
   wantedChannelCount,
-  enableBitrate,
-  bitrate,
 }: {
   args: IpluginInputArgs,
   langTag: string
@@ -145,9 +184,12 @@ const attemptMakeStream = ({
   audioCodec: string,
   audioEncoder: string,
   wantedChannelCount: number,
-  enableBitrate: boolean,
-  bitrate: string,
 }): boolean => {
+  const enableBitrate = Boolean(args.inputs.enableBitrate);
+  const bitrate = String(args.inputs.bitrate);
+  const enableSamplerate = Boolean(args.inputs.enableSamplerate);
+  const samplerate = String(args.inputs.samplerate);
+
   const langMatch = (stream: IffmpegCommandStream) => (
     (langTag === 'und'
       && (stream.tags === undefined || stream.tags.language === undefined))
@@ -217,6 +259,10 @@ const attemptMakeStream = ({
     streamCopy.outputArgs.push(`-b:${ffType}:{outputTypeIndex}`, `${bitrate}`);
   }
 
+  if (enableSamplerate) {
+    streamCopy.outputArgs.push('-ar', `${samplerate}`);
+  }
+
   // eslint-disable-next-line no-param-reassign
   args.variables.ffmpegCommand.shouldProcess = true;
 
@@ -234,8 +280,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const audioEncoder = String(args.inputs.audioEncoder);
   const langTag = String(args.inputs.language).toLowerCase();
   const wantedChannelCount = Number(args.inputs.channels);
-  const enableBitrate = Boolean(args.inputs.enableBitrate);
-  const bitrate = String(args.inputs.bitrate);
 
   const { streams } = args.variables.ffmpegCommand;
 
@@ -260,8 +304,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     audioCodec,
     audioEncoder,
     wantedChannelCount,
-    enableBitrate,
-    bitrate,
   });
 
   if (!addedOrExists) {
@@ -272,8 +314,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       audioCodec,
       audioEncoder,
       wantedChannelCount,
-      enableBitrate,
-      bitrate,
     });
   }
 
