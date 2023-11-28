@@ -124,7 +124,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, args.deps.axios(requestConfig)];
             case 1:
                 res = _d.sent();
-                console.log(res.data);
                 movieId = res.data.movie.movieFile.movieId;
                 requestConfig2 = {
                     method: 'post',
