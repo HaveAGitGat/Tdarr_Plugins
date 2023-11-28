@@ -152,7 +152,7 @@ var plugin = function (args) {
         });
     }
     if (!hasCodec) {
-        args.jobLog("File does not have codec: ".concat(args.inputs.codec, " ").concat(checkBitrate ? "with "
+        args.jobLog("File does not have codec: ".concat(args.inputs.codec, " ").concat(checkBitrate ? 'with '
             + "bitrate between ".concat(greaterThan, " and ").concat(lessThan) : ''));
     }
     return {
