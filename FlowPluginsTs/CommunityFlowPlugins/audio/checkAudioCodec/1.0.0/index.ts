@@ -43,6 +43,72 @@ const details = ():IpluginDetails => ({
       },
       tooltip: 'Specify the codec check for',
     },
+    {
+      label: 'Check Bitrate',
+      name: 'checkBitrate',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip:
+        'Toggle whether to check the bitrate of the audio codec is within a range.',
+    },
+
+    {
+      label: 'Greater Than',
+      name: 'greaterThan',
+      type: 'number',
+      defaultValue: '50000',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'checkBitrate',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: 'Specify lower bound.',
+    },
+    {
+      label: 'Less Than',
+      name: 'lessThan',
+      type: 'number',
+      defaultValue: '1000000',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'checkBitrate',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: 'Specify upper bound.',
+    },
   ],
   outputs: [
     {
@@ -62,14 +128,41 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  const checkBitrate = Boolean(args.inputs.checkBitrate);
+  const greaterThan = Number(args.inputs.greaterThan);
+  const lessThan = Number(args.inputs.lessThan);
+
   let hasCodec = false;
 
   if (args.inputFileObj.ffProbeData.streams) {
-    args.inputFileObj.ffProbeData.streams.forEach((stream) => {
+    args.inputFileObj.ffProbeData.streams.forEach((stream, index) => {
       if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
-        hasCodec = true;
+        if (!checkBitrate) {
+          args.jobLog(`File has codec: ${args.inputs.codec}`);
+          hasCodec = true;
+        } else {
+          const ffprobeBitrate = Number(stream.bit_rate || 0);
+          if (ffprobeBitrate > greaterThan && ffprobeBitrate < lessThan) {
+            args.jobLog(`File has codec: ${args.inputs.codec} with bitrate`
+            + ` ${ffprobeBitrate} between ${greaterThan} and ${lessThan}`);
+            hasCodec = true;
+          }
+
+          const mediaInfoBitrate = Number(args.inputFileObj.mediaInfo?.track?.[index + 1]?.BitRate || 0);
+
+          if (mediaInfoBitrate > greaterThan && mediaInfoBitrate < lessThan) {
+            args.jobLog(`File has codec: ${args.inputs.codec} with bitrate`
+            + ` ${mediaInfoBitrate} between ${greaterThan} and ${lessThan}`);
+            hasCodec = true;
+          }
+        }
       }
     });
+  }
+
+  if (!hasCodec) {
+    args.jobLog(`File does not have codec: ${args.inputs.codec} ${checkBitrate ? 'with '
+    + `bitrate between ${greaterThan} and ${lessThan}` : ''}`);
   }
 
   return {
