@@ -1,3 +1,4 @@
+import { getFfType } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IffmpegCommandStream,
   IpluginDetails,
@@ -70,6 +71,47 @@ const details = (): IpluginDetails => ({
       tooltip:
         'Enter the desired number of channels',
     },
+    {
+      label: 'Enable Bitrate',
+      name: 'enableBitrate',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip:
+        'Toggle whether to enable setting audio bitrate',
+    },
+    {
+      label: 'Bitrate',
+      name: 'bitrate',
+      type: 'string',
+      defaultValue: '128k',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'enableBitrate',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip:
+        'Specify the audio bitrate for newly added channels',
+    },
   ],
   outputs: [
     {
@@ -94,6 +136,8 @@ const attemptMakeStream = ({
   audioCodec,
   audioEncoder,
   wantedChannelCount,
+  enableBitrate,
+  bitrate,
 }: {
   args: IpluginInputArgs,
   langTag: string
@@ -101,6 +145,8 @@ const attemptMakeStream = ({
   audioCodec: string,
   audioEncoder: string,
   wantedChannelCount: number,
+  enableBitrate: boolean,
+  bitrate: string,
 }): boolean => {
   const langMatch = (stream: IffmpegCommandStream) => (
     (langTag === 'und'
@@ -166,6 +212,11 @@ const attemptMakeStream = ({
   streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
   streamCopy.outputArgs.push('-ac', `${targetChannels}`);
 
+  if (enableBitrate) {
+    const ffType = getFfType(streamCopy.codec_type);
+    streamCopy.outputArgs.push(`-b:${ffType}:{outputTypeIndex}`, `${bitrate}`);
+  }
+
   // eslint-disable-next-line no-param-reassign
   args.variables.ffmpegCommand.shouldProcess = true;
 
@@ -183,6 +234,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const audioEncoder = String(args.inputs.audioEncoder);
   const langTag = String(args.inputs.language).toLowerCase();
   const wantedChannelCount = Number(args.inputs.channels);
+  const enableBitrate = Boolean(args.inputs.enableBitrate);
+  const bitrate = String(args.inputs.bitrate);
 
   const { streams } = args.variables.ffmpegCommand;
 
@@ -207,6 +260,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     audioCodec,
     audioEncoder,
     wantedChannelCount,
+    enableBitrate,
+    bitrate,
   });
 
   if (!addedOrExists) {
@@ -217,6 +272,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       audioCodec,
       audioEncoder,
       wantedChannelCount,
+      enableBitrate,
+      bitrate,
     });
   }
 
