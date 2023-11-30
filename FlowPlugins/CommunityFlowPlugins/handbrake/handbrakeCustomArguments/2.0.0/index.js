@@ -60,11 +60,7 @@ var details = function () { return ({
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to use a JSON preset or not',
         },

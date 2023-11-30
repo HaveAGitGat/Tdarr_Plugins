@@ -75,11 +75,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'true',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to use hardware encoding if available',
     },
@@ -106,11 +102,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'true',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to use hardware decoding if available',
     },
@@ -120,11 +112,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'true',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to force encoding if stream already has the target codec',
     },

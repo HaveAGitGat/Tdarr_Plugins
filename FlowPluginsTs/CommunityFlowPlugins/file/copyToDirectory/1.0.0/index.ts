@@ -38,11 +38,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to keep the relative path',
     },
@@ -52,11 +48,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Make the copied file the working file',
     },

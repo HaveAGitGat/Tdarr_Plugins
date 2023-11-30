@@ -59,11 +59,7 @@ var details = function () { return ({
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Will check if input file and cache are readable and writable',
         },
@@ -73,11 +69,7 @@ var details = function () { return ({
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'This will pause the node if the file access checks fail',
         },
