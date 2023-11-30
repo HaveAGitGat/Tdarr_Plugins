@@ -102,11 +102,7 @@ var details = function () { return ({
             type: 'boolean',
             defaultValue: 'true',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to keep the relative path',
         },
@@ -116,11 +112,7 @@ var details = function () { return ({
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to copy/move all files in the directory (excluding the original and working file)',
         },
