@@ -77,11 +77,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip:
         'Toggle whether to enable setting audio bitrate',
@@ -118,11 +114,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip:
         'Toggle whether to enable setting audio samplerate',

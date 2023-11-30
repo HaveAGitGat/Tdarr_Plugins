@@ -49,11 +49,7 @@ const details = ():IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip:
         'Toggle whether to check the bitrate of the audio codec is within a range.',

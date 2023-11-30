@@ -2,7 +2,8 @@ import { IFileObject, Istreams } from './synced/IFileObject';
 import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
-    type: 'dropdown' | 'text' | 'textarea' | 'directory' | 'slider',
+    // boolean inputs will default to a switch
+    type: 'dropdown' | 'text' | 'textarea' | 'directory' | 'slider' | 'switch',
     options?: string[],
     sliderOptions?: {max: number, min: number, }
     style?: Record<string, unknown>,

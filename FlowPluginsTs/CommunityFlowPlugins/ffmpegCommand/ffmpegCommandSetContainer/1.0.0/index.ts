@@ -41,11 +41,7 @@ const details = (): IpluginDetails => ({
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: `
 Specify if you want to force conform the file to the new container,
