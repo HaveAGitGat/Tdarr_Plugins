@@ -4,6 +4,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import { getFileAbosluteDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -33,6 +34,16 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify the file to delete',
     },
+    {
+      label: 'Delete Parent Folder If Empty',
+      name: 'deleteParentFolderIfEmpty',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'If the folder that the file is in is empty after the file is deleted, delete the folder.',
+    },
   ],
   outputs: [
     {
@@ -49,6 +60,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const fileToDelete = String(args.inputs.fileToDelete);
+  const { deleteParentFolderIfEmpty } = args.inputs;
 
   if (fileToDelete === 'workingFile') {
     args.jobLog(`Deleting working file ${args.inputFileObj._id}`);
@@ -56,6 +68,22 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   } else if (fileToDelete === 'originalFile') {
     args.jobLog(`Deleting original file ${args.originalLibraryFile._id}`);
     await fs.unlink(args.originalLibraryFile._id);
+  }
+
+  const fileDir = getFileAbosluteDir(args.originalLibraryFile._id);
+
+  if (deleteParentFolderIfEmpty) {
+    args.jobLog(`Checking if folder ${fileDir} is empty`);
+    const files = await fs.readdir(fileDir);
+
+    if (files.length === 0) {
+      args.jobLog(`Deleting empty folder ${fileDir}`);
+      await fs.rmdir(fileDir);
+    } else {
+      args.jobLog(`Folder ${fileDir} is not empty, skipping delete`);
+    }
+  } else {
+    args.jobLog(`Skipping delete of parent folder ${fileDir}`);
   }
 
   return {
