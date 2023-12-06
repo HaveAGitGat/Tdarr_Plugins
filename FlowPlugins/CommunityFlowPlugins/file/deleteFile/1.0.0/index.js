@@ -38,6 +38,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var fs_1 = require("fs");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Delete File',
@@ -66,6 +67,16 @@ var details = function () { return ({
             },
             tooltip: 'Specify the file to delete',
         },
+        {
+            label: 'Delete Parent Folder If Empty',
+            name: 'deleteParentFolderIfEmpty',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'If the folder that the file is in is empty after the file is deleted, delete the folder.',
+        },
     ],
     outputs: [
         {
@@ -77,7 +88,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, fileToDelete;
+    var lib, fileToDelete, deleteParentFolderIfEmpty, fileDir, files;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -85,6 +96,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 fileToDelete = String(args.inputs.fileToDelete);
+                deleteParentFolderIfEmpty = args.inputs.deleteParentFolderIfEmpty;
                 if (!(fileToDelete === 'workingFile')) return [3 /*break*/, 2];
                 args.jobLog("Deleting working file ".concat(args.inputFileObj._id));
                 return [4 /*yield*/, fs_1.promises.unlink(args.inputFileObj._id)];
@@ -98,7 +110,27 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 3:
                 _a.sent();
                 _a.label = 4;
-            case 4: return [2 /*return*/, {
+            case 4:
+                fileDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                if (!deleteParentFolderIfEmpty) return [3 /*break*/, 9];
+                args.jobLog("Checking if folder ".concat(fileDir, " is empty"));
+                return [4 /*yield*/, fs_1.promises.readdir(fileDir)];
+            case 5:
+                files = _a.sent();
+                if (!(files.length === 0)) return [3 /*break*/, 7];
+                args.jobLog("Deleting empty folder ".concat(fileDir));
+                return [4 /*yield*/, fs_1.promises.rmdir(fileDir)];
+            case 6:
+                _a.sent();
+                return [3 /*break*/, 8];
+            case 7:
+                args.jobLog("Folder ".concat(fileDir, " is not empty, skipping delete"));
+                _a.label = 8;
+            case 8: return [3 /*break*/, 10];
+            case 9:
+                args.jobLog("Skipping delete of parent folder ".concat(fileDir));
+                _a.label = 10;
+            case 10: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: 1,
                     variables: args.variables,
