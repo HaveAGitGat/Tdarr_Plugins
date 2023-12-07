@@ -274,24 +274,30 @@ class CLI {
     const errorLogFull: string[] = [];
 
     this.config.jobLog(`Running ${this.config.cli} ${this.config.spawnArgs.join(' ')}`);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+    let thread: any;
+
+    process.on('exit', () => {
+      if (thread) {
+        try {
+          // eslint-disable-next-line no-console
+          console.log('Main thread exiting, cleaning up running CLI');
+          this.killThread(thread);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.log('Error running cliUtils on Exit function');
+          // eslint-disable-next-line no-console
+          console.log(err);
+        }
+      }
+    });
+
     const cliExitCode: number = await new Promise((resolve) => {
       try {
         const opts = this.config.spawnOpts || {};
         const spawnArgs = this.config.spawnArgs.map((row) => row.trim()).filter((row) => row !== '');
-        const thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
-
-        process.on('exit', () => {
-          try {
-            // eslint-disable-next-line no-console
-            console.log('Main thread exiting, cleaning up running CLI');
-            this.killThread(thread);
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.log('Error running cliUtils on Exit function');
-            // eslint-disable-next-line no-console
-            console.log(err);
-          }
-        });
+        thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
 
         thread.stdout.on('data', (data: string) => {
           errorLogFull.push(data.toString());
@@ -327,6 +333,8 @@ class CLI {
         resolve(1);
       }
     });
+
+    thread = undefined;
 
     if (!this.config.logFullCliOutput) {
       this.config.jobLog(errorLogFull.slice(-1000).join(''));
