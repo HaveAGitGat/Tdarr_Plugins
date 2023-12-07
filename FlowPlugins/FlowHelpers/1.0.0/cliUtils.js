@@ -248,7 +248,7 @@ var CLI = /** @class */ (function () {
             });
         };
         this.runCli = function () { return __awaiter(_this, void 0, void 0, function () {
-            var childProcess, errorLogFull, thread, cliExitCode;
+            var childProcess, errorLogFull, thread, exitHandler, cliExitCode;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -256,7 +256,7 @@ var CLI = /** @class */ (function () {
                         childProcess = require('child_process');
                         errorLogFull = [];
                         this.config.jobLog("Running ".concat(this.config.cli, " ").concat(this.config.spawnArgs.join(' ')));
-                        process.on('exit', function () {
+                        exitHandler = function () {
                             if (thread) {
                                 try {
                                     // eslint-disable-next-line no-console
@@ -270,7 +270,8 @@ var CLI = /** @class */ (function () {
                                     console.log(err);
                                 }
                             }
-                        });
+                        };
+                        process.on('exit', exitHandler);
                         return [4 /*yield*/, new Promise(function (resolve) {
                                 try {
                                     var opts = _this.config.spawnOpts || {};
@@ -310,6 +311,7 @@ var CLI = /** @class */ (function () {
                             })];
                     case 1:
                         cliExitCode = _a.sent();
+                        process.removeListener('exit', exitHandler);
                         thread = undefined;
                         if (!this.config.logFullCliOutput) {
                             this.config.jobLog(errorLogFull.slice(-1000).join(''));
