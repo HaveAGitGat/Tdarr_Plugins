@@ -278,20 +278,22 @@ class CLI {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
     let thread: any;
 
-    process.on('exit', () => {
+    const exitHandler = () => {
       if (thread) {
         try {
-          // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console
           console.log('Main thread exiting, cleaning up running CLI');
           this.killThread(thread);
         } catch (err) {
-          // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console
           console.log('Error running cliUtils on Exit function');
           // eslint-disable-next-line no-console
           console.log(err);
         }
       }
-    });
+    };
+
+    process.on('exit', exitHandler);
 
     const cliExitCode: number = await new Promise((resolve) => {
       try {
@@ -333,6 +335,8 @@ class CLI {
         resolve(1);
       }
     });
+
+    process.removeListener('exit', exitHandler);
 
     thread = undefined;
 
