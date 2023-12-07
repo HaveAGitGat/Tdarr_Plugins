@@ -224,30 +224,65 @@ var CLI = /** @class */ (function () {
                 }
             }
         };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+        this.killThread = function (thread) {
+            var killArray = [
+                'SIGKILL',
+                'SIGHUP',
+                'SIGTERM',
+                'SIGINT',
+            ];
+            try {
+                thread.kill();
+            }
+            catch (err) {
+                // err
+            }
+            killArray.forEach(function (com) {
+                try {
+                    thread.kill(com);
+                }
+                catch (err) {
+                    // err
+                }
+            });
+        };
         this.runCli = function () { return __awaiter(_this, void 0, void 0, function () {
-            var childProcess, errorLogFull, cliExitCode;
+            var childProcess, errorLogFull, thread, exitHandler, cliExitCode;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
                         childProcess = require('child_process');
                         errorLogFull = [];
-                        // eslint-disable-next-line no-console
                         this.config.jobLog("Running ".concat(this.config.cli, " ").concat(this.config.spawnArgs.join(' ')));
+                        exitHandler = function () {
+                            if (thread) {
+                                try {
+                                    // eslint-disable-next-line no-console
+                                    console.log('Main thread exiting, cleaning up running CLI');
+                                    _this.killThread(thread);
+                                }
+                                catch (err) {
+                                    // eslint-disable-next-line no-console
+                                    console.log('Error running cliUtils on Exit function');
+                                    // eslint-disable-next-line no-console
+                                    console.log(err);
+                                }
+                            }
+                        };
+                        process.on('exit', exitHandler);
                         return [4 /*yield*/, new Promise(function (resolve) {
                                 try {
                                     var opts = _this.config.spawnOpts || {};
                                     var spawnArgs = _this.config.spawnArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
-                                    var thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
+                                    thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
                                     thread.stdout.on('data', function (data) {
-                                        // eslint-disable-next-line no-console
-                                        // console.log(data.toString());
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
                                     thread.stderr.on('data', function (data) {
                                         // eslint-disable-next-line no-console
-                                        // console.log(data.toString());
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
@@ -276,6 +311,8 @@ var CLI = /** @class */ (function () {
                             })];
                     case 1:
                         cliExitCode = _a.sent();
+                        process.removeListener('exit', exitHandler);
+                        thread = undefined;
                         if (!this.config.logFullCliOutput) {
                             this.config.jobLog(errorLogFull.slice(-1000).join(''));
                         }

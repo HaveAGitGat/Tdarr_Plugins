@@ -241,6 +241,30 @@ class CLI {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+  killThread = (thread:any): void => {
+    const killArray = [
+      'SIGKILL',
+      'SIGHUP',
+      'SIGTERM',
+      'SIGINT',
+    ];
+
+    try {
+      thread.kill();
+    } catch (err) {
+      // err
+    }
+
+    killArray.forEach((com: string) => {
+      try {
+        thread.kill(com);
+      } catch (err) {
+        // err
+      }
+    });
+  }
+
   runCli = async (): Promise<{
     cliExitCode: number,
     errorLogFull: string[],
@@ -249,24 +273,41 @@ class CLI {
 
     const errorLogFull: string[] = [];
 
-    // eslint-disable-next-line no-console
     this.config.jobLog(`Running ${this.config.cli} ${this.config.spawnArgs.join(' ')}`);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+    let thread: any;
+
+    const exitHandler = () => {
+      if (thread) {
+        try {
+        // eslint-disable-next-line no-console
+          console.log('Main thread exiting, cleaning up running CLI');
+          this.killThread(thread);
+        } catch (err) {
+        // eslint-disable-next-line no-console
+          console.log('Error running cliUtils on Exit function');
+          // eslint-disable-next-line no-console
+          console.log(err);
+        }
+      }
+    };
+
+    process.on('exit', exitHandler);
+
     const cliExitCode: number = await new Promise((resolve) => {
       try {
         const opts = this.config.spawnOpts || {};
         const spawnArgs = this.config.spawnArgs.map((row) => row.trim()).filter((row) => row !== '');
-        const thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
+        thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
 
         thread.stdout.on('data', (data: string) => {
-          // eslint-disable-next-line no-console
-          // console.log(data.toString());
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
 
         thread.stderr.on('data', (data: string) => {
           // eslint-disable-next-line no-console
-          // console.log(data.toString());
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
@@ -294,6 +335,10 @@ class CLI {
         resolve(1);
       }
     });
+
+    process.removeListener('exit', exitHandler);
+
+    thread = undefined;
 
     if (!this.config.logFullCliOutput) {
       this.config.jobLog(errorLogFull.slice(-1000).join(''));
