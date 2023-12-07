@@ -248,7 +248,7 @@ var CLI = /** @class */ (function () {
             });
         };
         this.runCli = function () { return __awaiter(_this, void 0, void 0, function () {
-            var childProcess, errorLogFull, cliExitCode;
+            var childProcess, errorLogFull, thread, cliExitCode;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -256,34 +256,36 @@ var CLI = /** @class */ (function () {
                         childProcess = require('child_process');
                         errorLogFull = [];
                         this.config.jobLog("Running ".concat(this.config.cli, " ").concat(this.config.spawnArgs.join(' ')));
+                        process.on('exit', function () {
+                            if (thread) {
+                                try {
+                                    // eslint-disable-next-line no-console
+                                    console.log('Main thread exiting, cleaning up running CLI');
+                                    _this.killThread(thread);
+                                }
+                                catch (err) {
+                                    // eslint-disable-next-line no-console
+                                    console.log('Error running cliUtils on Exit function');
+                                    // eslint-disable-next-line no-console
+                                    console.log(err);
+                                }
+                            }
+                        });
                         return [4 /*yield*/, new Promise(function (resolve) {
                                 try {
                                     var opts = _this.config.spawnOpts || {};
                                     var spawnArgs = _this.config.spawnArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
-                                    var thread_1 = childProcess.spawn(_this.config.cli, spawnArgs, opts);
-                                    process.on('exit', function () {
-                                        try {
-                                            // eslint-disable-next-line no-console
-                                            console.log('Main thread exiting, cleaning up running CLI');
-                                            _this.killThread(thread_1);
-                                        }
-                                        catch (err) {
-                                            // eslint-disable-next-line no-console
-                                            console.log('Error running cliUtils on Exit function');
-                                            // eslint-disable-next-line no-console
-                                            console.log(err);
-                                        }
-                                    });
-                                    thread_1.stdout.on('data', function (data) {
+                                    thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
+                                    thread.stdout.on('data', function (data) {
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
-                                    thread_1.stderr.on('data', function (data) {
+                                    thread.stderr.on('data', function (data) {
                                         // eslint-disable-next-line no-console
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
-                                    thread_1.on('error', function () {
+                                    thread.on('error', function () {
                                         // catches execution error (bad file)
                                         // eslint-disable-next-line no-console
                                         console.log(1, "Error executing binary: ".concat(_this.config.cli));
@@ -291,7 +293,7 @@ var CLI = /** @class */ (function () {
                                     });
                                     // thread.stdout.pipe(process.stdout);
                                     // thread.stderr.pipe(process.stderr);
-                                    thread_1.on('close', function (code) {
+                                    thread.on('close', function (code) {
                                         if (code !== 0) {
                                             // eslint-disable-next-line no-console
                                             console.log(code, 'CLI error');
@@ -308,6 +310,7 @@ var CLI = /** @class */ (function () {
                             })];
                     case 1:
                         cliExitCode = _a.sent();
+                        thread = undefined;
                         if (!this.config.logFullCliOutput) {
                             this.config.jobLog(errorLogFull.slice(-1000).join(''));
                         }
