@@ -52,6 +52,7 @@ var details = function () { return ({
     icon: 'faArrowRight',
     inputs: [
         {
+            label: 'Method',
             name: 'method',
             type: 'string',
             defaultValue: 'post',
@@ -67,6 +68,7 @@ var details = function () { return ({
             tooltip: 'Specify request method',
         },
         {
+            label: 'Request URL',
             name: 'requestUrl',
             type: 'string',
             defaultValue: 'http://example.com',
@@ -76,6 +78,7 @@ var details = function () { return ({
             tooltip: 'Specify request URL',
         },
         {
+            label: 'Request Headers',
             name: 'requestHeaders',
             type: 'string',
             defaultValue: "{\n           \"Content-Type\": \"application/json\"\n}",
@@ -88,6 +91,7 @@ var details = function () { return ({
             tooltip: 'Specify request URL',
         },
         {
+            label: 'Request Body',
             name: 'requestBody',
             type: 'string',
             defaultValue: "{\n            \"test\": \"test\"\n}",

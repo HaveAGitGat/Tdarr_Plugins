@@ -20,6 +20,7 @@ const details = () :IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Bitrate',
       name: 'bitrate',
       type: 'string',
       defaultValue: '5000',

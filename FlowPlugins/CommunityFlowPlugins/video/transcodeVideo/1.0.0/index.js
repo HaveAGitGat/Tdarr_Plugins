@@ -17,6 +17,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Target Codec',
             name: 'target_codec',
             type: 'string',
             defaultValue: 'hevc',

@@ -18,6 +18,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Container',
             name: 'container',
             type: 'string',
             defaultValue: 'mkv',
@@ -31,15 +32,12 @@ var details = function () { return ({
             tooltip: 'Specify the container to use',
         },
         {
+            label: 'Force Conform',
             name: 'forceConform',
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: "\nSpecify if you want to force conform the file to the new container,\nThis is useful if not all streams are supported by the new container. \nFor example mkv does not support data streams.\n      ",
         },

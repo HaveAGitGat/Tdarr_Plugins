@@ -19,6 +19,7 @@ const details = (): IpluginDetails => ({
   icon: 'faArrowRight',
   inputs: [
     {
+      label: 'Method',
       name: 'method',
       type: 'string',
       defaultValue: 'post',
@@ -34,6 +35,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify request method',
     },
     {
+      label: 'Request URL',
       name: 'requestUrl',
       type: 'string',
       defaultValue: 'http://example.com',
@@ -43,6 +45,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify request URL',
     },
     {
+      label: 'Request Headers',
       name: 'requestHeaders',
       type: 'string',
       defaultValue: `{
@@ -57,6 +60,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify request URL',
     },
     {
+      label: 'Request Body',
       name: 'requestBody',
       type: 'string',
       defaultValue: `{

@@ -22,28 +22,22 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'File Access Checks',
       name: 'fileAccessChecks',
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Will check if input file and cache are readable and writable',
     },
     {
+      label: 'Pause Node If Access Checks Fail',
       name: 'pauseNodeIfAccessChecksFail',
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'This will pause the node if the file access checks fail',
     },

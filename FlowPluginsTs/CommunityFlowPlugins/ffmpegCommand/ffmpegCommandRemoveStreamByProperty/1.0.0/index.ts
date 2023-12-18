@@ -19,6 +19,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Property To Check',
       name: 'propertyToCheck',
       type: 'string',
       defaultValue: 'codec_name',
@@ -37,6 +38,7 @@ const details = (): IpluginDetails => ({
         `,
     },
     {
+      label: 'Values To Remove',
       name: 'valuesToRemove',
       type: 'string',
       defaultValue: 'aac',
@@ -52,6 +54,7 @@ const details = (): IpluginDetails => ({
         `,
     },
     {
+      label: 'Condition',
       name: 'condition',
       type: 'string',
       defaultValue: 'includes',

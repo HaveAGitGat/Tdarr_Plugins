@@ -53,6 +53,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Hardware Encoder',
             name: 'hardwareEncoder',
             type: 'string',
             defaultValue: 'hevc_nvenc',

@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Process Order',
             name: 'processOrder',
             type: 'string',
             defaultValue: 'codecs,channels,languages,streamTypes',
@@ -25,6 +26,7 @@ var details = function () { return ({
             tooltip: "Specify the process order.\nFor example, if 'languages' is first, the streams will be ordered based on that first.\nSo put the most important properties last.\nThe default order is suitable for most people.\n\n        \\nExample:\\n\n        codecs,channels,languages,streamTypes\n        ",
         },
         {
+            label: 'Languages',
             name: 'languages',
             type: 'string',
             defaultValue: '',
@@ -34,6 +36,7 @@ var details = function () { return ({
             tooltip: "Specify the language tags order, separated by commas. Leave blank to disable.\n        \\nExample:\\n\n        eng,fre\n        ",
         },
         {
+            label: 'Channels',
             name: 'channels',
             type: 'string',
             defaultValue: '7.1,5.1,2,1',
@@ -43,6 +46,7 @@ var details = function () { return ({
             tooltip: "Specify the channels order, separated by commas. Leave blank to disable.\n          \n          \\nExample:\\n\n          7.1,5.1,2,1",
         },
         {
+            label: 'Codecs',
             name: 'codecs',
             type: 'string',
             defaultValue: '',
@@ -52,6 +56,7 @@ var details = function () { return ({
             tooltip: "Specify the codec order, separated by commas. Leave blank to disable.\n          \n          \\nExample:\\n\n          aac,ac3",
         },
         {
+            label: 'Stream Types',
             name: 'streamTypes',
             type: 'string',
             defaultValue: 'video,audio,subtitle',

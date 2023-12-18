@@ -19,6 +19,7 @@ const details = ():IpluginDetails => ({
   icon: 'faArrowRight',
   inputs: [
     {
+      label: 'Flow ID',
       name: 'flowId',
       type: 'string',
       defaultValue: '',
@@ -29,6 +30,7 @@ const details = ():IpluginDetails => ({
       tooltip: 'Specify flow ID to go to',
     },
     {
+      label: 'Plugin ID',
       name: 'pluginId',
       type: 'string',
       defaultValue: 'start',

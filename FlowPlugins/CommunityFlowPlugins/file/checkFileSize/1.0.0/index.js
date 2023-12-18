@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Unit',
             name: 'unit',
             type: 'string',
             defaultValue: 'GB',
@@ -31,6 +32,7 @@ var details = function () { return ({
             tooltip: 'Specify the unit to use',
         },
         {
+            label: 'Greater Than',
             name: 'greaterThan',
             type: 'number',
             defaultValue: '0',
@@ -40,6 +42,7 @@ var details = function () { return ({
             tooltip: 'Specify lower bound',
         },
         {
+            label: 'Less Than',
             name: 'lessThan',
             type: 'number',
             defaultValue: '10000',

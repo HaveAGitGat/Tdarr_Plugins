@@ -19,6 +19,7 @@ const details = () :IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Target Resolution',
       name: 'targetResolution',
       type: 'string',
       defaultValue: '1080p',

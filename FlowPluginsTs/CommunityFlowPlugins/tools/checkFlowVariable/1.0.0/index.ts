@@ -19,18 +19,33 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Variable',
       name: 'variable',
       type: 'string',
       defaultValue: '',
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Variable to check. For example args.librarySettings._id',
+      tooltip: `Variable to check. For example , 
+      
+      \\nExample\\n
+      args.librarySettings._id
+      
+      \\nExample\\n
+      args.inputFileObj._id
+
+      \\nExample\\n
+      args.userVariables.library.test
+
+      \\nExample\\n
+      args.userVariables.global.test
+      `,
     },
     {
+      label: 'Condition',
       name: 'condition',
       type: 'string',
-      defaultValue: '',
+      defaultValue: '==',
       inputUI: {
         type: 'dropdown',
         options: [
@@ -42,6 +57,7 @@ const details = (): IpluginDetails => ({
     },
 
     {
+      label: 'Value',
       name: 'value',
       type: 'string',
       defaultValue: '',
@@ -69,7 +85,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const variable = String(args.inputs.variable);
+  const variable = String(args.inputs.variable).trim();
   const condition = String(args.inputs.condition);
   const value = String(args.inputs.value);
 

@@ -16,18 +16,20 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Variable',
             name: 'variable',
             type: 'string',
             defaultValue: '',
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Variable to check. For example args.librarySettings._id',
+            tooltip: "Variable to check. For example , \n      \n      \\nExample\\n\n      args.librarySettings._id\n      \n      \\nExample\\n\n      args.inputFileObj._id\n\n      \\nExample\\n\n      args.userVariables.library.test\n\n      \\nExample\\n\n      args.userVariables.global.test\n      ",
         },
         {
+            label: 'Condition',
             name: 'condition',
             type: 'string',
-            defaultValue: '',
+            defaultValue: '==',
             inputUI: {
                 type: 'dropdown',
                 options: [
@@ -38,6 +40,7 @@ var details = function () { return ({
             tooltip: 'Check condition',
         },
         {
+            label: 'Value',
             name: 'value',
             type: 'string',
             defaultValue: '',
@@ -64,7 +67,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    var variable = String(args.inputs.variable);
+    var variable = String(args.inputs.variable).trim();
     var condition = String(args.inputs.condition);
     var value = String(args.inputs.value);
     // variable could be e.g. args.librarySettings._id or args.inputFileObj._id
