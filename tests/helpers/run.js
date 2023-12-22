@@ -6,6 +6,15 @@ const os = require('os');
 
 const scriptName = path.basename(process.mainModule.filename);
 
+const stackLog = (err) => {
+  // eslint-disable-next-line no-console
+  console.log(err);
+  if (err.stack) {
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify(err.stack));
+  }
+};
+
 const run = async (tests) => {
   try {
     for (let i = 0; i < tests.length; i += 1) {
@@ -48,13 +57,13 @@ const run = async (tests) => {
 
         if (test?.error?.shouldThrow) {
           if (errorEncountered !== false) {
-            // eslint-disable-next-line no-console
-            console.log(errorEncountered);
+            stackLog(errorEncountered);
             chai.assert.deepEqual(errorEncountered.message, expectedOutput);
           } else {
             throw new Error('Expected plugin error but none was thrown!');
           }
         } else if (!test?.error?.shouldThrow && errorEncountered !== false) {
+          stackLog(errorEncountered);
           throw new Error(`Unexpected plugin error!${errorEncountered}`);
         } else {
           chai.assert.deepEqual(testOutput, expectedOutput);
@@ -63,7 +72,7 @@ const run = async (tests) => {
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error(err);
+    stackLog(err);
     process.exit(1);
   }
 };
