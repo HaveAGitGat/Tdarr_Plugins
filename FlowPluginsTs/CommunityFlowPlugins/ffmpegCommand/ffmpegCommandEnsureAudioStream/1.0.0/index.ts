@@ -242,6 +242,7 @@ const attemptMakeStream = ({
   args.jobLog(`Adding ${langTag} stream in ${audioEncoder}, ${targetChannels} channels \n`);
 
   const streamCopy: IffmpegCommandStream = JSON.parse(JSON.stringify(streamWithHighestChannel));
+  streamCopy.removed = false;
   streamCopy.index = streams.length;
   streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
   streamCopy.outputArgs.push('-ac', `${targetChannels}`);
