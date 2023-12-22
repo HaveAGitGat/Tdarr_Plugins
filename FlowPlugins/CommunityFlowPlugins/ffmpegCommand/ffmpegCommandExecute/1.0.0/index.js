@@ -119,8 +119,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     return !stream.removed;
                 });
                 if (streams.length === 0) {
-                    args.jobLog('All streams have been removed from the file');
-                    throw new Error('All streams have been removed from the file');
+                    args.jobLog('No streams mapped for new file');
+                    throw new Error('No streams mapped for new file');
                 }
                 _loop_1 = function (i) {
                     var stream = streams[i];
