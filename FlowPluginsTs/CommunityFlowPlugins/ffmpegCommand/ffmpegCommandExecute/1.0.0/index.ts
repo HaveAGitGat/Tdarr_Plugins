@@ -91,6 +91,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     return !stream.removed;
   });
 
+  if (streams.length === 0) {
+    args.jobLog('All streams have been removed from the file');
+    throw new Error('All streams have been removed from the file');
+  }
+
   for (let i = 0; i < streams.length; i += 1) {
     const stream = streams[i];
 
