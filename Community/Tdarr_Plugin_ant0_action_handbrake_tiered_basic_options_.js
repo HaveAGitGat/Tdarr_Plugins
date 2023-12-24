@@ -466,7 +466,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  const keepSubs = inputs.keepSubtitles === true ? ' --all-subtitles' : '';
+  const keepSubs = inputs.keepSubtitles === true ? ' --all-subtitles --subtitle-burned=none --subtitle-forced=scan' : '';
   let keepAllAudio;
   if (inputs.container === 'mkv') {
     if (inputs.keepAllAudio === true) {
