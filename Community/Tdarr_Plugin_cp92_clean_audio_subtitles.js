@@ -206,7 +206,10 @@ const processStreams = (result, file, user_langs, sub_codecs,sub_lang) => {
     if (stream.codec_type === 'audio') {
 
         if (langs.includes(stream.tags.language) && 
-            stream.disposition.comment !== 1 ) {
+            stream.disposition.comment !== 1  &&
+            ((stream.tags.hasOwnProperty('title') && !stream.tags.title.toLowerCase().includes('commentary')) ||
+            !stream.tags.hasOwnProperty('title') ) 
+        ) {
             
           tracks.keep.push(streamIndex);
         } else {
@@ -223,9 +226,10 @@ const processStreams = (result, file, user_langs, sub_codecs,sub_lang) => {
     
         if( !subtitle_langs.includes(stream.tags.language) ||
             subtitle_codecs.includes(stream.codec_name.toLowerCase()) ||
-            stream.tags.title.toLowerCase().includes('commentary') || 
+            stream.disposition.comment == 1 ||
+            (stream.tags.hasOwnProperty('title') && (stream.tags.title.toLowerCase().includes('commentary') || 
             stream.tags.title.toLowerCase().includes('description') || 
-            stream.tags.title.toLowerCase().includes('sdh') 
+            stream.tags.title.toLowerCase().includes('sdh') ))
             
         ) {
             response.preset += `-map -0:s:${substreamIndex} `;
