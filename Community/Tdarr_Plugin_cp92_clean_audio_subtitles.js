@@ -210,6 +210,7 @@ const processStreams = (result, file, user_langs, sub_codecs,sub_lang) => {
             ((stream.tags.hasOwnProperty('title') && !stream.tags.title.toLowerCase().includes('commentary')) ||
             !stream.tags.hasOwnProperty('title') ) 
         ) {
+>>>>>>>>> Temporary merge branch 2
             
           tracks.keep.push(streamIndex);
         } else {
