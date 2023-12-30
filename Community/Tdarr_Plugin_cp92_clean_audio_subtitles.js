@@ -206,9 +206,7 @@ const processStreams = (result, file, user_langs, sub_codecs,sub_lang) => {
     if (stream.codec_type === 'audio') {
 
         if (langs.includes(stream.tags.language) && 
-            stream.disposition.comment !== 1 &&
-            !stream.tags.title.toLowerCase().includes("commentary")
-            ) {
+            stream.disposition.comment !== 1 ) {
             
           tracks.keep.push(streamIndex);
         } else {
