@@ -28,11 +28,8 @@ const details = () => ({
     true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate".
     This plugin will also attempt to use mkvpropedit to generate accurate bitrate metadata in MKV files.
     It's not required to enable mkvpropedit but highly recommended to ensure accurate bitrates are used when 
-    encoding your media. 
-    \n\n==NOTE== Intel ARC cards are reportedly working successfully with this plugin, however please bare in mind that 
-    I've not officially tested with them yet and your results might vary. Don't just assume it will work and if it does
-    ensure you properly test your files & workflow!`,
-  Version: '1.2',
+    encoding your media.`,
+  Version: '1.21',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mkvpropedit,configurable',
   Inputs: [
     {
@@ -330,9 +327,8 @@ let bitrateSettings = '';
 let inflatedCutoff = 0;
 let main10 = false;
 let high10 = false;
+let oldFormat = false;
 let videoBR = 0;
-
-// Finds the first video stream and get video bitrate
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -390,8 +386,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Strings for easy to read dates in info log
     let statsThresString = new Date(statsThres);
     statsThresString = statsThresString.toUTCString();
+    statsThresString = `${statsThresString.slice(0, 22)}:00 GMT`;
     let datStatsString = new Date(datStats);
     datStatsString = datStatsString.toUTCString();
+    datStatsString = `${datStatsString.slice(0, 22)}:00 GMT`;
     response.infoLog += `Checking file stats - If stats are older than ${intStatsDays} days we'll grab new stats.\n
     Stats threshold: ${statsThresString}\n
     Current stats date: ${datStatsString}\n`;
@@ -437,7 +435,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
 
       // If MediaInfo fails somehow fallback to ffprobe - Try two types of tags that might exist
-      if (videoBR <= 0) {
+      if (videoBR <= 0 || Number.isNaN(videoBR)) {
         if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
           videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
         } else {
@@ -450,18 +448,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           }
         }
       }
+      // Check if duration info is filled, if so convert time format to minutes.
+      if (Number.isNaN(file.meta.Duration) === false) {
+        // If duration is a number then convert seconds to minutes
+        duration = file.meta.Duration / 60;
+      } else if (typeof file.meta.Duration !== 'undefined') {
+        // Get seconds by using a Date & then convert to minutes
+        duration = file.meta.Duration;
+        duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+      } else { // If not filled then get duration of video stream and do the same.
+        duration = file.ffProbeData.streams[videoIdx].tags.DURATION;
+        duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+      }
     }
-  }
-
-  // Check if duration info is filled, if so convert time format to minutes.
-  // If not filled then get duration of video stream and do the same.
-  if (typeof file.meta.Duration !== 'undefined') {
-    duration = file.meta.Duration;
-    // Get seconds by using a Date & then convert to minutes
-    duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
-  } else {
-    duration = file.ffProbeData.streams[videoIdx].tags.DURATION;
-    duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
   }
 
   if (Number.isNaN(videoBR) || videoBR <= 0) {
@@ -710,8 +709,28 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // Some video codecs won't play nice with 10 bit via QSV, whitelist safe ones here
+  switch (file.video_codec_name) {
+    case 'mpeg2':
+      break;
+    case 'h264':
+      break;
+    case 'mjpeg':
+      break;
+    case 'hevc':
+      break;
+    case 'vp9':
+      break;
+    case 'av1':
+      break;
+    default:
+      oldFormat = true;
+  }
+
   // Are we encoding to 10 bit? If so enable correct profile & pixel format.
-  if (high10 === true) { // This is used if we have High10 files. SW decode and use standard -pix_fmt p010le
+  if (high10 === true || (oldFormat === true && main10 === true)) {
+    // This is used if we have High10 or Main10 is enabled & odd format files.
+    // SW decode and use standard -pix_fmt p010le
     extraArguments += '-profile:v main10 -pix_fmt p010le ';
     response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
   } else if (main10 === true) { // Pixel formate method when using HW decode
@@ -764,20 +783,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         case 'h264':
           response.preset += '-c:v h264_qsv';
           break;
-        case 'vc1':
-          response.preset += '-c:v vc1_qsv';
-          break;
         case 'mjpeg':
           response.preset += '-c:v mjpeg_qsv';
-          break;
-        case 'vp8':
-          response.preset += '-c:v vp8_qsv';
           break;
         case 'hevc':
           response.preset += '-c:v hevc_qsv';
           break;
         case 'vp9': // Should be supported by 8th Gen +
           response.preset += '-c:v vp9_qsv';
+          break;
+        case 'av1': // Should be supported by 11th gen +
+          response.preset += '-c:v av1_qsv';
           break;
         default:
           response.preset += '';
