@@ -26,9 +26,8 @@ const details = () => ({
     Settings are dependant on file bitrate working by the logic that H265 can support the same amount of data at half 
     the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 unless "reconvert_hevc" is marked as 
     true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate".
-    This plugin will also attempt to use mkvpropedit to generate accurate bitrate metadata in MKV files.
-    It's not required to enable mkvpropedit but highly recommended to ensure accurate bitrates are used when 
-    encoding your media.`,
+    This plugin relies on understanding the accurate video bitrate of your files. It's highly recommended to remux 
+    into MKV & enable "Run mkvpropedit on files before running plugins" under Tdarr>Options.`,
   Version: '1.21',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mkvpropedit,configurable',
   Inputs: [
@@ -737,18 +736,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Account for different OS setup for QSV HEVC encode.
   switch (os.platform()) {
     case 'darwin':
-      response.preset += 'hevc_videotoolbox ';
+      response.preset += 'hevc_videotoolbox';
       // Mac OS & uses hevc_videotoolbox not QSV - Only shows up on Mac installs
       break;
     case 'linux':
-      response.preset += 'hevc_qsv ';
+      response.preset += 'hevc_qsv';
       break;
     case 'win32':
-      response.preset += 'hevc_qsv -load_plugin hevc_hw ';
+      response.preset += 'hevc_qsv -load_plugin hevc_hw';
       // Windows needs the additional -load_plugin. Tested working on a Win 10 - i5-10505
       break;
     default:
-      response.preset += 'hevc_qsv '; // Default to QSV
+      response.preset += 'hevc_qsv'; // Default to QSV
   }
 
   // If HW decode is happening add hwupload to encode
