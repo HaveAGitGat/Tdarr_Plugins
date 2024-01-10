@@ -2,12 +2,6 @@
 const _ = require('lodash');
 const run = require('../helpers/run');
 
-// Date stuff for mkvpropedit
-const intStatsDays = 7; // Use 1 week threshold for new stats
-let statsThresString = new Date(new Date().setDate(new Date().getDate() - intStatsDays)).toUTCString();
-statsThresString = `${statsThresString.slice(0, 22)}:00 GMT`;
-let datStatsString = new Date().toUTCString();
-datStatsString = `${datStatsString.slice(0, 22)}:00 GMT`;
 const tests = [
   // Test 0
   {
@@ -415,12 +409,12 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps. \n'
-        + 'Container for output selected as mkv. \n'
-        + 'Encode variable bitrate settings: \n'
-        + 'Target = 3227k \n'
-        + 'Minimum = 2420k \n'
-        + 'Maximum = 4034k \n'
-        + 'File Transcoding... \n',
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 3227k \n'
+          + 'Minimum = 2420k \n'
+          + 'Maximum = 4034k \n'
+          + 'File Transcoding... \n',
         container: '.mkv',
       },
       win32: {
@@ -431,12 +425,12 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps. \n'
-        + 'Container for output selected as mkv. \n'
-        + 'Encode variable bitrate settings: \n'
-        + 'Target = 3227k \n'
-        + 'Minimum = 2420k \n'
-        + 'Maximum = 4034k \n'
-        + 'File Transcoding... \n',
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 3227k \n'
+          + 'Minimum = 2420k \n'
+          + 'Maximum = 4034k \n'
+          + 'File Transcoding... \n',
         container: '.mkv',
       },
       darwin: {
@@ -446,12 +440,12 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps. \n'
-        + 'Container for output selected as mkv. \n'
-        + 'Encode variable bitrate settings: \n'
-        + 'Target = 3227k \n'
-        + 'Minimum = 2420k \n'
-        + 'Maximum = 4034k \n'
-        + 'File Transcoding... \n',
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 3227k \n'
+          + 'Minimum = 2420k \n'
+          + 'Maximum = 4034k \n'
+          + 'File Transcoding... \n',
         container: '.mkv',
       },
     },
