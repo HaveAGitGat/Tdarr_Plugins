@@ -31,7 +31,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv=qsv:MFX_IMPL_hw -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -96,7 +96,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv=qsv:MFX_IMPL_hw -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f mp4 -profile:v main10 -vf scale_qsv=format=p010le -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f mp4 -profile:v main10 -vf scale_qsv=format=p010le',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -166,7 +166,7 @@ const tests = [
       },
       win32: {
         processFile: true,
-        preset: '-fflags +genpts <io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts <io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -243,7 +243,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv=qsv:MFX_IMPL_hw -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -352,7 +352,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv=qsv:MFX_IMPL_hw -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -map -0:6 -f mp4 -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -map -0:6 -f mp4 ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -420,7 +420,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv=qsv:MFX_IMPL_hw -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -450,6 +450,73 @@ const tests = [
       },
     },
   },
+  // Test 7
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'mkv',
+        encoder_speedpreset: 'fast',
+        extra_qsv_options: '-look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1',
+        enable_10bit: 'true',
+      },
+      otherArguments: {},
+    },
+    output: {
+      linux: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1:format=p010le  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 1206kbps. \n'
+          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 603k \n'
+          + 'Minimum = 452k \n'
+          + 'Maximum = 754k \n'
+          + 'File Transcoding... \n',
+        container: '.mkv',
+      },
+      win32: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1:format=p010le  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 1206kbps. \n'
+          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 603k \n'
+          + 'Minimum = 452k \n'
+          + 'Maximum = 754k \n'
+          + 'File Transcoding... \n',
+        container: '.mkv',
+      },
+      darwin: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska ',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 1206kbps. \n'
+          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 603k \n'
+          + 'Minimum = 452k \n'
+          + 'Maximum = 754k \n'
+          + '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
+          + 'cmds set in extra_qsv_options will be IGNORED!\n'
+          + 'File Transcoding... \n',
+        container: '.mkv',
+      },
+    },
+  },
 ];
-
 void run(tests);

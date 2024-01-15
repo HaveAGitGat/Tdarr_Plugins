@@ -166,6 +166,7 @@ const details = () => ({
       \\nDefault is empty but the first example below has a suggested value. If unsure just leave empty.
       \\nEnsure to only use cmds valid to encoding QSV as the script handles other ffmpeg cmds relating to 
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
+      \\nIf you are using a "-vf" cmd, please put it at the end to avoid issues!
       \\nExample:\\n
       -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1
       \\n Above enables look ahead, extended bitrate control, b-frames, etc.\\n
@@ -664,7 +665,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     extraArguments += '-profile:v main10 -pix_fmt p010le ';
     response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
   } else if (main10 === true) { // Pixel formate method when using HW decode
-    extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le ';
+    if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
+      extraArguments += '-profile:v main10';
+      // eslint-disable-next-line no-param-reassign
+      inputs.extra_qsv_options += ':format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
+    } else {
+      extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le';
+    }
     response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
   }
 
@@ -696,7 +703,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         break;
       case 'win32': // Windows - Full device, should fix child_device_type warnings
         response.preset += `-hwaccel qsv -hwaccel_output_format qsv 
-        -init_hw_device qsv=qsv:MFX_IMPL_hw `;
+        -init_hw_device qsv:hw,child_device_type=d3d11va `;
         break;
       default:
         response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
@@ -743,34 +750,86 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.preset += 'hevc_qsv';
       break;
     case 'win32':
-      response.preset += 'hevc_qsv -load_plugin hevc_hw';
-      // Windows needs the additional -load_plugin. Tested working on a Win 10 - i5-10505
+      response.preset += 'hevc_qsv';
+      // Tested working on a Win 10 - i5-10505
       break;
     default:
       response.preset += 'hevc_qsv'; // Default to QSV
   }
 
-  // If HW decode is happening add hwupload to encode
-  if (os.platform() !== 'darwin') {
-    if (high10 === false) { // Don't enable for High10
+  // Check if -vf cmd has already been used on user input
+  if (high10 !== true) {
+    if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
       switch (file.video_codec_name) {
         case 'mpeg2':
-          extraArguments += '-vf "hwupload=extra_hw_frames=64,format=qsv" ';
+          // eslint-disable-next-line no-param-reassign
+          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
           break;
         case 'h264':
-          extraArguments += '-vf "hwupload=extra_hw_frames=64,format=qsv" ';
+          // eslint-disable-next-line no-param-reassign
+          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
           break;
         case 'mjpeg':
-          extraArguments += '-vf "hwupload=extra_hw_frames=64,format=qsv" ';
+          // eslint-disable-next-line no-param-reassign
+          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
           break;
         case 'hevc':
-          extraArguments += '-vf "hwupload=extra_hw_frames=64,format=qsv" ';
+          // eslint-disable-next-line no-param-reassign
+          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
           break;
         case 'vp9': // Should be supported by 8th Gen +
-          extraArguments += '-vf "hwupload=extra_hw_frames=64,format=qsv" ';
+          // eslint-disable-next-line no-param-reassign
+          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
           break;
         case 'av1': // Should be supported by 11th gen +
-          extraArguments += '-vf "hwupload=extra_hw_frames=64,format=qsv" ';
+          // eslint-disable-next-line no-param-reassign
+          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        default:
+      }
+    } else if (extraArguments.search('-vf') === -1) {
+      // Check if -vf cmd has been used on the other var instead, if not add it & rest of cmd
+      switch (file.video_codec_name) {
+        case 'mpeg2':
+          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'h264':
+          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'mjpeg':
+          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'hevc':
+          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'vp9': // Should be supported by 8th Gen +
+          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'av1': // Should be supported by 11th gen +
+          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        default:
+      }
+    } else {
+      // Otherwise add the cmd onto the end
+      switch (file.video_codec_name) {
+        case 'mpeg2':
+          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'h264':
+          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'mjpeg':
+          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'hevc':
+          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'vp9': // Should be supported by 8th Gen +
+          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
+          break;
+        case 'av1': // Should be supported by 11th gen +
+          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
           break;
         default:
       }
