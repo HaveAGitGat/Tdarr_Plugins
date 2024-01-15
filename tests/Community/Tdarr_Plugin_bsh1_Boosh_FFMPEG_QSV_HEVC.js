@@ -15,7 +15,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -31,7 +31,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -79,7 +79,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f mp4 -profile:v main10 -vf scale_qsv=format=p010le -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f mp4 -profile:v main10 -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -96,7 +96,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f mp4 -profile:v main10 -vf scale_qsv=format=p010le',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f mp4 -profile:v main10 -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -225,7 +225,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 12000kbps. \n'
@@ -243,7 +243,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -336,7 +336,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -map -0:6 -f mp4 -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -map -0:6 -f mp4 -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -352,7 +352,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -map -0:6 -f mp4 ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -map -0:6 -f mp4 -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -404,7 +404,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -load_plugin hevc_hw -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf "hwupload=extra_hw_frames=64,format=qsv" ',
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -420,7 +420,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska ',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -467,7 +467,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1:format=p010le  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10',
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1:format=p010le,hwupload=extra_hw_frames=64,format=qsv  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -484,7 +484,7 @@ const tests = [
       win32: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv \n'
-          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1:format=p010le  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10',
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -vf scale_qsv=1280:-1:format=p010le,hwupload=extra_hw_frames=64,format=qsv  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
