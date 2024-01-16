@@ -720,8 +720,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         case 'h264':
           response.preset += '-c:v h264_qsv';
           break;
+        case 'vc1': // VC1 no longer supported on latest intel HW
+          // response.preset += '-c:v vc1_qsv';
+          break;
         case 'mjpeg':
           response.preset += '-c:v mjpeg_qsv';
+          break;
+        case 'vp8': // VP8 no longer supported on latest intel HW
+          // response.preset += '-c:v vp8_qsv';
           break;
         case 'hevc':
           response.preset += '-c:v hevc_qsv';
