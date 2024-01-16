@@ -157,7 +157,6 @@ const details = () => ({
       https://ffmpeg.org/ffmpeg-codecs.html#toc-HEVC-Options-1
       \\n
       ==WARNING== \\n
-      Just because a cmd is mentioned doesn't mean your installed version of ffmpeg supports it... 
       Be certain to verify the cmds work before adding to your workflow. \\n
       Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands. \\n
       MAC SPECIFIC - This option is ignored on Mac because videotoolbox is used rather than qsv.
