@@ -357,21 +357,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Check if stream is a video.
     if (videoIdx === -1 && strstreamType === 'video') {
       videoIdx = i;
-      videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
-
-      // If MediaInfo fails somehow fallback to ffprobe - Try two types of tags that might exist
-      if (videoBR <= 0 || Number.isNaN(videoBR)) {
-        if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
-          videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
-        } else {
-          try {
-            if (Number(file.ffProbeData.streams[i].tags.BPS['-eng']) > 0) {
-              videoBR = file.ffProbeData.streams[i].tags.BPS['-eng'] / 1000;
-            }
-          } catch (err) {
-            // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+      // Try checking file stats using Mediainfo first, then ffprobe.
+      try {
+        videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
+        if (videoBR <= 0 || Number.isNaN(videoBR)) {
+          if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
+            videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
+          } else if (Number(file.ffProbeData.streams[i].tags.BPS['-eng']) > 0) {
+            videoBR = file.ffProbeData.streams[i].tags.BPS['-eng'] / 1000;
           }
         }
+      } catch (err) {
+        // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+        videoBR = 0; // Set videoBR to 0 for safety
       }
       // Check if duration info is filled, if so convert time format to minutes.
       if (Number.isNaN(file.meta.Duration) === false) {
