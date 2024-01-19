@@ -1,3 +1,7 @@
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
+import {
+  getFileAbosluteDir, getFileName,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -69,16 +73,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const { arr, arr_api_key } = args.inputs;
   const arr_host = String(args.inputs.arr_host).trim();
-
-  const fileName = args.originalLibraryFile?.meta?.FileName || '';
-
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-Api-Key': arr_api_key,
-    Accept: 'application/json',
-  };
+  const fileName = getFileName(args.inputFileObj._id);
 
   interface IRenameDelegates {
     getId: (parseRequestResult: any) => any,
@@ -92,7 +88,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.jobLog('Going to force rename');
     args.jobLog(`Renaming ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}...`);
 
-    let existingPath, newPath = '';
+    let existingPath = '', newPath = '';
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Api-Key': arr_api_key,
+      Accept: 'application/json',
+    };
 
     // Using parse endpoint to get the movie/serie's id.
     const parseRequestConfig = {
@@ -127,7 +129,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
       args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} in ${arr === 'radarr' ? 'Radarr' : 'Sonarr'} : '${existingPath}' => '${newPath}'.`);
     } else
-      args.jobLog(`✔ No rename necessary.`);
+      args.jobLog('✔ No rename necessary.');
 
     return { existingPath, newPath };
   };
@@ -157,10 +159,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
         return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
       },
-      getFileToRename: (previewRenameRequestResult) =>
-        ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
+      getFileToRename: (previewRenameRequestResult) => {
+        args.jobLog(JSON.stringify(previewRenameRequestResult));
+        return ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => ((episFile.episodeNumbers?.length ?? 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber : false)
-          : undefined,
+          : undefined
+      },
       getRenameResquestConfigData: (id, fileToRename) => {
         return {
           name: 'RenameFiles',
@@ -173,10 +177,24 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.jobLog('No arr specified in plugin inputs.');
   }
 
+  // If file has been renamed, move the transcoded file accordingly
+  let outputFileObj: {_id : string} = args.inputFileObj;
+  if (existingPath !== newPath) {
+    const destinationPath = `${getFileAbosluteDir(args.inputFileObj._id)}/${getFileName(newPath)}`;
+
+    await fileMoveOrCopy({
+      operation: 'move',
+      sourcePath: args.inputFileObj._id,
+      destinationPath: destinationPath,
+      args,
+    });
+    args.jobLog(`✔ File moved : '${args.inputFileObj._id}' => '${destinationPath}'.`);
+
+    outputFileObj = { _id: destinationPath };
+  }
+
   return {
-    outputFileObj: {
-      _id: args.inputFileObj._id.replace(existingPath, newPath)
-    },
+    outputFileObj: outputFileObj,
     outputNumber: 1,
     variables: args.variables,
   };
