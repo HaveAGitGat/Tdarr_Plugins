@@ -96,7 +96,7 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, fileName, arrHost, headers, rename;
+    var lib, _a, arr, arr_api_key, arr_host, fileName, arrHost, headers, rename, existingPath, newPath, episodeNumber_1, newFileId;
     var _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -113,12 +113,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     'X-Api-Key': arr_api_key,
                     Accept: 'application/json',
                 };
-                args.jobLog('Going to force rename');
                 rename = function (getId, getPreviewRenameResquestUrl, getRenameResquestData) { return __awaiter(void 0, void 0, void 0, function () {
                     var parseRequestConfig, parseRequestResult, id, previewRenameRequestConfig, previewRenameRequestResult, renameRequestConfig;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
+                                args.jobLog('Going to force rename');
                                 args.jobLog("Renaming ".concat(arr === 'radarr' ? 'Radarr' : 'Sonarr', "..."));
                                 parseRequestConfig = {
                                     method: 'get',
@@ -151,12 +151,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         }
                     });
                 }); };
+                newPath = '';
                 if (!(arr === 'radarr')) return [3 /*break*/, 2];
                 return [4 /*yield*/, rename(function (parseRequestResult) { return parseRequestResult.data.movie.movieFile.movieId; }, function (id, parseRequestResult) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(id); }, function (id, previewRenameRequestResult) {
+                        var movieFile = previewRenameRequestResult.data[0];
+                        (existingPath = movieFile.existingPath, newPath = movieFile.newPath);
                         return {
                             name: 'RenameFiles',
                             movieId: id,
-                            files: previewRenameRequestResult.data.map(function (movieFile) { return movieFile.movieFileId; })
+                            files: [movieFile.movieFileId]
                         };
                     })];
             case 1:
@@ -164,11 +167,17 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [3 /*break*/, 5];
             case 2:
                 if (!(arr === 'sonarr')) return [3 /*break*/, 4];
-                return [4 /*yield*/, rename(function (parseRequestResult) { return parseRequestResult.data.series.id; }, function (id, parseRequestResult) { return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(id, "&seasonNumber=").concat(parseRequestResult.data.parsedEpisodeInfo.seasonNumber); }, function (id, previewRenameRequestResult) {
+                episodeNumber_1 = 0;
+                return [4 /*yield*/, rename(function (parseRequestResult) { return parseRequestResult.data.series.id; }, function (id, parseRequestResult) {
+                        episodeNumber_1 = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
+                        return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(id, "&seasonNumber=").concat(parseRequestResult.data.parsedEpisodeInfo.seasonNumber);
+                    }, function (id, previewRenameRequestResult) {
+                        var episodeFile = previewRenameRequestResult.find(function (episFile) { return episFile.episodeNumbers[0] === episodeNumber_1; });
+                        (existingPath = episodeFile.existingPath, newPath = episodeFile.newPath);
                         return {
                             name: 'RenameFiles',
                             seriesId: id,
-                            files: previewRenameRequestResult.data.map(function (episodeFile) { return episodeFile.episodeFileId; })
+                            files: [episodeFile.episodeFileId]
                         };
                     })];
             case 3:
@@ -177,11 +186,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 4:
                 args.jobLog('No arr specified in plugin inputs.');
                 _d.label = 5;
-            case 5: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: 1,
-                    variables: args.variables,
-                }];
+            case 5:
+                newFileId = args.inputFileObj.replace(existingPath, newPath);
+                args.jobLog("New file iid ".concat(newFileId));
+                return [2 /*return*/, {
+                        outputFileObj: {
+                            _id: newFileId
+                        },
+                        outputNumber: 1,
+                        variables: args.variables,
+                    }];
         }
     });
 }); };

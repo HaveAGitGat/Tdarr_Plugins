@@ -80,13 +80,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     Accept: 'application/json',
   };
 
-  args.jobLog('Going to force rename');
-
   const rename = async (
     getId: (parseRequestResult: any) => any,
     getPreviewRenameResquestUrl: (id: any, parseRequestResult: any) => any,
     getRenameResquestData: (id: any, previewRenameRequestResult: any) => any)
     : Promise<void> => {
+    args.jobLog('Going to force rename');
+
     args.jobLog(`Renaming ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}...`);
 
     // Using parse endpoint to get the movie/serie's id.
@@ -118,27 +118,36 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} in ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}.`);
   };
 
+  let existingPath, newPath = '';
   if (arr === 'radarr') {
     await rename(
       (parseRequestResult) => parseRequestResult.data.movie.movieFile.movieId,
       (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
       (id, previewRenameRequestResult) => {
+        const movieFile = previewRenameRequestResult.data[0];
+        ({ existingPath, newPath } = movieFile);
         return {
           name: 'RenameFiles',
           movieId: id,
-          files: previewRenameRequestResult.data.map((movieFile: { movieFileId: any; }) => movieFile.movieFileId)
+          files: [movieFile.movieFileId]
         };
       }
     );
   } else if (arr === 'sonarr') {
+    let episodeNumber = 0;
     await rename(
       (parseRequestResult) => parseRequestResult.data.series.id,
-      (id, parseRequestResult) => `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`,
+      (id, parseRequestResult) => {
+        episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
+        return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
+      },
       (id, previewRenameRequestResult) => {
+        const episodeFile = previewRenameRequestResult.find((episFile: { episodeNumbers: number[]; }) => episFile.episodeNumbers[0] === episodeNumber);
+        ({ existingPath, newPath } = episodeFile);
         return {
           name: 'RenameFiles',
           seriesId: id,
-          files: previewRenameRequestResult.data.map((episodeFile: { episodeFileId: any; }) => episodeFile.episodeFileId)
+          files: [episodeFile.episodeFileId]
         };
       }
     );
@@ -146,8 +155,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.jobLog('No arr specified in plugin inputs.');
   }
 
+  const newFileId = args.inputFileObj.replace(existingPath, newPath);
+  args.jobLog(`New file iid ${newFileId}`);
   return {
-    outputFileObj: args.inputFileObj,
+    outputFileObj: {
+      _id: newFileId
+    },
     outputNumber: 1,
     variables: args.variables,
   };
