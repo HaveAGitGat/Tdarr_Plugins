@@ -167,7 +167,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         getPreviewRenameResquestUrl: function (id, parseRequestResult) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(id); },
                         getFileToRename: function (previewRenameRequestResult) {
                             var _a, _b;
-                            return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.lenght) !== null && _b !== void 0 ? _b : 0) > 0) ?
+                            return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ?
                                 previewRenameRequestResult.data[0]
                                 : undefined;
                         },
@@ -193,8 +193,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         },
                         getFileToRename: function (previewRenameRequestResult) {
                             var _a, _b;
-                            return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.lenght) !== null && _b !== void 0 ? _b : 0) > 0) ?
-                                previewRenameRequestResult.data.find(function (episFile) { return episFile.episodeNumbers[0] === episodeNumber_1; })
+                            return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ?
+                                previewRenameRequestResult.data.find(function (episFile) { var _a, _b; return (((_b = (_a = episFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber_1 : false; })
                                 : undefined;
                         },
                         getRenameResquestConfigData: function (id, fileToRename) {
@@ -213,7 +213,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _f.label = 5;
             case 5: return [2 /*return*/, {
                     outputFileObj: {
-                        _id: args.inputFileObj.replace(existingPath, newPath)
+                        _id: args.inputFileObj._id.replace(existingPath, newPath)
                     },
                     outputNumber: 1,
                     variables: args.variables,

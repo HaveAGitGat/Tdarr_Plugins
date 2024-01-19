@@ -138,7 +138,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       getId: (parseRequestResult) => parseRequestResult.data.movie.movieFile.movieId,
       getPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
       getFileToRename: (previewRenameRequestResult) =>
-        ((previewRenameRequestResult.data?.lenght ?? 0) > 0) ?
+        ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data[0]
           : undefined,
       getRenameResquestConfigData: (id, fileToRename) => {
@@ -158,8 +158,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
       },
       getFileToRename: (previewRenameRequestResult) =>
-        ((previewRenameRequestResult.data?.lenght ?? 0) > 0) ?
-          previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => episFile.episodeNumbers[0] === episodeNumber)
+        ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
+          previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => ((episFile.episodeNumbers?.length ?? 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber : false)
           : undefined,
       getRenameResquestConfigData: (id, fileToRename) => {
         return {
@@ -175,7 +175,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   return {
     outputFileObj: {
-      _id: args.inputFileObj.replace(existingPath, newPath)
+      _id: args.inputFileObj._id.replace(existingPath, newPath)
     },
     outputNumber: 1,
     variables: args.variables,
