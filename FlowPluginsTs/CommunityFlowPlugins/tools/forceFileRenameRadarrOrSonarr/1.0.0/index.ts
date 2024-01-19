@@ -83,7 +83,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const rename = async (
     getId: (parseRequestResult: any) => any,
     getPreviewRenameResquestUrl: (id: any, parseRequestResult: any) => any,
-    getRenameResquestData: (id: any, previewRenameRequestResult: any) => any)
+    getRenameResquestConfigData: (id: any, previewRenameRequestResult: any) => any)
     : Promise<void> => {
     args.jobLog('Going to force rename');
 
@@ -111,7 +111,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       method: 'post',
       url: `${arrHost}/api/v3/command`,
       headers,
-      data: JSON.stringify(getRenameResquestData(id, previewRenameRequestResult))
+      data: JSON.stringify(getRenameResquestConfigData(id, previewRenameRequestResult))
     };
     await args.deps.axios(renameRequestConfig);
 
@@ -142,7 +142,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
       },
       (id, previewRenameRequestResult) => {
-        const episodeFile = previewRenameRequestResult.find((episFile: { episodeNumbers: number[]; }) => episFile.episodeNumbers[0] === episodeNumber);
+        const episodeFile = previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => episFile.episodeNumbers[0] === episodeNumber);
         ({ existingPath, newPath } = episodeFile);
         return {
           name: 'RenameFiles',
@@ -156,7 +156,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   }
 
   const newFileId = args.inputFileObj.replace(existingPath, newPath);
-  args.jobLog(`New file iid ${newFileId}`);
+  args.jobLog(`New file id ${newFileId}`);
   return {
     outputFileObj: {
       _id: newFileId
