@@ -83,11 +83,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const rename = async (
     getId: (parseRequestResult: any) => any,
     getPreviewRenameResquestUrl: (id: any, parseRequestResult: any) => any,
-    getRenameResquestConfigData: (id: any, previewRenameRequestResult: any) => any)
-    : Promise<void> => {
+    getFileToRename: (previewRenameRequestResult: any) => any,
+    getRenameResquestConfigData: (id: any, fileToRename: any) => any)
+    : Promise<{ existingPath: any, newPath: any }> => {
     args.jobLog('Going to force rename');
-
     args.jobLog(`Renaming ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}...`);
+
+    let existingPath, newPath = '';
 
     // Using parse endpoint to get the movie/serie's id.
     const parseRequestConfig = {
@@ -105,61 +107,72 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       headers,
     };
     const previewRenameRequestResult = await args.deps.axios(previewRenameRequestConfig);
+    const fileToRename = getFileToRename(previewRenameRequestResult);
 
-    // Using command endpoint to schedule the renames.
-    const renameRequestConfig = {
-      method: 'post',
-      url: `${arrHost}/api/v3/command`,
-      headers,
-      data: JSON.stringify(getRenameResquestConfigData(id, previewRenameRequestResult))
-    };
-    await args.deps.axios(renameRequestConfig);
+    // Only if there is a rename to execute
+    if (fileToRename !== undefined) {
+      ({ existingPath, newPath } = fileToRename);
 
-    args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} in ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}.`);
+      // Using command endpoint to schedule the renames.
+      const renameRequestConfig = {
+        method: 'post',
+        url: `${arrHost}/api/v3/command`,
+        headers,
+        data: JSON.stringify(getRenameResquestConfigData(id, fileToRename))
+      };
+      await args.deps.axios(renameRequestConfig);
+
+      args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} in ${arr === 'radarr' ? 'Radarr' : 'Sonarr'} : '${existingPath}' => '${newPath}'.`);
+    } else
+      args.jobLog(`✔ No rename necessary.`);
+
+    return { existingPath, newPath };
   };
 
   let existingPath, newPath = '';
   if (arr === 'radarr') {
-    await rename(
+    ({ existingPath, newPath } = await rename(
       (parseRequestResult) => parseRequestResult.data.movie.movieFile.movieId,
       (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
-      (id, previewRenameRequestResult) => {
-        const movieFile = previewRenameRequestResult.data[0];
-        ({ existingPath, newPath } = movieFile);
+      (previewRenameRequestResult) =>
+        ((previewRenameRequestResult.data?.lenght ?? 0) > 0) ?
+          previewRenameRequestResult.data[0]
+          : undefined,
+      (id, fileToRename) => {
         return {
           name: 'RenameFiles',
           movieId: id,
-          files: [movieFile.movieFileId]
+          files: [fileToRename.movieFileId]
         };
       }
-    );
+    ));
   } else if (arr === 'sonarr') {
     let episodeNumber = 0;
-    await rename(
+    ({ existingPath, newPath } = await rename(
       (parseRequestResult) => parseRequestResult.data.series.id,
       (id, parseRequestResult) => {
         episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
         return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
       },
-      (id, previewRenameRequestResult) => {
-        const episodeFile = previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => episFile.episodeNumbers[0] === episodeNumber);
-        ({ existingPath, newPath } = episodeFile);
+      (previewRenameRequestResult) =>
+        ((previewRenameRequestResult.data?.lenght ?? 0) > 0) ?
+          previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => episFile.episodeNumbers[0] === episodeNumber)
+          : undefined,
+      (id, fileToRename) => {
         return {
           name: 'RenameFiles',
           seriesId: id,
-          files: [episodeFile.episodeFileId]
+          files: [fileToRename.episodeFileId]
         };
       }
-    );
+    ));
   } else {
     args.jobLog('No arr specified in plugin inputs.');
   }
 
-  const newFileId = args.inputFileObj.replace(existingPath, newPath);
-  args.jobLog(`New file id ${newFileId}`);
   return {
     outputFileObj: {
-      _id: newFileId
+      _id: args.inputFileObj.replace(existingPath, newPath)
     },
     outputNumber: 1,
     variables: args.variables,
