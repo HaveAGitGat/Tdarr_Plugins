@@ -1,6 +1,6 @@
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getFileAbosluteDir, getFileName,
+  getContainer, getFileAbosluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -9,8 +9,8 @@ import {
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 const details = (): IpluginDetails => ({
-  name: 'Force File Rename Radarr or Sonarr',
-  description: 'Force Radarr or Sonarr to rename a file according to the naming policy',
+  name: 'Apply Radarr or Sonarr naming policy',
+  description: 'Apply Radarr or Sonarr naming policy to a file. This plugin should be called after the original file has been replaced and Radarr or Sonarr has been notified. Radarr or Sonarr should also be notified after this plugin.',
   style: {
     borderColor: 'green',
   },
@@ -79,16 +79,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   interface IRenameDelegates {
     getId: (parseRequestResult: any) => any,
     getPreviewRenameResquestUrl: (id: any, parseRequestResult: any) => any,
-    getFileToRename: (previewRenameRequestResult: any) => any,
-    getRenameResquestConfigData: (id: any, fileToRename: any) => any
+    getFileToRename: (previewRenameRequestResult: any) => any
   }
 
   const rename = async (delegates: IRenameDelegates)
-    : Promise<{ existingPath: any, newPath: any }> => {
+    : Promise<string> => {
+    let destinationPath = '';
+
     args.jobLog('Going to force rename');
     args.jobLog(`Renaming ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}...`);
-
-    let existingPath = '', newPath = '';
 
     const headers = {
       'Content-Type': 'application/json',
@@ -116,44 +115,34 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     // Only if there is a rename to execute
     if (fileToRename !== undefined) {
-      ({ existingPath, newPath } = fileToRename);
+      destinationPath = `${getFileAbosluteDir(args.inputFileObj._id)}/${getFileName(fileToRename.newPath)}.${getContainer(fileToRename.newPath)}`;
 
-      // Using command endpoint to schedule the renames.
-      const renameRequestConfig = {
-        method: 'post',
-        url: `${arrHost}/api/v3/command`,
-        headers,
-        data: JSON.stringify(delegates.getRenameResquestConfigData(id, fileToRename))
-      };
-      await args.deps.axios(renameRequestConfig);
-
-      args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} in ${arr === 'radarr' ? 'Radarr' : 'Sonarr'} : '${existingPath}' => '${newPath}'.`);
+      await fileMoveOrCopy({
+        operation: 'move',
+        sourcePath: args.inputFileObj._id,
+        destinationPath: destinationPath,
+        args,
+      });
+      args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} : '${args.inputFileObj._id}' => '${destinationPath}'.`);
     } else
       args.jobLog('✔ No rename necessary.');
 
-    return { existingPath, newPath };
+    return destinationPath;
   };
 
-  let existingPath, newPath = '';
+  let destinationPath = '';
   if (arr === 'radarr') {
-    ({ existingPath, newPath } = await rename({
+    destinationPath = await rename({
       getId: (parseRequestResult) => parseRequestResult.data.movie.movieFile.movieId,
       getPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
       getFileToRename: (previewRenameRequestResult) =>
         ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data[0]
-          : undefined,
-      getRenameResquestConfigData: (id, fileToRename) => {
-        return {
-          name: 'RenameFiles',
-          movieId: id,
-          files: [fileToRename.movieFileId]
-        };
-      }
-    }));
+          : undefined
+    });
   } else if (arr === 'sonarr') {
     let episodeNumber = 0;
-    ({ existingPath, newPath } = await rename({
+    destinationPath = await rename({
       getId: (parseRequestResult) => parseRequestResult.data.series.id,
       getPreviewRenameResquestUrl: (id, parseRequestResult) => {
         episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
@@ -163,37 +152,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         return ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => ((episFile.episodeNumbers?.length ?? 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber : false)
           : undefined
-      },
-      getRenameResquestConfigData: (id, fileToRename) => {
-        return {
-          name: 'RenameFiles',
-          seriesId: id,
-          files: [fileToRename.episodeFileId]
-        };
       }
-    }));
+    });
   } else {
     args.jobLog('No arr specified in plugin inputs.');
   }
 
-  // If file has been renamed, move the transcoded file accordingly
-  let outputFileObj: {_id : string} = args.inputFileObj;
-  if (existingPath !== newPath) {
-    const destinationPath = `${getFileAbosluteDir(args.inputFileObj._id)}/${getFileName(newPath)}`;
-
-    await fileMoveOrCopy({
-      operation: 'move',
-      sourcePath: args.inputFileObj._id,
-      destinationPath: destinationPath,
-      args,
-    });
-    args.jobLog(`✔ File moved : '${args.inputFileObj._id}' => '${destinationPath}'.`);
-
-    outputFileObj = { _id: destinationPath };
-  }
-
   return {
-    outputFileObj: outputFileObj,
+    outputFileObj: destinationPath !== '' ? { _id: destinationPath } : args.inputFileObj,
     outputNumber: 1,
     variables: args.variables,
   };

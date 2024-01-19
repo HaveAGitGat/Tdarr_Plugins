@@ -43,8 +43,8 @@ exports.plugin = exports.details = void 0;
 var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
-    name: 'Force File Rename Radarr or Sonarr',
-    description: 'Force Radarr or Sonarr to rename a file according to the naming policy',
+    name: 'Apply Radarr or Sonarr naming policy',
+    description: 'Apply Radarr or Sonarr naming policy to a file. This plugin should be called after the original file has been replaced and Radarr or Sonarr has been notified. Radarr or Sonarr should also be notified after this plugin.',
     style: {
         borderColor: 'green',
     },
@@ -101,10 +101,9 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, rename, existingPath, newPath, episodeNumber_1, outputFileObj, destinationPath;
-    var _b, _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, rename, destinationPath, episodeNumber_1;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -114,13 +113,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 rename = function (delegates) { return __awaiter(void 0, void 0, void 0, function () {
-                    var existingPath, newPath, headers, parseRequestConfig, parseRequestResult, id, previewRenameRequestConfig, previewRenameRequestResult, fileToRename, renameRequestConfig;
+                    var destinationPath, headers, parseRequestConfig, parseRequestResult, id, previewRenameRequestConfig, previewRenameRequestResult, fileToRename;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
+                                destinationPath = '';
                                 args.jobLog('Going to force rename');
                                 args.jobLog("Renaming ".concat(arr === 'radarr' ? 'Radarr' : 'Sonarr', "..."));
-                                existingPath = '', newPath = '';
                                 headers = {
                                     'Content-Type': 'application/json',
                                     'X-Api-Key': arr_api_key,
@@ -145,26 +144,25 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 previewRenameRequestResult = _a.sent();
                                 fileToRename = delegates.getFileToRename(previewRenameRequestResult);
                                 if (!(fileToRename !== undefined)) return [3 /*break*/, 4];
-                                (existingPath = fileToRename.existingPath, newPath = fileToRename.newPath);
-                                renameRequestConfig = {
-                                    method: 'post',
-                                    url: "".concat(arrHost, "/api/v3/command"),
-                                    headers: headers,
-                                    data: JSON.stringify(delegates.getRenameResquestConfigData(id, fileToRename))
-                                };
-                                return [4 /*yield*/, args.deps.axios(renameRequestConfig)];
+                                destinationPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                                        operation: 'move',
+                                        sourcePath: args.inputFileObj._id,
+                                        destinationPath: destinationPath,
+                                        args: args,
+                                    })];
                             case 3:
                                 _a.sent();
-                                args.jobLog("\u2714 Renamed ".concat(arr === 'radarr' ? 'movie' : 'serie', " ").concat(id, " in ").concat(arr === 'radarr' ? 'Radarr' : 'Sonarr', " : '").concat(existingPath, "' => '").concat(newPath, "'."));
+                                args.jobLog("\u2714 Renamed ".concat(arr === 'radarr' ? 'movie' : 'serie', " ").concat(id, " : '").concat(args.inputFileObj._id, "' => '").concat(destinationPath, "'."));
                                 return [3 /*break*/, 5];
                             case 4:
                                 args.jobLog('✔ No rename necessary.');
                                 _a.label = 5;
-                            case 5: return [2 /*return*/, { existingPath: existingPath, newPath: newPath }];
+                            case 5: return [2 /*return*/, destinationPath];
                         }
                     });
                 }); };
-                newPath = '';
+                destinationPath = '';
                 if (!(arr === 'radarr')) return [3 /*break*/, 2];
                 return [4 /*yield*/, rename({
                         getId: function (parseRequestResult) { return parseRequestResult.data.movie.movieFile.movieId; },
@@ -174,17 +172,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ?
                                 previewRenameRequestResult.data[0]
                                 : undefined;
-                        },
-                        getRenameResquestConfigData: function (id, fileToRename) {
-                            return {
-                                name: 'RenameFiles',
-                                movieId: id,
-                                files: [fileToRename.movieFileId]
-                            };
                         }
                     })];
             case 1:
-                (_b = _d.sent(), existingPath = _b.existingPath, newPath = _b.newPath);
+                destinationPath = _b.sent();
                 return [3 /*break*/, 5];
             case 2:
                 if (!(arr === 'sonarr')) return [3 /*break*/, 4];
@@ -200,38 +191,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ?
                                 previewRenameRequestResult.data.find(function (episFile) { var _a, _b; return (((_b = (_a = episFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber_1 : false; })
                                 : undefined;
-                        },
-                        getRenameResquestConfigData: function (id, fileToRename) {
-                            return {
-                                name: 'RenameFiles',
-                                seriesId: id,
-                                files: [fileToRename.episodeFileId]
-                            };
                         }
                     })];
             case 3:
-                (_c = _d.sent(), existingPath = _c.existingPath, newPath = _c.newPath);
+                destinationPath = _b.sent();
                 return [3 /*break*/, 5];
             case 4:
                 args.jobLog('No arr specified in plugin inputs.');
-                _d.label = 5;
-            case 5:
-                outputFileObj = args.inputFileObj;
-                if (!(existingPath !== newPath)) return [3 /*break*/, 7];
-                destinationPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(newPath));
-                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                        operation: 'move',
-                        sourcePath: args.inputFileObj._id,
-                        destinationPath: destinationPath,
-                        args: args,
-                    })];
-            case 6:
-                _d.sent();
-                args.jobLog("\u2714 File moved : '".concat(args.inputFileObj._id, "' => '").concat(destinationPath, "'."));
-                outputFileObj = { _id: destinationPath };
-                _d.label = 7;
-            case 7: return [2 /*return*/, {
-                    outputFileObj: outputFileObj,
+                _b.label = 5;
+            case 5: return [2 /*return*/, {
+                    outputFileObj: destinationPath !== '' ? { _id: destinationPath } : args.inputFileObj,
                     outputNumber: 1,
                     variables: args.variables,
                 }];
