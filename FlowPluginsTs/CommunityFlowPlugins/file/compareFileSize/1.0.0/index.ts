@@ -45,13 +45,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   let outputNumber = 1;
 
   if (args.inputFileObj.file_size < args.originalLibraryFile.file_size) {
-    args.jobLog('Working file is smaller than original file.');
+    args.jobLog(`Working file (${args.inputFileObj.file_size}) is smaller than original file (${args.originalLibraryFile.file_size}).`);
     outputNumber = 1;
   } else if (args.inputFileObj.file_size === args.originalLibraryFile.file_size) {
-    args.jobLog('Working file is same size as original file.');
+    args.jobLog(`Working file (${args.inputFileObj.file_size})  is same size as original file (${args.originalLibraryFile.file_size}).`);
     outputNumber = 2;
   } else if (args.inputFileObj.file_size > args.originalLibraryFile.file_size) {
-    args.jobLog('Working file is larger than original file.');
+    args.jobLog(`Working file (${args.inputFileObj.file_size})  is larger than original file (${args.originalLibraryFile.file_size}).`);
     outputNumber = 3;
   }
 
