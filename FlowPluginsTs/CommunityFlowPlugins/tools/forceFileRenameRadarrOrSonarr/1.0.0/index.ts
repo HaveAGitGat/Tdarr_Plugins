@@ -160,7 +160,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
       },
       getFileToRename: (previewRenameRequestResult) => {
-        args.jobLog(JSON.stringify(previewRenameRequestResult));
         return ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => ((episFile.episodeNumbers?.length ?? 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber : false)
           : undefined

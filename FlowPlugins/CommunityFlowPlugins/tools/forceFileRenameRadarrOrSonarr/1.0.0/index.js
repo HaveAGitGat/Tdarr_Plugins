@@ -197,7 +197,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         },
                         getFileToRename: function (previewRenameRequestResult) {
                             var _a, _b;
-                            args.jobLog(JSON.stringify(previewRenameRequestResult));
                             return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ?
                                 previewRenameRequestResult.data.find(function (episFile) { var _a, _b; return (((_b = (_a = episFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber_1 : false; })
                                 : undefined;
