@@ -149,12 +149,13 @@ const tests = [
     output: {
       linux: {
         processFile: true,
-        preset: '-fflags +genpts <io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts -hwaccel_output_format qsv \n'
+          + '        -init_hw_device qsv:hw,child_device_type=vaapi -c:v h264<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps. \n'
-          + 'Input file is 10bit using High10. Disabling hardware decoding to avoid problems. \n'
+          + 'Input file is h264 High10. Hardware Decode not supported. \n'
           + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
           + 'Container for output selected as mkv. \n'
           + 'Encode variable bitrate settings: \n'
@@ -166,12 +167,13 @@ const tests = [
       },
       win32: {
         processFile: true,
-        preset: '-fflags +genpts <io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts -hwaccel_output_format qsv \n'
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps. \n'
-          + 'Input file is 10bit using High10. Disabling hardware decoding to avoid problems. \n'
+          + 'Input file is h264 High10. Hardware Decode not supported. \n'
           + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
           + 'Container for output selected as mkv. \n'
           + 'Encode variable bitrate settings: \n'
@@ -183,7 +185,7 @@ const tests = [
       },
       darwin: {
         processFile: true,
-        preset: '-fflags +genpts <io> -map 0 -c:v hevc_videotoolbox -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast -c:a copy -c:s copy -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts -c:v h264<io> -map 0 -c:v hevc_videotoolbox -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast -c:a copy -c:s copy -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -501,6 +503,78 @@ const tests = [
       darwin: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska ',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 1206kbps. \n'
+          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 603k \n'
+          + 'Minimum = 452k \n'
+          + 'Maximum = 754k \n'
+          + '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
+          + 'cmds set in extra_qsv_options will be IGNORED!\n'
+          + 'File Transcoding... \n',
+        container: '.mkv',
+      },
+    },
+  },
+  // Test 8
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        file.ffProbeData.streams[0].bits_per_raw_sample = '10';
+        file.video_codec_name = 'vc1';
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        container: 'mkv',
+        encoder_speedpreset: 'fast',
+      },
+      otherArguments: {},
+    },
+    output: {
+      linux: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel_output_format qsv \n'
+          + '        -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 1206kbps. \n'
+          + 'Input file is vc1. Hardware Decode not supported. \n'
+          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 603k \n'
+          + 'Minimum = 452k \n'
+          + 'Maximum = 754k \n'
+          + 'File Transcoding... \n',
+        container: '.mkv',
+      },
+      win32: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel_output_format qsv \n'
+          + '        -init_hw_device qsv:hw,child_device_type=d3d11va -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 1206kbps. \n'
+          + 'Input file is vc1. Hardware Decode not supported. \n'
+          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n'
+          + 'Container for output selected as mkv. \n'
+          + 'Encode variable bitrate settings: \n'
+          + 'Target = 603k \n'
+          + 'Minimum = 452k \n'
+          + 'Maximum = 754k \n'
+          + 'File Transcoding... \n',
+        container: '.mkv',
+      },
+      darwin: {
+        processFile: true,
+        preset: '-fflags +genpts -c:v vc1<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset slow -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,

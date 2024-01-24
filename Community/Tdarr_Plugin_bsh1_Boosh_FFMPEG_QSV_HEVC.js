@@ -326,7 +326,7 @@ let bitrateSettings = '';
 let inflatedCutoff = 0;
 let main10 = false;
 let high10 = false;
-let oldFormat = false;
+let swDecode = false;
 let videoBR = 0;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -609,14 +609,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         }
       }
 
-      // On testing I've found files in the High10 profile don't play nice with hw decoding so mark these
+      // Files in the High10 profile are not supported for HW Decode
       if (file.ffProbeData.streams[i].profile === 'High 10') {
         high10 = true;
-        response.infoLog += 'Input file is 10bit using High10. Disabling hardware decoding to avoid problems. \n';
-      }
-      // If files are 10 bit or the enable_10bit setting is used mark to enable Main10.
-      if (file.ffProbeData.streams[i].profile === 'Main 10' || file.ffProbeData.streams[i].bits_per_raw_sample === '10'
-        || inputs.enable_10bit === true) {
+        main10 = true;
+        // If files are 10 bit or the enable_10bit setting is used mark to enable Main10.
+      } else if (file.ffProbeData.streams[i].profile === 'Main 10'
+        || file.ffProbeData.streams[i].bits_per_raw_sample === '10' || inputs.enable_10bit === true) {
         main10 = true;
       }
 
@@ -637,26 +636,32 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     default:
   }
 
-  // Some video codecs won't play nice with 10 bit via QSV, whitelist safe ones here
+  // Some video codecs don't support HW decode so mark these
+  // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   switch (file.video_codec_name) {
     case 'mpeg2':
       break;
     case 'h264':
+      if (high10 === true) {
+        response.infoLog += `Input file is ${file.video_codec_name} High10. Hardware Decode not supported. \n`;
+        swDecode = true;
+      }
       break;
     case 'mjpeg':
       break;
     case 'hevc':
       break;
-    case 'vp9':
+    case 'vp9':// Should be supported by 8th Gen +
       break;
-    case 'av1':
+    case 'av1':// Should be supported by 11th gen +
       break;
     default:
-      oldFormat = true;
+      swDecode = true;
+      response.infoLog += `Input file is ${file.video_codec_name}. Hardware Decode not supported. \n`;
   }
 
   // Are we encoding to 10 bit? If so enable correct profile & pixel format.
-  if (high10 === true || (oldFormat === true && main10 === true)) {
+  if (swDecode === true && main10 === true) {
     // This is used if we have High10 or Main10 is enabled & odd format files.
     // SW decode and use standard -pix_fmt p010le
     extraArguments += '-profile:v main10 -pix_fmt p010le ';
@@ -686,10 +691,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // -fflags +genpts should regenerate timestamps if they end up missing...
   response.preset = '-fflags +genpts ';
 
-  // HW ACCEL FLAGS - I think these are good practice but are they necessary?
+  // HW ACCEL FLAGS
   // Account for different OS
-  if (high10 === false) {
-    // Seems incoming High10 files don't play nice decoding so use software decode
+  if (swDecode !== true) {
+    // Only enable hw decode for accepted formats
     switch (os.platform()) {
       case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
         response.preset += '-hwaccel videotoolbox';
@@ -705,38 +710,51 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       default:
         response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
     }
+  } else {
+    switch (os.platform()) {
+      case 'linux': // Linux - Full device, should fix child_device_type warnings
+        response.preset += `-hwaccel_output_format qsv 
+      -init_hw_device qsv:hw_any,child_device_type=vaapi `;
+        break;
+      case 'win32': // Windows - Full device, should fix child_device_type warnings
+        response.preset += `-hwaccel_output_format qsv 
+        -init_hw_device qsv:hw,child_device_type=d3d11va `;
+        break;
+      default:
+        // Default to enabling hwaccel for output only
+        response.preset += '-hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
+    }
   }
 
   // DECODE FLAGS
+  // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   if (os.platform() !== 'darwin') {
-    if (high10 === false) { // Don't enable for High10
-      switch (file.video_codec_name) {
-        case 'mpeg2':
-          response.preset += '-c:v mpeg2_qsv';
-          break;
-        case 'h264':
+    switch (file.video_codec_name) {
+      case 'mpeg2':
+        response.preset += '-c:v mpeg2_qsv';
+        break;
+      case 'h264':
+        if (high10 !== true) { // Don't enable for High10
           response.preset += '-c:v h264_qsv';
-          break;
-        case 'vc1': // VC1 no longer supported on latest intel HW
-          // response.preset += '-c:v vc1_qsv';
-          break;
-        case 'mjpeg':
-          response.preset += '-c:v mjpeg_qsv';
-          break;
-        case 'vp8': // VP8 no longer supported on latest intel HW
-          // response.preset += '-c:v vp8_qsv';
-          break;
-        case 'hevc':
-          response.preset += '-c:v hevc_qsv';
-          break;
-        case 'vp9': // Should be supported by 8th Gen +
-          response.preset += '-c:v vp9_qsv';
-          break;
-        case 'av1': // Should be supported by 11th gen +
-          response.preset += '-c:v av1_qsv';
-          break;
-        default:
-      }
+        } else {
+          response.preset += `-c:v ${file.video_codec_name}`;
+        }
+        break;
+      case 'mjpeg':
+        response.preset += '-c:v mjpeg_qsv';
+        break;
+      case 'hevc':
+        response.preset += '-c:v hevc_qsv';
+        break;
+      case 'vp9': // Should be supported by 8th Gen +
+        response.preset += '-c:v vp9_qsv';
+        break;
+      case 'av1': // Should be supported by 11th gen +
+        response.preset += '-c:v av1_qsv';
+        break;
+      default:
+        // Use incoming format for software decode
+        response.preset += `-c:v ${file.video_codec_name}`;
     }
   }
 
@@ -760,8 +778,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.preset += 'hevc_qsv'; // Default to QSV
   }
 
-  // Check if -vf cmd has already been used on user input
-  if (high10 !== true) {
+  // Only add on for HW decoded formats
+  // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
+  if (swDecode !== true) {
+    // Check if -vf cmd has already been used on user input
     if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
       switch (file.video_codec_name) {
         case 'mpeg2':
