@@ -25,7 +25,7 @@ var details = function () { return ({
                 type: 'slider',
                 sliderOptions: { max: 90, min: 10 }
             },
-            tooltip: "Specify the ratio used to adjust the bitrate.\n                          \\nExaFmple:\\n\n                          50\n      \n                          \\nExample:\\n\n                          60",
+            tooltip: "Specify the ratio used to adjust the bitrate.\n                          \\nExample:\\n\n                          50\n      \n                          \\nExample:\\n\n                          60",
         },
         {
             label: 'Bitrate cutoff (kbps)',

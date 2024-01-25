@@ -29,7 +29,7 @@ const details = (): IpluginDetails => ({
         sliderOptions: {max: 90, min: 10 }
       },
       tooltip: `Specify the ratio used to adjust the bitrate.
-                          \\nExaFmple:\\n
+                          \\nExample:\\n
                           50
       
                           \\nExample:\\n
@@ -80,6 +80,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     const currentBitrate = ~~(args.inputFileObj.file_size / (durationInMinutes * 0.0075));
     const calculatedAdjustedBitrate = ~~(currentBitrate * bitrate_ratio / 100);
     const targetBitrate = ~~(calculatedAdjustedBitrate > bitrate_cutoff ? calculatedAdjustedBitrate : bitrate_cutoff);
+    
     const minimumBitrate = ~~(targetBitrate * 0.7);
     const maximumBitrate = ~~(targetBitrate * 1.3);
 
