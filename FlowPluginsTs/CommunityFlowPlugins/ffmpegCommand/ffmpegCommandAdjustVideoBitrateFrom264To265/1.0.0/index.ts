@@ -8,7 +8,7 @@ import {
   /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
   const details = (): IpluginDetails => ({
     name: 'Adjust Video Bitrate From h264 to h265',
-    description: 'Adjust Video Bitrate when transcoding from x264 to x265, based on the logic of h265 can be half the bitrate of h264 without losing quality.',
+    description: 'Adjust Video Bitrate when transcoding from x264 to x265, based on the logic that h265 can be half the bitrate of h264 without losing quality.',
     style: {
       borderColor: '#6efefc',
     },
