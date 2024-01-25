@@ -15,7 +15,18 @@ var details = function () { return ({
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
-    inputs: [],
+    inputs: [
+        {
+            label: 'Bitrate cutoff',
+            name: 'bitrate_cutoff',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: "Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.\n                     \\n Rate is in kbps.\n                     \\n Leave empty to disable.\n                          \\nExample:\\n\n                          2500\n      \n                          \\nExample:\\n\n                          3500",
+        }
+    ],
     outputs: [
         {
             number: 1,
@@ -30,6 +41,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
+    var bitrate_cutoff = Number(args.inputs.bitrate_cutoff) || 0;
     // Duration can be found (or not) at multiple spots, trying to cover all of them here.
     var duration = Number((_b = (_a = args.inputFileObj.ffProbeData) === null || _a === void 0 ? void 0 : _a.format) === null || _b === void 0 ? void 0 : _b.duration)
         || ((_c = args.inputFileObj.meta) === null || _c === void 0 ? void 0 : _c.Duration)
@@ -38,7 +50,7 @@ var plugin = function (args) {
     if (duration !== -1 && typeof args.inputFileObj.file_size) {
         var durationInMinutes = duration * 0.0166667;
         var currentBitrate_1 = ~~(args.inputFileObj.file_size / (durationInMinutes * 0.0075));
-        var targetBitrate_1 = ~~(currentBitrate_1 / 2);
+        var targetBitrate_1 = ~~((currentBitrate_1 / 2) > bitrate_cutoff ? (currentBitrate_1 / 2) : bitrate_cutoff);
         var minimumBitrate_1 = ~~(targetBitrate_1 * 0.7);
         var maximumBitrate_1 = ~~(targetBitrate_1 * 1.3);
         args.jobLog("currentBitrate ".concat(String(currentBitrate_1), "k; targetBitrate ").concat(String(targetBitrate_1), "k; minimumBitrate ").concat(String(minimumBitrate_1), "k; maximumBitrate ").concat(String(maximumBitrate_1), "k"));
