@@ -64,7 +64,8 @@ var plugin = function (args) {
         var currentBitrate_1 = ~~(args.inputFileObj.file_size / (durationInMinutes * 0.0075));
         var calculatedAdjustedBitrate = ~~(currentBitrate_1 * bitrate_ratio / 100);
         var targetBitrate_1 = ~~(calculatedAdjustedBitrate > bitrate_cutoff ? calculatedAdjustedBitrate : bitrate_cutoff);
-        var minimumBitrate_1 = ~~(targetBitrate_1 * 0.7);
+        var calculatedMinimumBitrate = ~~(targetBitrate_1 * 0.7);
+        var minimumBitrate_1 = ~~(calculatedMinimumBitrate > bitrate_cutoff ? calculatedMinimumBitrate : bitrate_cutoff);
         var maximumBitrate_1 = ~~(targetBitrate_1 * 1.3);
         args.jobLog("currentBitrate ".concat(String(currentBitrate_1), "k; calculatedAdjustedBitrate ").concat(String(calculatedAdjustedBitrate), "k; targetBitrate ").concat(String(targetBitrate_1), "k; minimumBitrate ").concat(String(minimumBitrate_1), "k; maximumBitrate ").concat(String(maximumBitrate_1), "k"));
         args.variables.ffmpegCommand.streams.forEach(function (stream) {

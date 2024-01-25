@@ -80,8 +80,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     const currentBitrate = ~~(args.inputFileObj.file_size / (durationInMinutes * 0.0075));
     const calculatedAdjustedBitrate = ~~(currentBitrate * bitrate_ratio / 100);
     const targetBitrate = ~~(calculatedAdjustedBitrate > bitrate_cutoff ? calculatedAdjustedBitrate : bitrate_cutoff);
-    
-    const minimumBitrate = ~~(targetBitrate * 0.7);
+    const calculatedMinimumBitrate = ~~(targetBitrate * 0.7);
+    const minimumBitrate = ~~(calculatedMinimumBitrate > bitrate_cutoff ? calculatedMinimumBitrate : bitrate_cutoff);
     const maximumBitrate = ~~(targetBitrate * 1.3);
 
     args.jobLog(`currentBitrate ${String(currentBitrate)}k; calculatedAdjustedBitrate ${String(calculatedAdjustedBitrate)}k; targetBitrate ${String(targetBitrate)}k; minimumBitrate ${String(minimumBitrate)}k; maximumBitrate ${String(maximumBitrate)}k`);
