@@ -8,7 +8,7 @@ import { getFfType } from '../../../../FlowHelpers/1.0.0/fileUtils';
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Adjust Video Bitrate From h264 to h265',
-  description: 'Adjust Video Bitrate when transcoding from x264 to x265, based on the logic that h265 can be half the bitrate of h264 without losing quality.',
+  description: 'Adjust Video Bitrate when transcoding from x264 to x265, based on the logic that h265 can have a lower bitrate than h264 without losing quality.',
   style: {
     borderColor: '#6efefc',
   },
@@ -20,14 +20,31 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Bitrate ratio',
+      name: 'bitrate_ratio',
+      type: 'number',
+      defaultValue: '50',
+      inputUI: {
+        type: 'slider',
+        sliderOptions: {max: 90, min: 10 }
+      },
+      tooltip: `Specify the ratio used to adjust the bitrate.
+                     \\n Ratio is expressed as a percentage.
+                          \\nExample:\\n
+                          50
+      
+                          \\nExample:\\n
+                          60`,
+    },
+    {
       label: 'Bitrate cutoff',
       name: 'bitrate_cutoff',
-      type: 'string',
+      type: 'number',
       defaultValue: '',
       inputUI: {
         type: 'text',
       },
-      tooltip: `Specify bitrate cutoff, files with a current bitrate lower then this will not be transcoded.
+      tooltip: `Specify the cutoff value for the bitrate. If the calculated target bitrate is lower then the cutoff value will used as the target bitrate.
                      \\n Rate is in kbps.
                      \\n Leave empty to disable.
                           \\nExample:\\n
@@ -49,7 +66,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
-  const bitrate_cutoff = Number(args.inputs.bitrate_cutoff) || 0;
+  const bitrate_cutoff = Number(args.inputs.bitrate_cutoff);
+  const bitrate_ratio = Number(args.inputs.bitrate_ratio) || 50;
 
   // Duration can be found (or not) at multiple spots, trying to cover all of them here.
   const duration =
@@ -62,11 +80,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     const durationInMinutes = duration * 0.0166667;
 
     const currentBitrate = ~~(args.inputFileObj.file_size / (durationInMinutes * 0.0075));
-    const targetBitrate = ~~((currentBitrate / 2) > bitrate_cutoff ? (currentBitrate / 2) : bitrate_cutoff);
+    const calculatedAdjustedBitrate = ~~(currentBitrate * bitrate_ratio / 100);
+    const targetBitrate = ~~(calculatedAdjustedBitrate > bitrate_cutoff ? calculatedAdjustedBitrate : bitrate_cutoff);
     const minimumBitrate = ~~(targetBitrate * 0.7);
     const maximumBitrate = ~~(targetBitrate * 1.3);
 
-    args.jobLog(`currentBitrate ${String(currentBitrate)}k; targetBitrate ${String(targetBitrate)}k; minimumBitrate ${String(minimumBitrate)}k; maximumBitrate ${String(maximumBitrate)}k`);
+    args.jobLog(`currentBitrate ${String(currentBitrate)}k; calculatedAdjustedBitrate ${String(calculatedAdjustedBitrate)}k; targetBitrate ${String(targetBitrate)}k; minimumBitrate ${String(minimumBitrate)}k; maximumBitrate ${String(maximumBitrate)}k`);
     args.variables.ffmpegCommand.streams.forEach((stream) => {
       if (stream.codec_type === 'video') {
         stream.outputArgs.push(`-b:${getFfType(stream.codec_type)}:{outputTypeIndex}`, `${String(targetBitrate)}k`);
