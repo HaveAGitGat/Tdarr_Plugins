@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -101,7 +112,7 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, rename, destinationPath, episodeNumber_1;
+    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, getNewPath, pathWithNewName, episodeNumber_1;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -112,12 +123,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
-                rename = function (delegates) { return __awaiter(void 0, void 0, void 0, function () {
-                    var destinationPath, headers, parseRequestConfig, parseRequestResult, id, previewRenameRequestConfig, previewRenameRequestResult, fileToRename;
+                getNewPath = function (delegates) { return __awaiter(void 0, void 0, void 0, function () {
+                    var pathWithNewName, headers, parseRequestConfig, parseRequestResult, id, previewRenameRequestConfig, previewRenameRequestResult, fileToRename;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                destinationPath = '';
+                                pathWithNewName = '';
                                 args.jobLog('Going to force rename');
                                 args.jobLog("Renaming ".concat(arr === 'radarr' ? 'Radarr' : 'Sonarr', "..."));
                                 headers = {
@@ -145,16 +156,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 previewRenameRequestResult = _a.sent();
                                 fileToRename = delegates.getFileToRename(previewRenameRequestResult);
                                 if (!(fileToRename !== undefined)) return [3 /*break*/, 4];
-                                destinationPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                                pathWithNewName = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                                         operation: 'move',
                                         sourcePath: args.inputFileObj._id,
-                                        destinationPath: destinationPath,
+                                        destinationPath: pathWithNewName,
                                         args: args,
                                     })];
                             case 3:
                                 _a.sent();
-                                args.jobLog("\u2714 Renamed ".concat(arr === 'radarr' ? 'movie' : 'serie', " ").concat(id, " : '").concat(args.inputFileObj._id, "' => '").concat(destinationPath, "'."));
+                                args.jobLog("\u2714 Renamed ".concat(arr === 'radarr' ? 'movie' : 'serie', " ").concat(id, " : '").concat(args.inputFileObj._id, "' => '").concat(pathWithNewName, "'."));
                                 return [3 /*break*/, 5];
                             case 4:
                                 args.jobLog('✔ No rename necessary.');
@@ -163,13 +174,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             case 6:
                                 args.jobLog("\u2714 No ".concat(arr === 'radarr' ? 'movie' : 'serie', " with a file named '").concat(fileName, "'."));
                                 _a.label = 7;
-                            case 7: return [2 /*return*/, destinationPath];
+                            case 7: return [2 /*return*/, pathWithNewName];
                         }
                     });
                 }); };
-                destinationPath = '';
+                pathWithNewName = '';
                 if (!(arr === 'radarr')) return [3 /*break*/, 2];
-                return [4 /*yield*/, rename({
+                return [4 /*yield*/, getNewPath({
                         getId: function (parseRequestResult) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
                         getPreviewRenameResquestUrl: function (id, parseRequestResult) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(id); },
                         getFileToRename: function (previewRenameRequestResult) {
@@ -180,12 +191,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         }
                     })];
             case 1:
-                destinationPath = _b.sent();
+                pathWithNewName = _b.sent();
                 return [3 /*break*/, 5];
             case 2:
                 if (!(arr === 'sonarr')) return [3 /*break*/, 4];
                 episodeNumber_1 = 0;
-                return [4 /*yield*/, rename({
+                return [4 /*yield*/, getNewPath({
                         getId: function (parseRequestResult) { var _a, _b, _c; return String((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
                         getPreviewRenameResquestUrl: function (id, parseRequestResult) {
                             episodeNumber_1 = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
@@ -199,13 +210,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         }
                     })];
             case 3:
-                destinationPath = _b.sent();
+                pathWithNewName = _b.sent();
                 return [3 /*break*/, 5];
             case 4:
                 args.jobLog('No arr specified in plugin inputs.');
                 _b.label = 5;
             case 5: return [2 /*return*/, {
-                    outputFileObj: destinationPath !== '' ? { _id: destinationPath } : args.inputFileObj,
+                    outputFileObj: pathWithNewName !== '' ? __assign(__assign({}, args.inputFileObj), { _id: pathWithNewName }) : args.inputFileObj,
                     outputNumber: 1,
                     variables: args.variables,
                 }];
