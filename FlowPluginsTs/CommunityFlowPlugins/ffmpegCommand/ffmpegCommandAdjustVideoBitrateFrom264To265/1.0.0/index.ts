@@ -20,7 +20,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
-      label: 'Bitrate ratio',
+      label: 'Bitrate ratio (%)',
       name: 'bitrate_ratio',
       type: 'number',
       defaultValue: '50',
@@ -29,15 +29,14 @@ const details = (): IpluginDetails => ({
         sliderOptions: {max: 90, min: 10 }
       },
       tooltip: `Specify the ratio used to adjust the bitrate.
-                     \\n Ratio is expressed as a percentage.
-                          \\nExample:\\n
+                          \\nExaFmple:\\n
                           50
       
                           \\nExample:\\n
                           60`,
     },
     {
-      label: 'Bitrate cutoff',
+      label: 'Bitrate cutoff (kbps)',
       name: 'bitrate_cutoff',
       type: 'number',
       defaultValue: '',
@@ -45,8 +44,7 @@ const details = (): IpluginDetails => ({
         type: 'text',
       },
       tooltip: `Specify the cutoff value for the bitrate. If the calculated target bitrate is lower then the cutoff value will used as the target bitrate.
-                     \\n Rate is in kbps.
-                     \\n Leave empty to disable.
+                          \\n Leave empty to disable.
                           \\nExample:\\n
                           2500
       
@@ -67,7 +65,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
   const bitrate_cutoff = Number(args.inputs.bitrate_cutoff);
-  const bitrate_ratio = Number(args.inputs.bitrate_ratio) || 50;
+  const bitrate_ratio = Number(args.inputs.bitrate_ratio);
 
   // Duration can be found (or not) at multiple spots, trying to cover all of them here.
   const duration =

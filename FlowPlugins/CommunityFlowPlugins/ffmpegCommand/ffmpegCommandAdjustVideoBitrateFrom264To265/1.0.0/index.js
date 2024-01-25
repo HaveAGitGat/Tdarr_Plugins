@@ -17,7 +17,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
-            label: 'Bitrate ratio',
+            label: 'Bitrate ratio (%)',
             name: 'bitrate_ratio',
             type: 'number',
             defaultValue: '50',
@@ -25,17 +25,17 @@ var details = function () { return ({
                 type: 'slider',
                 sliderOptions: { max: 90, min: 10 }
             },
-            tooltip: "Specify the ratio used to adjust the bitrate.\n                     \\n Ratio is expressed as a percentage.\n                          \\nExample:\\n\n                          50\n      \n                          \\nExample:\\n\n                          60",
+            tooltip: "Specify the ratio used to adjust the bitrate.\n                          \\nExaFmple:\\n\n                          50\n      \n                          \\nExample:\\n\n                          60",
         },
         {
-            label: 'Bitrate cutoff',
+            label: 'Bitrate cutoff (kbps)',
             name: 'bitrate_cutoff',
             type: 'number',
             defaultValue: '',
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Specify the cutoff value for the bitrate. If the calculated target bitrate is lower then the cutoff value will used as the target bitrate.\n                     \\n Rate is in kbps.\n                     \\n Leave empty to disable.\n                          \\nExample:\\n\n                          2500\n      \n                          \\nExample:\\n\n                          3500",
+            tooltip: "Specify the cutoff value for the bitrate. If the calculated target bitrate is lower then the cutoff value will used as the target bitrate.\n                          \\n Leave empty to disable.\n                          \\nExample:\\n\n                          2500\n      \n                          \\nExample:\\n\n                          3500",
         }
     ],
     outputs: [
@@ -53,7 +53,7 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var bitrate_cutoff = Number(args.inputs.bitrate_cutoff);
-    var bitrate_ratio = Number(args.inputs.bitrate_ratio) || 50;
+    var bitrate_ratio = Number(args.inputs.bitrate_ratio);
     // Duration can be found (or not) at multiple spots, trying to cover all of them here.
     var duration = Number((_b = (_a = args.inputFileObj.ffProbeData) === null || _a === void 0 ? void 0 : _a.format) === null || _b === void 0 ? void 0 : _b.duration)
         || ((_c = args.inputFileObj.meta) === null || _c === void 0 ? void 0 : _c.Duration)
