@@ -28,8 +28,8 @@ const details = () => ({
     true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate".
     This plugin relies on understanding the accurate video bitrate of your files. It's highly recommended to remux 
     into MKV & enable "Run mkvpropedit on files before running plugins" under Tdarr>Options.`,
-  Version: '1.21',
-  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,mkvpropedit,configurable',
+  Version: '1.3',
+  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
   Inputs: [
     {
       name: 'container',
