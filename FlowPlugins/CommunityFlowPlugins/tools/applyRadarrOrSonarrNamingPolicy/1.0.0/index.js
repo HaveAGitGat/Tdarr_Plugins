@@ -172,7 +172,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 _a.label = 5;
                             case 5: return [3 /*break*/, 7];
                             case 6:
-                                args.jobLog("\u2714 No ".concat(arr === 'radarr' ? 'movie' : 'serie', " with a file named '").concat(fileName, "'."));
+                                args.jobLog("No ".concat(arr === 'radarr' ? 'movie' : 'serie', " with a file named '").concat(fileName, "'."));
                                 _a.label = 7;
                             case 7: return [2 /*return*/, pathWithNewName];
                         }
@@ -205,7 +205,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         getFileToRename: function (previewRenameRequestResult) {
                             var _a, _b;
                             return (((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ?
-                                previewRenameRequestResult.data.find(function (episFile) { var _a, _b; return (((_b = (_a = episFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber_1 : false; })
+                                previewRenameRequestResult.data.find(function (episodeFile) { var _a, _b; return (((_b = (_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0) ? episodeFile.episodeNumbers[0] === episodeNumber_1 : false; })
                                 : undefined;
                         }
                     })];

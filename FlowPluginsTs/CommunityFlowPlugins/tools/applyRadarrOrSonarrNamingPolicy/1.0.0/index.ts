@@ -66,6 +66,12 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+interface IGetNewPathDelegates {
+  getId: (parseRequestResult: any) => string,
+  getPreviewRenameResquestUrl: (id: string, parseRequestResult: any) => string,
+  getFileToRename: (previewRenameRequestResult: any) => any
+}
+
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -75,12 +81,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
   const fileName = getFileName(args.inputFileObj._id);
-
-  interface IGetNewPathDelegates {
-    getId: (parseRequestResult: any) => string,
-    getPreviewRenameResquestUrl: (id: string, parseRequestResult: any) => string,
-    getFileToRename: (previewRenameRequestResult: any) => any
-  }
 
   const getNewPath = async (delegates: IGetNewPathDelegates)
     : Promise<string> => {
@@ -130,7 +130,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       } else
         args.jobLog('✔ No rename necessary.');
     } else
-      args.jobLog(`✔ No ${arr === 'radarr' ? 'movie' : 'serie'} with a file named '${fileName}'.`);
+      args.jobLog(`No ${arr === 'radarr' ? 'movie' : 'serie'} with a file named '${fileName}'.`);
 
     return pathWithNewName;
   };
@@ -155,7 +155,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       },
       getFileToRename: (previewRenameRequestResult) =>
         ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
-          previewRenameRequestResult.data.find((episFile: { episodeNumbers: number[]; }) => ((episFile.episodeNumbers?.length ?? 0) > 0) ? episFile.episodeNumbers[0] === episodeNumber : false)
+          previewRenameRequestResult.data.find((episodeFile: { episodeNumbers: number[]; }) => ((episodeFile.episodeNumbers?.length ?? 0) > 0) ? episodeFile.episodeNumbers[0] === episodeNumber : false)
           : undefined
     });
   } else {
