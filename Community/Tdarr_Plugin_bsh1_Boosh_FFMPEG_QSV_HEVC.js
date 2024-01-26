@@ -670,7 +670,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
       extraArguments += '-profile:v main10';
       // eslint-disable-next-line no-param-reassign
-      inputs.extra_qsv_options += ':format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
+      inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
     } else {
       extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le';
     }
