@@ -67,9 +67,9 @@ const details = (): IpluginDetails => ({
 });
 
 interface IGetNewPathDelegates {
-  getId: (parseRequestResult: any) => string,
-  getPreviewRenameResquestUrl: (id: string, parseRequestResult: any) => string,
-  getFileToRename: (previewRenameRequestResult: any) => any
+  getIdFromParseRequestResult: (parseRequestResult: any) => string,
+  buildPreviewRenameResquestUrl: (id: string, parseRequestResult: any) => string,
+  getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult: any) => any
 }
 
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -102,7 +102,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       headers,
     };
     const parseRequestResult = await args.deps.axios(parseRequestConfig);
-    const id = delegates.getId(parseRequestResult);
+    const id = delegates.getIdFromParseRequestResult(parseRequestResult);
 
     // Checking that the file has been found. A file not found might be caused because Radarr/Sonarr hasn't been notified of a file rename (notify plugin missing ?)
     // or because Radarr/Sonarr has upgraded the movie/serie to another release before the end of the plugin stack execution.
@@ -110,11 +110,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       // Using rename endpoint to get ids of all the files that need renaming.
       const previewRenameRequestConfig = {
         method: 'get',
-        url: delegates.getPreviewRenameResquestUrl(id, parseRequestResult),
+        url: delegates.buildPreviewRenameResquestUrl(id, parseRequestResult),
         headers,
       };
       const previewRenameRequestResult = await args.deps.axios(previewRenameRequestConfig);
-      const fileToRename = delegates.getFileToRename(previewRenameRequestResult);
+      const fileToRename = delegates.getFileToRenameFromPreviewRenameRequestResult(previewRenameRequestResult);
 
       // Only if there is a rename to execute
       if (fileToRename !== undefined) {
@@ -138,9 +138,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   let pathWithNewName = '';
   if (arr === 'radarr') {
     pathWithNewName = await getNewPath({
-      getId: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
-      getPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
-      getFileToRename: (previewRenameRequestResult) =>
+      getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
+      buildPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
+      getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
         ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data[0]
           : undefined
@@ -148,12 +148,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   } else if (arr === 'sonarr') {
     let episodeNumber = 0;
     pathWithNewName = await getNewPath({
-      getId: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
-      getPreviewRenameResquestUrl: (id, parseRequestResult) => {
+      getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
+      buildPreviewRenameResquestUrl: (id, parseRequestResult) => {
         episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
         return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
       },
-      getFileToRename: (previewRenameRequestResult) =>
+      getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
         ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
           previewRenameRequestResult.data.find((episodeFile: { episodeNumbers: number[]; }) => ((episodeFile.episodeNumbers?.length ?? 0) > 0) ? episodeFile.episodeNumbers[0] === episodeNumber : false)
           : undefined
