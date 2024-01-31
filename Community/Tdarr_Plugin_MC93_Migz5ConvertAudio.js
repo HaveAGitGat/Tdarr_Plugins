@@ -59,8 +59,8 @@ const details = () => ({
       ],
     },
     tooltip: 'By default this plugin will downmix each track. '
-    + 'So four 6 channel tracks will result in four 2 channel tracks.'
-    + ' Enable this option to only downmix a single track.',
+      + 'So four 6 channel tracks will result in four 2 channel tracks.'
+      + ' Enable this option to only downmix a single track.',
   },
   ],
 });
@@ -79,12 +79,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  //  Check if both inputs.aac_stereo AND inputs.downmix have been left empty. If they have then exit plugin.
-  if (inputs && inputs.aac_stereo === '' && inputs.downmix === '') {
-    response.infoLog += '☒Plugin has not been configured, please configure required options. Skipping this plugin. \n';
-    response.processFile = false;
-    return response;
-  }
+  const safeToLowerCase = (stringInput) => stringInput?.toLowerCase() || '';
+
+  //Set up inputs
+  const aacStereo = inputs?.aac_stereo ?? false;
+  const downmix = inputs?.downmix ?? false;
+  const downmixSingleTrack = inputs?.downmix_single_track ?? false;
 
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
@@ -98,93 +98,46 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Set up required variables.
   let ffmpegCommandInsert = '';
   let audioIdx = 0;
-  let has2Channel = false;
-  let has6Channel = false;
+  const audioStreams = file.ffProbeData.streams.filters(stream => safeToLowerCase(stream.codec_type) === 'audio');
   let convert = false;
   let is2channelAdded = false;
   let is6channelAdded = false;
 
-  // Go through each stream in the file.
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    try {
-      // Go through all audio streams and check if 2,6 & 8 channel tracks exist or not.
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
-        if (file.ffProbeData.streams[i].channels === 2) {
-          has2Channel = true;
-        }
-        if (file.ffProbeData.streams[i].channels === 6) {
-          has6Channel = true;
-        }
+  const addDownmixedAudioStream = (audioStream, currentChannels, targetedChannels, channelsAdded, encoder, targetedChannelsLayout) => {
+    let isStreamAdded = false;
+    if (audioStream.channels === currentChannels && (!downmixSingleTrack || (downmixSingleTrack && !channelsAdded))) {
+      downmixedStream = audioStreams.find(aStream => aStream.channels === targetedChannels && (aStream.tags?.language?.toLowerCase() ?? 'und') !== (audioStream.tags?.language?.toLowerCase() ?? 'und'));
+      if (downmixedStream === undefined){
+        ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title=${targetedChannelsLayout}_from_${safeToLowerCase(audioStream.tags?.title).replace(/ /g, "_")} `;
+        response.infoLog += `☒Audio track is ${currentChannels} channel, no ${targetedChannels} channel exists. Creating ${targetedChannels} channel from ${currentChannels} channel. \n`;
+        convert = true;
+        isStreamAdded = true;
       }
-    } catch (err) {
-      // Error
     }
+    return isStreamAdded;
   }
 
-  // Go through each stream in the file.
-  for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-    // Check if stream is audio.
-    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
-      // Catch error here incase user left inputs.downmix empty.
-      try {
-        // Check if inputs.downmix is set to true.
-        if (inputs.downmix === true) {
-          // Check if file has 8 channel audio but no 6 channel, if so then create extra downmix from the 8 channel.
-          if (
-            file.ffProbeData.streams[i].channels === 8
-            && has6Channel === false
-            && (inputs.downmix_single_track === false
-              || (inputs.downmix_single_track === true && is6channelAdded === false))
-
-          ) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
-            response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel from 8 channel. \n';
-            convert = true;
-            is6channelAdded = true;
-          }
-          // Check if file has 6 channel audio but no 2 channel, if so then create extra downmix from the 6 channel.
-          if (
-            file.ffProbeData.streams[i].channels === 6
-            && has2Channel === false
-            && (inputs.downmix_single_track === false
-              || (inputs.downmix_single_track === true && is2channelAdded === false))
-          ) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
-            response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel from 6 channel. \n';
-            convert = true;
-            is2channelAdded = true;
-          }
-        }
-      } catch (err) {
-        // Error
-      }
-
-      // Catch error here incase user left inputs.downmix empty.
-      try {
-        // Check if inputs.aac_stereo is set to true.
-        if (inputs.aac_stereo === true) {
-          // Check if codec_name for stream is NOT aac AND check if channel ammount is 2.
-          if (
-            file.ffProbeData.streams[i].codec_name !== 'aac'
-            && file.ffProbeData.streams[i].channels === 2
-          ) {
-            ffmpegCommandInsert += `-c:a:${audioIdx} aac `;
-            response.infoLog += '☒Audio track is 2 channel but is not AAC. Converting. \n';
-            convert = true;
-          }
-        }
-      } catch (err) {
-        // Error
-      }
-      audioIdx += 1;
+  // Go through each audio stream in the file.
+  audioStreams.forEach(audioStream => {
+    if (downmix) {
+      is6channelAdded = addDownmixedAudioStream(audioStream, 8, 6, is6channelAdded, 'ac3', '5.1');
+      is2channelAdded = addDownmixedAudioStream(audioStream, 6, 2, is2channelAdded, 'aac', '2.0');
     }
-  }
+
+    if (aacStereo && safeToLowerCase(audioStream.codec_name) !== 'aac' && audioStream.channels === 2) {
+      ffmpegCommandInsert += `-c:a:${audioIdx} aac `;
+      response.infoLog += '☒Audio track is 2 channel but is not AAC. Converting. \n';
+      convert = true;
+    }
+
+    ++audioIdx;
+  });
 
   // Convert file if convert variable is set to true.
   if (convert === true) {
     response.processFile = true;
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
-    + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
+      + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
   } else {
     response.infoLog += '☑File contains all required audio formats. \n';
     response.processFile = false;
