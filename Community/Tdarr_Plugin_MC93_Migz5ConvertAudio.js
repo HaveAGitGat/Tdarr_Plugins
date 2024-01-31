@@ -106,7 +106,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const addDownmixedAudioStream = (audioStream, currentChannels, targetedChannels, channelsAdded, encoder, targetedChannelsLayout) => {
     let isStreamAdded = false;
     if (audioStream.channels === currentChannels && (!downmixSingleTrack || (downmixSingleTrack && !channelsAdded))) {
-      downmixedStream = audioStreams.find(aStream => aStream.channels === targetedChannels && (aStream.tags?.language?.toLowerCase() ?? 'und') !== (audioStream.tags?.language?.toLowerCase() ?? 'und'));
+      downmixedStream = audioStreams.find(aStream => aStream.channels === targetedChannels && (aStream.tags?.language?.toLowerCase() ?? 'und') === (audioStream.tags?.language?.toLowerCase() ?? 'und'));
       if (downmixedStream === undefined){
         ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title=${targetedChannelsLayout}_from_${safeToLowerCase(audioStream.tags?.title).replace(/ /g, "_")} `;
         response.infoLog += `☒Audio track is ${currentChannels} channel, no ${targetedChannels} channel exists. Creating ${targetedChannels} channel from ${currentChannels} channel. \n`;
