@@ -98,7 +98,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Set up required variables.
   let ffmpegCommandInsert = '';
   let audioIdx = 0;
-  const audioStreams = file.ffProbeData.streams.filters(stream => safeToLowerCase(stream.codec_type) === 'audio');
+  const audioStreams = file.ffProbeData.streams.filter(stream => safeToLowerCase(stream.codec_type) === 'audio');
   let convert = false;
   let is2channelAdded = false;
   let is6channelAdded = false;
