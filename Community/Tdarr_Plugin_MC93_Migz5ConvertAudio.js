@@ -134,7 +134,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   });
 
   // Convert file if convert variable is set to true.
-  if (convert === true) {
+  if (convert) {
     response.processFile = true;
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
       + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
