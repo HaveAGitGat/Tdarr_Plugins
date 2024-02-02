@@ -105,7 +105,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Set up different kinds of downmixing.
   const audioStreamDownmixes = {
-    from8chTo6ch: { currentChannels: 8, targetedChannels: 6, encoder: 'ac3', targetedChannelsLayout: '5.1' },
+    from8chTo6ch: { currentChannels: 8, targetedChannels: 6, encoder: 'eac3', targetedChannelsLayout: '5.1' },
     from6chTo2ch: { currentChannels: 6, targetedChannels: 2, encoder: 'aac', targetedChannelsLayout: '2.0' }
   };
   const addDownmixedAudioStream = (audioStream, audioStreamIndex, audioStreamDownmix, channelsAdded) => {
@@ -139,14 +139,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   });
 
   // Convert file if convert variable is set to true.
-  if (convert) {
-    response.processFile = true;
+  response.processFile = convert;
+  if (convert)
     response.preset = `, -map 0 -c:v copy -c:a copy ${ffmpegCommandInsert} `
       + '-strict -2 -c:s copy -max_muxing_queue_size 9999 ';
-  } else {
+  else
     response.infoLog += '☑File contains all required audio formats. \n';
-    response.processFile = false;
-  }
+
   return response;
 };
 module.exports.details = details;
