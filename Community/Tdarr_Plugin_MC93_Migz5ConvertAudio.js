@@ -134,7 +134,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const safeToLowerCase = (stringInput, defaultValue = '') => stringInput?.toLowerCase() ?? defaultValue;
   const safeToLowerCaseLanguage = (language) => safeToLowerCase(language, 'und');
-  const resolveEncoder = (encoder) => encoder == "mp3" ? 'libmp3lame' : (encoder == "dts" ? 'dca' : encoder);
+  const resolveEncoder = (encoder) => encoder === 'mp3' ? 'libmp3lame' : (encoder === 'dts' ? 'dca' : encoder);
 
   //Set up inputs.
   const aacStereo = inputs?.aac_stereo ?? false;
