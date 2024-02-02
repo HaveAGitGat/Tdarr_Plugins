@@ -134,13 +134,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   const safeToLowerCase = (stringInput, defaultValue = '') => stringInput?.toLowerCase() ?? defaultValue;
   const safeToLowerCaseLanguage = (language) => safeToLowerCase(language, 'und');
+  const resolveEncoder = (encoder) => encoder == "mp3" ? 'libmp3lame' : (encoder == "dts" ? 'dca' : encoder);
 
   //Set up inputs.
   const aacStereo = inputs?.aac_stereo ?? false;
   const downmix = inputs?.downmix ?? false;
   const downmixSingleTrack = inputs?.downmix_single_track ?? false;
-  const codec2channels = aacStereo ? 'aac' : safeToLowerCase(inputs?.codec2channels, 'aac');
-  const codec6channels = safeToLowerCase(inputs?.codec6channels, 'ac3');
+  const codec2channels = aacStereo ? 'aac' : resolveEncoder(safeToLowerCase(inputs?.codec2channels, 'aac'));
+  const codec6channels = resolveEncoder(safeToLowerCase(inputs?.codec6channels, 'ac3'));
 
   // Set up required variables.
   let ffmpegCommandInsert = '';
