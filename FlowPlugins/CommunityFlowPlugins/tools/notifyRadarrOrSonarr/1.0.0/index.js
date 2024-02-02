@@ -109,11 +109,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 refresh = function (refreshType) { return __awaiter(void 0, void 0, void 0, function () {
-                    var pathWithNewName, headers, parseRequestConfig, parseRequestResult, id, refreshResquestConfig;
+                    var headers, parseRequestConfig, parseRequestResult, id, refreshResquestConfig;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
-                                pathWithNewName = '';
                                 args.jobLog('Going to force scan');
                                 args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
                                 headers = {
@@ -145,7 +144,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             case 3:
                                 args.jobLog("No ".concat(refreshType.contentName, " with a file named '").concat(fileName, "'."));
                                 _a.label = 4;
-                            case 4: return [2 /*return*/, pathWithNewName];
+                            case 4: return [2 /*return*/];
                         }
                     });
                 }); };

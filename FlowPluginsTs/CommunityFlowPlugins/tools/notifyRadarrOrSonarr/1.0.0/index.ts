@@ -90,9 +90,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const fileName = getFileName(args.inputFileObj._id);
 
   const refresh = async (refreshType: IRefreshType)
-    : Promise<string> => {
-    let pathWithNewName = '';
-
+    : Promise<void> => {
     args.jobLog('Going to force scan');
     args.jobLog(`Refreshing ${refreshType.appName}...`);
 
@@ -125,8 +123,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       args.jobLog(`✔ Refreshed ${refreshType.contentName} ${id} in ${refreshType.appName}.`);
     } else
       args.jobLog(`No ${refreshType.contentName} with a file named '${fileName}'.`);
-
-    return pathWithNewName;
   };
 
   const refreshTypes: IRefreshTypes = {
