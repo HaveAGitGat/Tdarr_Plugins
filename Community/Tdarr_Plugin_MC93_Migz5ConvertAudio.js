@@ -140,8 +140,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const aacStereo = inputs?.aac_stereo ?? false;
   const downmix = inputs?.downmix ?? false;
   const downmixSingleTrack = inputs?.downmix_single_track ?? false;
-  const codec2channels = aacStereo ? 'aac' : resolveEncoder(safeToLowerCase(inputs?.codec2channels, 'aac'));
   const codec6channels = resolveEncoder(safeToLowerCase(inputs?.codec6channels, 'ac3'));
+  const codec2channels = aacStereo ? 'aac' : resolveEncoder(safeToLowerCase(inputs?.codec2channels, 'aac'));
 
   // Set up required variables.
   let ffmpegCommandInsert = '';
@@ -161,8 +161,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // No downmixing if an audio stream is found with the targeted number of channels and the correct language.
       const downmixedStream = audioStreams.find(existingAudioStream => existingAudioStream.channels === audioStreamDownmix.targetedChannels && safeToLowerCaseLanguage(existingAudioStream.tags?.language) === safeToLowerCaseLanguage(audioStream.tags?.language));
       if (downmixedStream === undefined) {
-        const addedStreamTitle = `${audioStreamDownmix.targetedChannelsLayout}_from_${safeToLowerCase(audioStream.tags?.title).replace(/ /g, "_")}`;
-        ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioStreamIndex} ${audioStreamDownmix.encoder} -ac:a:${audioStreamIndex} ${audioStreamDownmix.targetedChannels} -metadata:s:a:${audioStreamIndex} title=${addedStreamTitle} `;
+        const addedStreamTitle = `${audioStreamDownmix.targetedChannelsLayout} from ${audioStream.tags?.title?.replace(/"/g, '') ?? ''}`;
+        ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioStreamIndex} ${audioStreamDownmix.encoder} -ac:a:${audioStreamIndex} ${audioStreamDownmix.targetedChannels} -metadata:s:a:${audioStreamIndex} title="${addedStreamTitle}" `;
         response.infoLog += `☒Creating ${audioStreamDownmix.targetedChannels} channel from ${audioStreamDownmix.currentChannels} channel for language ${safeToLowerCaseLanguage(audioStream.tags?.language)}. \n`;
         convert = true;
         isStreamAdded = true;
