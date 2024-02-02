@@ -19,7 +19,7 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatability with devices.
+    tooltip: `Specify if any 2.0 audio tracks should be converted to aac for maximum compatibility with devices.
                     \\nOptional.
              \\nExample:\\n
              true
@@ -62,7 +62,51 @@ const details = () => ({
       + 'So four 6 channel tracks will result in four 2 channel tracks.'
       + ' Enable this option to only downmix a single track.',
   },
-  ],
+  {
+    name: "codec",
+    name: "codec_6channels",
+    type: 'string',
+    defaultValue: 'ac3',
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'aac'
+        , 'ac3'
+        , 'eac3'
+        , 'dts'
+        , 'flac'
+        , 'mp2'
+        , 'mp3'
+        , 'truehd'
+      ],
+    },
+    tooltip: `Specify the codec you'd like to transcode into for audio tracks with 6 channels.
+              \\nExample:\\n
+              eac3`,
+  },
+  {
+    name: "codec",
+    name: "codec_2channels",
+    type: 'string',
+    defaultValue: 'aac',
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'aac'
+        , 'ac3'
+        , 'eac3'
+        , 'dts'
+        , 'flac'
+        , 'mp2'
+        , 'mp3'
+        , 'truehd'
+      ],
+    },
+    tooltip: `Specify the codec you'd like to transcode into for audio tracks with 2 channels. Will be ignored if aac_stereo is set to true.
+            \\nExample:\\n
+            aac`,
+  }
+  ]
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -95,6 +139,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const aacStereo = inputs?.aac_stereo ?? false;
   const downmix = inputs?.downmix ?? false;
   const downmixSingleTrack = inputs?.downmix_single_track ?? false;
+  const codec2channels = aacStereo ? 'aac' : safeToLowerCase(inputs?.codec2channels, 'aac');
+  const codec6channels = safeToLowerCase(inputs?.codec6channels, 'ac3');
 
   // Set up required variables.
   let ffmpegCommandInsert = '';
@@ -105,8 +151,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Set up different kinds of downmixing.
   const audioStreamDownmixes = {
-    from8chTo6ch: { currentChannels: 8, targetedChannels: 6, encoder: 'eac3', targetedChannelsLayout: '5.1' },
-    from6chTo2ch: { currentChannels: 6, targetedChannels: 2, encoder: 'aac', targetedChannelsLayout: '2.0' }
+    from8chTo6ch: { currentChannels: 8, targetedChannels: 6, encoder: codec6channels, targetedChannelsLayout: '5.1' },
+    from6chTo2ch: { currentChannels: 6, targetedChannels: 2, encoder: codec2channels, targetedChannelsLayout: '2.0' }
   };
   const addDownmixedAudioStream = (audioStream, audioStreamIndex, audioStreamDownmix, channelsAdded) => {
     let isStreamAdded = false;
