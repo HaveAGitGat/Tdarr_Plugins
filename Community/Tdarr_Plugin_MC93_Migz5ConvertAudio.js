@@ -79,7 +79,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const safeToLowerCase = (stringInput) => stringInput?.toLowerCase() || '';
+  const safeToLowerCase = (stringInput, defaultValue = '') => stringInput?.toLowerCase() ?? defaultValue;
+  const safeToLowerCaseLanguage = (language) => safeToLowerCase(language, 'und');
 
   //Set up inputs
   const aacStereo = inputs?.aac_stereo ?? false;
@@ -97,19 +98,25 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Set up required variables.
   let ffmpegCommandInsert = '';
-  let audioIdx = 0;
   const audioStreams = file.ffProbeData.streams.filter(stream => safeToLowerCase(stream.codec_type) === 'audio');
   let convert = false;
   let is2channelAdded = false;
   let is6channelAdded = false;
 
-  const addDownmixedAudioStream = (audioStream, currentChannels, targetedChannels, channelsAdded, encoder, targetedChannelsLayout) => {
+  // Set up different kinds of downmixing
+  const audioStreamDownmixes = {
+    from8chTo6ch: { currentChannels: 8, targetedChannels: 6, encoder: 'ac3', targetedChannelsLayout: '5.1' },
+    from6chTo2ch: { currentChannels: 6, targetedChannels: 2, encoder: 'aac', targetedChannelsLayout: '2.0' }
+  };
+  const addDownmixedAudioStream = (audioStream, audioStreamIndex, audioStreamDownmix, channelsAdded) => {
     let isStreamAdded = false;
-    if (audioStream.channels === currentChannels && (!downmixSingleTrack || (downmixSingleTrack && !channelsAdded))) {
-      downmixedStream = audioStreams.find(aStream => aStream.channels === targetedChannels && (aStream.tags?.language?.toLowerCase() ?? 'und') === (audioStream.tags?.language?.toLowerCase() ?? 'und'));
-      if (downmixedStream === undefined){
-        ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioIdx} ${encoder} -ac ${targetedChannels} -metadata:s:a:${audioIdx} title=${targetedChannelsLayout}_from_${safeToLowerCase(audioStream.tags?.title).replace(/ /g, "_")} `;
-        response.infoLog += `☒Audio track is ${currentChannels} channel, no ${targetedChannels} channel exists. Creating ${targetedChannels} channel from ${currentChannels} channel. \n`;
+    if (audioStream.channels === audioStreamDownmix.currentChannels && (!downmixSingleTrack || (downmixSingleTrack && !channelsAdded))) {
+      // No downmixing if an audio stream is found with the targeted number of channels and the correct language.
+      const downmixedStream = audioStreams.find(existingAudioStream => existingAudioStream.channels === audioStreamDownmix.targetedChannels && safeToLowerCaseLanguage(existingAudioStream.tags?.language) === safeToLowerCaseLanguage(audioStream.tags?.language));
+      if (downmixedStream === undefined) {
+        const addedStreamTitle = `${audioStreamDownmix.targetedChannelsLayout}_from_${safeToLowerCase(audioStream.tags?.title).replace(/ /g, "_")}`;
+        ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioStreamIndex} ${audioStreamDownmix.encoder} -ac:a:${audioStreamIndex} ${audioStreamDownmix.targetedChannels} -metadata:s:a:${audioStreamIndex} title=${addedStreamTitle} `;
+        response.infoLog += `☒Audio track is ${audioStreamDownmix.currentChannels} channel, no ${audioStreamDownmix.targetedChannels} channel exists. Creating ${audioStreamDownmix.targetedChannels} channel from ${audioStreamDownmix.currentChannels} channel. \n`;
         convert = true;
         isStreamAdded = true;
       }
@@ -118,19 +125,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Go through each audio stream in the file.
-  audioStreams.forEach(audioStream => {
+  audioStreams.forEach((audioStream, audioStreamIndex) => {
     if (downmix) {
-      is6channelAdded = addDownmixedAudioStream(audioStream, 8, 6, is6channelAdded, 'ac3', '5.1');
-      is2channelAdded = addDownmixedAudioStream(audioStream, 6, 2, is2channelAdded, 'aac', '2.0');
+      is6channelAdded = addDownmixedAudioStream(audioStream, audioStreamIndex, audioStreamDownmixes.from8chTo6ch, is6channelAdded);
+      is2channelAdded = addDownmixedAudioStream(audioStream, audioStreamIndex, audioStreamDownmixes.from6chTo2ch, is2channelAdded);
     }
 
-    if (aacStereo && safeToLowerCase(audioStream.codec_name) !== 'aac' && audioStream.channels === 2) {
-      ffmpegCommandInsert += `-c:a:${audioIdx} aac `;
+    if (aacStereo && audioStream.channels === 2 && safeToLowerCase(audioStream.codec_name) !== 'aac') {
+      ffmpegCommandInsert += `-c:a:${audioStreamIndex} aac `;
       response.infoLog += '☒Audio track is 2 channel but is not AAC. Converting. \n';
       convert = true;
     }
-
-    ++audioIdx;
   });
 
   // Convert file if convert variable is set to true.
