@@ -79,14 +79,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     infoLog: '',
   };
 
-  const safeToLowerCase = (stringInput, defaultValue = '') => stringInput?.toLowerCase() ?? defaultValue;
-  const safeToLowerCaseLanguage = (language) => safeToLowerCase(language, 'und');
-
-  //Set up inputs
-  const aacStereo = inputs?.aac_stereo ?? false;
-  const downmix = inputs?.downmix ?? false;
-  const downmixSingleTrack = inputs?.downmix_single_track ?? false;
-
   // Check if file is a video. If it isn't then exit plugin.
   if (file.fileMedium !== 'video') {
     // eslint-disable-next-line no-console
@@ -96,6 +88,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  const safeToLowerCase = (stringInput, defaultValue = '') => stringInput?.toLowerCase() ?? defaultValue;
+  const safeToLowerCaseLanguage = (language) => safeToLowerCase(language, 'und');
+
+  //Set up inputs.
+  const aacStereo = inputs?.aac_stereo ?? false;
+  const downmix = inputs?.downmix ?? false;
+  const downmixSingleTrack = inputs?.downmix_single_track ?? false;
+
   // Set up required variables.
   let ffmpegCommandInsert = '';
   const audioStreams = file.ffProbeData.streams.filter(stream => safeToLowerCase(stream.codec_type) === 'audio');
@@ -103,7 +103,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let is2channelAdded = false;
   let is6channelAdded = false;
 
-  // Set up different kinds of downmixing
+  // Set up different kinds of downmixing.
   const audioStreamDownmixes = {
     from8chTo6ch: { currentChannels: 8, targetedChannels: 6, encoder: 'ac3', targetedChannelsLayout: '5.1' },
     from6chTo2ch: { currentChannels: 6, targetedChannels: 2, encoder: 'aac', targetedChannelsLayout: '2.0' }
@@ -116,7 +116,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       if (downmixedStream === undefined) {
         const addedStreamTitle = `${audioStreamDownmix.targetedChannelsLayout}_from_${safeToLowerCase(audioStream.tags?.title).replace(/ /g, "_")}`;
         ffmpegCommandInsert += `-map 0:${audioStream.index} -c:a:${audioStreamIndex} ${audioStreamDownmix.encoder} -ac:a:${audioStreamIndex} ${audioStreamDownmix.targetedChannels} -metadata:s:a:${audioStreamIndex} title=${addedStreamTitle} `;
-        response.infoLog += `☒Audio track is ${audioStreamDownmix.currentChannels} channel, no ${audioStreamDownmix.targetedChannels} channel exists. Creating ${audioStreamDownmix.targetedChannels} channel from ${audioStreamDownmix.currentChannels} channel. \n`;
+        response.infoLog += `☒Creating ${audioStreamDownmix.targetedChannels} channel from ${audioStreamDownmix.currentChannels} channel for language ${safeToLowerCaseLanguage(audioStream.tags?.language)}. \n`;
         convert = true;
         isStreamAdded = true;
       }
