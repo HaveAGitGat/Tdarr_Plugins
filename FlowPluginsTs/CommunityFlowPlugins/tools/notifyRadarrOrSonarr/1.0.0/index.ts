@@ -69,14 +69,14 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-interface IGetNewPathDelegates {
+interface IRefreshDelegates {
   getIdFromParseRequestResult: (parseRequestResult: any) => string,
   buildRefreshResquestData: (id: string) => string
 }
 interface IRefreshType {
   appName: string,
   contentName: string,
-  delegates: IGetNewPathDelegates
+  delegates: IRefreshDelegates
 }
 interface IRefreshTypes {
   radarr: IRefreshType,
@@ -91,7 +91,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { arr, arr_api_key } = args.inputs;
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const fileName = getFileName(args.originalLibraryFile._id);
+  const fileName = getFileName(args.originalLibraryFile?._id ?? '');
 
   const refresh = async (refreshType: IRefreshType)
     : Promise<boolean> => {

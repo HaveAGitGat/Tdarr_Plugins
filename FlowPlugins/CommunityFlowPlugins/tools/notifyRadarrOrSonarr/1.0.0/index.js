@@ -91,15 +91,20 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'Continue to next plugin',
+            tooltip: 'Radarr or Sonnar notified',
         },
+        {
+            number: 2,
+            tooltip: 'Radarr or Sonnar do not know this file',
+        }
     ],
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, refresh, refreshTypes;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, refresh, refreshTypes, refreshed;
+    var _b, _c;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -107,14 +112,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
+                fileName = (0, fileUtils_1.getFileName)((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : '');
                 refresh = function (refreshType) { return __awaiter(void 0, void 0, void 0, function () {
-                    var headers, parseRequestConfig, parseRequestResult, id, refreshResquestConfig;
+                    var refreshed, headers, parseRequestConfig, parseRequestResult, id, refreshResquestConfig;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
                                 args.jobLog('Going to force scan');
                                 args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
+                                refreshed = false;
                                 headers = {
                                     'Content-Type': 'application/json',
                                     'X-Api-Key': arr_api_key,
@@ -139,12 +145,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 return [4 /*yield*/, args.deps.axios(refreshResquestConfig)];
                             case 2:
                                 _a.sent();
+                                refreshed = true;
                                 args.jobLog("\u2714 Refreshed ".concat(refreshType.contentName, " ").concat(id, " in ").concat(refreshType.appName, "."));
                                 return [3 /*break*/, 4];
                             case 3:
                                 args.jobLog("No ".concat(refreshType.contentName, " with a file named '").concat(fileName, "'."));
                                 _a.label = 4;
-                            case 4: return [2 /*return*/];
+                            case 4: return [2 /*return*/, refreshed];
                         }
                     });
                 }); };
@@ -168,10 +175,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 };
                 return [4 /*yield*/, refresh(arr === 'radarr' ? refreshTypes.radarr : refreshTypes.sonarr)];
             case 1:
-                _b.sent();
+                refreshed = _d.sent();
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
-                        outputNumber: 1,
+                        outputNumber: refreshed ? 1 : 2,
                         variables: args.variables,
                     }];
         }
