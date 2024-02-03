@@ -61,15 +61,32 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'Continue to next plugin',
+      tooltip: 'Radarr or Sonnar notified',
     },
-  ],
+    {
+      number: 2,
+      tooltip: 'Radarr or Sonnar do not know this file',
+    }
+  ]
 });
 
 interface IGetNewPathDelegates {
   getIdFromParseRequestResult: (parseRequestResult: any) => string,
   buildPreviewRenameResquestUrl: (id: string, parseRequestResult: any) => string,
   getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult: any) => any
+}
+interface IGetNewPathType {
+  appName: string,
+  contentName: string,
+  delegates: IGetNewPathDelegates
+}
+interface IGetNewPathTypes {
+  radarr: IGetNewPathType,
+  sonarr: IGetNewPathType
+}
+interface IGetNewPathOutput {
+  newPath: string,
+  isSuccessful: boolean
 }
 
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -80,14 +97,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { arr, arr_api_key } = args.inputs;
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const fileName = getFileName(args.inputFileObj._id);
+  const filePath = args.originalLibraryFile?._id ?? '';
+  const fileName = getFileName(filePath);
 
-  const getNewPath = async (delegates: IGetNewPathDelegates)
-    : Promise<string> => {
-    let pathWithNewName = '';
+  const getNewPath = async (getNewPathType: IGetNewPathType)
+    : Promise<IGetNewPathOutput> => {
+    const output : IGetNewPathOutput = {
+      newPath: '',
+      isSuccessful: false
+    }
 
-    args.jobLog('Going to force rename');
-    args.jobLog(`Renaming ${arr === 'radarr' ? 'Radarr' : 'Sonarr'}...`);
+    args.jobLog('Going to apply new name');
+    args.jobLog(`Renaming ${getNewPathType.appName}...`);
 
     const headers = {
       'Content-Type': 'application/json',
@@ -102,7 +123,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       headers,
     };
     const parseRequestResult = await args.deps.axios(parseRequestConfig);
-    const id = delegates.getIdFromParseRequestResult(parseRequestResult);
+    const id = getNewPathType.delegates.getIdFromParseRequestResult(parseRequestResult);
 
     // Checking that the file has been found. A file not found might be caused because Radarr/Sonarr hasn't been notified of a file rename (notify plugin missing ?)
     // or because Radarr/Sonarr has upgraded the movie/serie to another release before the end of the plugin stack execution.
@@ -110,61 +131,68 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       // Using rename endpoint to get ids of all the files that need renaming.
       const previewRenameRequestConfig = {
         method: 'get',
-        url: delegates.buildPreviewRenameResquestUrl(id, parseRequestResult),
+        url: getNewPathType.delegates.buildPreviewRenameResquestUrl(id, parseRequestResult),
         headers,
       };
       const previewRenameRequestResult = await args.deps.axios(previewRenameRequestConfig);
-      const fileToRename = delegates.getFileToRenameFromPreviewRenameRequestResult(previewRenameRequestResult);
+      const fileToRename = getNewPathType.delegates.getFileToRenameFromPreviewRenameRequestResult(previewRenameRequestResult);
 
       // Only if there is a rename to execute
       if (fileToRename !== undefined) {
-        pathWithNewName = `${getFileAbosluteDir(args.inputFileObj._id)}/${getFileName(fileToRename.newPath)}.${getContainer(fileToRename.newPath)}`;
+        output.newPath = `${getFileAbosluteDir(args.inputFileObj._id)}/${getFileName(fileToRename.newPath)}.${getContainer(fileToRename.newPath)}`;
 
-        await fileMoveOrCopy({
+        output.isSuccessful = await fileMoveOrCopy({
           operation: 'move',
           sourcePath: args.inputFileObj._id,
-          destinationPath: pathWithNewName,
+          destinationPath: output.newPath,
           args,
         });
-        args.jobLog(`✔ Renamed ${arr === 'radarr' ? 'movie' : 'serie'} ${id} : '${args.inputFileObj._id}' => '${pathWithNewName}'.`);
-      } else
+        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${id} : '${filePath}' => '${output.newPath}'.`);
+      } else {
+        output.isSuccessful = true;
         args.jobLog('✔ No rename necessary.');
+      }
     } else
-      args.jobLog(`No ${arr === 'radarr' ? 'movie' : 'serie'} with a file named '${fileName}'.`);
+      args.jobLog(`No ${getNewPathType.appName} with a file named '${fileName}'.`);
 
-    return pathWithNewName;
+    return output;
   };
 
-  let pathWithNewName = '';
-  if (arr === 'radarr') {
-    pathWithNewName = await getNewPath({
-      getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
-      buildPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
-      getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
-        ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
-          previewRenameRequestResult.data[0]
-          : undefined
-    });
-  } else if (arr === 'sonarr') {
-    let episodeNumber = 0;
-    pathWithNewName = await getNewPath({
-      getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
-      buildPreviewRenameResquestUrl: (id, parseRequestResult) => {
-        episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
-        return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
-      },
-      getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
-        ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
-          previewRenameRequestResult.data.find((episodeFile: { episodeNumbers: number[]; }) => ((episodeFile.episodeNumbers?.length ?? 0) > 0) ? episodeFile.episodeNumbers[0] === episodeNumber : false)
-          : undefined
-    });
-  } else {
-    args.jobLog('No arr specified in plugin inputs.');
+  let episodeNumber = 0;
+  const getNewPathTypes: IGetNewPathTypes = {
+    radarr: {
+      appName: 'Radarr',
+      contentName: 'movie',
+      delegates: {
+        getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
+        buildPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
+        getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
+          ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
+            previewRenameRequestResult.data[0]
+            : undefined
+      }
+    },
+    sonarr: {
+      appName: 'Sonarr',
+      contentName: 'serie',
+      delegates: {
+        getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
+        buildPreviewRenameResquestUrl: (id, parseRequestResult) => {
+          episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
+          return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
+        },
+        getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
+          ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
+            previewRenameRequestResult.data.find((episodeFile: { episodeNumbers: number[]; }) => ((episodeFile.episodeNumbers?.length ?? 0) > 0) ? episodeFile.episodeNumbers[0] === episodeNumber : false)
+            : undefined
+      }
+    }
   }
+  const newPathOutput = await getNewPath(arr === 'radarr' ? getNewPathTypes.radarr : getNewPathTypes.sonarr);
 
   return {
-    outputFileObj: pathWithNewName !== '' ? { ...args.inputFileObj, _id: pathWithNewName } : args.inputFileObj,
-    outputNumber: 1,
+    outputFileObj: newPathOutput.isSuccessful ? { ...args.inputFileObj, _id: newPathOutput.newPath } : args.inputFileObj,
+    outputNumber: newPathOutput.isSuccessful ? 1 : 2,
     variables: args.variables,
   };
 };
