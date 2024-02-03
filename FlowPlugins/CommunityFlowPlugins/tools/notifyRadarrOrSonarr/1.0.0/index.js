@@ -135,7 +135,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             case 1:
                                 parseRequestResult = _a.sent();
                                 id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
-                                if (!(id !== '-1')) return [3 /*break*/, 3];
+                                if (!(id !== -1)) return [3 /*break*/, 3];
                                 refreshResquestConfig = {
                                     method: 'post',
                                     url: "".concat(arrHost, "/api/v3/command"),
@@ -160,7 +160,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         appName: 'Radarr',
                         contentName: 'movie',
                         delegates: {
-                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
+                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c, _d; return Number((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); }
                         }
                     },
@@ -168,8 +168,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         appName: 'Sonarr',
                         contentName: 'serie',
                         delegates: {
-                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c; return String((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
-                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', id: id }); }
+                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
+                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); }
                         },
                     },
                 };
