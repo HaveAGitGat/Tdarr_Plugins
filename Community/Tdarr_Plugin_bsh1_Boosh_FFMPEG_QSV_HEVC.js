@@ -353,35 +353,41 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
-    videoIdx = -1;
     // Check if stream is a video.
-    if (videoIdx === -1 && strstreamType === 'video') {
-      videoIdx = i;
-      // Try checking file stats using Mediainfo first, then ffprobe.
-      try {
-        videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
-        if (videoBR <= 0 || Number.isNaN(videoBR)) {
-          if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
-            videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
-          } else if (Number(file.ffProbeData.streams[i].tags.BPS['-eng']) > 0) {
-            videoBR = file.ffProbeData.streams[i].tags.BPS['-eng'] / 1000;
+    if (strstreamType === 'video') {
+      if (file.ffProbeData.streams[i].codec_name !== 'mjpeg'
+        && file.ffProbeData.streams[i].codec_name !== 'png') {
+        // Try checking file stats using Mediainfo first, then ffprobe.
+        try {
+          videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
+          if (videoBR <= 0 || Number.isNaN(videoBR)) {
+            if (Number(file.ffProbeData.streams[i].tags.BPS) > 0) {
+              videoBR = file.ffProbeData.streams[i].tags.BPS / 1000;
+            } else if (Number(file.ffProbeData.streams[i].tags.BPS['-eng']) > 0) {
+              videoBR = file.ffProbeData.streams[i].tags.BPS['-eng'] / 1000;
+            }
           }
+        } catch (err) {
+          // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+          videoBR = 0; // Set videoBR to 0 for safety
         }
-      } catch (err) {
-        // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
-        videoBR = 0; // Set videoBR to 0 for safety
-      }
-      // Check if duration info is filled, if so convert time format to minutes.
-      if (Number.isNaN(file.meta.Duration) === false) {
-        // If duration is a number then convert seconds to minutes
-        duration = file.meta.Duration / 60;
-      } else if (typeof file.meta.Duration !== 'undefined') {
-        // Get seconds by using a Date & then convert to minutes
-        duration = file.meta.Duration;
-        duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
-      } else { // If not filled then get duration of video stream and do the same.
-        duration = file.ffProbeData.streams[videoIdx].tags.DURATION;
-        duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+        // Check if duration info is filled, if so convert time format to minutes.
+        if (Number.isNaN(file.meta.Duration) === false) {
+          // If duration is a number then convert seconds to minutes
+          duration = file.meta.Duration / 60;
+        } else if (typeof file.meta.Duration !== 'undefined') {
+          // Get seconds by using a Date & then convert to minutes
+          duration = file.meta.Duration;
+          duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+        } else { // If not filled then get duration of video stream and do the same.
+          duration = file.ffProbeData.streams[i].tags.DURATION;
+          duration = (new Date(`1970-01-01T${duration}Z`).getTime() / 1000) / 60;
+        }
+        if (videoBR <= 0 || Number.isNaN(videoBR)) {
+          // videoBR not yet valid so Loop
+        } else {
+          break;// Exit loop if videoBR is valid
+        }
       }
     }
   }
@@ -532,91 +538,91 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Check if codec of stream is mjpeg/png, if so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
       if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
-        extraArguments += `-map -v:${videoIdx} `;
-      }
-
-      // Check for HDR in files. If so exit plugin. We assume HDR files have bt2020 color spaces. HDR can be complicated
-      // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
-      if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
-        && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
-        && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
-        response.infoLog += '☒ This looks to be a HDR file. HDR files are unfortunately '
-          + 'not supported by this plugin. Exiting plugin. \n\n';
-        return response;
-      }
-
-      // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
-      if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
-        || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
-        // Check if codec of stream is HEVC, VP9 or AV1 AND check if file.container matches inputs.container.
-        // If so nothing for plugin to do.
-        if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
-          || file.ffProbeData.streams[i].codec_name === 'av1') && file.container === inputs.container) {
-          response.infoLog += `☑ File is already HEVC, VP9 or AV1 & in ${inputs.container}. \n`;
+        extraArguments += `-map -0:v:${videoIdx} `;
+      } else { // Ensure to only do further checks if video stream is valid for use
+        // Check for HDR in files. If so exit plugin. HDR can be complicated
+        // and some aspects are still unsupported in ffmpeg I believe. Likely we don't want to re-encode anything HDR.
+        if (file.ffProbeData.streams[i].color_space === 'bt2020nc'
+          && file.ffProbeData.streams[i].color_transfer === 'smpte2084'
+          && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
+          response.infoLog += '☒ This looks to be a HDR file. HDR files are unfortunately '
+            + 'not supported by this plugin. Exiting plugin. \n\n';
           return response;
         }
 
-        // Check if codec of stream is HEVC, Vp9 or AV1
-        // AND check if file.container does NOT match inputs.container.
-        // If so remux file.
-        if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
-          || file.ffProbeData.streams[i].codec_name === 'av1') && file.container !== inputs.container) {
-          response.infoLog += `☒ File is HEVC, VP9 or AV1 but is not in ${inputs.container} container. Remuxing. \n`;
-          response.preset = `<io> -map 0 -c copy ${extraArguments}`;
-          response.processFile = true;
-          return response;
-        }
-
-        // New logic for reprocessing HEVC. Mainly done for my own use.
-        // We attempt to get accurate stats earlier - If we can't we fall back onto overall bitrate
-        // which can be inaccurate. We may inflate the current bitrate check so we don't keep looping this logic.
-      } else if (inputs.reconvert_hevc === true && (file.ffProbeData.streams[i].codec_name === 'hevc'
-        || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
-        if (inputs.hevc_max_bitrate > 0) {
-          if (currentBitrate > inputs.hevc_max_bitrate) {
-            // If bitrate is higher then hevc_max_bitrate then need to re-encode
-            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `
-              + `VP9 or AV1. Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n`;
-            response.infoLog += '☒ The file is still above this new cutoff! Reconverting. \n';
-          } else {
-            // Otherwise we're now below the hevc cutoff and we can exit
-            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `
-              + `VP9 or AV1. Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n`;
-            response.infoLog += '☑ The file is NOT above this new cutoff. Exiting plugin. \n';
+        // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
+        if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
+          || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
+          // Check if codec of stream is HEVC, VP9 or AV1 AND check if file.container matches inputs.container.
+          // If so nothing for plugin to do.
+          if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
+            || file.ffProbeData.streams[i].codec_name === 'av1') && file.container === inputs.container) {
+            response.infoLog += `☑ File is already HEVC, VP9 or AV1 & in ${inputs.container}. \n`;
             return response;
           }
 
-          // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
-          // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
-        } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
-          inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-          response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `;
-          response.infoLog += 'VP9 or AV1. Will use Overall file Bitrate for HEVC files as safety, ';
-          response.infoLog += `bitrate is ${overallBitRate}kbps. \n`;
-          response.infoLog += 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! \n';
-          response.infoLog += `Cutoff now temporarily ${inflatedCutoff}kbps. \n`;
-          response.infoLog += '☒ The file is still above this new cutoff! Reconverting. \n';
-        } else {
-          // File is below cutoff so we can exit
-          inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-          response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `;
-          response.infoLog += 'VP9 or AV1. Will use Overall file Bitrate for HEVC files as safety, ';
-          response.infoLog += `bitrate is ${overallBitRate}kbps. \n`;
-          response.infoLog += 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! \n';
-          response.infoLog += `Cutoff now temporarily ${inflatedCutoff}kbps. \n`;
-          response.infoLog += '☑The file is NOT above this new cutoff. Exiting plugin. \n';
-          return response;
-        }
-      }
+          // Check if codec of stream is HEVC, Vp9 or AV1
+          // AND check if file.container does NOT match inputs.container.
+          // If so remux file.
+          if ((file.ffProbeData.streams[i].codec_name === 'hevc' || file.ffProbeData.streams[i].codec_name === 'vp9'
+            || file.ffProbeData.streams[i].codec_name === 'av1') && file.container !== inputs.container) {
+            response.infoLog += `☒ File is HEVC, VP9 or AV1 but is not in ${inputs.container} container. Remuxing. \n`;
+            response.preset = `<io> -map 0 -c copy ${extraArguments}`;
+            response.processFile = true;
+            return response;
+          }
 
-      // Files in the High10 profile are not supported for HW Decode
-      if (file.ffProbeData.streams[i].profile === 'High 10') {
-        high10 = true;
-        main10 = true;
-        // If files are 10 bit or the enable_10bit setting is used mark to enable Main10.
-      } else if (file.ffProbeData.streams[i].profile === 'Main 10'
-        || file.ffProbeData.streams[i].bits_per_raw_sample === '10' || inputs.enable_10bit === true) {
-        main10 = true;
+          // New logic for reprocessing HEVC. Mainly done for my own use.
+          // We attempt to get accurate stats earlier - If we can't we fall back onto overall bitrate
+          // which can be inaccurate. We may inflate the current bitrate check so we don't keep looping this logic.
+        } else if (inputs.reconvert_hevc === true && (file.ffProbeData.streams[i].codec_name === 'hevc'
+          || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
+          if (inputs.hevc_max_bitrate > 0) {
+            if (currentBitrate > inputs.hevc_max_bitrate) {
+              // If bitrate is higher then hevc_max_bitrate then need to re-encode
+              response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `
+                + `VP9 or AV1. Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n`;
+              response.infoLog += '☒ The file is still above this new cutoff! Reconverting. \n';
+            } else {
+              // Otherwise we're now below the hevc cutoff and we can exit
+              response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `
+                + `VP9 or AV1. Using HEVC specific cutoff of ${inputs.hevc_max_bitrate}kbps. \n`;
+              response.infoLog += '☑ The file is NOT above this new cutoff. Exiting plugin. \n';
+              return response;
+            }
+
+            // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
+            // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
+          } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
+            inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
+            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `;
+            response.infoLog += 'VP9 or AV1. Will use Overall file Bitrate for HEVC files as safety, ';
+            response.infoLog += `bitrate is ${overallBitRate}kbps. \n`;
+            response.infoLog += 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! \n';
+            response.infoLog += `Cutoff now temporarily ${inflatedCutoff}kbps. \n`;
+            response.infoLog += '☒ The file is still above this new cutoff! Reconverting. \n';
+          } else {
+            // File is below cutoff so we can exit
+            inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
+            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, `;
+            response.infoLog += 'VP9 or AV1. Will use Overall file Bitrate for HEVC files as safety, ';
+            response.infoLog += `bitrate is ${overallBitRate}kbps. \n`;
+            response.infoLog += 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety! \n';
+            response.infoLog += `Cutoff now temporarily ${inflatedCutoff}kbps. \n`;
+            response.infoLog += '☑The file is NOT above this new cutoff. Exiting plugin. \n';
+            return response;
+          }
+        }
+
+        // Files in the High10 profile are not supported for HW Decode
+        if (file.ffProbeData.streams[i].profile === 'High 10') {
+          high10 = true;
+          main10 = true;
+          // If files are 10 bit or the enable_10bit setting is used mark to enable Main10.
+        } else if (file.ffProbeData.streams[i].profile === 'Main 10'
+          || file.ffProbeData.streams[i].bits_per_raw_sample === '10' || inputs.enable_10bit === true) {
+          main10 = true;
+        }
       }
 
       // Increment video index. Needed to keep track of video id in case there is more than one video track.
@@ -661,20 +667,26 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Are we encoding to 10 bit? If so enable correct profile & pixel format.
-  if (swDecode === true && main10 === true) {
-    // This is used if we have High10 or Main10 is enabled & odd format files.
-    // SW decode and use standard -pix_fmt p010le
-    extraArguments += '-profile:v main10 -pix_fmt p010le ';
-    response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
-  } else if (main10 === true) { // Pixel formate method when using HW decode
-    if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
-      extraArguments += '-profile:v main10';
-      // eslint-disable-next-line no-param-reassign
-      inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
-    } else {
-      extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le';
+  if (os.platform() !== 'darwin') {
+    if (swDecode === true && main10 === true) {
+      // This is used if we have High10 or Main10 is enabled & odd format files.
+      // SW decode and use standard -pix_fmt p010le
+      extraArguments += '-profile:v main10 -pix_fmt p010le ';
+      response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
+    } else if (main10 === true) { // Pixel formate method when using HW decode
+      if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
+        extraArguments += '-profile:v main10';
+        // eslint-disable-next-line no-param-reassign
+        inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
+      } else {
+        extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le';
+      }
+      response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
     }
-    response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format \n';
+  } else {
+    // Mac - Video toolbox profile & pixel format
+    extraArguments += '-profile:v 2 -pix_fmt yuv420p10le ';
+    response.infoLog += '10 bit encode enabled. Setting VideoToolBox Profile v2 & 10 bit pixel format \n';
   }
 
   // Set bitrateSettings variable using bitrate information calculated earlier.
@@ -712,6 +724,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   } else {
     switch (os.platform()) {
+      case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
+        response.preset += '-hwaccel videotoolbox';
+        break;
       case 'linux': // Linux - Full device, should fix child_device_type warnings
         response.preset += `-hwaccel_output_format qsv 
       -init_hw_device qsv:hw_any,child_device_type=vaapi `;
@@ -780,7 +795,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Only add on for HW decoded formats
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
-  if (swDecode !== true) {
+  if (swDecode !== true && os.platform() !== 'darwin') {
     // Check if -vf cmd has already been used on user input
     if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
       switch (file.video_codec_name) {
