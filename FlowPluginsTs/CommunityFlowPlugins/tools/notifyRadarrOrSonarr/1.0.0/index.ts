@@ -70,8 +70,8 @@ const details = (): IpluginDetails => ({
 });
 
 interface IRefreshDelegates {
-  getIdFromParseRequestResult: (parseRequestResult: any) => string,
-  buildRefreshResquestData: (id: string) => string
+  getIdFromParseRequestResult: (parseRequestResult: any) => number,
+  buildRefreshResquestData: (id: number) => string
 }
 interface IRefreshType {
   appName: string,
@@ -115,7 +115,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     const id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
 
     // Checking that the file has been found.
-    if (id !== '-1') {
+    if (id !== -1) {
       // Using refresh command endpoint to force rescan.
       const refreshResquestConfig = {
         method: 'post',
@@ -138,7 +138,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       appName: 'Radarr',
       contentName: 'movie',
       delegates: {
-        getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
+        getIdFromParseRequestResult: (parseRequestResult) => Number(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
         buildRefreshResquestData: id => JSON.stringify({ name: 'RefreshMovie', movieIds: [id] })
       }
     },
@@ -146,8 +146,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       appName: 'Sonarr',
       contentName: 'serie',
       delegates: {
-        getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
-        buildRefreshResquestData: id => JSON.stringify({ name: 'RefreshSeries', id })
+        getIdFromParseRequestResult: (parseRequestResult) => Number(parseRequestResult.data?.series?.id ?? -1),
+        buildRefreshResquestData: id => JSON.stringify({ name: 'RefreshSeries', seriesId: id })
       },
     },
   }
