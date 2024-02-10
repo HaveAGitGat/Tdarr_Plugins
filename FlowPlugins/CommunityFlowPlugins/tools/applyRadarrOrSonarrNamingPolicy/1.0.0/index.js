@@ -227,7 +227,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 newPathOutput = _d.sent();
                 return [2 /*return*/, {
-                        outputFileObj: newPathOutput.isSuccessful ? __assign(__assign({}, args.inputFileObj), { _id: newPathOutput.newPath }) : args.inputFileObj,
+                        outputFileObj: newPathOutput.isSuccessful && newPathOutput.newPath ? __assign(__assign({}, args.inputFileObj), { _id: newPathOutput.newPath }) : args.inputFileObj,
                         outputNumber: newPathOutput.isSuccessful ? 1 : 2,
                         variables: args.variables,
                     }];
