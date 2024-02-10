@@ -191,7 +191,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const newPathOutput = await getNewPath(arr === 'radarr' ? getNewPathTypes.radarr : getNewPathTypes.sonarr);
 
   return {
-    outputFileObj: newPathOutput.isSuccessful ? { ...args.inputFileObj, _id: newPathOutput.newPath } : args.inputFileObj,
+    outputFileObj: newPathOutput.isSuccessful && newPathOutput.newPath !== '' ? { ...args.inputFileObj, _id: newPathOutput.newPath } : args.inputFileObj,
     outputNumber: newPathOutput.isSuccessful ? 1 : 2,
     variables: args.variables,
   };
