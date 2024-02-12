@@ -25,8 +25,12 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'Continue to next plugin',
+      tooltip: 'File has been replaced',
     },
+    {
+      number: 2,
+      tooltip: 'File has not been replaced',
+    }
   ],
 });
 
@@ -44,7 +48,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.jobLog('File has not changed, no need to replace file');
     return {
       outputFileObj: args.inputFileObj,
-      outputNumber: 1,
+      outputNumber: 2,
       variables: args.variables,
     };
   }
