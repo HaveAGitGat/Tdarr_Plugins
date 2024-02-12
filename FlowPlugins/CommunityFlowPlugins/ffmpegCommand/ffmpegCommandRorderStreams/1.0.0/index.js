@@ -80,11 +80,16 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var streams = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
-    var originalStreams = JSON.stringify(streams);
     streams.forEach(function (stream, index) {
         // eslint-disable-next-line no-param-reassign
         stream.typeIndex = index;
     });
+    var getSimplifiedStreamsForComparison = function (streams) {
+        return streams.map(function (stream) {
+            return { index: stream.typeIndex, codec_name: stream.codec_name, codec_type: stream.codec_type };
+        });
+    };
+    var originalStreams = JSON.stringify(getSimplifiedStreamsForComparison(streams));
     var sortStreams = function (sortType) {
         var items = sortType.inputs.split(',');
         items.reverse();
@@ -163,14 +168,15 @@ var plugin = function (args) {
             sortStreams(sortTypes[processOrderArr[k]]);
         }
     }
-    if (JSON.stringify(streams) !== originalStreams) {
+    var sortedStreams = JSON.stringify(getSimplifiedStreamsForComparison(streams));
+    if (sortedStreams !== originalStreams) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.shouldProcess = true;
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.streams = streams;
         args.jobLog("\u2714 Streams are not in order. Reordering.");
         args.jobLog("originalStreams ".concat(originalStreams));
-        args.jobLog("sortedStreams ".concat(JSON.stringify(streams)));
+        args.jobLog("sortedStreams ".concat(sortedStreams));
     }
     else
         args.jobLog("\u2714 Streams are already in order. No reordering necessary.");
