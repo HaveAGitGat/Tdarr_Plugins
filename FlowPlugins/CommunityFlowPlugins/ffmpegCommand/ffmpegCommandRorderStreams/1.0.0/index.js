@@ -169,8 +169,6 @@ var plugin = function (args) {
         }
     }
     var sortedStreams = JSON.stringify(getSimplifiedStreams(streams));
-    args.jobLog("originalStreams ".concat(originalStreams));
-    args.jobLog("sortedStreams ".concat(sortedStreams));
     if (sortedStreams !== originalStreams) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.shouldProcess = true;
