@@ -111,12 +111,17 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
 
-  const originalStreams = JSON.stringify(streams);
-
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
     stream.typeIndex = index;
   });
+
+  const getSimplifiedStreamsForComparison = (streams: IffmpegCommandStream[]) =>
+    streams.map(stream => {
+      return { index: stream.typeIndex, codec_name: stream.codec_name, codec_type: stream.codec_type };
+    });
+
+  const originalStreams = JSON.stringify(getSimplifiedStreamsForComparison(streams));
 
   const sortStreams = (sortType: {
     inputs: string,
@@ -216,14 +221,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     }
   }
 
-  if (JSON.stringify(streams) !== originalStreams) {
+  const sortedStreams = JSON.stringify(getSimplifiedStreamsForComparison(streams));
+  if (sortedStreams !== originalStreams) {
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
     args.jobLog(`✔ Streams are not in order. Reordering.`);
     args.jobLog(`originalStreams ${originalStreams}`);
-    args.jobLog(`sortedStreams ${JSON.stringify(streams)}`);
+    args.jobLog(`sortedStreams ${sortedStreams}`);
   } else
     args.jobLog(`✔ Streams are already in order. No reordering necessary.`);
 
