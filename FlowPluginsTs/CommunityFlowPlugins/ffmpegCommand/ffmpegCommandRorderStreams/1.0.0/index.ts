@@ -222,6 +222,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
     args.jobLog(`✔ Streams are not in order. Reordering.`);
+    args.jobLog(`originalStreams ${originalStreams}`);
+    args.jobLog(`sortedStreams ${JSON.stringify(streams)}`);
   } else
     args.jobLog(`✔ Streams are already in order. No reordering necessary.`);
 
