@@ -168,7 +168,10 @@ var plugin = function (args) {
         args.variables.ffmpegCommand.shouldProcess = true;
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.streams = streams;
+        args.jobLog("\u2714 Streams are not in order. Reordering.");
     }
+    else
+        args.jobLog("\u2714 Streams are already in order. No reordering necessary.");
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,
