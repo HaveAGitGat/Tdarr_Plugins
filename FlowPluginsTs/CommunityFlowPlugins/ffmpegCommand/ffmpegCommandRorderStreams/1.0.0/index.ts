@@ -222,8 +222,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   const sortedStreams = JSON.stringify(getSimplifiedStreams(streams));
-  args.jobLog(`originalStreams ${originalStreams}`);
-  args.jobLog(`sortedStreams ${sortedStreams}`);
   if (sortedStreams !== originalStreams) {
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
