@@ -180,7 +180,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 parseRequestResult = _b.sent();
                                 _b.label = 3;
                             case 3:
-                                if (!(parseRequestResult.id !== '-1')) return [3 /*break*/, 8];
+                                if (!(parseRequestResult.id !== '-1')) return [3 /*break*/, 7];
                                 previewRenameRequestConfig = {
                                     method: 'get',
                                     url: getNewPathType.delegates.buildPreviewRenameResquestUrl(parseRequestResult),
@@ -207,11 +207,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 output.isSuccessful = true;
                                 args.jobLog('✔ No rename necessary.');
                                 _b.label = 7;
-                            case 7: return [3 /*break*/, 9];
-                            case 8:
-                                args.jobLog("No ".concat(getNewPathType.appName, " with a file named '").concat(fileName, "'."));
-                                _b.label = 9;
-                            case 9: return [2 /*return*/, output];
+                            case 7: return [2 /*return*/, output];
                         }
                     });
                 }); };

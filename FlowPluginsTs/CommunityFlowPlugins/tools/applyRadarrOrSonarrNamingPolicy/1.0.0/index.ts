@@ -176,8 +176,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         output.isSuccessful = true;
         args.jobLog('✔ No rename necessary.');
       }
-    } else
-      args.jobLog(`No ${getNewPathType.appName} with a file named '${fileName}'.`);
+    }
 
     return output;
   };
