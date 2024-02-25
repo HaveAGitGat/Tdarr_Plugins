@@ -70,9 +70,17 @@ const details = (): IpluginDetails => ({
   ]
 });
 
+interface IFileNames {
+  originalFileName: string,
+  currentFileName: string
+}
+interface IParseRequestResult {
+  requestResult: any,
+  id: string
+}
 interface IGetNewPathDelegates {
   getIdFromParseRequestResult: (parseRequestResult: any) => string,
-  buildPreviewRenameResquestUrl: (id: string, parseRequestResult: any) => string,
+  buildPreviewRenameResquestUrl: (parseRequestResult: IParseRequestResult) => string,
   getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult: any) => any
 }
 interface IGetNewPathType {
@@ -98,15 +106,17 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
   const filePath = args.originalLibraryFile?._id ?? '';
-  const fileName = getFileName(filePath);
+  const fileNames: IFileNames = {
+    originalFileName: getFileName(args.originalLibraryFile?._id ?? ''),
+    currentFileName: getFileName(args.inputFileObj?._id ?? '')
+  };
 
   const getNewPath = async (getNewPathType: IGetNewPathType)
     : Promise<IGetNewPathOutput> => {
-    const output : IGetNewPathOutput = {
+    const output: IGetNewPathOutput = {
       newPath: '',
       isSuccessful: false
     }
-
     args.jobLog('Going to apply new name');
     args.jobLog(`Renaming ${getNewPathType.appName}...`);
 
@@ -116,22 +126,36 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       Accept: 'application/json',
     };
 
-    // Using parse endpoint to get the movie/serie's id.
-    const parseRequestConfig = {
-      method: 'get',
-      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
-      headers,
-    };
-    const parseRequestResult = await args.deps.axios(parseRequestConfig);
-    const id = getNewPathType.delegates.getIdFromParseRequestResult(parseRequestResult);
+    const getParseRequestResult = async (fileName: string)
+      : Promise<IParseRequestResult> => {
+      // Using parse endpoint to get the movie/serie's id.
+      const parseRequestConfig = {
+        method: 'get',
+        url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
+        headers,
+      };
+      const parseRequestResult = await args.deps.axios(parseRequestConfig);
+      const id = getNewPathType.delegates.getIdFromParseRequestResult(parseRequestResult);
+      args.jobLog(id !== '-1' ?
+        `Found ${getNewPathType.contentName} ${id} with a file named '${fileName}'`
+        : `Didn't find ${getNewPathType.contentName} with a file named '${fileName}' in ${arrHost}.`);
+      return { requestResult: parseRequestResult, id: id };
+    }
 
-    // Checking that the file has been found. A file not found might be caused because Radarr/Sonarr hasn't been notified of a file rename (notify plugin missing ?)
-    // or because Radarr/Sonarr has upgraded the movie/serie to another release before the end of the plugin stack execution.
-    if (id !== '-1') {
+    let fileName = fileNames.originalFileName;
+    let parseRequestResult = await getParseRequestResult(fileName);
+    // In case there has been a name change and the arr app already noticed it.
+    if (parseRequestResult.id == '-1' && fileNames.currentFileName !== fileNames.originalFileName) {
+      fileName = fileNames.currentFileName;
+      parseRequestResult = await getParseRequestResult(fileName);
+    }
+
+    // Checking that the file has been found.
+    if (parseRequestResult.id !== '-1') {
       // Using rename endpoint to get ids of all the files that need renaming.
       const previewRenameRequestConfig = {
         method: 'get',
-        url: getNewPathType.delegates.buildPreviewRenameResquestUrl(id, parseRequestResult),
+        url: getNewPathType.delegates.buildPreviewRenameResquestUrl(parseRequestResult),
         headers,
       };
       const previewRenameRequestResult = await args.deps.axios(previewRenameRequestConfig);
@@ -147,7 +171,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           destinationPath: output.newPath,
           args,
         });
-        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${id} : '${filePath}' => '${output.newPath}'.`);
+        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResult} : '${filePath}' => '${output.newPath}'.`);
       } else {
         output.isSuccessful = true;
         args.jobLog('✔ No rename necessary.');
@@ -165,7 +189,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       contentName: 'movie',
       delegates: {
         getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
-        buildPreviewRenameResquestUrl: (id, parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${id}`,
+        buildPreviewRenameResquestUrl: (parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${parseRequestResult.id}`,
         getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
           ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
             previewRenameRequestResult.data[0]
@@ -177,9 +201,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       contentName: 'serie',
       delegates: {
         getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
-        buildPreviewRenameResquestUrl: (id, parseRequestResult) => {
-          episodeNumber = parseRequestResult.data.parsedEpisodeInfo.episodeNumbers[0];
-          return `${arrHost}/api/v3/rename?seriesId=${id}&seasonNumber=${parseRequestResult.data.parsedEpisodeInfo.seasonNumber}`;
+        buildPreviewRenameResquestUrl: (parseRequestResult) => {
+          episodeNumber = parseRequestResult.requestResult.data.parsedEpisodeInfo.episodeNumbers[0];
+          return `${arrHost}/api/v3/rename?seriesId=${parseRequestResult.id}&seasonNumber=${parseRequestResult.requestResult.data.parsedEpisodeInfo.seasonNumber}`;
         },
         getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
           ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
