@@ -156,7 +156,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 id = _a.sent();
                                 if (!(id == -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
                                 fileName = fileNames.currentFileName;
-                                return [4 /*yield*/, getId(fileNames.currentFileName)];
+                                return [4 /*yield*/, getId(fileName)];
                             case 2:
                                 id = _a.sent();
                                 _a.label = 3;
@@ -173,11 +173,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 _a.sent();
                                 refreshed = true;
                                 args.jobLog("\u2714 Refreshed ".concat(refreshType.contentName, " ").concat(id, " in ").concat(refreshType.appName, "."));
-                                return [3 /*break*/, 6];
-                            case 5:
-                                args.jobLog("No ".concat(refreshType.contentName, " with a file named '").concat(fileName, "'."));
-                                _a.label = 6;
-                            case 6: return [2 /*return*/, refreshed];
+                                _a.label = 5;
+                            case 5: return [2 /*return*/, refreshed];
                         }
                     });
                 }); };

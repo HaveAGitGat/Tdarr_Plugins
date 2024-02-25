@@ -134,7 +134,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     // In case there has been a name change and the arr app already noticed it.
     if(id == -1 && fileNames.currentFileName !== fileNames.originalFileName) {
       fileName = fileNames.currentFileName;
-      id = await getId(fileNames.currentFileName);
+      id = await getId(fileName);
     }
 
     // Checking that the file has been found.
@@ -150,8 +150,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
       refreshed = true;
       args.jobLog(`✔ Refreshed ${refreshType.contentName} ${id} in ${refreshType.appName}.`);
-    } else
-      args.jobLog(`No ${refreshType.contentName} with a file named '${fileName}'.`);
+    }
 
     return refreshed;
   };
