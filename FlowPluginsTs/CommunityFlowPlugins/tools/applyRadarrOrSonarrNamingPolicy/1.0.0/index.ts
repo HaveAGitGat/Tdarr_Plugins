@@ -171,7 +171,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           destinationPath: output.newPath,
           args,
         });
-        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResult} : '${filePath}' => '${output.newPath}'.`);
+        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResult.id} : '${filePath}' => '${output.newPath}'.`);
       } else {
         output.isSuccessful = true;
         args.jobLog('✔ No rename necessary.');

@@ -201,7 +201,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                     })];
                             case 5:
                                 _a.isSuccessful = _b.sent();
-                                args.jobLog("\u2714 Renamed ".concat(getNewPathType.contentName, " ").concat(parseRequestResult, " : '").concat(filePath, "' => '").concat(output.newPath, "'."));
+                                args.jobLog("\u2714 Renamed ".concat(getNewPathType.contentName, " ").concat(parseRequestResult.id, " : '").concat(filePath, "' => '").concat(output.newPath, "'."));
                                 return [3 /*break*/, 7];
                             case 6:
                                 output.isSuccessful = true;
