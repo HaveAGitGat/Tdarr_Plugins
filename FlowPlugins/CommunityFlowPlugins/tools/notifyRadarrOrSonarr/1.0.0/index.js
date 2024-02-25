@@ -101,10 +101,10 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileName, refresh, refreshTypes, refreshed;
-    var _b, _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileNames, refresh, refreshTypes, refreshed;
+    var _b, _c, _d, _e;
+    return __generator(this, function (_f) {
+        switch (_f.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -112,9 +112,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                fileName = (0, fileUtils_1.getFileName)((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : '');
+                fileNames = {
+                    originalFileName: (0, fileUtils_1.getFileName)((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : ''),
+                    currentFileName: (0, fileUtils_1.getFileName)((_e = (_d = args.inputFileObj) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : '')
+                };
                 refresh = function (refreshType) { return __awaiter(void 0, void 0, void 0, function () {
-                    var refreshed, headers, parseRequestConfig, parseRequestResult, id, refreshResquestConfig;
+                    var refreshed, headers, getId, fileName, id, refreshResquestConfig;
                     return __generator(this, function (_a) {
                         switch (_a.label) {
                             case 0:
@@ -126,16 +129,39 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                     'X-Api-Key': arr_api_key,
                                     Accept: 'application/json',
                                 };
-                                parseRequestConfig = {
-                                    method: 'get',
-                                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
-                                    headers: headers,
-                                };
-                                return [4 /*yield*/, args.deps.axios(parseRequestConfig)];
+                                getId = function (fileName) { return __awaiter(void 0, void 0, void 0, function () {
+                                    var parseRequestConfig, parseRequestResult, id;
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0:
+                                                parseRequestConfig = {
+                                                    method: 'get',
+                                                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
+                                                    headers: headers,
+                                                };
+                                                return [4 /*yield*/, args.deps.axios(parseRequestConfig)];
+                                            case 1:
+                                                parseRequestResult = _a.sent();
+                                                id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
+                                                args.jobLog(id !== -1 ?
+                                                    "Found ".concat(refreshType.contentName, " ").concat(id, " with a file named '").concat(fileName, "'")
+                                                    : "Didn't find ".concat(refreshType.contentName, " with a file named '").concat(fileName, "' in ").concat(arrHost, "."));
+                                                return [2 /*return*/, id];
+                                        }
+                                    });
+                                }); };
+                                fileName = fileNames.originalFileName;
+                                return [4 /*yield*/, getId(fileName)];
                             case 1:
-                                parseRequestResult = _a.sent();
-                                id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
-                                if (!(id !== -1)) return [3 /*break*/, 3];
+                                id = _a.sent();
+                                if (!(id == -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
+                                fileName = fileNames.currentFileName;
+                                return [4 /*yield*/, getId(fileNames.currentFileName)];
+                            case 2:
+                                id = _a.sent();
+                                _a.label = 3;
+                            case 3:
+                                if (!(id !== -1)) return [3 /*break*/, 5];
                                 refreshResquestConfig = {
                                     method: 'post',
                                     url: "".concat(arrHost, "/api/v3/command"),
@@ -143,15 +169,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                     data: refreshType.delegates.buildRefreshResquestData(id)
                                 };
                                 return [4 /*yield*/, args.deps.axios(refreshResquestConfig)];
-                            case 2:
+                            case 4:
                                 _a.sent();
                                 refreshed = true;
                                 args.jobLog("\u2714 Refreshed ".concat(refreshType.contentName, " ").concat(id, " in ").concat(refreshType.appName, "."));
-                                return [3 /*break*/, 4];
-                            case 3:
+                                return [3 /*break*/, 6];
+                            case 5:
                                 args.jobLog("No ".concat(refreshType.contentName, " with a file named '").concat(fileName, "'."));
-                                _a.label = 4;
-                            case 4: return [2 /*return*/, refreshed];
+                                _a.label = 6;
+                            case 6: return [2 /*return*/, refreshed];
                         }
                     });
                 }); };
@@ -175,7 +201,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 };
                 return [4 /*yield*/, refresh(arr === 'radarr' ? refreshTypes.radarr : refreshTypes.sonarr)];
             case 1:
-                refreshed = _d.sent();
+                refreshed = _f.sent();
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: refreshed ? 1 : 2,

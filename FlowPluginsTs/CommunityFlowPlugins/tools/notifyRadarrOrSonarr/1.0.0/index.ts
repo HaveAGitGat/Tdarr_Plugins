@@ -1,3 +1,4 @@
+import { get } from 'http';
 import {
   getContainer, getFileAbosluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
@@ -69,6 +70,10 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+interface IFileNames {
+  originalFileName: string,
+  currentFileName : string
+}
 interface IRefreshDelegates {
   getIdFromParseRequestResult: (parseRequestResult: any) => number,
   buildRefreshResquestData: (id: number) => string
@@ -91,7 +96,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { arr, arr_api_key } = args.inputs;
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const fileName = getFileName(args.originalLibraryFile?._id ?? '');
+  const fileNames : IFileNames = {
+    originalFileName : getFileName(args.originalLibraryFile?._id ?? ''),
+    currentFileName: getFileName(args.inputFileObj?._id ?? '')
+  };
 
   const refresh = async (refreshType: IRefreshType)
     : Promise<boolean> => {
@@ -105,14 +113,29 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       Accept: 'application/json',
     };
 
-    // Using parse endpoint to get the movie/serie's id.
-    const parseRequestConfig = {
-      method: 'get',
-      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
-      headers,
-    };
-    const parseRequestResult = await args.deps.axios(parseRequestConfig);
-    const id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
+    const getId = async (fileName : string)
+    : Promise<number> => {
+      // Using parse endpoint to get the movie/serie's id.
+      const parseRequestConfig = {
+        method: 'get',
+        url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
+        headers,
+      };
+      const parseRequestResult = await args.deps.axios(parseRequestConfig);
+      const id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
+      args.jobLog(id !== -1 ?
+        `Found ${refreshType.contentName} ${id} with a file named '${fileName}'`
+        : `Didn't find ${refreshType.contentName} with a file named '${fileName}' in ${arrHost}.`);
+      return id;
+    }
+
+    let fileName = fileNames.originalFileName;
+    let id = await getId(fileName);
+    // In case there has been a name change and the arr app already noticed it.
+    if(id == -1 && fileNames.currentFileName !== fileNames.originalFileName) {
+      fileName = fileNames.currentFileName;
+      id = await getId(fileNames.currentFileName);
+    }
 
     // Checking that the file has been found.
     if (id !== -1) {
