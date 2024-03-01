@@ -96,18 +96,26 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     throw new Error('No streams mapped for new file');
   }
 
+  let outputIndices = new Map();
   for (let i = 0; i < streams.length; i += 1) {
     const stream = streams[i];
+    if (outputIndices.has(stream.codec_type)) {
+      outputIndices.set(stream.codec_type, 0);
+    } else {
+      outputIndices.set(stream.codec_type, outputIndices.get(stream.codec_type) + 1);
+    }
 
+    let codecIndex = outputIndices.get(stream.codec_type);
+    
     stream.outputArgs = stream.outputArgs.map((arg) => {
       if (arg.includes('{outputIndex}')) {
         // eslint-disable-next-line no-param-reassign
-        arg = arg.replace('{outputIndex}', String(getOuputStreamIndex(streams, stream)));
+        arg = arg.replace('{outputIndex}', String(i));
       }
 
       if (arg.includes('{outputTypeIndex}')) {
         // eslint-disable-next-line no-param-reassign
-        arg = arg.replace('{outputTypeIndex}', String(getOuputStreamTypeIndex(streams, stream)));
+        arg = arg.replace('{outputTypeIndex}', String(codecIndex));
       }
 
       return arg;
@@ -116,9 +124,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     cliArgs.push(...stream.mapArgs);
 
     if (stream.outputArgs.length === 0) {
-      cliArgs.push(`-c:${getOuputStreamIndex(streams, stream)}`, 'copy');
+      cliArgs.push(`-c:${i}`, 'copy');
     } else {
       cliArgs.push(...stream.outputArgs);
+    }
+
+    if (stream.disposition) {
+      cliArgs.push(`-disposition:${i}`)
     }
 
     inputArgs.push(...stream.inputArgs);
