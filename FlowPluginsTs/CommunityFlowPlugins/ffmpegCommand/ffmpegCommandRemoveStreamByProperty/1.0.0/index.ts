@@ -28,12 +28,13 @@ const details = (): IpluginDetails => ({
         options: [
           'audio',
           'video',
+          'subtitle',
           'any',
         ],
       },
       tooltip:
         `
-      Stream Codec Type to check against the property: audio, video or any.
+      Stream Codec Type to check against the property.
         `,
     },
 
