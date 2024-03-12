@@ -19,6 +19,26 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Codec Type',
+      name: 'codecType',
+      type: 'string',
+      defaultValue: 'all',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'audio',
+          'video',
+          'any',
+        ],
+      },
+      tooltip:
+        `
+      Codec Type audio, video or any
+        `,
+    },
+
+
+    {
       label: 'Property To Check',
       name: 'propertyToCheck',
       type: 'string',
@@ -84,11 +104,14 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  const codecType = String(args.inputs.codecType).trim();
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
   const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',');
   const condition = String(args.inputs.condition);
 
-  args.variables.ffmpegCommand.streams.forEach((stream) => {
+  args.variables.ffmpegCommand.streams
+  .filter(stream => codecType === 'any' || stream.codec_type === codecType)
+  .forEach((stream) => {
     let target = '';
     if (propertyToCheck.includes('.')) {
       const parts = propertyToCheck.split('.');
