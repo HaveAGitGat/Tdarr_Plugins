@@ -33,7 +33,7 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-      Codec Type to check against the property: audio, video or any.
+      Stream Codec Type to check against the property: audio, video or any.
         `,
     },
 
