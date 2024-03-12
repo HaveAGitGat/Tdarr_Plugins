@@ -111,7 +111,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const condition = String(args.inputs.condition);
 
   args.variables.ffmpegCommand.streams
-  .filter(stream => codecType === 'any' || stream.codec_type === codecType)
+  .filter((stream) => codecType === 'any' || stream.codec_type === codecType)
   .forEach((stream) => {
     let target = '';
     if (propertyToCheck.includes('.')) {
