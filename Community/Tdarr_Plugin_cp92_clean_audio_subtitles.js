@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-module.exports.dependencies = ['axios@0.27.2', '@cospired/i18n-iso-languages'];
+module.exports.dependencies = ['axios@1.6.8', '@cospired/i18n-iso-languages'];
 // tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_cp92_clean_audio_subtitles',
@@ -308,6 +308,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   if (file.ffProbeData.streams.filter((stream) => stream.codec_type.toLowerCase() === 'audio').length > 1){
 
     if (inputs.priority) {
+      response.infoLog += `API priority (${inputs.priority})  \n `;
         if (inputs.priority === 'sonarr') {
         prio = ['sonarr', 'radarr'];
         }
@@ -360,11 +361,12 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
                 if (sonarrResult) {
                     imdbId = sonarrResult.imdbId;
                     response.infoLog += `Grabbed ID (${imdbId}) from Sonarr \n `;
+                    const languages = require('@cospired/i18n-iso-languages');
+                    tmdbResult = { original_language: languages.getAlpha2Code(sonarrResult.originalLanguage.name, 'en') };
                 } else {
                     response.infoLog += "Couldn't grab ID from Sonarr \n ";
                     imdbId = fileNameEncoded;
                 }
-                tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
                 }
             }
     }
