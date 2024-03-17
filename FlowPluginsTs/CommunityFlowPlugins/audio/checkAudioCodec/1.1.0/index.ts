@@ -182,9 +182,9 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
           hasStreamPosition = (index + 1) === streamPosition;
           if (hasStreamPosition) {
             args.jobLog(`File has codec at stream position: ${index}`);
+          } else {
+            args.jobLog(`File does not have codec at stream position: ${index}`);
           }
-        } else {
-          hasStreamPosition = true;
         }
 
         if (checkBitrate) {
@@ -207,11 +207,9 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
             args.jobLog(`File does not have codec: ${args.inputs.codec} ${checkBitrate ? 'with '
             + `bitrate between ${greaterThan} and ${lessThan}` : ''}`);
           }
-        } else {
-          hasBitrate = true;
         }
 
-        if (hasStreamPosition && hasBitrate) {
+        if ((!checkStreamPosition || hasStreamPosition) && (!checkBitrate || hasBitrate)) {
           args.jobLog(`File has codec: ${args.inputs.codec}`);
           hasCodec = true;
         }
