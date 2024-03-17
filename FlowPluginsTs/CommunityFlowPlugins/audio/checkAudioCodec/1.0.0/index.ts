@@ -105,6 +105,42 @@ const details = ():IpluginDetails => ({
       },
       tooltip: 'Specify upper bound.',
     },
+    {
+      label: 'Check Stream Position',
+      name: 'checkStreamPosition',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip:
+        'Toggle whether to check the position of the audio codec.',
+    },
+    {
+      label: 'Position',
+      name: 'streamPosition',
+      type: 'number',
+      defaultValue: '1',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'checkStreamPosition',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: 'Specify expected stream position.',
+    },
   ],
   outputs: [
     {
@@ -127,21 +163,36 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const checkBitrate = Boolean(args.inputs.checkBitrate);
   const greaterThan = Number(args.inputs.greaterThan);
   const lessThan = Number(args.inputs.lessThan);
+  let hasBitrate = false;
+
+  const checkStreamPosition = Boolean(args.inputFileObj.checkStreamPosition);
+  const streamPosition = Number(args.inputs.streamPosition);
+  let hasStreamPosition = false;
 
   let hasCodec = false;
 
   if (args.inputFileObj.ffProbeData.streams) {
     args.inputFileObj.ffProbeData.streams.forEach((stream, index) => {
+      // reset for each stream
+      hasStreamPosition = false;
+      hasBitrate = false;
+
       if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
-        if (!checkBitrate) {
-          args.jobLog(`File has codec: ${args.inputs.codec}`);
-          hasCodec = true;
+        if (checkStreamPosition) {
+          hasStreamPosition = (index + 1) === streamPosition;
+          if (hasStreamPosition) {
+            args.jobLog(`File has codec at stream position: ${index}`);
+          }
         } else {
+          hasStreamPosition = true;
+        }
+
+        if (checkBitrate) {
           const ffprobeBitrate = Number(stream.bit_rate || 0);
           if (ffprobeBitrate > greaterThan && ffprobeBitrate < lessThan) {
             args.jobLog(`File has codec: ${args.inputs.codec} with bitrate`
             + ` ${ffprobeBitrate} between ${greaterThan} and ${lessThan}`);
-            hasCodec = true;
+            hasBitrate = true;
           }
 
           const mediaInfoBitrate = Number(args.inputFileObj.mediaInfo?.track?.[index + 1]?.BitRate || 0);
@@ -149,16 +200,23 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
           if (mediaInfoBitrate > greaterThan && mediaInfoBitrate < lessThan) {
             args.jobLog(`File has codec: ${args.inputs.codec} with bitrate`
             + ` ${mediaInfoBitrate} between ${greaterThan} and ${lessThan}`);
-            hasCodec = true;
+            hasBitrate = true;
           }
+
+          if (!hasBitrate) {
+            args.jobLog(`File does not have codec: ${args.inputs.codec} ${checkBitrate ? 'with '
+            + `bitrate between ${greaterThan} and ${lessThan}` : ''}`);
+          }
+        } else {
+          hasBitrate = true;
+        }
+
+        if (hasStreamPosition && hasBitrate) {
+          args.jobLog(`File has codec: ${args.inputs.codec}`);
+          hasCodec = true;
         }
       }
     });
-  }
-
-  if (!hasCodec) {
-    args.jobLog(`File does not have codec: ${args.inputs.codec} ${checkBitrate ? 'with '
-    + `bitrate between ${greaterThan} and ${lessThan}` : ''}`);
   }
 
   return {
@@ -167,6 +225,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
     variables: args.variables,
   };
 };
+
 export {
   details,
   plugin,
