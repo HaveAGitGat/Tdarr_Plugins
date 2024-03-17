@@ -173,9 +173,9 @@ var plugin = function (args) {
                     if (hasStreamPosition) {
                         args.jobLog("File has codec at stream position: ".concat(index));
                     }
-                }
-                else {
-                    hasStreamPosition = true;
+                    else {
+                        args.jobLog("File does not have codec at stream position: ".concat(index));
+                    }
                 }
                 if (checkBitrate) {
                     var ffprobeBitrate = Number(stream.bit_rate || 0);
@@ -195,10 +195,7 @@ var plugin = function (args) {
                             + "bitrate between ".concat(greaterThan, " and ").concat(lessThan) : ''));
                     }
                 }
-                else {
-                    hasBitrate = true;
-                }
-                if (hasStreamPosition && hasBitrate) {
+                if ((!checkStreamPosition || hasStreamPosition) && (!checkBitrate || hasBitrate)) {
                     args.jobLog("File has codec: ".concat(args.inputs.codec));
                     hasCodec = true;
                 }
