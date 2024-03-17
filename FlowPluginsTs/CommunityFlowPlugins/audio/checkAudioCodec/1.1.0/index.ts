@@ -212,6 +212,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
         }
 
         if ((!checkStreamPosition || hasStreamPosition) && (!checkBitrate || hasBitrate)) {
+          args.jobLog(`2 ${!checkStreamPosition} ${hasStreamPosition}`);
           args.jobLog(`File has codec: ${args.inputs.codec}`);
           hasCodec = true;
         }

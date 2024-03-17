@@ -197,6 +197,7 @@ var plugin = function (args) {
                     }
                 }
                 if ((!checkStreamPosition || hasStreamPosition) && (!checkBitrate || hasBitrate)) {
+                    args.jobLog("2 ".concat(!checkStreamPosition, " ").concat(hasStreamPosition));
                     args.jobLog("File has codec: ".concat(args.inputs.codec));
                     hasCodec = true;
                 }
