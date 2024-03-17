@@ -168,7 +168,7 @@ var plugin = function (args) {
             hasStreamPosition = false;
             hasBitrate = false;
             if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
-                args.jobLog("test ".concat(index));
+                args.jobLog("test ".concat(index, " ").concat(stream.codec_name, " ").concat(hasStreamPosition, " ").concat(hasBitrate));
                 if (checkStreamPosition) {
                     hasStreamPosition = (index + 1) === streamPosition;
                     if (hasStreamPosition) {
