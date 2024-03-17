@@ -179,11 +179,9 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
       if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
         if (checkStreamPosition) {
-          hasStreamPosition = (index + 1) === streamPosition;
+          hasStreamPosition = index === streamPosition;
           if (hasStreamPosition) {
-            args.jobLog(`File has codec at stream position: ${index}`);
-          } else {
-            args.jobLog(`File does not have codec at stream position: ${index}`);
+            args.jobLog(`${stream.codec_name} found at expected postition: ${index}`);
           }
         }
 

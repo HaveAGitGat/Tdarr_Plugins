@@ -169,12 +169,9 @@ var plugin = function (args) {
             hasBitrate = false;
             if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
                 if (checkStreamPosition) {
-                    hasStreamPosition = (index + 1) === streamPosition;
+                    hasStreamPosition = index === streamPosition;
                     if (hasStreamPosition) {
-                        args.jobLog("File has codec at stream position: ".concat(index));
-                    }
-                    else {
-                        args.jobLog("File does not have codec at stream position: ".concat(index));
+                        args.jobLog("".concat(stream.codec_name, " found at expected postition: ").concat(index));
                     }
                 }
                 if (checkBitrate) {
