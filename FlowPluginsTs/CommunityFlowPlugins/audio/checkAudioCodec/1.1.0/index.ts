@@ -178,7 +178,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
       hasBitrate = false;
 
       if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
-        args.jobLog(`test ${index} ${stream.codec_name} ${hasStreamPosition} ${hasBitrate}`);
+        args.jobLog(`test ${index} ${hasCodec} ${stream.codec_name} ${hasStreamPosition} ${hasBitrate}`);
 
         if (checkStreamPosition) {
           hasStreamPosition = (index + 1) === streamPosition;
