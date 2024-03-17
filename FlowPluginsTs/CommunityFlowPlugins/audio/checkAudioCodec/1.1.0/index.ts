@@ -165,7 +165,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const lessThan = Number(args.inputs.lessThan);
   let hasBitrate = false;
 
-  const checkStreamPosition = Boolean(args.inputFileObj.checkStreamPosition);
+  const checkStreamPosition = Boolean(args.inputs.checkStreamPosition);
   const streamPosition = Number(args.inputs.streamPosition);
   let hasStreamPosition = false;
 
@@ -178,8 +178,6 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
       hasBitrate = false;
 
       if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
-        args.jobLog(`test ${index} ${hasCodec} ${stream.codec_name} ${hasStreamPosition} ${hasBitrate}`);
-
         if (checkStreamPosition) {
           hasStreamPosition = (index + 1) === streamPosition;
           if (hasStreamPosition) {
@@ -212,7 +210,6 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
         }
 
         if ((!checkStreamPosition || hasStreamPosition) && (!checkBitrate || hasBitrate)) {
-          args.jobLog(`2 ${!checkStreamPosition} ${checkStreamPosition} ${hasStreamPosition}`);
           args.jobLog(`File has codec: ${args.inputs.codec}`);
           hasCodec = true;
         }

@@ -157,7 +157,7 @@ var plugin = function (args) {
     var greaterThan = Number(args.inputs.greaterThan);
     var lessThan = Number(args.inputs.lessThan);
     var hasBitrate = false;
-    var checkStreamPosition = Boolean(args.inputFileObj.checkStreamPosition);
+    var checkStreamPosition = Boolean(args.inputs.checkStreamPosition);
     var streamPosition = Number(args.inputs.streamPosition);
     var hasStreamPosition = false;
     var hasCodec = false;
@@ -168,7 +168,6 @@ var plugin = function (args) {
             hasStreamPosition = false;
             hasBitrate = false;
             if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
-                args.jobLog("test ".concat(index, " ").concat(hasCodec, " ").concat(stream.codec_name, " ").concat(hasStreamPosition, " ").concat(hasBitrate));
                 if (checkStreamPosition) {
                     hasStreamPosition = (index + 1) === streamPosition;
                     if (hasStreamPosition) {
@@ -197,7 +196,6 @@ var plugin = function (args) {
                     }
                 }
                 if ((!checkStreamPosition || hasStreamPosition) && (!checkBitrate || hasBitrate)) {
-                    args.jobLog("2 ".concat(!checkStreamPosition, " ").concat(checkStreamPosition, " ").concat(hasStreamPosition));
                     args.jobLog("File has codec: ".concat(args.inputs.codec));
                     hasCodec = true;
                 }
