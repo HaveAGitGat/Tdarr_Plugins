@@ -32,8 +32,8 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify terms to check for in file name using comma seperated list e.g. _720p,_1080p',
     },
     {
-      label: 'Patterns',
-      name: 'patterns',
+      label: 'Pattern (regular expression)',
+      name: 'pattern',
       type: 'string',
       // eslint-disable-next-line no-template-curly-in-string
       defaultValue: '',
@@ -41,7 +41,7 @@ const details = (): IpluginDetails => ({
         type: 'text',
       },
       // eslint-disable-next-line no-template-curly-in-string
-      tooltip: 'Specify patterns (regex) to check for in file name using comma seperated list e.g. ^Pattern*\.mkv$',
+      tooltip: 'Specify the pattern (regex) to check for in file name e.g. ^Pattern*\.mkv$',
     },
     {
       label: 'Include file directory in check',
@@ -77,16 +77,17 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const buildArrayInput = (arrayInput: any): string[] =>
     String(arrayInput)?.trim().split(',') ?? new Array();
 
+  let isAMatch = false;
   const fileName = `${Boolean(args.inputs.includeFileDirectory) ? getFileAbosluteDir(args.inputFileObj._id) + '/' : ''}${getFileName(args.inputFileObj._id)}.${getContainer(args.inputFileObj._id)}`;
   const searchCriteriasArray = buildArrayInput(args.inputs.terms)
-    .map(term => term.replace(/[\-\/\\^$*+?.()|[\]{}]/g, '\\$&')) // https://github.com/tc39/proposal-regex-escaping
-    .concat(buildArrayInput(args.inputs.patterns));
-  let isAMatch = false;
+    .map(term => term.replace(/[\-\/\\^$*+?.()|[\]{}]/g, '\\$&')); // https://github.com/tc39/proposal-regex-escaping
+  if (args.inputs.pattern)
+    searchCriteriasArray.push(String(args.inputs.pattern));
 
   for (let i = 0; i < searchCriteriasArray.length; i++)
     if (new RegExp(searchCriteriasArray[i]).test(fileName)) {
       isAMatch = true;
-      args.jobLog(`${fileName} includes ${searchCriteriasArray[i]}`);
+      args.jobLog(`'${fileName}' includes '${searchCriteriasArray[i]}'`);
       break;
     }
 
