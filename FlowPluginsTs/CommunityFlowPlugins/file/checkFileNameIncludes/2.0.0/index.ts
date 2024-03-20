@@ -79,6 +79,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const fileName = `${Boolean(args.inputs.includeFileDirectory) ? getFileAbosluteDir(args.inputFileObj._id) + '/' : ''}${getFileName(args.inputFileObj._id)}.${getContainer(args.inputFileObj._id)}`;
   const searchCriteriasArray = buildArrayInput(args.inputs.terms)
+    .map(term => term.replace(/[\-\/\\^$*+?.()|[\]{}]/g, '\\$&')) // https://github.com/tc39/proposal-regex-escaping
     .concat(buildArrayInput(args.inputs.patterns));
   let isAMatch = false;
 

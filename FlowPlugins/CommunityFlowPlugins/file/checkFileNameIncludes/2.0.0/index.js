@@ -73,6 +73,7 @@ var plugin = function (args) {
     var buildArrayInput = function (arrayInput) { var _a, _b; return (_b = (_a = String(arrayInput)) === null || _a === void 0 ? void 0 : _a.trim().split(',')) !== null && _b !== void 0 ? _b : new Array(); };
     var fileName = "".concat(Boolean(args.inputs.includeFileDirectory) ? (0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id) + '/' : '').concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
     var searchCriteriasArray = buildArrayInput(args.inputs.terms)
+        .map(function (term) { return term.replace(/[\-\/\\^$*+?.()|[\]{}]/g, '\\$&'); }) // https://github.com/tc39/proposal-regex-escaping
         .concat(buildArrayInput(args.inputs.patterns));
     var isAMatch = false;
     for (var i = 0; i < searchCriteriasArray.length; i++)
