@@ -63,7 +63,7 @@ const details = (): IpluginDetails => ({
     {
       number: 2,
       tooltip: 'Radarr or Sonnar do not know this file',
-    }
+    },
   ],
 });
 
@@ -173,7 +173,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           (id) => JSON.stringify({ name: 'RefreshSeries', seriesId: id }),
       },
     },
-  }
+  };
 
   const refreshed = await refresh(arr === 'radarr' ? refreshTypes.radarr : refreshTypes.sonarr);
 

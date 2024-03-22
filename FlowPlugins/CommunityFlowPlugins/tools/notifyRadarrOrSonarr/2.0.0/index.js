@@ -96,7 +96,7 @@ var details = function () { return ({
         {
             number: 2,
             tooltip: 'Radarr or Sonnar do not know this file',
-        }
+        },
     ],
 }); };
 exports.details = details;
