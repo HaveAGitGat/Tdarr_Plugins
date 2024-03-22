@@ -84,10 +84,12 @@ var plugin = function (args) {
         // eslint-disable-next-line no-param-reassign
         stream.typeIndex = index;
     });
-    var getSimplifiedStreams = function (streams) {
-        return streams.map(function (stream) {
-            return { index: stream.typeIndex, codec_name: stream.codec_name, codec_type: stream.codec_type };
-        });
+    var getSimplifiedStreams = function (streamsToSimplify) {
+        return streamsToSimplify.map(function (stream) { return ({
+            index: stream.typeIndex,
+            codec_name: stream.codec_name,
+            codec_type: stream.codec_type,
+        }); });
     };
     var originalStreams = JSON.stringify(getSimplifiedStreams(streams));
     var sortStreams = function (sortType) {
@@ -174,10 +176,10 @@ var plugin = function (args) {
         args.variables.ffmpegCommand.shouldProcess = true;
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.streams = streams;
-        args.jobLog("Streams are not in order. Reordering.");
+        args.jobLog('Streams are not in order. Reordering.');
     }
     else
-        args.jobLog("\u2714 Streams are already in order. No reordering necessary.");
+        args.jobLog('✔ Streams are already in order. No reordering necessary.');
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,
