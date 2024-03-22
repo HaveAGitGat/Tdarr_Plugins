@@ -77,13 +77,39 @@ interface IFileNames {
   currentFileName: string
 }
 interface IParseRequestResult {
-  requestResult: any,
+  data: {
+    movie?: {
+      movieFile: {
+        movieId: number
+      },
+    },
+    series?: {
+      id: number
+    },
+    parsedEpisodeInfo?: {
+      episodeNumbers: number[],
+      seasonNumber: number
+    },
+  },
+}
+interface IParseRequestResultWrapper {
+  parseRequestResult: IParseRequestResult,
   id: string
 }
+interface IFileToRename {
+  newPath: string
+  episodeNumbers?: number[]
+}
+interface IPreviewRenameRequestResult {
+  data: IFileToRename[]
+}
 interface IGetNewPathDelegates {
-  getIdFromParseRequestResult: (parseRequestResult: any) => string,
-  buildPreviewRenameResquestUrl: (parseRequestResult: IParseRequestResult) => string,
-  getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult: any) => any
+  getIdFromParseRequestResult:
+    (parseRequestResult: IParseRequestResult) => string,
+  buildPreviewRenameResquestUrl:
+    (parseRequestResult: IParseRequestResultWrapper) => string,
+  getFileToRenameFromPreviewRenameRequestResult:
+    (previewRenameRequestResult: IPreviewRenameRequestResult) => IFileToRename | undefined
 }
 interface IGetNewPathType {
   appName: string,
@@ -128,8 +154,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       Accept: 'application/json',
     };
 
-    const getParseRequestResult = async (fileName: string)
-      : Promise<IParseRequestResult> => {
+    const getParseRequestResultWrapper = async (fileName: string)
+      : Promise<IParseRequestResultWrapper> => {
       // Using parse endpoint to get the movie/serie's id.
       const parseRequestConfig = {
         method: 'get',
@@ -141,23 +167,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       args.jobLog(id !== '-1'
         ? `Found ${getNewPathType.contentName} ${id} with a file named '${fileName}'`
         : `Didn't find ${getNewPathType.contentName} with a file named '${fileName}' in ${arrHost}.`);
-      return { requestResult: parseRequestResult, id };
+      return { parseRequestResult, id };
     };
 
     let fileName = fileNames.originalFileName;
-    let parseRequestResult = await getParseRequestResult(fileName);
+    let parseRequestResultWrapper = await getParseRequestResultWrapper(fileName);
     // In case there has been a name change and the arr app already noticed it.
-    if (parseRequestResult.id === '-1' && fileNames.currentFileName !== fileNames.originalFileName) {
+    if (parseRequestResultWrapper.id === '-1' && fileNames.currentFileName !== fileNames.originalFileName) {
       fileName = fileNames.currentFileName;
-      parseRequestResult = await getParseRequestResult(fileName);
+      parseRequestResultWrapper = await getParseRequestResultWrapper(fileName);
     }
 
     // Checking that the file has been found.
-    if (parseRequestResult.id !== '-1') {
+    if (parseRequestResultWrapper.id !== '-1') {
       // Using rename endpoint to get ids of all the files that need renaming.
       const previewRenameRequestConfig = {
         method: 'get',
-        url: getNewPathType.delegates.buildPreviewRenameResquestUrl(parseRequestResult),
+        url: getNewPathType.delegates.buildPreviewRenameResquestUrl(parseRequestResultWrapper),
         headers,
       };
       const previewRenameRequestResult = await args.deps.axios(previewRenameRequestConfig);
@@ -176,7 +202,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           destinationPath: output.newPath,
           args,
         });
-        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResult.id} : `
+        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResultWrapper.id} : `
           + `'${filePath}' => '${output.newPath}'.`);
       } else {
         output.isSuccessful = true;
@@ -196,7 +222,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         getIdFromParseRequestResult:
           (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
         buildPreviewRenameResquestUrl:
-          (parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${parseRequestResult.id}`,
+          (parseRequestResultWrapper) => `${arrHost}/api/v3/rename?movieId=${parseRequestResultWrapper.id}`,
         getFileToRenameFromPreviewRenameRequestResult:
           (previewRenameRequestResult) => (((previewRenameRequestResult.data?.length ?? 0) > 0)
             ? previewRenameRequestResult.data[0]
@@ -210,19 +236,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         getIdFromParseRequestResult:
           (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
         buildPreviewRenameResquestUrl:
-          (parseRequestResult) => {
-            [episodeNumber] = parseRequestResult.requestResult.data.parsedEpisodeInfo.episodeNumbers;
-            return `${arrHost}/api/v3/rename?`
-              + `seriesId=${parseRequestResult.id}`
-              + `&seasonNumber=${parseRequestResult.requestResult.data.parsedEpisodeInfo.seasonNumber}`;
+          (parseRequestResultWrapper) => {
+            [episodeNumber] = parseRequestResultWrapper.parseRequestResult.data.parsedEpisodeInfo?.episodeNumbers
+              ?? [1];
+            return `${arrHost}/api/v3/rename?seriesId=${parseRequestResultWrapper.id}&seasonNumber=`
+              + `${parseRequestResultWrapper.parseRequestResult.data.parsedEpisodeInfo?.seasonNumber ?? 1}`;
           },
         getFileToRenameFromPreviewRenameRequestResult:
           (previewRenameRequestResult) => (((previewRenameRequestResult.data?.length ?? 0) > 0)
-            ? previewRenameRequestResult.data.find(
-              (episodeFile: { episodeNumbers: number[]; }) => (((episodeFile.episodeNumbers?.length ?? 0) > 0)
-                ? episodeFile.episodeNumbers[0] === episodeNumber
-                : false),
-            )
+            ? previewRenameRequestResult.data.find((episodeFile) => episodeFile.episodeNumbers?.at(0) === episodeNumber)
             : undefined),
       },
     },
