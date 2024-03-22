@@ -114,7 +114,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 fileNames = {
                     originalFileName: (0, fileUtils_1.getFileName)((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : ''),
-                    currentFileName: (0, fileUtils_1.getFileName)((_e = (_d = args.inputFileObj) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : '')
+                    currentFileName: (0, fileUtils_1.getFileName)((_e = (_d = args.inputFileObj) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : ''),
                 };
                 refresh = function (refreshType) { return __awaiter(void 0, void 0, void 0, function () {
                     var refreshed, headers, getId, fileName, id, refreshResquestConfig;
@@ -143,8 +143,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                             case 1:
                                                 parseRequestResult = _a.sent();
                                                 id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
-                                                args.jobLog(id !== -1 ?
-                                                    "Found ".concat(refreshType.contentName, " ").concat(id, " with a file named '").concat(fileName, "'")
+                                                args.jobLog(id !== -1
+                                                    ? "Found ".concat(refreshType.contentName, " ").concat(id, " with a file named '").concat(fileName, "'")
                                                     : "Didn't find ".concat(refreshType.contentName, " with a file named '").concat(fileName, "' in ").concat(arrHost, "."));
                                                 return [2 /*return*/, id];
                                         }
@@ -154,7 +154,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 return [4 /*yield*/, getId(fileName)];
                             case 1:
                                 id = _a.sent();
-                                if (!(id == -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
+                                if (!(id === -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
                                 fileName = fileNames.currentFileName;
                                 return [4 /*yield*/, getId(fileName)];
                             case 2:
@@ -166,7 +166,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                     method: 'post',
                                     url: "".concat(arrHost, "/api/v3/command"),
                                     headers: headers,
-                                    data: refreshType.delegates.buildRefreshResquestData(id)
+                                    data: refreshType.delegates.buildRefreshResquestData(id),
                                 };
                                 return [4 /*yield*/, args.deps.axios(refreshResquestConfig)];
                             case 4:
@@ -184,15 +184,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         contentName: 'movie',
                         delegates: {
                             getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c, _d; return Number((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
-                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); }
-                        }
+                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); },
+                        },
                     },
                     sonarr: {
                         appName: 'Sonarr',
                         contentName: 'serie',
                         delegates: {
                             getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
-                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); }
+                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); },
                         },
                     },
                 };
