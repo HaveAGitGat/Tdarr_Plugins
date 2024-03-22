@@ -10,7 +10,9 @@ import {
 
 const details = (): IpluginDetails => ({
   name: 'Apply Radarr or Sonarr naming policy',
-  description: 'Apply Radarr or Sonarr naming policy to a file. This plugin should be called after the original file has been replaced and Radarr or Sonarr has been notified. Radarr or Sonarr should also be notified after this plugin.',
+  description:
+    'Apply Radarr or Sonarr naming policy to a file. This plugin should be called after the original file has been '
+    + 'replaced and Radarr or Sonarr has been notified. Radarr or Sonarr should also be notified after this plugin.',
   style: {
     borderColor: 'green',
   },
@@ -66,8 +68,8 @@ const details = (): IpluginDetails => ({
     {
       number: 2,
       tooltip: 'Radarr or Sonnar do not know this file',
-    }
-  ]
+    },
+  ],
 });
 
 interface IFileNames {
@@ -108,15 +110,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const filePath = args.originalLibraryFile?._id ?? '';
   const fileNames: IFileNames = {
     originalFileName: getFileName(args.originalLibraryFile?._id ?? ''),
-    currentFileName: getFileName(args.inputFileObj?._id ?? '')
+    currentFileName: getFileName(args.inputFileObj?._id ?? ''),
   };
 
   const getNewPath = async (getNewPathType: IGetNewPathType)
     : Promise<IGetNewPathOutput> => {
     const output: IGetNewPathOutput = {
       newPath: '',
-      isSuccessful: false
-    }
+      isSuccessful: false,
+    };
     args.jobLog('Going to apply new name');
     args.jobLog(`Renaming ${getNewPathType.appName}...`);
 
@@ -136,16 +138,16 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       };
       const parseRequestResult = await args.deps.axios(parseRequestConfig);
       const id = getNewPathType.delegates.getIdFromParseRequestResult(parseRequestResult);
-      args.jobLog(id !== '-1' ?
-        `Found ${getNewPathType.contentName} ${id} with a file named '${fileName}'`
+      args.jobLog(id !== '-1'
+        ? `Found ${getNewPathType.contentName} ${id} with a file named '${fileName}'`
         : `Didn't find ${getNewPathType.contentName} with a file named '${fileName}' in ${arrHost}.`);
-      return { requestResult: parseRequestResult, id: id };
-    }
+      return { requestResult: parseRequestResult, id };
+    };
 
     let fileName = fileNames.originalFileName;
     let parseRequestResult = await getParseRequestResult(fileName);
     // In case there has been a name change and the arr app already noticed it.
-    if (parseRequestResult.id == '-1' && fileNames.currentFileName !== fileNames.originalFileName) {
+    if (parseRequestResult.id === '-1' && fileNames.currentFileName !== fileNames.originalFileName) {
       fileName = fileNames.currentFileName;
       parseRequestResult = await getParseRequestResult(fileName);
     }
@@ -159,11 +161,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         headers,
       };
       const previewRenameRequestResult = await args.deps.axios(previewRenameRequestConfig);
-      const fileToRename = getNewPathType.delegates.getFileToRenameFromPreviewRenameRequestResult(previewRenameRequestResult);
+      const fileToRename = getNewPathType.delegates
+        .getFileToRenameFromPreviewRenameRequestResult(previewRenameRequestResult);
 
       // Only if there is a rename to execute
       if (fileToRename !== undefined) {
-        output.newPath = `${getFileAbosluteDir(args.inputFileObj._id)}/${getFileName(fileToRename.newPath)}.${getContainer(fileToRename.newPath)}`;
+        output.newPath = `${getFileAbosluteDir(args.inputFileObj._id)
+        }/${getFileName(fileToRename.newPath)
+        }.${getContainer(fileToRename.newPath)}`;
 
         output.isSuccessful = await fileMoveOrCopy({
           operation: 'move',
@@ -171,7 +176,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           destinationPath: output.newPath,
           args,
         });
-        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResult.id} : '${filePath}' => '${output.newPath}'.`);
+        args.jobLog(`✔ Renamed ${getNewPathType.contentName} ${parseRequestResult.id} : `
+          + `'${filePath}' => '${output.newPath}'.`);
       } else {
         output.isSuccessful = true;
         args.jobLog('✔ No rename necessary.');
@@ -187,34 +193,47 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       appName: 'Radarr',
       contentName: 'movie',
       delegates: {
-        getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
-        buildPreviewRenameResquestUrl: (parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${parseRequestResult.id}`,
-        getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
-          ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
-            previewRenameRequestResult.data[0]
-            : undefined
-      }
+        getIdFromParseRequestResult:
+          (parseRequestResult) => String(parseRequestResult.data?.movie?.movieFile?.movieId ?? -1),
+        buildPreviewRenameResquestUrl:
+          (parseRequestResult) => `${arrHost}/api/v3/rename?movieId=${parseRequestResult.id}`,
+        getFileToRenameFromPreviewRenameRequestResult:
+          (previewRenameRequestResult) => (((previewRenameRequestResult.data?.length ?? 0) > 0)
+            ? previewRenameRequestResult.data[0]
+            : undefined),
+      },
     },
     sonarr: {
       appName: 'Sonarr',
       contentName: 'serie',
       delegates: {
-        getIdFromParseRequestResult: (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
-        buildPreviewRenameResquestUrl: (parseRequestResult) => {
-          episodeNumber = parseRequestResult.requestResult.data.parsedEpisodeInfo.episodeNumbers[0];
-          return `${arrHost}/api/v3/rename?seriesId=${parseRequestResult.id}&seasonNumber=${parseRequestResult.requestResult.data.parsedEpisodeInfo.seasonNumber}`;
-        },
-        getFileToRenameFromPreviewRenameRequestResult: (previewRenameRequestResult) =>
-          ((previewRenameRequestResult.data?.length ?? 0) > 0) ?
-            previewRenameRequestResult.data.find((episodeFile: { episodeNumbers: number[]; }) => ((episodeFile.episodeNumbers?.length ?? 0) > 0) ? episodeFile.episodeNumbers[0] === episodeNumber : false)
-            : undefined
-      }
-    }
-  }
+        getIdFromParseRequestResult:
+          (parseRequestResult) => String(parseRequestResult.data?.series?.id ?? -1),
+        buildPreviewRenameResquestUrl:
+          (parseRequestResult) => {
+            [episodeNumber] = parseRequestResult.requestResult.data.parsedEpisodeInfo.episodeNumbers;
+            return `${arrHost}/api/v3/rename?`
+              + `seriesId=${parseRequestResult.id}`
+              + `&seasonNumber=${parseRequestResult.requestResult.data.parsedEpisodeInfo.seasonNumber}`;
+          },
+        getFileToRenameFromPreviewRenameRequestResult:
+          (previewRenameRequestResult) => (((previewRenameRequestResult.data?.length ?? 0) > 0)
+            ? previewRenameRequestResult.data.find(
+              (episodeFile: { episodeNumbers: number[]; }) => (((episodeFile.episodeNumbers?.length ?? 0) > 0)
+                ? episodeFile.episodeNumbers[0] === episodeNumber
+                : false),
+            )
+            : undefined),
+      },
+    },
+  };
   const newPathOutput = await getNewPath(arr === 'radarr' ? getNewPathTypes.radarr : getNewPathTypes.sonarr);
 
   return {
-    outputFileObj: newPathOutput.isSuccessful && newPathOutput.newPath !== '' ? { ...args.inputFileObj, _id: newPathOutput.newPath } : args.inputFileObj,
+    outputFileObj:
+      newPathOutput.isSuccessful && newPathOutput.newPath !== ''
+        ? { ...args.inputFileObj, _id: newPathOutput.newPath }
+        : args.inputFileObj,
     outputNumber: newPathOutput.isSuccessful ? 1 : 2,
     variables: args.variables,
   };
