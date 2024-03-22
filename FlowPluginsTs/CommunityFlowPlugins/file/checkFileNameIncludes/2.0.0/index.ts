@@ -41,7 +41,7 @@ const details = (): IpluginDetails => ({
         type: 'text',
       },
       // eslint-disable-next-line no-template-curly-in-string
-      tooltip: 'Specify the pattern (regex) to check for in file name e.g. ^Pattern*\.mkv$',
+      tooltip: 'Specify the pattern (regex) to check for in file name e.g. ^Pattern.*mkv$',
     },
     {
       label: 'Include file directory in check',
@@ -54,7 +54,7 @@ const details = (): IpluginDetails => ({
       },
       // eslint-disable-next-line no-template-curly-in-string
       tooltip: 'Should the terms and patterns be evaluated against the file directory e.g. false, true',
-    }
+    },
   ],
   outputs: [
     {
@@ -74,22 +74,23 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const buildArrayInput = (arrayInput: any): string[] =>
-    String(arrayInput)?.trim().split(',') ?? new Array();
+  const buildArrayInput = (arrayInput: unknown): string[] => String(arrayInput)?.trim().split(',') ?? [];
 
   let isAMatch = false;
-  const fileName = `${Boolean(args.inputs.includeFileDirectory) ? getFileAbosluteDir(args.inputFileObj._id) + '/' : ''}${getFileName(args.inputFileObj._id)}.${getContainer(args.inputFileObj._id)}`;
+  const fileName = `${(args.inputs.includeFileDirectory ? `${getFileAbosluteDir(args.inputFileObj._id)}/` : '')
+    + getFileName(args.inputFileObj._id)
+  }.${getContainer(args.inputFileObj._id)}`;
   const searchCriteriasArray = buildArrayInput(args.inputs.terms)
-    .map(term => term.replace(/[\-\/\\^$*+?.()|[\]{}]/g, '\\$&')); // https://github.com/tc39/proposal-regex-escaping
-  if (args.inputs.pattern)
-    searchCriteriasArray.push(String(args.inputs.pattern));
+    .map((term) => term.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&')); // https://github.com/tc39/proposal-regex-escaping
+  if (args.inputs.pattern) searchCriteriasArray.push(String(args.inputs.pattern));
 
-  for (let i = 0; i < searchCriteriasArray.length; i++)
+  for (let i = 0; i < searchCriteriasArray.length; i++) {
     if (new RegExp(searchCriteriasArray[i]).test(fileName)) {
       isAMatch = true;
       args.jobLog(`'${fileName}' includes '${searchCriteriasArray[i]}'`);
       break;
     }
+  }
 
   return {
     outputFileObj: args.inputFileObj,
