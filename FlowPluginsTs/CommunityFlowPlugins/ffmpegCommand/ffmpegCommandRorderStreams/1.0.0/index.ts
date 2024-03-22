@@ -111,12 +111,20 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
 
-  const originalStreams = JSON.stringify(streams);
-
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
     stream.typeIndex = index;
   });
+
+  const getSimplifiedStreams =
+    (streamsToSimplify: IffmpegCommandStream[]) =>
+      streamsToSimplify.map((stream) => ({
+        index: stream.typeIndex,
+        codec_name: stream.codec_name,
+        codec_type: stream.codec_type,
+      }));
+
+  const originalStreams = JSON.stringify(getSimplifiedStreams(streams));
 
   const sortStreams = (sortType: {
     inputs: string,
@@ -153,7 +161,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     languages, codecs, channels, streamTypes,
   } = args.inputs;
 
-  const sortTypes:{
+  const sortTypes: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any,
   } = {
@@ -180,7 +188,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     },
     channels: {
       getValue: (stream: Istreams) => {
-        const chanMap:{
+        const chanMap: {
           [key: number]: string
         } = {
           8: '7.1',
@@ -198,7 +206,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       inputs: channels,
     },
     streamTypes: {
-      getValue: (stream:Istreams) => {
+      getValue: (stream: Istreams) => {
         if (stream.codec_type) {
           return stream.codec_type;
         }
@@ -216,12 +224,14 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     }
   }
 
-  if (JSON.stringify(streams) !== originalStreams) {
+  const sortedStreams = JSON.stringify(getSimplifiedStreams(streams));
+  if (sortedStreams !== originalStreams) {
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-  }
+    args.jobLog('Streams are not in order. Reordering.');
+  } else args.jobLog('✔ Streams are already in order. No reordering necessary.');
 
   return {
     outputFileObj: args.inputFileObj,
