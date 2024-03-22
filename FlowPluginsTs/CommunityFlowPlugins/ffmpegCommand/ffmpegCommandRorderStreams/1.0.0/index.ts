@@ -116,10 +116,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     stream.typeIndex = index;
   });
 
-  const getSimplifiedStreams = (streams: IffmpegCommandStream[]) =>
-    streams.map(stream => {
-      return { index: stream.typeIndex, codec_name: stream.codec_name, codec_type: stream.codec_type };
-    });
+  const getSimplifiedStreams =
+    (streamsToSimplify: IffmpegCommandStream[]) =>
+      streamsToSimplify.map((stream) => ({
+        index: stream.typeIndex,
+        codec_name: stream.codec_name,
+        codec_type: stream.codec_type,
+      }));
 
   const originalStreams = JSON.stringify(getSimplifiedStreams(streams));
 
@@ -227,9 +230,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-    args.jobLog(`Streams are not in order. Reordering.`);
-  } else
-    args.jobLog(`✔ Streams are already in order. No reordering necessary.`);
+    args.jobLog('Streams are not in order. Reordering.');
+  } else args.jobLog('✔ Streams are already in order. No reordering necessary.');
 
   return {
     outputFileObj: args.inputFileObj,
