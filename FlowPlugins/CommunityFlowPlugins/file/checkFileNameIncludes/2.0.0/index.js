@@ -71,20 +71,17 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var buildArrayInput = function (arrayInput) { var _a, _b; return (_b = (_a = String(arrayInput)) === null || _a === void 0 ? void 0 : _a.trim().split(',')) !== null && _b !== void 0 ? _b : []; };
-    var isAMatch = false;
     var fileName = "".concat((args.inputs.includeFileDirectory ? "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/") : '')
         + (0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
     var searchCriteriasArray = buildArrayInput(args.inputs.terms)
         .map(function (term) { return term.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&'); }); // https://github.com/tc39/proposal-regex-escaping
     if (args.inputs.pattern)
         searchCriteriasArray.push(String(args.inputs.pattern));
-    for (var i = 0; i < searchCriteriasArray.length; i++) {
-        if (new RegExp(searchCriteriasArray[i]).test(fileName)) {
-            isAMatch = true;
-            args.jobLog("'".concat(fileName, "' includes '").concat(searchCriteriasArray[i], "'"));
-            break;
-        }
-    }
+    var searchCriteriaMatched = searchCriteriasArray
+        .find(function (searchCriteria) { return new RegExp(searchCriteria).test(fileName); });
+    var isAMatch = searchCriteriaMatched !== undefined;
+    if (isAMatch)
+        args.jobLog("'".concat(fileName, "' includes '").concat(searchCriteriaMatched, "'"));
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: isAMatch ? 1 : 2,

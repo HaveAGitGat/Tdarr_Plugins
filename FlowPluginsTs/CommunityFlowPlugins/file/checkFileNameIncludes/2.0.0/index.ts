@@ -76,7 +76,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const buildArrayInput = (arrayInput: unknown): string[] => String(arrayInput)?.trim().split(',') ?? [];
 
-  let isAMatch = false;
   const fileName = `${(args.inputs.includeFileDirectory ? `${getFileAbosluteDir(args.inputFileObj._id)}/` : '')
     + getFileName(args.inputFileObj._id)
   }.${getContainer(args.inputFileObj._id)}`;
@@ -84,13 +83,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     .map((term) => term.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&')); // https://github.com/tc39/proposal-regex-escaping
   if (args.inputs.pattern) searchCriteriasArray.push(String(args.inputs.pattern));
 
-  for (let i = 0; i < searchCriteriasArray.length; i++) {
-    if (new RegExp(searchCriteriasArray[i]).test(fileName)) {
-      isAMatch = true;
-      args.jobLog(`'${fileName}' includes '${searchCriteriasArray[i]}'`);
-      break;
-    }
-  }
+  const searchCriteriaMatched = searchCriteriasArray
+    .find((searchCriteria) => new RegExp(searchCriteria).test(fileName));
+  const isAMatch = searchCriteriaMatched !== undefined;
+  if (isAMatch) args.jobLog(`'${fileName}' includes '${searchCriteriaMatched}'`);
 
   return {
     outputFileObj: args.inputFileObj,
