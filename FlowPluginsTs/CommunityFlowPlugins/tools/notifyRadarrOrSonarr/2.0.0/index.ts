@@ -71,8 +71,20 @@ interface IFileNames {
   originalFileName: string,
   currentFileName: string
 }
+interface IParsedRequestResult {
+  data: {
+    movie: {
+      movieFile: {
+        movieId: number
+      }
+    }
+    series: {
+      id: number
+    }
+  }
+}
 interface IRefreshDelegates {
-  getIdFromParseRequestResult: (parseRequestResult: any) => number,
+  getIdFromParseRequestResult: (parseRequestResult: IParsedRequestResult) => number,
   buildRefreshResquestData: (id: number) => string
 }
 interface IRefreshType {
