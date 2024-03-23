@@ -73,15 +73,15 @@ interface IFileNames {
 }
 interface IParsedRequestResult {
   data: {
-    movie: {
+    movie?: {
       movieFile: {
         movieId: number
-      }
-    }
-    series: {
+      },
+    },
+    series?: {
       id: number
-    }
-  }
+    },
+  },
 }
 interface IRefreshDelegates {
   getIdFromParseRequestResult: (parseRequestResult: IParsedRequestResult) => number,
