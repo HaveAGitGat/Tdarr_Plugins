@@ -101,7 +101,7 @@ const getId = async (
     ? Number(
       (await args.deps.axios({
         method: 'get',
-        url: `${arrHost}/api/v3/movie/lookup?terms=imdb:${imdbId}`,
+        url: `${arrHost}/api/v3/movie/lookup?term=imdb:${imdbId}`,
         headers,
       })).data?.id ?? -1,
     )
@@ -181,7 +181,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     });
 
     refreshed = true;
-    args.jobLog(`✔ Refreshed ${refreshType.content} ${id} in ${refreshType.appName}.`);
+    args.jobLog(`✔ ${refreshType.content} ${id} refreshed in ${refreshType.appName}.`);
   }
 
   return {
