@@ -205,7 +205,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // Using command endpoint to queue a refresh task
                 _g.sent();
                 refreshed = true;
-                args.jobLog("\u2714 Refreshed ".concat(refreshType.content, " ").concat(id, " in ").concat(refreshType.appName, "."));
+                args.jobLog("\u2714 ".concat(refreshType.content, " ").concat(id, " refreshed in ").concat(refreshType.appName, "."));
                 _g.label = 5;
             case 5: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,

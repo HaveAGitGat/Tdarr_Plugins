@@ -181,7 +181,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     });
 
     refreshed = true;
-    args.jobLog(`✔ Refreshed ${refreshType.content} ${id} in ${refreshType.appName}.`);
+    args.jobLog(`✔ ${refreshType.content} ${id} refreshed in ${refreshType.appName}.`);
   }
 
   return {
