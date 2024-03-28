@@ -115,7 +115,7 @@ var getId = function (args, arrHost, headers, fileName, refreshType) { return __
                 _b = Number;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrHost, "/api/v3/movie/lookup?terms=imdb:").concat(imdbId),
+                        url: "".concat(arrHost, "/api/v3/movie/lookup?term=imdb:").concat(imdbId),
                         headers: headers,
                     })];
             case 1:

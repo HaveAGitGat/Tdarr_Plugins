@@ -101,7 +101,7 @@ const getId = async (
     ? Number(
       (await args.deps.axios({
         method: 'get',
-        url: `${arrHost}/api/v3/movie/lookup?terms=imdb:${imdbId}`,
+        url: `${arrHost}/api/v3/movie/lookup?term=imdb:${imdbId}`,
         headers,
       })).data?.id ?? -1,
     )
