@@ -35,8 +35,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var path_1 = __importDefault(require("path"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
     name: 'Notify Radarr or Sonarr',
@@ -100,110 +104,114 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var getId = function (args, arrHost, headers, fileName, refreshType) { return __awaiter(void 0, void 0, void 0, function () {
+    var imdbId, id, _a, _b, _c, _d;
+    var _e, _f, _g, _h;
+    return __generator(this, function (_j) {
+        switch (_j.label) {
+            case 0:
+                imdbId = (_f = (_e = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
+                if (!(imdbId !== '')) return [3 /*break*/, 2];
+                _b = Number;
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrHost, "/api/v3/movie/lookup?terms=imdb:").concat(imdbId),
+                        headers: headers,
+                    })];
+            case 1:
+                _a = _b.apply(void 0, [(_h = (_g = (_j.sent()).data) === null || _g === void 0 ? void 0 : _g.id) !== null && _h !== void 0 ? _h : -1]);
+                return [3 /*break*/, 3];
+            case 2:
+                _a = -1;
+                _j.label = 3;
+            case 3:
+                id = _a;
+                if (!(id === -1)) return [3 /*break*/, 5];
+                _d = (_c = refreshType.delegates).getIdFromParseResponse;
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
+                        headers: headers,
+                    })];
+            case 4:
+                id = _d.apply(_c, [(_j.sent())]);
+                _j.label = 5;
+            case 5:
+                args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for '").concat(fileName, "', imdb '").concat(imdbId, "'"));
+                return [2 /*return*/, id];
+        }
+    });
+}); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileNames, refresh, refreshTypes, refreshed;
-    var _b, _c, _d, _e;
-    return __generator(this, function (_f) {
-        switch (_f.label) {
+    var lib, refreshed, arr, arr_host, arrHost, absoluteFileDir, fileNames, headers, refreshType, id;
+    var _a, _b, _c, _d, _e, _f;
+    return __generator(this, function (_g) {
+        switch (_g.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
+                refreshed = false;
+                arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
+                absoluteFileDir = (0, fileUtils_1.getFileAbosluteDir)((_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '');
                 fileNames = {
-                    originalFileName: (0, fileUtils_1.getFileName)((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : ''),
-                    currentFileName: (0, fileUtils_1.getFileName)((_e = (_d = args.inputFileObj) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : ''),
+                    originalFileName: path_1.default.join(absoluteFileDir, (0, fileUtils_1.getFileName)((_d = (_c = args.originalLibraryFile) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '')),
+                    currentFileName: path_1.default.join(absoluteFileDir, (0, fileUtils_1.getFileName)((_f = (_e = args.inputFileObj) === null || _e === void 0 ? void 0 : _e._id) !== null && _f !== void 0 ? _f : '')),
                 };
-                refresh = function (refreshType) { return __awaiter(void 0, void 0, void 0, function () {
-                    var refreshed, headers, getId, fileName, id, refreshResquestConfig;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                args.jobLog('Going to force scan');
-                                args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
-                                refreshed = false;
-                                headers = {
-                                    'Content-Type': 'application/json',
-                                    'X-Api-Key': arr_api_key,
-                                    Accept: 'application/json',
-                                };
-                                getId = function (fileName) { return __awaiter(void 0, void 0, void 0, function () {
-                                    var parseRequestConfig, parseRequestResult, id;
-                                    return __generator(this, function (_a) {
-                                        switch (_a.label) {
-                                            case 0:
-                                                parseRequestConfig = {
-                                                    method: 'get',
-                                                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
-                                                    headers: headers,
-                                                };
-                                                return [4 /*yield*/, args.deps.axios(parseRequestConfig)];
-                                            case 1:
-                                                parseRequestResult = _a.sent();
-                                                id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
-                                                args.jobLog(id !== -1
-                                                    ? "Found ".concat(refreshType.contentName, " ").concat(id, " with a file named '").concat(fileName, "'")
-                                                    : "Didn't find ".concat(refreshType.contentName, " with a file named '").concat(fileName, "' in ").concat(arrHost, "."));
-                                                return [2 /*return*/, id];
-                                        }
-                                    });
-                                }); };
-                                fileName = fileNames.originalFileName;
-                                return [4 /*yield*/, getId(fileName)];
-                            case 1:
-                                id = _a.sent();
-                                if (!(id === -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
-                                fileName = fileNames.currentFileName;
-                                return [4 /*yield*/, getId(fileName)];
-                            case 2:
-                                id = _a.sent();
-                                _a.label = 3;
-                            case 3:
-                                if (!(id !== -1)) return [3 /*break*/, 5];
-                                refreshResquestConfig = {
-                                    method: 'post',
-                                    url: "".concat(arrHost, "/api/v3/command"),
-                                    headers: headers,
-                                    data: refreshType.delegates.buildRefreshResquestData(id),
-                                };
-                                return [4 /*yield*/, args.deps.axios(refreshResquestConfig)];
-                            case 4:
-                                _a.sent();
-                                refreshed = true;
-                                args.jobLog("\u2714 Refreshed ".concat(refreshType.contentName, " ").concat(id, " in ").concat(refreshType.appName, "."));
-                                _a.label = 5;
-                            case 5: return [2 /*return*/, refreshed];
-                        }
-                    });
-                }); };
-                refreshTypes = {
-                    radarr: {
+                headers = {
+                    'Content-Type': 'application/json',
+                    'X-Api-Key': String(args.inputs.arr_api_key),
+                    Accept: 'application/json',
+                };
+                refreshType = arr === 'radarr'
+                    ? {
                         appName: 'Radarr',
-                        contentName: 'movie',
+                        content: 'Movie',
                         delegates: {
-                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c, _d; return Number((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
+                            getIdFromParseResponse: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); },
                         },
-                    },
-                    sonarr: {
+                    }
+                    : {
                         appName: 'Sonarr',
-                        contentName: 'serie',
+                        content: 'Serie',
                         delegates: {
-                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
+                            getIdFromParseResponse: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); },
                         },
-                    },
-                };
-                return [4 /*yield*/, refresh(arr === 'radarr' ? refreshTypes.radarr : refreshTypes.sonarr)];
+                    };
+                args.jobLog('Going to force scan');
+                args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
+                return [4 /*yield*/, getId(args, arrHost, headers, fileNames.originalFileName, refreshType)];
             case 1:
-                refreshed = _f.sent();
-                return [2 /*return*/, {
-                        outputFileObj: args.inputFileObj,
-                        outputNumber: refreshed ? 1 : 2,
-                        variables: args.variables,
-                    }];
+                id = _g.sent();
+                if (!(id === -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
+                return [4 /*yield*/, getId(args, arrHost, headers, fileNames.currentFileName, refreshType)];
+            case 2:
+                id = _g.sent();
+                _g.label = 3;
+            case 3:
+                if (!(id !== -1)) return [3 /*break*/, 5];
+                // Using command endpoint to queue a refresh task
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'post',
+                        url: "".concat(arrHost, "/api/v3/command"),
+                        headers: headers,
+                        data: refreshType.delegates.buildRefreshResquestData(id),
+                    })];
+            case 4:
+                // Using command endpoint to queue a refresh task
+                _g.sent();
+                refreshed = true;
+                args.jobLog("\u2714 Refreshed ".concat(refreshType.content, " ").concat(id, " in ").concat(refreshType.appName, "."));
+                _g.label = 5;
+            case 5: return [2 /*return*/, {
+                    outputFileObj: args.inputFileObj,
+                    outputNumber: refreshed ? 1 : 2,
+                    variables: args.variables,
+                }];
         }
     });
 }); };
