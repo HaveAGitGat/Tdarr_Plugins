@@ -103,7 +103,7 @@ const getId = async (
         method: 'get',
         url: `${arrHost}/api/v3/${arr === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
         headers,
-      })).data?.id ?? -1,
+      })).data?.at(0)?.id ?? -1,
     )
     : -1;
   args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for imdb '${imdbId}'`);

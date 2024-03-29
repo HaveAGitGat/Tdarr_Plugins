@@ -106,9 +106,9 @@ var details = function () { return ({
 exports.details = details;
 var getId = function (args, arr, arrHost, headers, fileName, refreshType) { return __awaiter(void 0, void 0, void 0, function () {
     var imdbId, id, _a, _b, _c, _d;
-    var _e, _f, _g, _h;
-    return __generator(this, function (_j) {
-        switch (_j.label) {
+    var _e, _f, _g, _h, _j;
+    return __generator(this, function (_k) {
+        switch (_k.label) {
             case 0:
                 imdbId = (_f = (_e = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
                 if (!(imdbId !== '')) return [3 /*break*/, 2];
@@ -119,11 +119,11 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
                         headers: headers,
                     })];
             case 1:
-                _a = _b.apply(void 0, [(_h = (_g = (_j.sent()).data) === null || _g === void 0 ? void 0 : _g.id) !== null && _h !== void 0 ? _h : -1]);
+                _a = _b.apply(void 0, [(_j = (_h = (_g = (_k.sent()).data) === null || _g === void 0 ? void 0 : _g.at(0)) === null || _h === void 0 ? void 0 : _h.id) !== null && _j !== void 0 ? _j : -1]);
                 return [3 /*break*/, 3];
             case 2:
                 _a = -1;
-                _j.label = 3;
+                _k.label = 3;
             case 3:
                 id = _a;
                 args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for imdb '").concat(imdbId, "'"));
@@ -135,9 +135,9 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
                         headers: headers,
                     })];
             case 4:
-                id = _d.apply(_c, [(_j.sent())]);
+                id = _d.apply(_c, [(_k.sent())]);
                 args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
-                _j.label = 5;
+                _k.label = 5;
             case 5: return [2 /*return*/, id];
         }
     });
