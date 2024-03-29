@@ -144,10 +144,10 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, absoluteFileDir, fileNames, headers, refreshType, id;
-    var _a, _b, _c, _d, _e, _f;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
+    var lib, refreshed, arr, arr_host, arrHost, originalFileName, currentFileName, headers, refreshType, id;
+    var _a, _b, _c, _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -156,11 +156,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                absoluteFileDir = (0, fileUtils_1.getFileAbosluteDir)((_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '');
-                fileNames = {
-                    originalFileName: path_1.default.join(absoluteFileDir, (0, fileUtils_1.getFileName)((_d = (_c = args.originalLibraryFile) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '')),
-                    currentFileName: path_1.default.join(absoluteFileDir, (0, fileUtils_1.getFileName)((_f = (_e = args.inputFileObj) === null || _e === void 0 ? void 0 : _e._id) !== null && _f !== void 0 ? _f : '')),
-                };
+                originalFileName = path_1.default.join((_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '');
+                currentFileName = path_1.default.join((_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '');
                 headers = {
                     'Content-Type': 'application/json',
                     'X-Api-Key': String(args.inputs.arr_api_key),
@@ -185,14 +182,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     };
                 args.jobLog('Going to force scan');
                 args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
-                return [4 /*yield*/, getId(args, arr, arrHost, headers, fileNames.originalFileName, refreshType)];
+                return [4 /*yield*/, getId(args, arr, arrHost, headers, originalFileName, refreshType)];
             case 1:
-                id = _g.sent();
-                if (!(id === -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
-                return [4 /*yield*/, getId(args, arr, arrHost, headers, fileNames.currentFileName, refreshType)];
+                id = _e.sent();
+                if (!(id === -1 && currentFileName !== originalFileName)) return [3 /*break*/, 3];
+                return [4 /*yield*/, getId(args, arr, arrHost, headers, currentFileName, refreshType)];
             case 2:
-                id = _g.sent();
-                _g.label = 3;
+                id = _e.sent();
+                _e.label = 3;
             case 3:
                 if (!(id !== -1)) return [3 /*break*/, 5];
                 // Using command endpoint to queue a refresh task
@@ -204,10 +201,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     })];
             case 4:
                 // Using command endpoint to queue a refresh task
-                _g.sent();
+                _e.sent();
                 refreshed = true;
                 args.jobLog("\u2714 ".concat(refreshType.content, " ").concat(id, " refreshed in ").concat(refreshType.appName, "."));
-                _g.label = 5;
+                _e.label = 5;
             case 5: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: refreshed ? 1 : 2,
