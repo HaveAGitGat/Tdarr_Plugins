@@ -116,149 +116,163 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, arrHost, filePath, fileNames, getNewPath, episodeNumber, getNewPathTypes, newPathOutput;
-    var _b, _c, _d, _e, _f, _g;
+var getMovieId = function (args, arrHost, headers, fileName, getNewPathType) { return __awaiter(void 0, void 0, void 0, function () {
+    var imdbId, id, _a, _b;
+    var _c, _d, _e, _f, _g;
     return __generator(this, function (_h) {
         switch (_h.label) {
+            case 0:
+                imdbId = (_d = (_c = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _c === void 0 ? void 0 : _c.at(0)) !== null && _d !== void 0 ? _d : '';
+                if (!(imdbId !== '')) return [3 /*break*/, 2];
+                _b = String;
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrHost, "/api/v3/movie/lookup?term=imdb:").concat(imdbId),
+                        headers: headers,
+                    })];
+            case 1:
+                _a = _b.apply(void 0, [(_g = (_f = (_e = (_h.sent()).data) === null || _e === void 0 ? void 0 : _e.at(0)) === null || _f === void 0 ? void 0 : _f.id) !== null && _g !== void 0 ? _g : -1]);
+                return [3 /*break*/, 3];
+            case 2:
+                _a = '-1';
+                _h.label = 3;
+            case 3:
+                id = _a;
+                args.jobLog("".concat(getNewPathType.content, " ").concat(id !== '-1' ? "".concat(id, " found") : 'not found', " for imdb '").concat(imdbId, "'"));
+                return [2 /*return*/, id];
+        }
+    });
+}); };
+var getFileDetailsWrapper = function (args, arr, arrHost, headers, fileName, renameType) { return __awaiter(void 0, void 0, void 0, function () {
+    var fdw, _a, _b;
+    var _c;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
+            case 0:
+                _c = {};
+                if (!(arr === 'radarr')) return [3 /*break*/, 2];
+                return [4 /*yield*/, getMovieId(args, arrHost, headers, fileName, renameType)];
+            case 1:
+                _a = _d.sent();
+                return [3 /*break*/, 3];
+            case 2:
+                _a = '-1';
+                _d.label = 3;
+            case 3:
+                fdw = (_c.id = _a,
+                    _c.fileDetails = undefined,
+                    _c);
+                if (!(fdw.id === '-1')) return [3 /*break*/, 5];
+                _b = fdw;
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
+                        headers: headers,
+                    })];
+            case 4:
+                _b.fileDetails = _d.sent();
+                fdw.id = renameType.delegates.getIdFromParseResponse(fdw);
+                args.jobLog("".concat(renameType.content, " ").concat(fdw.id !== '-1' ? "".concat(fdw.id, " found") : 'not found', " for '")
+                    + "".concat((0, fileUtils_1.getFileName)(fileName), "'"));
+                _d.label = 5;
+            case 5: return [2 /*return*/, fdw];
+        }
+    });
+}); };
+var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
+    var lib, newPath, isSuccessful, arr, arr_host, arrHost, filePath, originalFileName, currentFileName, headers, episodeNumber, renameType, fileDetailsWrapper, previewRenameRequestResult, fileToRename;
+    var _a, _b, _c, _d, _e, _f;
+    return __generator(this, function (_g) {
+        switch (_g.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
+                newPath = '';
+                isSuccessful = false;
+                arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                filePath = (_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : '';
-                fileNames = {
-                    originalFileName: (0, fileUtils_1.getFileName)((_e = (_d = args.originalLibraryFile) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : ''),
-                    currentFileName: (0, fileUtils_1.getFileName)((_g = (_f = args.inputFileObj) === null || _f === void 0 ? void 0 : _f._id) !== null && _g !== void 0 ? _g : ''),
+                filePath = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
+                originalFileName = (_d = (_c = args.originalLibraryFile) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
+                currentFileName = (_f = (_e = args.inputFileObj) === null || _e === void 0 ? void 0 : _e._id) !== null && _f !== void 0 ? _f : '';
+                headers = {
+                    'Content-Type': 'application/json',
+                    'X-Api-Key': String(args.inputs.arr_api_key),
+                    Accept: 'application/json',
                 };
-                getNewPath = function (getNewPathType) { return __awaiter(void 0, void 0, void 0, function () {
-                    var output, headers, getParseRequestResultWrapper, fileName, parseRequestResultWrapper, previewRenameRequestConfig, previewRenameRequestResult, fileToRename, _a;
-                    return __generator(this, function (_b) {
-                        switch (_b.label) {
-                            case 0:
-                                output = {
-                                    newPath: '',
-                                    isSuccessful: false,
-                                };
-                                args.jobLog('Going to apply new name');
-                                args.jobLog("Renaming ".concat(getNewPathType.appName, "..."));
-                                headers = {
-                                    'Content-Type': 'application/json',
-                                    'X-Api-Key': arr_api_key,
-                                    Accept: 'application/json',
-                                };
-                                getParseRequestResultWrapper = function (fileName) { return __awaiter(void 0, void 0, void 0, function () {
-                                    var parseRequestConfig, parseRequestResult, id;
-                                    return __generator(this, function (_a) {
-                                        switch (_a.label) {
-                                            case 0:
-                                                parseRequestConfig = {
-                                                    method: 'get',
-                                                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
-                                                    headers: headers,
-                                                };
-                                                return [4 /*yield*/, args.deps.axios(parseRequestConfig)];
-                                            case 1:
-                                                parseRequestResult = _a.sent();
-                                                id = getNewPathType.delegates.getIdFromParseRequestResult(parseRequestResult);
-                                                args.jobLog(id !== '-1'
-                                                    ? "Found ".concat(getNewPathType.contentName, " ").concat(id, " with a file named '").concat(fileName, "'")
-                                                    : "Didn't find ".concat(getNewPathType.contentName, " with a file named '").concat(fileName, "' in ").concat(arrHost, "."));
-                                                return [2 /*return*/, { parseRequestResult: parseRequestResult, id: id }];
-                                        }
-                                    });
-                                }); };
-                                fileName = fileNames.originalFileName;
-                                return [4 /*yield*/, getParseRequestResultWrapper(fileName)];
-                            case 1:
-                                parseRequestResultWrapper = _b.sent();
-                                if (!(parseRequestResultWrapper.id === '-1' && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
-                                fileName = fileNames.currentFileName;
-                                return [4 /*yield*/, getParseRequestResultWrapper(fileName)];
-                            case 2:
-                                parseRequestResultWrapper = _b.sent();
-                                _b.label = 3;
-                            case 3:
-                                if (!(parseRequestResultWrapper.id !== '-1')) return [3 /*break*/, 7];
-                                previewRenameRequestConfig = {
-                                    method: 'get',
-                                    url: getNewPathType.delegates.buildPreviewRenameResquestUrl(parseRequestResultWrapper),
-                                    headers: headers,
-                                };
-                                return [4 /*yield*/, args.deps.axios(previewRenameRequestConfig)];
-                            case 4:
-                                previewRenameRequestResult = _b.sent();
-                                fileToRename = getNewPathType.delegates
-                                    .getFileToRenameFromPreviewRenameRequestResult(previewRenameRequestResult);
-                                if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
-                                output.newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
-                                _a = output;
-                                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                                        operation: 'move',
-                                        sourcePath: args.inputFileObj._id,
-                                        destinationPath: output.newPath,
-                                        args: args,
-                                    })];
-                            case 5:
-                                _a.isSuccessful = _b.sent();
-                                args.jobLog("\u2714 Renamed ".concat(getNewPathType.contentName, " ").concat(parseRequestResultWrapper.id, " : ")
-                                    + "'".concat(filePath, "' => '").concat(output.newPath, "'."));
-                                return [3 /*break*/, 7];
-                            case 6:
-                                output.isSuccessful = true;
-                                args.jobLog('✔ No rename necessary.');
-                                _b.label = 7;
-                            case 7: return [2 /*return*/, output];
-                        }
-                    });
-                }); };
                 episodeNumber = 0;
-                getNewPathTypes = {
-                    radarr: {
+                renameType = arr === 'radarr'
+                    ? {
                         appName: 'Radarr',
-                        contentName: 'movie',
+                        content: 'Movie',
                         delegates: {
-                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
-                            buildPreviewRenameResquestUrl: function (parseRequestResultWrapper) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(parseRequestResultWrapper.id); },
-                            getFileToRenameFromPreviewRenameRequestResult: function (previewRenameRequestResult) {
-                                var _a, _b;
-                                return ((((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0)
-                                    ? previewRenameRequestResult.data[0]
-                                    : undefined);
-                            },
+                            getIdFromParseResponse: function (fileDetailsWrapper) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = fileDetailsWrapper.fileDetails) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.movie) === null || _c === void 0 ? void 0 : _c.id) !== null && _d !== void 0 ? _d : -1); },
+                            buildPreviewRenameResquestUrl: function (fileDetailsWrapper) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(fileDetailsWrapper.id); },
+                            getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse) { var _a; return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.at(0); },
                         },
-                    },
-                    sonarr: {
+                    }
+                    : {
                         appName: 'Sonarr',
-                        contentName: 'serie',
+                        content: 'Serie',
                         delegates: {
-                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c; return String((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
-                            buildPreviewRenameResquestUrl: function (parseRequestResultWrapper) {
-                                var _a, _b, _c, _d;
-                                episodeNumber = ((_b = (_a = parseRequestResultWrapper.parseRequestResult.data.parsedEpisodeInfo) === null || _a === void 0 ? void 0 : _a.episodeNumbers) !== null && _b !== void 0 ? _b : [1])[0];
-                                return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(parseRequestResultWrapper.id, "&seasonNumber=")
-                                    + "".concat((_d = (_c = parseRequestResultWrapper.parseRequestResult.data.parsedEpisodeInfo) === null || _c === void 0 ? void 0 : _c.seasonNumber) !== null && _d !== void 0 ? _d : 1);
+                            getIdFromParseResponse: function (fileDetailsWrapper) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = fileDetailsWrapper.fileDetails) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.series) === null || _c === void 0 ? void 0 : _c.id) !== null && _d !== void 0 ? _d : -1); },
+                            buildPreviewRenameResquestUrl: function (fileDetailsWrapper) {
+                                var _a, _b, _c, _d, _e, _f;
+                                episodeNumber = ((_c = (_b = (_a = fileDetailsWrapper.fileDetails) === null || _a === void 0 ? void 0 : _a.data.parsedEpisodeInfo) === null || _b === void 0 ? void 0 : _b.episodeNumbers) !== null && _c !== void 0 ? _c : [1])[0];
+                                return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(fileDetailsWrapper.id, "&seasonNumber=")
+                                    + "".concat((_f = (_e = (_d = fileDetailsWrapper.fileDetails) === null || _d === void 0 ? void 0 : _d.data.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.seasonNumber) !== null && _f !== void 0 ? _f : 1);
                             },
-                            getFileToRenameFromPreviewRenameRequestResult: function (previewRenameRequestResult) {
-                                var _a, _b;
-                                return ((((_b = (_a = previewRenameRequestResult.data) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0)
-                                    ? previewRenameRequestResult.data.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === episodeNumber; })
-                                    : undefined);
+                            getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse) {
+                                var _a;
+                                return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === episodeNumber; });
                             },
                         },
-                    },
-                };
-                return [4 /*yield*/, getNewPath(arr === 'radarr' ? getNewPathTypes.radarr : getNewPathTypes.sonarr)];
+                    };
+                args.jobLog('Going to apply new name');
+                args.jobLog("Renaming ".concat(renameType.appName, "..."));
+                return [4 /*yield*/, getFileDetailsWrapper(args, arr, arrHost, headers, originalFileName, renameType)];
             case 1:
-                newPathOutput = _h.sent();
-                return [2 /*return*/, {
-                        outputFileObj: newPathOutput.isSuccessful && newPathOutput.newPath !== ''
-                            ? __assign(__assign({}, args.inputFileObj), { _id: newPathOutput.newPath }) : args.inputFileObj,
-                        outputNumber: newPathOutput.isSuccessful ? 1 : 2,
-                        variables: args.variables,
-                    }];
+                fileDetailsWrapper = _g.sent();
+                if (!(fileDetailsWrapper.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 3];
+                return [4 /*yield*/, getFileDetailsWrapper(args, arr, arrHost, headers, currentFileName, renameType)];
+            case 2:
+                fileDetailsWrapper = _g.sent();
+                _g.label = 3;
+            case 3:
+                if (!(fileDetailsWrapper.id !== '-1')) return [3 /*break*/, 7];
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: renameType.delegates.buildPreviewRenameResquestUrl(fileDetailsWrapper),
+                        headers: headers,
+                    })];
+            case 4:
+                previewRenameRequestResult = _g.sent();
+                fileToRename = renameType.delegates
+                    .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult);
+                if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
+                newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
+                        sourcePath: args.inputFileObj._id,
+                        destinationPath: newPath,
+                        args: args,
+                    })];
+            case 5:
+                isSuccessful = _g.sent();
+                args.jobLog("\u2714 ".concat(renameType.content, " renamed ").concat(fileDetailsWrapper.id, " : ")
+                    + "'".concat(filePath, "' => '").concat(newPath, "'."));
+                return [3 /*break*/, 7];
+            case 6:
+                isSuccessful = true;
+                args.jobLog('✔ No rename necessary.');
+                _g.label = 7;
+            case 7: return [2 /*return*/, {
+                    outputFileObj: isSuccessful && newPath !== ''
+                        ? __assign(__assign({}, args.inputFileObj), { _id: newPath }) : args.inputFileObj,
+                    outputNumber: isSuccessful ? 1 : 2,
+                    variables: args.variables,
+                }];
         }
     });
 }); };
