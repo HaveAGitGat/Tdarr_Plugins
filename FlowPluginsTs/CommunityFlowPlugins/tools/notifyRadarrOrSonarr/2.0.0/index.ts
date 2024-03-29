@@ -1,4 +1,3 @@
-import path from 'path';
 import { getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -130,8 +129,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr = String(args.inputs.arr);
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const originalFileName = path.join(args.originalLibraryFile?._id ?? '');
-  const currentFileName = path.join(args.inputFileObj?._id ?? '');
+  const originalFileName = args.originalLibraryFile?._id ?? '';
+  const currentFileName = args.inputFileObj?._id ?? '';
   const headers: IHTTPHeaders = {
     'Content-Type': 'application/json',
     'X-Api-Key': String(args.inputs.arr_api_key),
