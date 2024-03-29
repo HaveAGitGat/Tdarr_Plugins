@@ -115,8 +115,8 @@ const getId = async (
         headers,
       })),
     );
+    args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for '${getFileName(fileName)}'`);
   }
-  args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for '${getFileName(fileName)}'`);
   return id;
 };
 
