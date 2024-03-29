@@ -91,6 +91,7 @@ interface IRefreshType {
 
 const getId = async (
   args: IpluginInputArgs,
+  arr: string,
   arrHost: string, headers: IHTTPHeaders,
   fileName: string,
   refreshType: IRefreshType,
@@ -101,11 +102,12 @@ const getId = async (
     ? Number(
       (await args.deps.axios({
         method: 'get',
-        url: `${arrHost}/api/v3/movie/lookup?term=imdb:${imdbId}`,
+        url: `${arrHost}/api/v3/${arr === 'radarr' ? 'movie' : 'serie'}/lookup?term=imdb:${imdbId}`,
         headers,
       })).data?.id ?? -1,
     )
     : -1;
+  args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for imdb '${imdbId}'`);
   if (id === -1) {
     id = refreshType.delegates.getIdFromParseResponse(
       (await args.deps.axios({
@@ -115,7 +117,7 @@ const getId = async (
       })),
     );
   }
-  args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for '${fileName}', imdb '${imdbId}'`);
+  args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for '${getFileName(fileName)}'`);
   return id;
 };
 
@@ -164,10 +166,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${refreshType.appName}...`);
 
-  let id = await getId(args, arrHost, headers, fileNames.originalFileName, refreshType);
+  let id = await getId(args, arr, arrHost, headers, fileNames.originalFileName, refreshType);
   // Useful in some edge cases
   if (id === -1 && fileNames.currentFileName !== fileNames.originalFileName) {
-    id = await getId(args, arrHost, headers, fileNames.currentFileName, refreshType);
+    id = await getId(args, arr, arrHost, headers, fileNames.currentFileName, refreshType);
   }
 
   // Checking that the file has been found

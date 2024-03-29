@@ -104,7 +104,7 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getId = function (args, arrHost, headers, fileName, refreshType) { return __awaiter(void 0, void 0, void 0, function () {
+var getId = function (args, arr, arrHost, headers, fileName, refreshType) { return __awaiter(void 0, void 0, void 0, function () {
     var imdbId, id, _a, _b, _c, _d;
     var _e, _f, _g, _h;
     return __generator(this, function (_j) {
@@ -115,7 +115,7 @@ var getId = function (args, arrHost, headers, fileName, refreshType) { return __
                 _b = Number;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrHost, "/api/v3/movie/lookup?term=imdb:").concat(imdbId),
+                        url: "".concat(arrHost, "/api/v3/").concat(arr === 'radarr' ? 'movie' : 'serie', "/lookup?term=imdb:").concat(imdbId),
                         headers: headers,
                     })];
             case 1:
@@ -126,6 +126,7 @@ var getId = function (args, arrHost, headers, fileName, refreshType) { return __
                 _j.label = 3;
             case 3:
                 id = _a;
+                args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for imdb '").concat(imdbId, "'"));
                 if (!(id === -1)) return [3 /*break*/, 5];
                 _d = (_c = refreshType.delegates).getIdFromParseResponse;
                 return [4 /*yield*/, args.deps.axios({
@@ -137,7 +138,7 @@ var getId = function (args, arrHost, headers, fileName, refreshType) { return __
                 id = _d.apply(_c, [(_j.sent())]);
                 _j.label = 5;
             case 5:
-                args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for '").concat(fileName, "', imdb '").concat(imdbId, "'"));
+                args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
                 return [2 /*return*/, id];
         }
     });
@@ -184,11 +185,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     };
                 args.jobLog('Going to force scan');
                 args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
-                return [4 /*yield*/, getId(args, arrHost, headers, fileNames.originalFileName, refreshType)];
+                return [4 /*yield*/, getId(args, arr, arrHost, headers, fileNames.originalFileName, refreshType)];
             case 1:
                 id = _g.sent();
                 if (!(id === -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
-                return [4 /*yield*/, getId(args, arrHost, headers, fileNames.currentFileName, refreshType)];
+                return [4 /*yield*/, getId(args, arr, arrHost, headers, fileNames.currentFileName, refreshType)];
             case 2:
                 id = _g.sent();
                 _g.label = 3;
