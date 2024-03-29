@@ -115,7 +115,7 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
                 _b = Number;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrHost, "/api/v3/").concat(arr === 'radarr' ? 'movie' : 'serie', "/lookup?term=imdb:").concat(imdbId),
+                        url: "".concat(arrHost, "/api/v3/").concat(arr === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
                         headers: headers,
                     })];
             case 1:
