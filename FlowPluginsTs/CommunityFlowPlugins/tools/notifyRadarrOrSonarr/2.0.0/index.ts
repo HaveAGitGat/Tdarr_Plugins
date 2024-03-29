@@ -1,5 +1,5 @@
 import path from 'path';
-import { getFileAbosluteDir, getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -79,14 +79,13 @@ interface IParsedRequestResult {
     series?: { id: number },
   },
 }
-interface IRefreshDelegates {
-  getIdFromParseResponse: (parseRequestResult: IParsedRequestResult) => number,
-  buildRefreshResquestData: (id: number) => string
-}
 interface IRefreshType {
   appName: string,
   content: string,
-  delegates: IRefreshDelegates
+  delegates: {
+    getIdFromParseResponse: (parseRequestResult: IParsedRequestResult) => number,
+    buildRefreshResquestData: (id: number) => string
+  }
 }
 
 const getId = async (
@@ -131,11 +130,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr = String(args.inputs.arr);
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const absoluteFileDir = getFileAbosluteDir(args.originalLibraryFile?._id ?? '');
-  const fileNames = {
-    originalFileName: path.join(absoluteFileDir, getFileName(args.originalLibraryFile?._id ?? '')),
-    currentFileName: path.join(absoluteFileDir, getFileName(args.inputFileObj?._id ?? '')),
-  };
+  const originalFileName = path.join(args.originalLibraryFile?._id ?? '');
+  const currentFileName = path.join(args.inputFileObj?._id ?? '');
   const headers: IHTTPHeaders = {
     'Content-Type': 'application/json',
     'X-Api-Key': String(args.inputs.arr_api_key),
@@ -166,10 +162,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${refreshType.appName}...`);
 
-  let id = await getId(args, arr, arrHost, headers, fileNames.originalFileName, refreshType);
+  let id = await getId(args, arr, arrHost, headers, originalFileName, refreshType);
   // Useful in some edge cases
-  if (id === -1 && fileNames.currentFileName !== fileNames.originalFileName) {
-    id = await getId(args, arr, arrHost, headers, fileNames.currentFileName, refreshType);
+  if (id === -1 && currentFileName !== originalFileName) {
+    id = await getId(args, arr, arrHost, headers, currentFileName, refreshType);
   }
 
   // Checking that the file has been found
