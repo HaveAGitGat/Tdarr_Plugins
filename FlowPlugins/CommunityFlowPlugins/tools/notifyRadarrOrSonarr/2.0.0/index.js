@@ -136,10 +136,9 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
                     })];
             case 4:
                 id = _d.apply(_c, [(_j.sent())]);
-                _j.label = 5;
-            case 5:
                 args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
-                return [2 /*return*/, id];
+                _j.label = 5;
+            case 5: return [2 /*return*/, id];
         }
     });
 }); };
