@@ -242,7 +242,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         destinationPath: newPath,
         args,
       });
-      args.jobLog(`✔ ${renameType.content} renamed ${fileDetailsWrapper.id} : `
+      args.jobLog(`✔ ${renameType.content} ${fileDetailsWrapper.id} renamed : `
         + `'${filePath}' => '${newPath}'.`);
     } else {
       isSuccessful = true;

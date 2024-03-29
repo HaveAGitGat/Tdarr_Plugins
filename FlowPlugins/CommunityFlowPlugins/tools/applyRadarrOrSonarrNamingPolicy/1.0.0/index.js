@@ -260,7 +260,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     })];
             case 5:
                 isSuccessful = _g.sent();
-                args.jobLog("\u2714 ".concat(renameType.content, " renamed ").concat(fileDetailsWrapper.id, " : ")
+                args.jobLog("\u2714 ".concat(renameType.content, " ").concat(fileDetailsWrapper.id, " renamed : ")
                     + "'".concat(filePath, "' => '").concat(newPath, "'."));
                 return [3 /*break*/, 7];
             case 6:
