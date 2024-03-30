@@ -116,71 +116,65 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getMovieId = function (args, arrHost, headers, fileName, getNewPathType) { return __awaiter(void 0, void 0, void 0, function () {
-    var imdbId, id, _a, _b;
-    var _c, _d, _e, _f, _g;
-    return __generator(this, function (_h) {
-        switch (_h.label) {
+var getFileInfoFromLookup = function (args, arr, arrHost, headers, fileName, renameType) { return __awaiter(void 0, void 0, void 0, function () {
+    var fInfo, imdbId, lookupResponse;
+    var _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
-                imdbId = (_d = (_c = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _c === void 0 ? void 0 : _c.at(0)) !== null && _d !== void 0 ? _d : '';
+                fInfo = { id: '-1' };
+                imdbId = (_b = (_a = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _a === void 0 ? void 0 : _a.at(0)) !== null && _b !== void 0 ? _b : '';
                 if (!(imdbId !== '')) return [3 /*break*/, 2];
-                _b = String;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrHost, "/api/v3/movie/lookup?term=imdb:").concat(imdbId),
+                        url: "".concat(arrHost, "/api/v3/").concat(arr === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
                         headers: headers,
                     })];
             case 1:
-                _a = _b.apply(void 0, [(_g = (_f = (_e = (_h.sent()).data) === null || _e === void 0 ? void 0 : _e.at(0)) === null || _f === void 0 ? void 0 : _f.id) !== null && _g !== void 0 ? _g : -1]);
-                return [3 /*break*/, 3];
-            case 2:
-                _a = '-1';
-                _h.label = 3;
-            case 3:
-                id = _a;
-                args.jobLog("".concat(getNewPathType.content, " ").concat(id !== '-1' ? "".concat(id, " found") : 'not found', " for imdb '").concat(imdbId, "'"));
-                return [2 /*return*/, id];
+                lookupResponse = _c.sent();
+                fInfo = renameType.delegates.getFileInfoFromLookupResponse(lookupResponse, fileName);
+                args.jobLog("".concat(renameType.content, " ").concat(fInfo.id !== '-1' ? "'".concat(fInfo.id, "' found") : 'not found')
+                    + " for imdb '".concat(imdbId, "'"));
+                _c.label = 2;
+            case 2: return [2 /*return*/, fInfo];
         }
     });
 }); };
-var getFileDetailsWrapper = function (args, arr, arrHost, headers, fileName, renameType) { return __awaiter(void 0, void 0, void 0, function () {
-    var fdw, _a, _b;
-    var _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+var getFileInfoFromParse = function (args, arr, arrHost, headers, fileName, renameType) { return __awaiter(void 0, void 0, void 0, function () {
+    var fInfo, parseResponse;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
-                _c = {};
-                if (!(arr === 'radarr')) return [3 /*break*/, 2];
-                return [4 /*yield*/, getMovieId(args, arrHost, headers, fileName, renameType)];
-            case 1:
-                _a = _d.sent();
-                return [3 /*break*/, 3];
-            case 2:
-                _a = '-1';
-                _d.label = 3;
-            case 3:
-                fdw = (_c.id = _a,
-                    _c.fileDetails = undefined,
-                    _c);
-                if (!(fdw.id === '-1')) return [3 /*break*/, 5];
-                _b = fdw;
+                fInfo = { id: '-1' };
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
                         url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
                         headers: headers,
                     })];
-            case 4:
-                _b.fileDetails = _d.sent();
-                fdw.id = renameType.delegates.getIdFromParseResponse(fdw);
-                args.jobLog("".concat(renameType.content, " ").concat(fdw.id !== '-1' ? "".concat(fdw.id, " found") : 'not found', " for '")
-                    + "".concat((0, fileUtils_1.getFileName)(fileName), "'"));
-                _d.label = 5;
-            case 5: return [2 /*return*/, fdw];
+            case 1:
+                parseResponse = _a.sent();
+                fInfo = renameType.delegates.getFileInfoFromParseResponse(parseResponse);
+                args.jobLog("".concat(renameType.content, " ").concat(fInfo.id !== '-1' ? "'".concat(fInfo.id, "' found") : 'not found')
+                    + " for '".concat((0, fileUtils_1.getFileName)(fileName), "'"));
+                return [2 /*return*/, fInfo];
+        }
+    });
+}); };
+var getFileInfo = function (args, arr, arrHost, headers, fileName, renameType) { return __awaiter(void 0, void 0, void 0, function () {
+    var fInfo;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, getFileInfoFromLookup(args, arr, arrHost, headers, fileName, renameType)];
+            case 1:
+                fInfo = _a.sent();
+                return [2 /*return*/, (fInfo.id === '-1' || (arr === 'sonarr' && (fInfo.seasonNumber === -1 || fInfo.episodeNumber === -1)))
+                        ? getFileInfoFromParse(args, arr, arrHost, headers, fileName, renameType)
+                        : fInfo];
         }
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, newPath, isSuccessful, arr, arr_host, arrHost, originalFileName, currentFileName, headers, episodeNumber, renameType, fileDetailsWrapper, previewRenameRequestResult, fileToRename;
+    var lib, newPath, isSuccessful, arr, arr_host, arrHost, originalFileName, currentFileName, headers, renameType, fInfo, previewRenameRequestResult, fileToRename;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -200,14 +194,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     'X-Api-Key': String(args.inputs.arr_api_key),
                     Accept: 'application/json',
                 };
-                episodeNumber = 0;
                 renameType = arr === 'radarr'
                     ? {
                         appName: 'Radarr',
                         content: 'Movie',
                         delegates: {
-                            getIdFromParseResponse: function (fileDetailsWrapper) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = fileDetailsWrapper.fileDetails) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.movie) === null || _c === void 0 ? void 0 : _c.id) !== null && _d !== void 0 ? _d : -1); },
-                            buildPreviewRenameResquestUrl: function (fileDetailsWrapper) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(fileDetailsWrapper.id); },
+                            getFileInfoFromLookupResponse: function (lookupResponse) { var _a, _b, _c; return ({ id: String((_c = (_b = (_a = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _a === void 0 ? void 0 : _a.at(0)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1) }); },
+                            getFileInfoFromParseResponse: function (parseResponse) { var _a, _b, _c; return ({ id: String((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1) }); },
+                            buildPreviewRenameResquestUrl: function (fInfo) { return "".concat(arrHost, "/api/v3/rename?movieId=").concat(fInfo.id); },
                             getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse) { var _a; return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.at(0); },
                         },
                     }
@@ -215,40 +209,54 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         appName: 'Sonarr',
                         content: 'Serie',
                         delegates: {
-                            getIdFromParseResponse: function (fileDetailsWrapper) { var _a, _b, _c, _d; return String((_d = (_c = (_b = (_a = fileDetailsWrapper.fileDetails) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.series) === null || _c === void 0 ? void 0 : _c.id) !== null && _d !== void 0 ? _d : -1); },
-                            buildPreviewRenameResquestUrl: function (fileDetailsWrapper) {
-                                var _a, _b, _c, _d, _e, _f;
-                                episodeNumber = ((_c = (_b = (_a = fileDetailsWrapper.fileDetails) === null || _a === void 0 ? void 0 : _a.data.parsedEpisodeInfo) === null || _b === void 0 ? void 0 : _b.episodeNumbers) !== null && _c !== void 0 ? _c : [1])[0];
-                                return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(fileDetailsWrapper.id, "&seasonNumber=")
-                                    + "".concat((_f = (_e = (_d = fileDetailsWrapper.fileDetails) === null || _d === void 0 ? void 0 : _d.data.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.seasonNumber) !== null && _f !== void 0 ? _f : 1);
+                            getFileInfoFromLookupResponse: function (lookupResponse, fileName) {
+                                var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+                                var fInfo = { id: String((_c = (_b = (_a = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _a === void 0 ? void 0 : _a.at(0)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1) };
+                                if (fInfo.id !== '-1') {
+                                    var seasonEpisodenumber = (_e = (_d = /\bS\d{1,3}E\d{1,4}\b/i.exec(fileName)) === null || _d === void 0 ? void 0 : _d.at(0)) !== null && _e !== void 0 ? _e : '';
+                                    var episodeNumber = (_g = (_f = /\d{1,4}$/i.exec(seasonEpisodenumber)) === null || _f === void 0 ? void 0 : _f.at(0)) !== null && _g !== void 0 ? _g : '';
+                                    fInfo.seasonNumber = Number((_j = (_h = /\d{1,3}/i
+                                        .exec(seasonEpisodenumber.slice(0, -episodeNumber.length))) === null || _h === void 0 ? void 0 : _h.at(0)) !== null && _j !== void 0 ? _j : '-1');
+                                    fInfo.episodeNumber = Number(episodeNumber !== '' ? episodeNumber : -1);
+                                }
+                                return fInfo;
                             },
-                            getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse) {
+                            getFileInfoFromParseResponse: function (parseResponse) {
+                                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+                                return ({
+                                    id: String((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
+                                    seasonNumber: (_f = (_e = (_d = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _d === void 0 ? void 0 : _d.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.seasonNumber) !== null && _f !== void 0 ? _f : 1,
+                                    episodeNumber: (_k = (_j = (_h = (_g = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _g === void 0 ? void 0 : _g.parsedEpisodeInfo) === null || _h === void 0 ? void 0 : _h.episodeNumbers) === null || _j === void 0 ? void 0 : _j.at(0)) !== null && _k !== void 0 ? _k : 1,
+                                });
+                            },
+                            buildPreviewRenameResquestUrl: function (fInfo) { return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(fInfo.id, "&seasonNumber=").concat(fInfo.seasonNumber); },
+                            getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse, fInfo) {
                                 var _a;
-                                return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === episodeNumber; });
+                                return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
                             },
                         },
                     };
                 args.jobLog('Going to apply new name');
                 args.jobLog("Renaming ".concat(renameType.appName, "..."));
-                return [4 /*yield*/, getFileDetailsWrapper(args, arr, arrHost, headers, originalFileName, renameType)];
+                return [4 /*yield*/, getFileInfo(args, arr, arrHost, headers, originalFileName, renameType)];
             case 1:
-                fileDetailsWrapper = _e.sent();
-                if (!(fileDetailsWrapper.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 3];
-                return [4 /*yield*/, getFileDetailsWrapper(args, arr, arrHost, headers, currentFileName, renameType)];
+                fInfo = _e.sent();
+                if (!(fInfo.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 3];
+                return [4 /*yield*/, getFileInfo(args, arr, arrHost, headers, currentFileName, renameType)];
             case 2:
-                fileDetailsWrapper = _e.sent();
+                fInfo = _e.sent();
                 _e.label = 3;
             case 3:
-                if (!(fileDetailsWrapper.id !== '-1')) return [3 /*break*/, 7];
+                if (!(fInfo.id !== '-1')) return [3 /*break*/, 7];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: renameType.delegates.buildPreviewRenameResquestUrl(fileDetailsWrapper),
+                        url: renameType.delegates.buildPreviewRenameResquestUrl(fInfo),
                         headers: headers,
                     })];
             case 4:
                 previewRenameRequestResult = _e.sent();
                 fileToRename = renameType.delegates
-                    .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult);
+                    .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult, fInfo);
                 if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
                 newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
@@ -259,8 +267,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     })];
             case 5:
                 isSuccessful = _e.sent();
-                args.jobLog("\u2714 ".concat(renameType.content, " ").concat(fileDetailsWrapper.id, " renamed : ")
-                    + "'".concat(originalFileName, "' => '").concat(newPath, "'."));
                 return [3 /*break*/, 7];
             case 6:
                 isSuccessful = true;
