@@ -169,7 +169,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr = String(args.inputs.arr);
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const filePath = args.originalLibraryFile?._id ?? '';
   const originalFileName = args.originalLibraryFile?._id ?? '';
   const currentFileName = args.inputFileObj?._id ?? '';
   const headers = {
@@ -232,18 +231,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     // Only if there is a rename to execute
     if (fileToRename !== undefined) {
-      newPath = `${getFileAbosluteDir(args.inputFileObj._id)
+      newPath = `${getFileAbosluteDir(currentFileName)
       }/${getFileName(fileToRename.newPath)
       }.${getContainer(fileToRename.newPath)}`;
 
       isSuccessful = await fileMoveOrCopy({
         operation: 'move',
-        sourcePath: args.inputFileObj._id,
+        sourcePath: currentFileName,
         destinationPath: newPath,
         args,
       });
       args.jobLog(`✔ ${renameType.content} ${fileDetailsWrapper.id} renamed : `
-        + `'${filePath}' => '${newPath}'.`);
+        + `'${originalFileName}' => '${newPath}'.`);
     } else {
       isSuccessful = true;
       args.jobLog('✔ No rename necessary.');

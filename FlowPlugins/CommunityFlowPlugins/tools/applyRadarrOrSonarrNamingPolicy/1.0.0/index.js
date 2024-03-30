@@ -180,10 +180,10 @@ var getFileDetailsWrapper = function (args, arr, arrHost, headers, fileName, ren
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, newPath, isSuccessful, arr, arr_host, arrHost, filePath, originalFileName, currentFileName, headers, episodeNumber, renameType, fileDetailsWrapper, previewRenameRequestResult, fileToRename;
-    var _a, _b, _c, _d, _e, _f;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
+    var lib, newPath, isSuccessful, arr, arr_host, arrHost, originalFileName, currentFileName, headers, episodeNumber, renameType, fileDetailsWrapper, previewRenameRequestResult, fileToRename;
+    var _a, _b, _c, _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -193,9 +193,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                filePath = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
-                originalFileName = (_d = (_c = args.originalLibraryFile) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
-                currentFileName = (_f = (_e = args.inputFileObj) === null || _e === void 0 ? void 0 : _e._id) !== null && _f !== void 0 ? _f : '';
+                originalFileName = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
+                currentFileName = (_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
                 headers = {
                     'Content-Type': 'application/json',
                     'X-Api-Key': String(args.inputs.arr_api_key),
@@ -233,12 +232,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.jobLog("Renaming ".concat(renameType.appName, "..."));
                 return [4 /*yield*/, getFileDetailsWrapper(args, arr, arrHost, headers, originalFileName, renameType)];
             case 1:
-                fileDetailsWrapper = _g.sent();
+                fileDetailsWrapper = _e.sent();
                 if (!(fileDetailsWrapper.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 3];
                 return [4 /*yield*/, getFileDetailsWrapper(args, arr, arrHost, headers, currentFileName, renameType)];
             case 2:
-                fileDetailsWrapper = _g.sent();
-                _g.label = 3;
+                fileDetailsWrapper = _e.sent();
+                _e.label = 3;
             case 3:
                 if (!(fileDetailsWrapper.id !== '-1')) return [3 /*break*/, 7];
                 return [4 /*yield*/, args.deps.axios({
@@ -247,26 +246,26 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         headers: headers,
                     })];
             case 4:
-                previewRenameRequestResult = _g.sent();
+                previewRenameRequestResult = _e.sent();
                 fileToRename = renameType.delegates
                     .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult);
                 if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
-                newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
-                        sourcePath: args.inputFileObj._id,
+                        sourcePath: currentFileName,
                         destinationPath: newPath,
                         args: args,
                     })];
             case 5:
-                isSuccessful = _g.sent();
+                isSuccessful = _e.sent();
                 args.jobLog("\u2714 ".concat(renameType.content, " ").concat(fileDetailsWrapper.id, " renamed : ")
-                    + "'".concat(filePath, "' => '").concat(newPath, "'."));
+                    + "'".concat(originalFileName, "' => '").concat(newPath, "'."));
                 return [3 /*break*/, 7];
             case 6:
                 isSuccessful = true;
                 args.jobLog('✔ No rename necessary.');
-                _g.label = 7;
+                _e.label = 7;
             case 7: return [2 /*return*/, {
                     outputFileObj: isSuccessful && newPath !== ''
                         ? __assign(__assign({}, args.inputFileObj), { _id: newPath }) : args.inputFileObj,
