@@ -1,4 +1,3 @@
-import path from 'path';
 import { getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -73,49 +72,47 @@ interface IHTTPHeaders {
   'X-Api-Key': string,
   Accept: string,
 }
-interface IParsedRequestResult {
+interface IParseResponse {
   data: {
     movie?: { id: number },
     series?: { id: number },
   },
 }
-interface IRefreshType {
-  appName: string,
+interface IArrApp {
+  name: string,
+  host: string,
+  headers: IHTTPHeaders,
   content: string,
   delegates: {
-    getIdFromParseResponse: (parseRequestResult: IParsedRequestResult) => number,
+    getIdFromParseResponse: (parseResponse: IParseResponse) => number,
     buildRefreshResquestData: (id: number) => string
   }
 }
 
 const getId = async (
   args: IpluginInputArgs,
-  arr: string,
-  arrHost: string, headers: IHTTPHeaders,
+  arrApp: IArrApp,
   fileName: string,
-  refreshType: IRefreshType,
 )
   : Promise<number> => {
   const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)?.at(0) ?? '';
   let id = (imdbId !== '')
-    ? Number(
-      (await args.deps.axios({
-        method: 'get',
-        url: `${arrHost}/api/v3/${arr === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
-        headers,
-      })).data?.at(0)?.id ?? -1,
-    )
+    ? Number((await args.deps.axios({
+      method: 'get',
+      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
+      headers: arrApp.headers,
+    })).data?.at(0)?.id ?? -1)
     : -1;
-  args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for imdb '${imdbId}'`);
+  args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for imdb '${imdbId}'`);
   if (id === -1) {
-    id = refreshType.delegates.getIdFromParseResponse(
+    id = arrApp.delegates.getIdFromParseResponse(
       (await args.deps.axios({
         method: 'get',
-        url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
-        headers,
+        url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
+        headers: arrApp.headers,
       })),
     );
-    args.jobLog(`${refreshType.content} ${id !== -1 ? `${id} found` : 'not found'} for '${getFileName(fileName)}'`);
+    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${getFileName(fileName)}'`);
   }
   return id;
 };
@@ -130,42 +127,46 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr = String(args.inputs.arr);
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const originalFileName = path.join(args.originalLibraryFile?._id ?? '');
-  const currentFileName = path.join(args.inputFileObj?._id ?? '');
+  const originalFileName = args.originalLibraryFile?._id ?? '';
+  const currentFileName = args.inputFileObj?._id ?? '';
   const headers: IHTTPHeaders = {
     'Content-Type': 'application/json',
     'X-Api-Key': String(args.inputs.arr_api_key),
     Accept: 'application/json',
   };
-  const refreshType: IRefreshType = arr === 'radarr'
+  const arrApp: IArrApp = arr === 'radarr'
     ? {
-      appName: 'Radarr',
+      name: arr,
+      host: arrHost,
+      headers,
       content: 'Movie',
       delegates: {
         getIdFromParseResponse:
-          (parseRequestResult: IParsedRequestResult) => Number(parseRequestResult.data?.movie?.id ?? -1),
+          (parseResponse: IParseResponse) => Number(parseResponse?.data?.movie?.id ?? -1),
         buildRefreshResquestData:
           (id) => JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }),
       },
     }
     : {
-      appName: 'Sonarr',
+      name: arr,
+      host: arrHost,
+      headers,
       content: 'Serie',
       delegates: {
         getIdFromParseResponse:
-          (parseRequestResult: IParsedRequestResult) => Number(parseRequestResult.data?.series?.id ?? -1),
+          (parseResponse: IParseResponse) => Number(parseResponse?.data?.series?.id ?? -1),
         buildRefreshResquestData:
           (id) => JSON.stringify({ name: 'RefreshSeries', seriesId: id }),
       },
     };
 
   args.jobLog('Going to force scan');
-  args.jobLog(`Refreshing ${refreshType.appName}...`);
+  args.jobLog(`Refreshing ${arrApp.name}...`);
 
-  let id = await getId(args, arr, arrHost, headers, originalFileName, refreshType);
+  let id = await getId(args, arrApp, originalFileName);
   // Useful in some edge cases
   if (id === -1 && currentFileName !== originalFileName) {
-    id = await getId(args, arr, arrHost, headers, currentFileName, refreshType);
+    id = await getId(args, arrApp, currentFileName);
   }
 
   // Checking that the file has been found
@@ -173,13 +174,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     // Using command endpoint to queue a refresh task
     await args.deps.axios({
       method: 'post',
-      url: `${arrHost}/api/v3/command`,
+      url: `${arrApp.host}/api/v3/command`,
       headers,
-      data: refreshType.delegates.buildRefreshResquestData(id),
+      data: arrApp.delegates.buildRefreshResquestData(id),
     });
 
     refreshed = true;
-    args.jobLog(`✔ ${refreshType.content} ${id} refreshed in ${refreshType.appName}.`);
+    args.jobLog(`✔ ${arrApp.content} '${id}' refreshed in ${arrApp.name}.`);
   }
 
   return {

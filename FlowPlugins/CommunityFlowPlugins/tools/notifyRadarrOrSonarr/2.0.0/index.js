@@ -35,12 +35,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var path_1 = __importDefault(require("path"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
     name: 'Notify Radarr or Sonarr',
@@ -104,7 +100,7 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getId = function (args, arr, arrHost, headers, fileName, refreshType) { return __awaiter(void 0, void 0, void 0, function () {
+var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
     var imdbId, id, _a, _b, _c, _d;
     var _e, _f, _g, _h, _j;
     return __generator(this, function (_k) {
@@ -115,8 +111,8 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
                 _b = Number;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrHost, "/api/v3/").concat(arr === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
-                        headers: headers,
+                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
+                        headers: arrApp.headers,
                     })];
             case 1:
                 _a = _b.apply(void 0, [(_j = (_h = (_g = (_k.sent()).data) === null || _g === void 0 ? void 0 : _g.at(0)) === null || _h === void 0 ? void 0 : _h.id) !== null && _j !== void 0 ? _j : -1]);
@@ -126,24 +122,24 @@ var getId = function (args, arr, arrHost, headers, fileName, refreshType) { retu
                 _k.label = 3;
             case 3:
                 id = _a;
-                args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for imdb '").concat(imdbId, "'"));
+                args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for imdb '").concat(imdbId, "'"));
                 if (!(id === -1)) return [3 /*break*/, 5];
-                _d = (_c = refreshType.delegates).getIdFromParseResponse;
+                _d = (_c = arrApp.delegates).getIdFromParseResponse;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
-                        headers: headers,
+                        url: "".concat(arrApp.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
+                        headers: arrApp.headers,
                     })];
             case 4:
                 id = _d.apply(_c, [(_k.sent())]);
-                args.jobLog("".concat(refreshType.content, " ").concat(id !== -1 ? "".concat(id, " found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
+                args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
                 _k.label = 5;
             case 5: return [2 /*return*/, id];
         }
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, originalFileName, currentFileName, headers, refreshType, id;
+    var lib, refreshed, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, id;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -155,37 +151,41 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                originalFileName = path_1.default.join((_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '');
-                currentFileName = path_1.default.join((_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '');
+                originalFileName = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
+                currentFileName = (_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
                 headers = {
                     'Content-Type': 'application/json',
                     'X-Api-Key': String(args.inputs.arr_api_key),
                     Accept: 'application/json',
                 };
-                refreshType = arr === 'radarr'
+                arrApp = arr === 'radarr'
                     ? {
-                        appName: 'Radarr',
+                        name: arr,
+                        host: arrHost,
+                        headers: headers,
                         content: 'Movie',
                         delegates: {
-                            getIdFromParseResponse: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
+                            getIdFromParseResponse: function (parseResponse) { var _a, _b, _c; return Number((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); },
                         },
                     }
                     : {
-                        appName: 'Sonarr',
+                        name: arr,
+                        host: arrHost,
+                        headers: headers,
                         content: 'Serie',
                         delegates: {
-                            getIdFromParseResponse: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
+                            getIdFromParseResponse: function (parseResponse) { var _a, _b, _c; return Number((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); },
                         },
                     };
                 args.jobLog('Going to force scan');
-                args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
-                return [4 /*yield*/, getId(args, arr, arrHost, headers, originalFileName, refreshType)];
+                args.jobLog("Refreshing ".concat(arrApp.name, "..."));
+                return [4 /*yield*/, getId(args, arrApp, originalFileName)];
             case 1:
                 id = _e.sent();
                 if (!(id === -1 && currentFileName !== originalFileName)) return [3 /*break*/, 3];
-                return [4 /*yield*/, getId(args, arr, arrHost, headers, currentFileName, refreshType)];
+                return [4 /*yield*/, getId(args, arrApp, currentFileName)];
             case 2:
                 id = _e.sent();
                 _e.label = 3;
@@ -194,15 +194,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // Using command endpoint to queue a refresh task
                 return [4 /*yield*/, args.deps.axios({
                         method: 'post',
-                        url: "".concat(arrHost, "/api/v3/command"),
+                        url: "".concat(arrApp.host, "/api/v3/command"),
                         headers: headers,
-                        data: refreshType.delegates.buildRefreshResquestData(id),
+                        data: arrApp.delegates.buildRefreshResquestData(id),
                     })];
             case 4:
                 // Using command endpoint to queue a refresh task
                 _e.sent();
                 refreshed = true;
-                args.jobLog("\u2714 ".concat(refreshType.content, " ").concat(id, " refreshed in ").concat(refreshType.appName, "."));
+                args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' refreshed in ").concat(arrApp.name, "."));
                 _e.label = 5;
             case 5: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
