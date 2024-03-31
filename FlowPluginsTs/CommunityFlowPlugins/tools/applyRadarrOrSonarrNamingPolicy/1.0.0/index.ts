@@ -21,7 +21,7 @@ const details = (): IpluginDetails => ({
   pType: '',
   requiresVersion: '2.11.01',
   sidebarPosition: -1,
-  icon: 'faBell',
+  icon: 'faPenToSquare',
   inputs: [
     {
       label: 'Arr',
