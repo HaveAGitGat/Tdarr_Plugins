@@ -102,8 +102,10 @@ interface IFileToRename {
 interface IPreviewRenameResponse {
   data: IFileToRename[]
 }
-interface IRenameType {
-  appName: string,
+interface IArrApp {
+  name: string,
+  host: string,
+  headers: IHTTPHeaders,
   content: string,
   delegates: {
     getFileInfoFromLookupResponse:
@@ -119,11 +121,8 @@ interface IRenameType {
 
 const getFileInfoFromLookup = async (
   args: IpluginInputArgs,
-  arr: string,
-  arrHost: string,
-  headers: IHTTPHeaders,
+  arrApp: IArrApp,
   fileName: string,
-  renameType: IRenameType,
 )
   : Promise<IFileInfo> => {
   let fInfo: IFileInfo = { id: '-1' };
@@ -131,11 +130,11 @@ const getFileInfoFromLookup = async (
   if (imdbId !== '') {
     const lookupResponse: ILookupResponse = await args.deps.axios({
       method: 'get',
-      url: `${arrHost}/api/v3/${arr === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
-      headers,
+      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
+      headers: arrApp.headers,
     });
-    fInfo = renameType.delegates.getFileInfoFromLookupResponse(lookupResponse, fileName);
-    args.jobLog(`${renameType.content} ${fInfo.id !== '-1' ? `'${fInfo.id}' found` : 'not found'}`
+    fInfo = arrApp.delegates.getFileInfoFromLookupResponse(lookupResponse, fileName);
+    args.jobLog(`${arrApp.content} ${fInfo.id !== '-1' ? `'${fInfo.id}' found` : 'not found'}`
       + ` for imdb '${imdbId}'`);
   }
   return fInfo;
@@ -143,37 +142,31 @@ const getFileInfoFromLookup = async (
 
 const getFileInfoFromParse = async (
   args: IpluginInputArgs,
-  arr: string,
-  arrHost: string,
-  headers: IHTTPHeaders,
+  arrApp: IArrApp,
   fileName: string,
-  renameType: IRenameType,
 )
   : Promise<IFileInfo> => {
   let fInfo: IFileInfo = { id: '-1' };
   const parseResponse: IParseResponse = await args.deps.axios({
     method: 'get',
-    url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
-    headers,
+    url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
+    headers: arrApp.headers,
   });
-  fInfo = renameType.delegates.getFileInfoFromParseResponse(parseResponse);
-  args.jobLog(`${renameType.content} ${fInfo.id !== '-1' ? `'${fInfo.id}' found` : 'not found'}`
+  fInfo = arrApp.delegates.getFileInfoFromParseResponse(parseResponse);
+  args.jobLog(`${arrApp.content} ${fInfo.id !== '-1' ? `'${fInfo.id}' found` : 'not found'}`
     + ` for '${getFileName(fileName)}'`);
   return fInfo;
 };
 
 const getFileInfo = async (
   args: IpluginInputArgs,
-  arr: string,
-  arrHost: string,
-  headers: IHTTPHeaders,
+  arrApp: IArrApp,
   fileName: string,
-  renameType: IRenameType,
 )
   : Promise<IFileInfo> => {
-  const fInfo = await getFileInfoFromLookup(args, arr, arrHost, headers, fileName, renameType);
-  return (fInfo.id === '-1' || (arr === 'sonarr' && (fInfo.seasonNumber === -1 || fInfo.episodeNumber === -1)))
-    ? getFileInfoFromParse(args, arr, arrHost, headers, fileName, renameType)
+  const fInfo = await getFileInfoFromLookup(args, arrApp, fileName);
+  return (fInfo.id === '-1' || (arrApp.name === 'sonarr' && (fInfo.seasonNumber === -1 || fInfo.episodeNumber === -1)))
+    ? getFileInfoFromParse(args, arrApp, fileName)
     : fInfo;
 };
 
@@ -195,9 +188,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     Accept: 'application/json',
   };
 
-  const renameType: IRenameType = arr === 'radarr'
+  const arrApp: IArrApp = arr === 'radarr'
     ? {
-      appName: 'Radarr',
+      name: arr,
+      host: arrHost,
+      headers,
       content: 'Movie',
       delegates: {
         getFileInfoFromLookupResponse:
@@ -211,7 +206,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       },
     }
     : {
-      appName: 'Sonarr',
+      name: arr,
+      host: arrHost,
+      headers,
       content: 'Serie',
       delegates: {
         getFileInfoFromLookupResponse:
@@ -242,13 +239,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
 
   args.jobLog('Going to apply new name');
-  args.jobLog(`Renaming ${renameType.appName}...`);
+  args.jobLog(`Renaming ${arrApp.name}...`);
 
   // Retrieving movie or serie id, plus season and episode number for serie
-  let fInfo = await getFileInfo(args, arr, arrHost, headers, originalFileName, renameType);
+  let fInfo = await getFileInfo(args, arrApp, originalFileName);
   // Useful in some edge cases
   if (fInfo.id === '-1' && currentFileName !== originalFileName) {
-    fInfo = await getFileInfo(args, arr, arrHost, headers, currentFileName, renameType);
+    fInfo = await getFileInfo(args, arrApp, currentFileName);
   }
 
   // Checking that the file has been found
@@ -256,10 +253,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     // Using rename endpoint to get ids of all the files that need renaming
     const previewRenameRequestResult = await args.deps.axios({
       method: 'get',
-      url: renameType.delegates.buildPreviewRenameResquestUrl(fInfo),
+      url: arrApp.delegates.buildPreviewRenameResquestUrl(fInfo),
       headers,
     });
-    const fileToRename = renameType.delegates
+    const fileToRename = arrApp.delegates
       .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult, fInfo);
 
     // Only if there is a rename to execute
