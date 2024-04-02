@@ -225,7 +225,7 @@ const processStreams = (result, file, user_langs, sub_codecs,sub_lang) => {
     if (stream.codec_type === "subtitle"){
     
         if( !subtitle_langs.includes(stream.tags.language) ||
-            subtitle_codecs.includes(stream.codec_name.toLowerCase()) ||
+        (stream.hasOwnProperty('codec_name') && subtitle_codecs.includes(stream.codec_name.toLowerCase()) )||
             stream.disposition.comment == 1 ||
             (stream.tags.hasOwnProperty('title') && (stream.tags.title.toLowerCase().includes('commentary') || 
             stream.tags.title.toLowerCase().includes('description') || 
