@@ -106,7 +106,7 @@ var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0,
     return __generator(this, function (_k) {
         switch (_k.label) {
             case 0:
-                imdbId = (_f = (_e = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
+                imdbId = (_f = (_e = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
                 if (!(imdbId !== '')) return [3 /*break*/, 2];
                 _b = Number;
                 return [4 /*yield*/, args.deps.axios({
