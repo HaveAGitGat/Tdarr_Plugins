@@ -7,27 +7,31 @@ const details = () => ({
   Name: 'Clean audio and subtitle streams',
   Type: 'Audio',
   Operation: 'Transcode',
-  Description: `This plugin is a combination of other plugins to clean the audio and subtitle streams. No video transcoding happens here.
-    For AUDIO streams, it will look for the original language in Radarr/Sonarr or TMDB to KEEP it, 
-    it will also keep any additional audio stream based on the parameter audio_language (ISO-639-2), and it will remove the rest, including commentary audio stream.
-    For SUBTITLE streams, it will keep subtitles based on the parameter subtitle_language (ISO-639-2) and remove based on the parameter subtitle_codecs (e.g. hdmv_pgs_subtitle). 
+  Description: `This plugin is a combination of other plugins to clean the audio and subtitle streams. 
+    No video transcoding happens here. For AUDIO streams, 
+    it will look for the original language in Radarr/Sonarr or TMDB to KEEP it, 
+    it will also keep any additional audio stream based on the parameter audio_language (ISO-639-2), 
+    and it will remove the rest, including commentary audio stream.
+    For SUBTITLE streams, it will keep subtitles based on the parameter subtitle_language (ISO-639-2) 
+    and remove based on the parameter subtitle_codecs (e.g. hdmv_pgs_subtitle). 
     If the subtitle_language is left empty, it will remove all subtitles. 
-    If a subtitle is found with a codec specified in the parameter subtitle_codecs it will be removed regardless of the parameter subtitle_language.`,
+    If a subtitle is found with a codec specified in the parameter subtitle_codecs 
+    it will be removed regardless of the parameter subtitle_language.`,
   Version: '1.0',
   Tags: 'pre-processing,configurable,ffmpeg,audio,subtitle',
   Inputs: [
     {
-        name: 'audio_language',
-        type: 'string',
-        defaultValue: '',
-        inputUI: {
-            type: 'text',
-        },
-        tooltip:
-            'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
-            + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
-            + '\\n Example:\\n '
-            + 'nld,nor',
+      name: 'audio_language',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+          type: 'text',
+      },
+      tooltip:
+          'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
+          + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
+          + '\\n Example:\\n '
+          + 'nld,nor',
     },
     {
         name: 'priority',
