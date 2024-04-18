@@ -167,6 +167,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
+
+                // Ensure ffmpegCommand is initialized in args.variables
+                if (!args.variables.ffmpegCommand) {
+                    args.variables.ffmpegCommand = {
+                        hardwareDecoding: false, // Default to false, modify as needed
+                        streams: []
+                    };
+                }
+                
                 hardwareDecoding = args.inputs.hardwareDecoding === true;
                 hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
