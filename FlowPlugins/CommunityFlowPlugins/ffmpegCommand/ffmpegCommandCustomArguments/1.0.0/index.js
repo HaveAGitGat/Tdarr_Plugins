@@ -52,6 +52,16 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var inputArguments = String(args.inputs.inputArguments);
     var outputArguments = String(args.inputs.outputArguments);
+
+    // Initialize overallInputArguments if not already initialized
+    if (!args.variables.ffmpegCommand.overallInputArguments) {
+        args.variables.ffmpegCommand.overallInputArguments = [];
+    }
+    // Initialize overallOutputArguments if not already initialized
+    if (!args.variables.ffmpegCommand.overallOuputArguments) {
+        args.variables.ffmpegCommand.overallOuputArguments = [];
+    }
+    
     if (inputArguments) {
         (_a = args.variables.ffmpegCommand.overallInputArguments).push.apply(_a, inputArguments.split(' '));
     }
