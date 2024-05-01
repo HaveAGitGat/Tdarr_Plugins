@@ -100,26 +100,26 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   var hasStreamsToTranscode = false;
 
   var ffmpegCommand = `, -c copy  -map 0:v `;
-
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (
-      file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
-      file.ffProbeData.streams[i].codec_name &&
+  var audiojson = file.ffProbeData.streams.filter(function(value) { return value.codec_type === "audio" });
+  
+  for (var i = 0; i < audiojson.length-1; i++) {
+	if (
+      audiojson[i].codec_name &&
       codecs_to_transcode.includes(
-        file.ffProbeData.streams[i].codec_name.toLowerCase()
+        audiojson[i].codec_name.toLowerCase()
       )
     ) {
-      ffmpegCommand += `  -map 0:${i} -c:${i} ${encoder} `;
+      ffmpegCommand += `  -map 0:a:${i} -c:a:${i} ${encoder} `;
       if (inputs.bitrate !== '') {
         ffmpegCommand += `-b:a ${inputs.bitrate} `;
       }
       hasStreamsToTranscode = true;
-    } else if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
-      ffmpegCommand += `  -map 0:${i}`;
+    } else {
+      ffmpegCommand += `  -map 0:a:${i}`;
     }
   }
 
-  ffmpegCommand += ` -map 0:s? -map 0:d? -max_muxing_queue_size 9999`;
+  ffmpegCommand += ` -map 0:s? -map 0:d? -strict -2 -max_muxing_queue_size 9999`;
 
   if (hasStreamsToTranscode == false) {
     response.processFile = false;
