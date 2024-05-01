@@ -102,7 +102,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   var ffmpegCommand = `, -c copy  -map 0:v `;
   var audiojson = file.ffProbeData.streams.filter(function(value) { return value.codec_type === "audio" });
   if (audiojson.length >0){
-  for (var i = 0; i < audiojson.length-1; i++) {
+  for (var i = 0; i < audiojson.length; i++) {
 	if (
       audiojson[i].codec_name &&
       codecs_to_transcode.includes(
