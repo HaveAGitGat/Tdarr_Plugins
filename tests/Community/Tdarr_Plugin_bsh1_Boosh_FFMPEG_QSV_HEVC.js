@@ -145,7 +145,7 @@ const tests = [
     output: {
       linux: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel_output_format qsv -init_hw_device qsv:hw,child_device_type=vaapi -c:v h264<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
