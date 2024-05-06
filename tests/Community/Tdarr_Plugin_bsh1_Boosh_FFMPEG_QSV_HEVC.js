@@ -221,6 +221,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v hevc_qsv<io> -map 0 -c:v hevc_qsv -b:v 6000k -minrate 4500k -maxrate 7500k -bufsize 12000k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
+        handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
