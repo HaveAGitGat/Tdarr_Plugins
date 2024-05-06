@@ -527,6 +527,7 @@ const tests = [
       linux: {
         processFile: true,
         preset: '-fflags +genpts -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -f matroska -profile:v main10 -pix_fmt p010le ',
+        handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
