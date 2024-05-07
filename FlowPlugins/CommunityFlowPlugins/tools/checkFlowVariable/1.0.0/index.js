@@ -47,7 +47,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Value of variable to check',
+            tooltip: "Value of variable to check. \n  For == condition, you can specify multiple values separated by comma. For example: value1,value2,value3\n  If the variable matches any of the values, the condition is true.\n  ",
         },
     ],
     outputs: [
@@ -100,8 +100,9 @@ var plugin = function (args) {
     targetValue = String(targetValue);
     var outputNumber = 1;
     if (condition === '==') {
-        if (targetValue === value) {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(value));
+        var valuesArr = value.trim().split(',');
+        if (valuesArr.includes(targetValue)) {
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 1;
         }
         else {
