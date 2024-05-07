@@ -23,36 +23,30 @@ const details = (): IpluginDetails => ({
       label: 'Terms',
       name: 'terms',
       type: 'string',
-      // eslint-disable-next-line no-template-curly-in-string
       defaultValue: '_720p,_1080p',
       inputUI: {
         type: 'text',
       },
-      // eslint-disable-next-line no-template-curly-in-string
       tooltip: 'Specify terms to check for in file name using comma seperated list e.g. _720p,_1080p',
     },
     {
       label: 'Pattern (regular expression)',
       name: 'pattern',
       type: 'string',
-      // eslint-disable-next-line no-template-curly-in-string
       defaultValue: '',
       inputUI: {
         type: 'text',
       },
-      // eslint-disable-next-line no-template-curly-in-string
       tooltip: 'Specify the pattern (regex) to check for in file name e.g. ^Pattern.*mkv$',
     },
     {
       label: 'Include file directory in check',
       name: 'includeFileDirectory',
       type: 'boolean',
-      // eslint-disable-next-line no-template-curly-in-string
       defaultValue: 'false',
       inputUI: {
         type: 'switch',
       },
-      // eslint-disable-next-line no-template-curly-in-string
       tooltip: 'Should the terms and patterns be evaluated against the file directory e.g. false, true',
     },
   ],
