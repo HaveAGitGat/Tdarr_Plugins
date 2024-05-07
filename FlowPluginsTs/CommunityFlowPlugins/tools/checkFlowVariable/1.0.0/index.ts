@@ -64,7 +64,10 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Value of variable to check',
+      tooltip: `Value of variable to check. 
+  For == condition, you can specify multiple values separated by comma. For example: value1,value2,value3
+  If the variable matches any of the values, the condition is true.
+  `,
     },
   ],
   outputs: [
@@ -123,8 +126,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   let outputNumber = 1;
 
   if (condition === '==') {
-    if (targetValue === value) {
-      args.jobLog(`Variable ${variable} of value ${targetValue} matches condition ${condition} ${value}`);
+    const valuesArr = value.trim().split(',');
+    if (valuesArr.includes(targetValue)) {
+      args.jobLog(`Variable ${variable} of value ${targetValue} matches condition ${condition} ${valuesArr}`);
       outputNumber = 1;
     } else {
       args.jobLog(`Variable ${variable} of value ${targetValue} does not match condition ${condition} ${value}`);
