@@ -47,7 +47,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Value of variable to check',
+            tooltip: "Value of variable to check. \nYou can specify multiple values separated by comma. For example: value1,value2,value3",
         },
     ],
     outputs: [
@@ -99,23 +99,24 @@ var plugin = function (args) {
     }
     targetValue = String(targetValue);
     var outputNumber = 1;
+    var valuesArr = value.trim().split(',');
     if (condition === '==') {
-        if (targetValue === value) {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(value));
+        if (valuesArr.includes(targetValue)) {
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 1;
         }
         else {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(value));
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 2;
         }
     }
     else if (condition === '!=') {
-        if (targetValue !== value) {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(value));
+        if (!valuesArr.includes(targetValue)) {
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 1;
         }
         else {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(value));
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 2;
         }
     }
