@@ -57,7 +57,7 @@ jobs:
       with:
         node-version: '18.x'
 
-    - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc
+    - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
 
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
