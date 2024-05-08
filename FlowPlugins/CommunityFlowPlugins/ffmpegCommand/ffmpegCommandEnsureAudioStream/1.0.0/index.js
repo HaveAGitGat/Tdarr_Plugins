@@ -203,6 +203,7 @@ var attemptMakeStream = function (_a) {
     }
     args.jobLog("Adding ".concat(langTag, " stream in ").concat(audioEncoder, ", ").concat(targetChannels, " channels \n"));
     var streamCopy = JSON.parse(JSON.stringify(streamWithHighestChannel));
+    streamCopy.removed = false;
     streamCopy.index = streams.length;
     streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
     streamCopy.outputArgs.push('-ac', "".concat(targetChannels));

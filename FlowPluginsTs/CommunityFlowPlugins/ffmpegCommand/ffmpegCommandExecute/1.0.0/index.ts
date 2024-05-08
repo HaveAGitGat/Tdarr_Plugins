@@ -91,6 +91,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     return !stream.removed;
   });
 
+  if (streams.length === 0) {
+    args.jobLog('No streams mapped for new file');
+    throw new Error('No streams mapped for new file');
+  }
+
   for (let i = 0; i < streams.length; i += 1) {
     const stream = streams[i];
 
