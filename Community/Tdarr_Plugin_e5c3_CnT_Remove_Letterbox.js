@@ -34,11 +34,11 @@ const details = () => {
   };
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
     const lib = require('../methods/lib')(); const fs = require("fs");
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   if (inputs.bitrate == "" || inputs.bitrate == "undefined") {
     var min_bitrate = 6600;
@@ -284,7 +284,14 @@ function crop_decider(file, crop_height) {
 
 function size_check(file, min_bitrate) {
   const fs = require("fs");
-  var duration = file.meta.Duration; //duration of video in seconds
+
+  let duration =  0;
+  if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+    duration =  parseFloat(file.ffProbeData?.format?.duration)
+  }else{
+    duration = file.meta.Duration; //duration of video in seconds
+  }
+
   var source = file.meta.SourceFile; //source file
   var stats = fs.statSync(source);
   var size = stats["size"] / 1000000000;

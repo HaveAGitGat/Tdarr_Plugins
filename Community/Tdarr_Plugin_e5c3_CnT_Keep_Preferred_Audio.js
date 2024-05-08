@@ -43,11 +43,11 @@ const details = () => {
   };
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   
   const lib = require('../methods/lib')(); const exec = require("child_process").exec; const fs = require("fs");
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   if (inputs.languages == "" || typeof inputs.special == "undefined") {
     var languages = ["eng", "en"]; //these languages should be kept, named according to ISO 639-2 language scheme

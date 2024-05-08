@@ -12,7 +12,7 @@ const details = () => ({
     'Native' languages are the ones that are listed on imdb. It does an API call to 
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
     falls back to the IMDB id in the filename.`,
-  Version: '1.01',
+  Version: '1.2',
   Tags: 'pre-processing,configurable',
   Inputs: [
     {
@@ -22,7 +22,8 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
+      tooltip:
+        'Input a comma separated list of ISO-639-2 languages. It will still keep English and undefined tracks.'
         + '(https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes 639-2 column)'
         + '\\nExample:\\n'
         + 'nld,nor',
@@ -34,7 +35,8 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Priority for either Radarr or Sonarr. Leaving it empty defaults to Radarr first.'
+      tooltip:
+        'Priority for either Radarr or Sonarr. Leaving it empty defaults to Radarr first.'
         + '\\nExample:\\n'
         + 'sonarr',
     },
@@ -45,7 +47,8 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
+      tooltip:
+        'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
     },
     {
       name: 'radarr_api_key',
@@ -63,7 +66,8 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your Radarr url here. (Without http://). Do include the port.'
+      tooltip:
+        'Input your Radarr url here. (Without http://). Do include the port.'
         + '\\nExample:\\n'
         + '192.168.1.2:7878',
     },
@@ -83,7 +87,8 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your Sonarr url here. (Without http://). Do include the port.'
+      tooltip:
+        'Input your Sonarr url here. (Without http://). Do include the port.'
         + '\\nExample:\\n'
         + '192.168.1.2:8989',
     },
@@ -117,7 +122,9 @@ const processStreams = (result, file, user_langs) => {
   langs.push(languages.alpha2ToAlpha3B(langsTemp));
 
   // Some console reporting for clarification of what the plugin is using and reporting.
-  response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(langsTemp)}\n`;
+  response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(
+    langsTemp,
+  )}\n`;
 
   if (user_langs) {
     langs = langs.concat(user_langs);
@@ -133,9 +140,8 @@ const processStreams = (result, file, user_langs) => {
 
   response.infoLog = `${response.infoLog.slice(0, -2)}\n`;
 
-  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-    const stream = file.ffProbeData.streams[i];
-
+  // eslint-disable-next-line no-restricted-syntax
+  for (const stream of file.ffProbeData.streams) {
     if (stream.codec_type === 'audio') {
       if (!stream.tags) {
         response.infoLog += `☒No tags found on audio track ${streamIndex}. Keeping it. \n`;
@@ -150,7 +156,10 @@ const processStreams = (result, file, user_langs) => {
         } else {
           tracks.remove.push(streamIndex);
           response.preset += `-map -0:a:${streamIndex} `;
-          tracks.remLangs += `${languages.getName(stream.tags.language, 'en')}, `;
+          tracks.remLangs += `${languages.getName(
+            stream.tags.language,
+            'en',
+          )}, `;
         }
         streamIndex += 1;
       } else {
@@ -166,7 +175,7 @@ const tmdbApi = async (filename, api_key, axios) => {
   let fileName;
   // If filename begins with tt, it's already an imdb id
   if (filename) {
-    if (filename.substr(0, 2) === 'tt') {
+    if (filename.slice(0, 2) === 'tt') {
       fileName = filename;
     } else {
       const idRegex = /(tt\d{7,8})/;
@@ -177,9 +186,14 @@ const tmdbApi = async (filename, api_key, axios) => {
   }
 
   if (fileName) {
-    const result = await axios.get(`https://api.themoviedb.org/3/find/${fileName}?api_key=`
-      + `${api_key}&language=en-US&external_source=imdb_id`)
-      .then((resp) => (resp.data.movie_results.length > 0 ? resp.data.movie_results[0] : resp.data.tv_results[0]));
+    const result = await axios
+      .get(
+        `https://api.themoviedb.org/3/find/${fileName}?api_key=`
+        + `${api_key}&language=en-US&external_source=imdb_id`,
+      )
+      .then((resp) => (resp.data.movie_results.length > 0
+        ? resp.data.movie_results[0]
+        : resp.data.tv_results[0]));
 
     if (!result) {
       response.infoLog += '☒No IMDB result was found. \n';
@@ -190,44 +204,24 @@ const tmdbApi = async (filename, api_key, axios) => {
 };
 
 // eslint-disable-next-line consistent-return
-const parseArrResponse = async (body, filePath, arr) => {
+const parseArrResponse = (body, filePath, arr) => {
   // eslint-disable-next-line default-case
   switch (arr) {
     case 'radarr':
-      // filePath = file
-      for (let i = 0; i < body.length; i += 1) {
-        if (body[i].movieFile) {
-          if (body[i].movieFile.relativePath) {
-            if (body[i].movieFile.relativePath === filePath) {
-              return body[i];
-            }
-          }
-        }
-      }
-      break;
+      return body.movie;
     case 'sonarr':
-      // filePath = directory the file is in
-      for (let i = 0; i < body.length; i += 1) {
-        if (body[i].path) {
-          const sonarrTemp = body[i].path.replace(/\\/g, '/').split('/');
-          const sonarrFolder = sonarrTemp[sonarrTemp.length - 1];
-          const tdarrTemp = filePath.split('/');
-          const tdarrFolder = tdarrTemp[tdarrTemp.length - 2];
-          if (sonarrFolder === tdarrFolder) {
-            return body[i];
-          }
-        }
-      }
+      return body.series;
   }
 };
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // eslint-disable-next-line import/no-unresolved
   const axios = require('axios').default;
+
   response.container = `.${file.container}`;
   let prio = ['radarr', 'sonarr'];
   let radarrResult = null;
@@ -240,44 +234,56 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  for (let i = 0; i < prio.length; i += 1) {
+  const fileNameEncoded = encodeURIComponent(file.meta.FileName);
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const arr of prio) {
     let imdbId;
     // eslint-disable-next-line default-case
-    switch (prio[i]) {
+    switch (arr) {
       case 'radarr':
         if (tmdbResult) break;
         if (inputs.radarr_api_key) {
-          radarrResult = await parseArrResponse(
-            await axios.get(`http://${inputs.radarr_url}/api/v3/movie?apiKey=${inputs.radarr_api_key}`)
+          radarrResult = parseArrResponse(
+            await axios
+              .get(
+                `http://${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
+              )
               .then((resp) => resp.data),
-            file.meta.FileName, 'radarr',
+            fileNameEncoded,
+            'radarr',
           );
 
           if (radarrResult) {
             imdbId = radarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Radarr \n`;
+            // eslint-disable-next-line import/no-unresolved
+            const languages = require('@cospired/i18n-iso-languages');
+            tmdbResult = { original_language: languages.getAlpha2Code(radarrResult.originalLanguage.name, 'en') };
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Radarr \n';
-            imdbId = file.meta.FileName;
+            response.infoLog += "Couldn't grab ID from Radarr \n";
+            imdbId = fileNameEncoded;
           }
-          tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
         }
         break;
       case 'sonarr':
         if (tmdbResult) break;
         if (inputs.sonarr_api_key) {
-          sonarrResult = await parseArrResponse(
-            await axios.get(`http://${inputs.sonarr_url}/api/series?apikey=${inputs.sonarr_api_key}`)
+          sonarrResult = parseArrResponse(
+            await axios.get(
+              `http://${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
+            )
               .then((resp) => resp.data),
-            file.meta.Directory, 'sonarr',
+            file.meta.Directory,
+            'sonarr',
           );
 
           if (sonarrResult) {
             imdbId = sonarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Sonarr \n`;
           } else {
-            response.infoLog += 'Couldn\'t grab ID from Sonarr \n';
-            imdbId = file.meta.FileName;
+            response.infoLog += "Couldn't grab ID from Sonarr \n";
+            imdbId = fileNameEncoded;
           }
           tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
         }
@@ -285,21 +291,29 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (tmdbResult) {
-    const tracks = processStreams(tmdbResult, file, inputs.user_langs ? inputs.user_langs.split(',') : '');
+    const tracks = processStreams(
+      tmdbResult,
+      file,
+      inputs.user_langs ? inputs.user_langs.split(',') : '',
+    );
 
     if (tracks.remove.length > 0) {
       if (tracks.keep.length > 0) {
-        response.infoLog += `☑Removing tracks with languages: ${tracks.remLangs.slice(0, -2)}. \n`;
+        response.infoLog += `☑Removing tracks with languages: ${tracks.remLangs.slice(
+          0,
+          -2,
+        )}. \n`;
         response.processFile = true;
         response.infoLog += '\n';
       } else {
-        response.infoLog += '☒Cancelling plugin otherwise all audio tracks would be removed. \n';
+        response.infoLog
+          += '☒Cancelling plugin otherwise all audio tracks would be removed. \n';
       }
     } else {
       response.infoLog += '☒No audio tracks to be removed. \n';
     }
   } else {
-    response.infoLog += '☒Couldn\'t find the IMDB id of this file. Skipping. \n';
+    response.infoLog += "☒Couldn't find the IMDB id of this file. Skipping. \n";
   }
   return response;
 };
