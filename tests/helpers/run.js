@@ -16,8 +16,10 @@ const stackLog = (err) => {
 };
 
 const run = async (tests) => {
-  try {
-    for (let i = 0; i < tests.length; i += 1) {
+  let errorsEncountered = false;
+
+  for (let i = 0; i < tests.length; i += 1) {
+    try {
       // eslint-disable-next-line no-console
       console.log(`[${os.platform()}] ${scriptName}: test ${i}`);
       const test = tests[i];
@@ -69,10 +71,14 @@ const run = async (tests) => {
           chai.assert.deepEqual(testOutput, expectedOutput);
         }
       }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      stackLog(err);
+      errorsEncountered = true;
     }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    stackLog(err);
+  }
+
+  if (errorsEncountered) {
     process.exit(1);
   }
 };
