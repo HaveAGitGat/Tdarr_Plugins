@@ -1,0 +1,53 @@
+/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+
+import {
+  IpluginDetails,
+  IpluginInputArgs,
+  IpluginOutputArgs,
+} from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+
+/* eslint-disable no-param-reassign */
+const details = ():IpluginDetails => ({
+  name: 'Remove Data Streams',
+  description: 'Remove Data Streams ',
+  style: {
+    borderColor: '#6efefc',
+  },
+  tags: 'video',
+
+  isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
+  sidebarPosition: -1,
+  icon: '',
+  inputs: [],
+  outputs: [
+    {
+      number: 1,
+      tooltip: 'Continue to next plugin',
+    },
+  ],
+});
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
+  const lib = require('../../../../../methods/lib')();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
+  args.inputs = lib.loadDefaultValues(args.inputs, details);
+
+  args.variables.ffmpegCommand.streams.forEach((stream) => {
+    if (stream.codec_type === 'data') {
+      stream.removed = true;
+    }
+  });
+
+  return {
+    outputFileObj: args.inputFileObj,
+    outputNumber: 1,
+    variables: args.variables,
+  };
+};
+export {
+  details,
+  plugin,
+};

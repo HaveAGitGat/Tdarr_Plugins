@@ -1,4 +1,4 @@
-function filterByCodec(file, mode, codecs) {
+const filterByCodec = (file, mode, codecs) => {
   try {
     // console.log(file,mode,codecs)
 
@@ -54,6 +54,6 @@ function filterByCodec(file, mode, codecs) {
     };
     return response;
   }
-}
+};
 
 module.exports = filterByCodec;
