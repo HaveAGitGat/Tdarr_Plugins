@@ -163,11 +163,11 @@ const details = () => {
     }
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
     const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
 
     var response = {
@@ -269,7 +269,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         var intChapNum = 0;
         var strChapNum = "";
 
-        for (var i = 0; i < file.meta.Duration; i += chapterlengthlong) {
+        let duration = 0;
+        if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+            duration = parseFloat(file.ffProbeData?.format?.duration)
+        } else {
+            duration = file.meta.Duration
+        }
+
+        for (var i = 0; i < duration; i += chapterlengthlong) {
             intChapNum += 1;
             strChapNum = String(intChapNum).padStart(2, '0');
 
@@ -283,7 +290,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         intChapNum += 1;
         strChapNum = String(intChapNum).padStart(2, "0");
 
-        var timeString = new Date((Math.floor(file.meta.Duration) - 1) * 1000).toISOString().substr(11, 12);
+ 
+        var timeString = new Date((Math.floor(duration) - 1) * 1000).toISOString().substr(11, 12);
 
         strChapterFile += "CHAPTER" + strChapNum + "=" + timeString + "\n";
         strChapterFile += "CHAPTER" + strChapNum + "NAME=CHAPTER " + intChapNum + "\n";

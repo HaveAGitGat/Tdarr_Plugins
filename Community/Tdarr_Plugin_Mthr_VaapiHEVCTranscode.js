@@ -41,11 +41,11 @@ const details = () => {
   }
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
     const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   var response = {
     processFile: false,
@@ -85,7 +85,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Bitrate = file size / (stream duration * .0075)
       // Calculations were made based on the formula from this site:
       // https://blog.frame.io/2017/03/06/calculate-video-bitrates/
-      duration = (file.meta.Duration !== `undefined` ? file.meta.Duration : stream.duration) * 0.0166667;
+
+      if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+          duration = parseFloat(file.ffProbeData?.format?.duration) * 0.0166667;
+      } else if(file.meta.Duration !== `undefined`){
+          duration = file.meta.Duration* 0.0166667;
+      }else{
+        duration = stream.duration * 0.0166667;
+      }
+
+
       currentBitrate = ~~(file.file_size / (duration * 0.0075));
       targetBitrate = ~~(currentBitrate / 2);
       minimumBitrate = ~~(targetBitrate * 0.7);

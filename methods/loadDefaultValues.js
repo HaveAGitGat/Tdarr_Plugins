@@ -4,7 +4,9 @@ const loadDefaultValues = (inputs, details) => {
   if (!inputs) {
     inputs = {};
   }
-  const defaultInputs = details().Inputs;
+
+  const dets = details();
+  const defaultInputs = dets.Inputs || dets.inputs || [];
   for (let i = 0; i < defaultInputs.length; i += 1) {
     if (typeof inputs[defaultInputs[i].name] === 'string') {
       inputs[defaultInputs[i].name] = inputs[defaultInputs[i].name].trim();

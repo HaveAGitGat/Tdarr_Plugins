@@ -17,7 +17,7 @@ const details = () => ({
       },
       tooltip:
         `Enter the upper bound % size for the new file. For example, if '110' is entered, 
-        then if the new file size is 11% larger than the original, an error will be given.`,
+        then if the new file size is greater than 110% the size of the original, an error will be given.`,
     },
     {
       name: 'lowerBound',
@@ -35,7 +35,7 @@ const details = () => ({
 
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // Must return this object at some point in the function else plugin will fail.
   const response = {
