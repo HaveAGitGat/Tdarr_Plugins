@@ -60,5 +60,8 @@ jobs:
     - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
 
     - uses: stefanzweifel/git-auto-commit-action@v5
+      if: ${{ github.event.pull_request.head.repo.full_name == 'org/repo' }}
       with:
         commit_message: Apply auto-build changes
+
+    - run: (git diff --quiet HEAD -- 2>/dev/null && echo "No uncommitted changes" || (echo "Error: Uncommitted changes found." && exit 1))
