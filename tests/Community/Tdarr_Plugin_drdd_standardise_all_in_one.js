@@ -20,9 +20,7 @@ const tests = [
         + '• Original Bitrate: 1517\n'
         + '• Target Bitrate: 1517\n'
         + '• Minimum Bitrate: 1061\n'
-        + '• Maximum Bitrate: 1972\n'
-        + '\n'
-        + '☑ No subtitle processing necessary',
+        + '• Maximum Bitrate: 1972\n',
       processFile: true,
       preset: ',-map 0 -map -0:d -c:v libx265 -b:v 1517k -minrate 1061k -maxrate 1972k -bufsize 1517k -c:a copy -c:a:0 ac3 -c:s copy -max_muxing_queue_size 4096',
       reQueueAfter: false,
@@ -47,9 +45,7 @@ const tests = [
         + '• Original Bitrate: 1517\n'
         + '• Target Bitrate: 1517\n'
         + '• Minimum Bitrate: 1061\n'
-        + '• Maximum Bitrate: 1972\n'
-        + '\n'
-        + '☑ No subtitle processing necessary',
+        + '• Maximum Bitrate: 1972\n',
       processFile: true,
       preset: '-c:v h264_cuvid,-map 0 -map -0:d -c:v hevc_nvenc -cq:v 19 -b:v 1517k -minrate 1061k -maxrate 1972k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:a:0 ac3 -c:s copy -max_muxing_queue_size 4096',
       reQueueAfter: false,
@@ -62,6 +58,7 @@ const tests = [
       inputs: {
         nvenc: 'false',
         qsv: 'true',
+        wanted_subtitle_languages: 'eng,fre',
       },
       otherArguments: {},
     },
@@ -87,7 +84,9 @@ const tests = [
     input: {
       file: _.cloneDeep(require('../sampleData/media/sampleH265_1.json')),
       librarySettings: {},
-      inputs: {},
+      inputs: {
+        wanted_subtitle_languages: 'eng,fre',
+      },
       otherArguments: {},
     },
     output: {
@@ -107,4 +106,4 @@ const tests = [
   },
 ];
 
-run(tests);
+void run(tests);

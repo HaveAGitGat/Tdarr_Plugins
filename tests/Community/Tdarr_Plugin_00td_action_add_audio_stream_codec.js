@@ -11,7 +11,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -ac 2',
+      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 aac -ac 2 -max_muxing_queue_size 9999',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: false,
@@ -32,7 +32,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 eac3 -ac 2',
+      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 eac3 -ac 2 -max_muxing_queue_size 9999',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: false,
@@ -54,7 +54,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 eac3 -ac 6',
+      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 eac3 -ac 6 -max_muxing_queue_size 9999',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: false,
@@ -77,7 +77,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 eac3 -ac 6',
+      preset: ',-map 0:v -map 0:1 -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 eac3 -ac 6 -max_muxing_queue_size 9999',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: false,
@@ -89,4 +89,4 @@ const tests = [
   },
 ];
 
-run(tests);
+void run(tests);

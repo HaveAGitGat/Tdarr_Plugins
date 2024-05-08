@@ -69,13 +69,14 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
   // load default plugin inputs
   inputs = lib.loadDefaultValues(inputs, details);
 
   // Only 'require' dependencies within this function or other functions. Do not require in the top scope.
+  // eslint-disable-next-line  @typescript-eslint/no-unused-vars
   const importFresh = require('import-fresh');
 
   // Must return following object at some point in the function else plugin will fail.

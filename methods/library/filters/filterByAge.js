@@ -1,4 +1,4 @@
-function filterByAge(file, ageCutOff_Seconds, type) {
+const filterByAge = (file, ageCutOff_Seconds, type) => {
   try {
     const timeNow = new Date();
     const dateCreated = new Date(file.statSync.birthtime);
@@ -24,6 +24,6 @@ function filterByAge(file, ageCutOff_Seconds, type) {
     };
     return response;
   }
-}
+};
 
 module.exports = filterByAge;
