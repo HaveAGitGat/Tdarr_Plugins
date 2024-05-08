@@ -23,7 +23,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Variable to check using templating. \n      \\n\n      \\n\n      https://docs.tdarr.io/docs/plugins/flow-plugins/basics#plugin-variable-templating\n      \n      \\n\n      \\n\n      For example , \n      \n      \\nExample\\n\n      {{{args.librarySettings._id}}}\n      \n      \\nExample\\n\n      {{{args.inputFileObj._id}}}\n\n      \\nExample\\n\n      {{{args.userVariables.library.test}}}\n\n      \\nExample\\n\n      {{{args.userVariables.global.test\n\n      \\nExample\\n\n      {{{args.inputFileObj.mediaInfo.track.0.IsStreamable}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.format.nb_streams}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.streams.1.codec_name}}}\n      ",
+            tooltip: "Variable to check using templating. \n      \\n\n      \\n\n      https://docs.tdarr.io/docs/plugins/flow-plugins/basics#plugin-variable-templating\n      \n      \\n\n      \\n\n      For example , \n      \n      \\nExample\\n\n      {{{args.librarySettings._id}}}\n      \n      \\nExample\\n\n      {{{args.inputFileObj._id}}}\n\n      \\nExample\\n\n      {{{args.userVariables.library.test}}}\n\n      \\nExample\\n\n      {{{args.userVariables.global.test}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.mediaInfo.track.0.IsStreamable}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.format.nb_streams}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.streams.1.codec_name}}}\n      ",
         },
         {
             label: 'Condition',
