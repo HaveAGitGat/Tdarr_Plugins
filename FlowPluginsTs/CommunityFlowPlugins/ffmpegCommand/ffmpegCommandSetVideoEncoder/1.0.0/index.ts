@@ -138,7 +138,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
     const stream = args.variables.ffmpegCommand.streams[i];
 
-    if (stream.codec_type === 'video') {
+    const image_streams = ['mjpeg', 'png', 'gif'];
+    if (stream.codec_type === 'video' || image_streams.includes(stream.codec_name)) {
       const targetCodec = String(args.inputs.outputCodec);
       const ffmpegPreset = String(args.inputs.ffmpegPreset);
       const ffmpegQuality = String(args.inputs.ffmpegQuality);

@@ -159,8 +159,8 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
-    var _a, _b; var image_streams = ["mjpeg", "png", "gif"];
+    var lib, hardwareDecoding, hardwareType, i, stream, image_streams, targetCodec, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
+    var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
@@ -175,7 +175,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 if (!(i < args.variables.ffmpegCommand.streams.length)) return [3 /*break*/, 4];
                 stream = args.variables.ffmpegCommand.streams[i];
-                if (!(stream.codec_type === 'video') || image_streams.includes(stream.codec_name)) return [3 /*break*/, 3];
+                image_streams = ['mjpeg', 'png', 'gif'];
+                if (!(stream.codec_type === 'video' || image_streams.includes(stream.codec_name))) return [3 /*break*/, 3];
                 targetCodec = String(args.inputs.outputCodec);
                 ffmpegPreset = String(args.inputs.ffmpegPreset);
                 ffmpegQuality = String(args.inputs.ffmpegQuality);
