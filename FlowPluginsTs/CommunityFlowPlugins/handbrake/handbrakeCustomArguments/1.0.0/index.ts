@@ -22,6 +22,7 @@ const details = ():IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Custom Arguments',
       name: 'customArguments',
       type: 'string',
       defaultValue: '-Z "Fast 1080p30" --all-subtitles',
@@ -31,6 +32,7 @@ const details = ():IpluginDetails => ({
       tooltip: 'Specify HandBrake arguments',
     },
     {
+      label: 'JSON Preset',
       name: 'jsonPreset',
       type: 'string',
       defaultValue: '',
@@ -40,6 +42,7 @@ const details = ():IpluginDetails => ({
       tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
     },
     {
+      label: 'Container',
       name: 'container',
       type: 'string',
       defaultValue: 'mkv',
@@ -56,7 +59,7 @@ const details = ():IpluginDetails => ({
           'mpeg',
         ],
       },
-      tooltip: 'Specify HandBrake arguments',
+      tooltip: 'Specify output container',
     },
   ],
   outputs: [

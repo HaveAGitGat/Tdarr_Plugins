@@ -23,6 +23,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Type',
       name: 'type',
       type: 'string',
       defaultValue: 'quick',
