@@ -35,7 +35,13 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
     const stream = args.variables.ffmpegCommand.streams[i];
     if (stream.codec_type === 'video') {
-      stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le', '-profile:v:{outputTypeIndex}', 'main10');
+      stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
+
+      if (stream.outputArgs.some((row) => row.includes('qsv'))) {
+        stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
+      } else {
+        stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');
+      }
     }
   }
 

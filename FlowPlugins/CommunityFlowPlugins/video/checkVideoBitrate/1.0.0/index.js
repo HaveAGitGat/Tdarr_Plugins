@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Unit',
             name: 'unit',
             type: 'string',
             defaultValue: 'kbps',
@@ -30,6 +31,7 @@ var details = function () { return ({
             tooltip: 'Specify the unit to use',
         },
         {
+            label: 'Greater Than',
             name: 'greaterThan',
             type: 'number',
             defaultValue: '0',
@@ -39,6 +41,7 @@ var details = function () { return ({
             tooltip: 'Specify lower bound',
         },
         {
+            label: 'Less Than',
             name: 'lessThan',
             type: 'number',
             defaultValue: '10000',
@@ -80,9 +83,10 @@ var plugin = function (args) {
     var hasVideoBitrate = false;
     if ((_b = (_a = args.inputFileObj) === null || _a === void 0 ? void 0 : _a.mediaInfo) === null || _b === void 0 ? void 0 : _b.track) {
         args.inputFileObj.mediaInfo.track.forEach(function (stream) {
-            if (stream['@type'] === 'video') {
+            if (stream['@type'].toLowerCase() === 'video') {
                 if (stream.BitRate) {
                     hasVideoBitrate = true;
+                    args.jobLog("Found video bitrate: ".concat(stream.BitRate));
                 }
                 if (stream.BitRate >= greaterThanBits && stream.BitRate <= lessThanBits) {
                     isWithinRange = true;

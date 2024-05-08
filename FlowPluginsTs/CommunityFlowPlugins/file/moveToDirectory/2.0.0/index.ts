@@ -1,5 +1,6 @@
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileName, getSubStem, moveFileAndValidate,
+  getContainer, getFileName, getSubStem,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -24,6 +25,7 @@ const details = ():IpluginDetails => ({
   icon: 'faArrowRight',
   inputs: [
     {
+      label: 'Output Directory',
       name: 'outputDirectory',
       type: 'string',
       defaultValue: '',
@@ -33,15 +35,12 @@ const details = ():IpluginDetails => ({
       tooltip: 'Specify ouput directory',
     },
     {
+      label: 'Keep Relative Path',
       name: 'keepRelativePath',
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to keep the relative path',
     },
@@ -113,11 +112,11 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   args.deps.fsextra.ensureDirSync(outputPath);
 
-  await moveFileAndValidate({
-    inputPath: args.inputFileObj._id,
-    outputPath: ouputFilePath,
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: args.inputFileObj._id,
+    destinationPath: ouputFilePath,
     args,
-
   });
 
   return {

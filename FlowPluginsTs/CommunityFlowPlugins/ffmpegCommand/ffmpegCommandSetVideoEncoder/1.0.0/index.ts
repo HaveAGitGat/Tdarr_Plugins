@@ -22,6 +22,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Output Codec',
       name: 'outputCodec',
       type: 'string',
       defaultValue: 'hevc',
@@ -32,11 +33,13 @@ const details = (): IpluginDetails => ({
           // 'vp9',
           'h264',
           // 'vp8',
+          'av1',
         ],
       },
       tooltip: 'Specify codec of the output file',
     },
     {
+      label: 'FFmpeg Preset',
       name: 'ffmpegPreset',
       type: 'string',
       defaultValue: 'fast',
@@ -57,6 +60,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify ffmpeg preset',
     },
     {
+      label: 'FFmpeg Quality',
       name: 'ffmpegQuality',
       type: 'number',
       defaultValue: '25',
@@ -66,41 +70,49 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify ffmpeg quality',
     },
     {
+      label: 'Hardware Encoding',
       name: 'hardwareEncoding',
       type: 'boolean',
       defaultValue: 'true',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to use hardware encoding if available',
     },
     {
+      label: 'Hardware Type',
+      name: 'hardwareType',
+      type: 'string',
+      defaultValue: 'auto',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'auto',
+          'nvenc',
+          'qsv',
+          'vaapi',
+          'videotoolbox',
+        ],
+      },
+      tooltip: 'Specify codec of the output file',
+    },
+    {
+      label: 'Hardware Decoding',
       name: 'hardwareDecoding',
       type: 'boolean',
       defaultValue: 'true',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to use hardware decoding if available',
     },
     {
+      label: 'Force Encoding',
       name: 'forceEncoding',
       type: 'boolean',
-      defaultValue: 'false',
+      defaultValue: 'true',
       inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to force encoding if stream already has the target codec',
     },
@@ -120,6 +132,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const hardwareDecoding = args.inputs.hardwareDecoding === true;
+  const hardwareType = String(args.inputs.hardwareType);
   args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
 
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
@@ -142,6 +155,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         const encoderProperties = await getEncoder({
           targetCodec,
           hardwareEncoding: hardwarEncoding,
+          hardwareType,
           args,
         });
 
@@ -153,7 +167,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           stream.outputArgs.push('-crf', ffmpegQuality);
         }
 
-        if (ffmpegPreset) {
+        if (targetCodec !== 'av1' && ffmpegPreset) {
           stream.outputArgs.push('-preset', ffmpegPreset);
         }
 

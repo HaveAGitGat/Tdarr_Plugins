@@ -136,8 +136,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // If Container .ts or .avi set genpts to fix unknown timestamp
-  if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi') {
+  // If Container .ts|.avi|.mpg|.mpeg set genpts to fix unknown timestamp
+  if (
+    file.container.toLowerCase() === 'ts'
+     || file.container.toLowerCase() === 'avi'
+  || file.container.toLowerCase() === 'mpg'
+  || file.container.toLowerCase() === 'mpeg'
+  ) {
     genpts = '-fflags +genpts';
   }
 

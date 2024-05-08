@@ -88,20 +88,6 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
   const container = getContainer(args.inputFileObj._id);
   const cacheFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
-  const otherArguments = {
-    handbrakePath: args.handbrakePath,
-    ffmpegPath: args.ffmpegPath,
-    mkvpropeditPath: args.mkvpropeditPath,
-    originalLibraryFile: args.originalLibraryFile,
-    nodeHardwareType: args.nodeHardwareType,
-    pluginCycle: 0,
-    workerType: args.workerType,
-    version: args.config.version,
-    platform_arch_isdocker: args.platform_arch_isdocker,
-    cacheFilePath,
-    job: args.job,
-  };
-
   const scanTypes = getScanTypes([pluginSrcStr]);
 
   const pluginInputFileObj = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
@@ -113,6 +99,30 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
     },
     scanTypes,
   });
+
+  const originalLibraryFile = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
+    file: {
+      _id: args.originalLibraryFile._id,
+      file: args.originalLibraryFile.file,
+      DB: args.originalLibraryFile.DB,
+      footprintId: args.originalLibraryFile.footprintId,
+    },
+    scanTypes,
+  });
+
+  const otherArguments = {
+    handbrakePath: args.handbrakePath,
+    ffmpegPath: args.ffmpegPath,
+    mkvpropeditPath: args.mkvpropeditPath,
+    originalLibraryFile,
+    nodeHardwareType: args.nodeHardwareType,
+    pluginCycle: 0,
+    workerType: args.workerType,
+    version: args.config.version,
+    platform_arch_isdocker: args.platform_arch_isdocker,
+    cacheFilePath,
+    job: args.job,
+  };
 
   const result = await classicPlugin.plugin(
     pluginInputFileObj,

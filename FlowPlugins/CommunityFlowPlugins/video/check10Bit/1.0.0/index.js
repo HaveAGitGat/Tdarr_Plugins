@@ -37,7 +37,9 @@ var plugin = function (args) {
     if (Array.isArray((_b = (_a = args === null || args === void 0 ? void 0 : args.inputFileObj) === null || _a === void 0 ? void 0 : _a.ffProbeData) === null || _b === void 0 ? void 0 : _b.streams)) {
         for (var i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
             var stream = args.inputFileObj.ffProbeData.streams[i];
-            if (stream.codec_type === 'video' && stream.bits_per_raw_sample === 10) {
+            if (stream.codec_type === 'video'
+                && (stream.bits_per_raw_sample === 10
+                    || stream.pix_fmt === 'yuv420p10le')) {
                 is10Bit = true;
             }
         }

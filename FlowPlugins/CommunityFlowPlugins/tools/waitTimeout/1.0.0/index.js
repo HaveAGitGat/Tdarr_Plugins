@@ -52,6 +52,7 @@ var details = function () { return ({
     icon: 'faClock',
     inputs: [
         {
+            label: 'Amount',
             name: 'amount',
             type: 'string',
             defaultValue: '1',
@@ -61,6 +62,7 @@ var details = function () { return ({
             tooltip: 'Specify the amount of time to wait',
         },
         {
+            label: 'Unit',
             name: 'unit',
             type: 'string',
             defaultValue: 'seconds',

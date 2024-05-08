@@ -40,7 +40,7 @@ exports.runClassicPlugin = void 0;
 var fs_1 = require("fs");
 var fileUtils_1 = require("./fileUtils");
 var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, void 0, function () {
-    var path, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, pluginSrcStr, res, container, cacheFilePath, otherArguments, scanTypes, pluginInputFileObj, result;
+    var path, pluginSourceId, parts, pluginSource, pluginId, relativePluginPath, absolutePath, classicPlugin, pluginSrcStr, res, container, cacheFilePath, scanTypes, pluginInputFileObj, originalLibraryFile, otherArguments, result;
     var _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
@@ -98,19 +98,6 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
             case 9:
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 cacheFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
-                otherArguments = {
-                    handbrakePath: args.handbrakePath,
-                    ffmpegPath: args.ffmpegPath,
-                    mkvpropeditPath: args.mkvpropeditPath,
-                    originalLibraryFile: args.originalLibraryFile,
-                    nodeHardwareType: args.nodeHardwareType,
-                    pluginCycle: 0,
-                    workerType: args.workerType,
-                    version: args.config.version,
-                    platform_arch_isdocker: args.platform_arch_isdocker,
-                    cacheFilePath: cacheFilePath,
-                    job: args.job,
-                };
                 scanTypes = (0, fileUtils_1.getScanTypes)([pluginSrcStr]);
                 return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/scan-individual-file', {
                         file: {
@@ -123,8 +110,32 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
                     })];
             case 10:
                 pluginInputFileObj = _b.sent();
-                return [4 /*yield*/, classicPlugin.plugin(pluginInputFileObj, args.librarySettings, args.inputs, otherArguments)];
+                return [4 /*yield*/, args.deps.axiosMiddleware('api/v2/scan-individual-file', {
+                        file: {
+                            _id: args.originalLibraryFile._id,
+                            file: args.originalLibraryFile.file,
+                            DB: args.originalLibraryFile.DB,
+                            footprintId: args.originalLibraryFile.footprintId,
+                        },
+                        scanTypes: scanTypes,
+                    })];
             case 11:
+                originalLibraryFile = _b.sent();
+                otherArguments = {
+                    handbrakePath: args.handbrakePath,
+                    ffmpegPath: args.ffmpegPath,
+                    mkvpropeditPath: args.mkvpropeditPath,
+                    originalLibraryFile: originalLibraryFile,
+                    nodeHardwareType: args.nodeHardwareType,
+                    pluginCycle: 0,
+                    workerType: args.workerType,
+                    version: args.config.version,
+                    platform_arch_isdocker: args.platform_arch_isdocker,
+                    cacheFilePath: cacheFilePath,
+                    job: args.job,
+                };
+                return [4 /*yield*/, classicPlugin.plugin(pluginInputFileObj, args.librarySettings, args.inputs, otherArguments)];
+            case 12:
                 result = _b.sent();
                 if (((_a = result === null || result === void 0 ? void 0 : result.file) === null || _a === void 0 ? void 0 : _a._id) && args.inputFileObj._id !== result.file._id) {
                     // eslint-disable-next-line no-param-reassign
