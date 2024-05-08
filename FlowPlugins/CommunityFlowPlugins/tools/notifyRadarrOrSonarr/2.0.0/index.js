@@ -91,11 +91,11 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'Radarr or Sonnar notified',
+            tooltip: 'Radarr or Sonarr notified',
         },
         {
             number: 2,
-            tooltip: 'Radarr or Sonnar do not know this file',
+            tooltip: 'Radarr or Sonarr do not know this file',
         },
     ],
 }); };
