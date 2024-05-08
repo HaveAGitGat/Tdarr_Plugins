@@ -1,5 +1,7 @@
-import { promises as fs } from 'fs';
-import { getContainer, getFileName, getSubStem } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
+import {
+  getContainer, getFileName, getSubStem,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -17,10 +19,13 @@ const details = ():IpluginDetails => ({
   tags: '',
 
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faArrowRight',
   inputs: [
     {
+      label: 'Output Directory',
       name: 'outputDirectory',
       type: 'string',
       defaultValue: '',
@@ -30,15 +35,12 @@ const details = ():IpluginDetails => ({
       tooltip: 'Specify ouput directory',
     },
     {
+      label: 'Keep Relative Path',
       name: 'keepRelativePath',
       type: 'boolean',
       defaultValue: 'false',
       inputUI: {
-        type: 'text',
-        options: [
-          'false',
-          'true',
-        ],
+        type: 'switch',
       },
       tooltip: 'Specify whether to keep the relative path',
     },
@@ -96,8 +98,26 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   args.jobLog(`Input path: ${args.inputFileObj._id}`);
   args.jobLog(`Output path: ${ouputFilePath}`);
 
+  if (args.inputFileObj._id === ouputFilePath) {
+    args.jobLog('Input and output path are the same, skipping move.');
+
+    return {
+      outputFileObj: {
+        _id: args.inputFileObj._id,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
+
   args.deps.fsextra.ensureDirSync(outputPath);
-  await fs.rename(args.inputFileObj._id, ouputFilePath);
+
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: args.inputFileObj._id,
+    destinationPath: ouputFilePath,
+    args,
+  });
 
   return {
     outputFileObj: {

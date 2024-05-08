@@ -35,17 +35,24 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
-    description: 'Replace the original file',
+    description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
     style: {
         borderColor: 'green',
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faArrowRight',
     inputs: [],
@@ -57,16 +64,9 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getNewPath = function (originalPath, tempPath) {
-    var tempPathParts = tempPath.split('.');
-    var container = tempPathParts[tempPathParts.length - 1];
-    var originalPathParts = originalPath.split('.');
-    originalPathParts[originalPathParts.length - 1] = container;
-    return originalPathParts.join('.');
-};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var fs, lib, currentPath, newPath, newPathTmp;
+    var fs, lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -85,7 +85,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 args.jobLog('File has changed, replacing original file');
                 currentPath = args.inputFileObj._id;
-                newPath = getNewPath(args.originalLibraryFile._id, currentPath);
+                orignalFolder = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
+                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                newPath = "".concat(orignalFolder, "/").concat(fileName, ".").concat(container);
                 newPathTmp = "".concat(newPath, ".tmp");
                 args.jobLog(JSON.stringify({
                     currentPath: currentPath,
@@ -95,19 +98,31 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 1:
                 _a.sent();
-                // delete temp file
-                if (fs.existsSync(newPath)) {
-                    fs.unlinkSync(newPath);
-                }
-                fs.renameSync(currentPath, newPathTmp);
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
+                        sourcePath: currentPath,
+                        destinationPath: newPathTmp,
+                        args: args,
+                    })];
+            case 2:
+                _a.sent();
                 // delete original file
-                if (fs.existsSync(args.originalLibraryFile._id)) {
+                if (fs.existsSync(args.originalLibraryFile._id)
+                    && args.originalLibraryFile._id !== currentPath) {
+                    args.jobLog("Deleting original file:".concat(args.originalLibraryFile._id));
                     fs.unlinkSync(args.originalLibraryFile._id);
                 }
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
-            case 2:
+            case 3:
                 _a.sent();
-                fs.renameSync(newPathTmp, newPath);
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
+                        sourcePath: newPathTmp,
+                        destinationPath: newPath,
+                        args: args,
+                    })];
+            case 4:
+                _a.sent();
                 return [2 /*return*/, {
                         outputFileObj: {
                             _id: newPath,

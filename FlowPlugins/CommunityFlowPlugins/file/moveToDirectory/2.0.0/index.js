@@ -40,7 +40,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fs_1 = require("fs");
+var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var normJoinPath_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/normJoinPath"));
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
@@ -52,10 +52,13 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faArrowRight',
     inputs: [
         {
+            label: 'Output Directory',
             name: 'outputDirectory',
             type: 'string',
             defaultValue: '',
@@ -65,15 +68,12 @@ var details = function () { return ({
             tooltip: 'Specify ouput directory',
         },
         {
+            label: 'Keep Relative Path',
             name: 'keepRelativePath',
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'text',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to keep the relative path',
         },
@@ -125,8 +125,23 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 args.jobLog("Input path: ".concat(args.inputFileObj._id));
                 args.jobLog("Output path: ".concat(ouputFilePath));
+                if (args.inputFileObj._id === ouputFilePath) {
+                    args.jobLog('Input and output path are the same, skipping move.');
+                    return [2 /*return*/, {
+                            outputFileObj: {
+                                _id: args.inputFileObj._id,
+                            },
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
                 args.deps.fsextra.ensureDirSync(outputPath);
-                return [4 /*yield*/, fs_1.promises.rename(args.inputFileObj._id, ouputFilePath)];
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
+                        sourcePath: args.inputFileObj._id,
+                        destinationPath: ouputFilePath,
+                        args: args,
+                    })];
             case 1:
                 _a.sent();
                 return [2 /*return*/, {

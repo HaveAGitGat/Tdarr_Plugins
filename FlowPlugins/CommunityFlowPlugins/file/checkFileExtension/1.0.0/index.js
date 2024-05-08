@@ -11,10 +11,13 @@ var details = function () { return ({
     },
     tags: 'video',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Extensions',
             name: 'extensions',
             type: 'string',
             defaultValue: 'mkv,mp4',
@@ -42,8 +45,8 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var extensions = String(args.inputs.extensions);
-    var extensionArray = extensions.trim().split(',');
-    var extension = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+    var extensionArray = extensions.trim().split(',').map(function (row) { return row.toLowerCase(); });
+    var extension = (0, fileUtils_1.getContainer)(args.inputFileObj._id).toLowerCase();
     var extensionMatch = false;
     if (extensionArray.includes(extension)) {
         extensionMatch = true;

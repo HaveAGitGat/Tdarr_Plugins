@@ -4,16 +4,38 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Custom Arguments',
-    description: 'Custom Arguments',
+    description: 'Set FFmpeg custome input and output arguments',
     style: {
         borderColor: '#6efefc',
-        opacity: 0.5,
     },
     tags: 'video',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
-    inputs: [],
+    inputs: [
+        {
+            label: 'Input Arguments',
+            name: 'inputArguments',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: 'Specify input arguments',
+        },
+        {
+            label: 'Output Arguments',
+            name: 'outputArguments',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: 'Specify output arguments',
+        },
+    ],
     outputs: [
         {
             number: 1,
@@ -24,9 +46,18 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
+    var _a, _b;
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
+    var inputArguments = String(args.inputs.inputArguments);
+    var outputArguments = String(args.inputs.outputArguments);
+    if (inputArguments) {
+        (_a = args.variables.ffmpegCommand.overallInputArguments).push.apply(_a, inputArguments.split(' '));
+    }
+    if (outputArguments) {
+        (_b = args.variables.ffmpegCommand.overallOuputArguments).push.apply(_b, outputArguments.split(' '));
+    }
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,

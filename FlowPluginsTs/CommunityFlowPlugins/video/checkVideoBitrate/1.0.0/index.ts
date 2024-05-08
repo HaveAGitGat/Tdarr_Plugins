@@ -13,10 +13,13 @@ const details = (): IpluginDetails => ({
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Unit',
       name: 'unit',
       type: 'string',
       defaultValue: 'kbps',
@@ -31,6 +34,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify the unit to use',
     },
     {
+      label: 'Greater Than',
       name: 'greaterThan',
       type: 'number',
       defaultValue: '0',
@@ -40,6 +44,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify lower bound',
     },
     {
+      label: 'Less Than',
       name: 'lessThan',
       type: 'number',
       defaultValue: '10000',
@@ -80,14 +85,24 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     lessThanBits *= 1000000;
   }
 
+  let hasVideoBitrate = false;
+
   if (args.inputFileObj?.mediaInfo?.track) {
     args.inputFileObj.mediaInfo.track.forEach((stream) => {
-      if (stream['@type'] === 'video') {
+      if (stream['@type'].toLowerCase() === 'video') {
+        if (stream.BitRate) {
+          hasVideoBitrate = true;
+          args.jobLog(`Found video bitrate: ${stream.BitRate}`);
+        }
         if (stream.BitRate >= greaterThanBits && stream.BitRate <= lessThanBits) {
           isWithinRange = true;
         }
       }
     });
+  }
+
+  if (!hasVideoBitrate) {
+    throw new Error('Video bitrate not found');
   }
 
   return {

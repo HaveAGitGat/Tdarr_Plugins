@@ -48,10 +48,13 @@ var details = function () { return ({
     },
     tags: 'video',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
         {
+            label: 'i',
             name: 'i',
             type: 'string',
             defaultValue: '-23.0',
@@ -61,6 +64,7 @@ var details = function () { return ({
             tooltip: "\"i\" value used in loudnorm pass \\n\n              defaults to -23.0",
         },
         {
+            label: 'lra',
             name: 'lra',
             type: 'string',
             defaultValue: '7.0',
@@ -70,6 +74,7 @@ var details = function () { return ({
             tooltip: "Desired lra value. \\n Defaults to 7.0  \n            ",
         },
         {
+            label: 'tp',
             name: 'tp',
             type: 'string',
             defaultValue: '-2.0',
@@ -100,7 +105,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lra = args.inputs.lra;
                 tp = args.inputs.tp;
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 normArgs1 = [
                     '-i',
                     args.inputFileObj._id,
@@ -146,9 +151,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 parts.shift();
                 infoLine = parts.join(']');
                 infoLine = infoLine.split('\r\n').join('').split('\t').join('');
-                console.log({
-                    infoLine: infoLine,
-                });
                 loudNormValues = JSON.parse(infoLine);
                 args.jobLog("Loudnorm first pass values returned:  \n".concat(JSON.stringify(loudNormValues)));
                 normArgs2 = [

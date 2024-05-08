@@ -5,7 +5,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
@@ -16,10 +16,13 @@ const details = ():IpluginDetails => ({
   },
   tags: '',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
     {
+      label: 'Custom Arguments',
       name: 'customArguments',
       type: 'string',
       defaultValue: '-Z "Fast 1080p30" --all-subtitles',
@@ -29,6 +32,7 @@ const details = ():IpluginDetails => ({
       tooltip: 'Specify HandBrake arguments',
     },
     {
+      label: 'JSON Preset',
       name: 'jsonPreset',
       type: 'string',
       defaultValue: '',
@@ -38,6 +42,7 @@ const details = ():IpluginDetails => ({
       tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
     },
     {
+      label: 'Container',
       name: 'container',
       type: 'string',
       defaultValue: 'mkv',
@@ -54,7 +59,7 @@ const details = ():IpluginDetails => ({
           'mpeg',
         ],
       },
-      tooltip: 'Specify HandBrake arguments',
+      tooltip: 'Specify output container',
     },
   ],
   outputs: [
@@ -79,7 +84,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     container = getContainer(args.inputFileObj._id);
   }
 
-  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
+  const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
   const presetString = String(args.inputs.jsonPreset);
 

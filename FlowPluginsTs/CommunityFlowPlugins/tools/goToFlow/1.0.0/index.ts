@@ -9,14 +9,27 @@ const details = ():IpluginDetails => ({
   name: 'Go To Flow',
   description: 'Go to a different flow',
   style: {
-    borderColor: 'red',
-    opacity: 0.5,
+    borderColor: 'green',
   },
   tags: '',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faArrowRight',
-  inputs: [],
+  inputs: [
+    {
+      label: 'Flow ID',
+      name: 'flowId',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'dropdown',
+        options: [],
+      },
+      tooltip: 'Specify flow ID to go to',
+    },
+  ],
   outputs: [],
 });
 

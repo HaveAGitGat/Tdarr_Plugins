@@ -2,19 +2,38 @@ import { IFileObject, Istreams } from './synced/IFileObject';
 import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
-    type: 'dropdown' | 'text' | 'textarea' | 'directory',
+    // boolean inputs will default to a switch
+    type: 'dropdown' | 'text' | 'textarea' | 'directory' | 'slider' | 'switch',
     options?: string[],
-    style?:Record<string, unknown>,
+    sliderOptions?: {max: number, min: number, }
+    style?: Record<string, unknown>,
     onSelect?: {
-        'hevc': {
-          update: {
-            quality: '28',
-          },
+        [index: string]: {
+            [index: string]: string,
         }
-      },
+    },
+    displayConditions?: {
+        // if logic is 'AND' then all sets must be true for element to be displayed
+        // if logic is 'OR' then at least one set must be true for element to be displayed
+        logic: 'AND' | 'OR',
+        sets: {
+            // if logic is 'AND' then all inputs conditions must be true for set to be true
+            // if logic is 'OR' then at least one input condition must be true for set to be true
+            logic: 'OR' | 'AND',
+            inputs: {
+                // the name of the input to check
+                name: string,
+                // the value to check against
+                value: string,
+                // the condition to check against
+                condition: '===' | '!==' | '>' | '>=' | '<' | '<=' | 'includes' | 'notIncludes',
+            }[],
+        }[]
+    },
 }
 
 export interface IpluginInputs {
+    label: string,
     name: string,
     type: 'string' | 'boolean' | 'number',
     defaultValue: string,
@@ -24,13 +43,22 @@ export interface IpluginInputs {
 
 export interface IpluginDetails {
     name: string,
+    nameUI?: {
+        type: 'text' | 'textarea',
+        style?: Record<string, unknown>,
+    }
     description: string,
     style: {
         borderColor: string,
         opacity?: number,
+        borderRadius?: number | string,
+        width?: number | string,
+        height?: number | string,
+        backgroundColor?: string,
     },
     tags: string,
     isStartPlugin: boolean,
+    pType: 'start' | 'onFlowError' | '',
     sidebarPosition: number,
     icon: string,
     inputs: IpluginInputs[],
@@ -39,6 +67,7 @@ export interface IpluginDetails {
         number: number,
         tooltip: string,
     }[],
+    requiresVersion: string,
 }
 
 export interface Ilog {
@@ -67,7 +96,9 @@ export interface IffmpegCommand {
 }
 
 export interface Ivariables {
-    ffmpegCommand: IffmpegCommand
+    ffmpegCommand: IffmpegCommand,
+    flowFailed: boolean,
+    inFlow: Record<string, string>,
 }
 
 export interface IpluginOutputArgs {
@@ -75,7 +106,7 @@ export interface IpluginOutputArgs {
     outputFileObj: {
         _id: string,
     },
-    variables: Ivariables
+    variables: Ivariables,
 }
 
 export interface IpluginInputArgs {
@@ -114,8 +145,36 @@ export interface IpluginInputArgs {
         importFresh(path: string): any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axiosMiddleware: (endpoint: string, data: Record<string, unknown>) => Promise<any>,
-        requireFromString: (pluginText: string, relativePath:string) => Record<string, unknown>,
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        upath:any,
+        requireFromString: (pluginText: string, relativePath: string) => Record<string, unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        upath: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        gracefulfs: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mvdir: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ncp: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        axios: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        crudTransDBN: (collection: string, mode: string, docID: string, obj: any) => any,
+        configVars: {
+            config: {
+                serverIP: string,
+                serverPort: string,
+            }
+        }
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    installClassicPluginDeps: (deps: string[]) => Promise<any>,
+}
+
+export interface IflowTemplate {
+    name: string,
+    description: string,
+    tags: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    flowPlugins: any[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    flowEdges: any[],
 }

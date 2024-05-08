@@ -11,10 +11,13 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
         {
+            label: 'Target Codec',
             name: 'target_codec',
             type: 'string',
             defaultValue: 'hevc',

@@ -1,10 +1,10 @@
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import { runClassicPlugin } from '../../../../FlowHelpers/1.0.0/classicPlugins';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -15,10 +15,13 @@ const details = (): IpluginDetails => ({
   },
   tags: '',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
     {
+      label: 'Plugin Source ID',
       name: 'pluginSourceId',
       type: 'string',
       defaultValue: 'Community:Tdarr_Plugin_MC93_Migz1FFMPEG',
@@ -45,61 +48,14 @@ const replaceContainer = (filePath:string, container:string): string => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
-  const path = require('path');
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const pluginSourceId = String(args.inputs.pluginSourceId);
-  const parts = pluginSourceId.split(':');
-  const pluginSource = parts[0];
-  const pluginId = parts[1];
+  const outcome = await runClassicPlugin(args, 'transcode');
+  const { result, absolutePath } = outcome;
 
-  const relativePluginPath = `../../../../../${pluginSource}/${pluginId}.js`;
-  const absolutePath = path.resolve(__dirname, relativePluginPath);
-
-  let classicPlugin;
-  if (pluginSource === 'Community') {
-    classicPlugin = args.deps.importFresh(relativePluginPath);
-  } else {
-    // eslint-disable-next-line no-await-in-loop
-    const res = await args.deps.axiosMiddleware('api/v2/read-plugin', {
-      plugin: {
-        id: pluginId,
-        source: pluginSource,
-      },
-    });
-
-    classicPlugin = args.deps.requireFromString(res.pluginRaw, absolutePath);
-  }
-
-  if (classicPlugin.details().Operation === 'Filter') {
-    throw new Error(
-      `${'This plugin is meant for classic plugins that have '
-      + 'Operation: Transcode. This classic plugin has Operation: '}${classicPlugin.details().Operation}`
-      + 'Please use the Run Classic Filter Flow Plugin plugin instead.'
-      ,
-    );
-  }
-
-  const container = getContainer(args.inputFileObj._id);
-  let cacheFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
-
-  const otherArguments = {
-    handbrakePath: args.handbrakePath,
-    ffmpegPath: args.ffmpegPath,
-    mkvpropeditPath: args.mkvpropeditPath,
-    originalLibraryFile: args.originalLibraryFile,
-    nodeHardwareType: args.nodeHardwareType,
-    pluginCycle: 0,
-    workerType: args.workerType,
-    version: args.config.version,
-    platform_arch_isdocker: args.platform_arch_isdocker,
-    cacheFilePath,
-    job: args.job,
-  };
-
-  const result = await classicPlugin.plugin(args.inputFileObj, args.librarySettings, args.inputs, otherArguments);
+  let { cacheFilePath } = outcome;
 
   args.jobLog(JSON.stringify(result, null, 2));
 
@@ -154,11 +110,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const customArgs = result?.custom?.args;
   const isCustomConfig = (Array.isArray(customArgs) && customArgs.length > 0)
-    || (typeof customArgs === 'string' && customArgs.length > 0);
+    || (typeof customArgs === 'string'
+    // @ts-expect-error length
+    && customArgs.length
+     > 0);
 
   if (!isCustomConfig) {
     cacheFilePath = replaceContainer(cacheFilePath, result.container);
   } else {
+    // @ts-expect-error type
     cacheFilePath = result.custom.outputPath;
   }
 
@@ -173,6 +133,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   let cliPath = '';
 
   if (isCustomConfig) {
+    // @ts-expect-error cliPath
     cliPath = result?.custom?.cliPath;
 
     if (Array.isArray(customArgs)) {

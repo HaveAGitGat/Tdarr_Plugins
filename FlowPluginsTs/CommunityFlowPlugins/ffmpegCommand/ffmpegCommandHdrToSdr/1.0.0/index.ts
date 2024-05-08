@@ -13,6 +13,8 @@ const details = () :IpluginDetails => ({
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [],

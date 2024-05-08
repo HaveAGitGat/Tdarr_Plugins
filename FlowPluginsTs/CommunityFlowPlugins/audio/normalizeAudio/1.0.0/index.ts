@@ -1,5 +1,5 @@
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
-import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -15,10 +15,13 @@ const details = (): IpluginDetails => ({
   },
   tags: 'video',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: '',
   inputs: [
     {
+      label: 'i',
       name: 'i',
       type: 'string',
       defaultValue: '-23.0',
@@ -29,6 +32,7 @@ const details = (): IpluginDetails => ({
               defaults to -23.0`,
     },
     {
+      label: 'lra',
       name: 'lra',
       type: 'string',
       defaultValue: '7.0',
@@ -39,6 +43,7 @@ const details = (): IpluginDetails => ({
             `,
     },
     {
+      label: 'tp',
       name: 'tp',
       type: 'string',
       defaultValue: '-2.0',
@@ -69,7 +74,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { tp } = args.inputs;
 
   const container = getContainer(args.inputFileObj._id);
-  const outputFilePath = `${args.workDir}/tempFile_${new Date().getTime()}.${container}`;
+  const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
 
   const normArgs1: string[] = [
     '-i',
@@ -121,10 +126,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   parts.shift();
   let infoLine = parts.join(']');
   infoLine = infoLine.split('\r\n').join('').split('\t').join('');
-
-  console.log({
-    infoLine,
-  });
 
   const loudNormValues = JSON.parse(infoLine);
 

@@ -85,6 +85,8 @@ class CLI {
 
   lastProgCheck = 0;
 
+  hbPass = 0;
+
   constructor(config: Iconfig) {
     this.config = config;
   }
@@ -163,9 +165,17 @@ class CLI {
     }
 
     if (this.config.cli.toLowerCase().includes('handbrake')) {
+      if (str.includes('task 1 of 2')) {
+        this.hbPass = 1;
+      } else if (str.includes('task 2 of 2')) {
+        this.hbPass = 2;
+      }
+
       const percentage = handbrakeParser({
         str,
+        hbPass: this.hbPass,
       });
+
       if (percentage > 0) {
         this.updateETA(percentage);
         this.config.updateWorker({
@@ -212,7 +222,7 @@ class CLI {
         });
       }
 
-      if (shouldUpdate === true && percentage > 0) {
+      if (percentage > 0) {
         this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
@@ -231,6 +241,30 @@ class CLI {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+  killThread = (thread:any): void => {
+    const killArray = [
+      'SIGKILL',
+      'SIGHUP',
+      'SIGTERM',
+      'SIGINT',
+    ];
+
+    try {
+      thread.kill();
+    } catch (err) {
+      // err
+    }
+
+    killArray.forEach((com: string) => {
+      try {
+        thread.kill(com);
+      } catch (err) {
+        // err
+      }
+    });
+  }
+
   runCli = async (): Promise<{
     cliExitCode: number,
     errorLogFull: string[],
@@ -239,23 +273,41 @@ class CLI {
 
     const errorLogFull: string[] = [];
 
-    // eslint-disable-next-line no-console
     this.config.jobLog(`Running ${this.config.cli} ${this.config.spawnArgs.join(' ')}`);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+    let thread: any;
+
+    const exitHandler = () => {
+      if (thread) {
+        try {
+        // eslint-disable-next-line no-console
+          console.log('Main thread exiting, cleaning up running CLI');
+          this.killThread(thread);
+        } catch (err) {
+        // eslint-disable-next-line no-console
+          console.log('Error running cliUtils on Exit function');
+          // eslint-disable-next-line no-console
+          console.log(err);
+        }
+      }
+    };
+
+    process.on('exit', exitHandler);
+
     const cliExitCode: number = await new Promise((resolve) => {
       try {
         const opts = this.config.spawnOpts || {};
-        const thread = childProcess.spawn(this.config.cli, this.config.spawnArgs, opts);
+        const spawnArgs = this.config.spawnArgs.map((row) => row.trim()).filter((row) => row !== '');
+        thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
 
         thread.stdout.on('data', (data: string) => {
-          // eslint-disable-next-line no-console
-          // console.log(data.toString());
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
 
         thread.stderr.on('data', (data: string) => {
           // eslint-disable-next-line no-console
-          // console.log(data.toString());
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
@@ -283,6 +335,10 @@ class CLI {
         resolve(1);
       }
     });
+
+    process.removeListener('exit', exitHandler);
+
+    thread = undefined;
 
     if (!this.config.logFullCliOutput) {
       this.config.jobLog(errorLogFull.slice(-1000).join(''));

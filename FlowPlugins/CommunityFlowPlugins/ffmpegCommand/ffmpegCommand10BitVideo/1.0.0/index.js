@@ -10,6 +10,8 @@ var details = function () { return ({
     },
     tags: 'video',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [],
@@ -29,7 +31,13 @@ var plugin = function (args) {
     for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
         var stream = args.variables.ffmpegCommand.streams[i];
         if (stream.codec_type === 'video') {
-            stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le', '-profile:v:{outputTypeIndex}', 'main10');
+            stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
+            if (stream.outputArgs.some(function (row) { return row.includes('qsv'); })) {
+                stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
+            }
+            else {
+                stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');
+            }
         }
     }
     return {

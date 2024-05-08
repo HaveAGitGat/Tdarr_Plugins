@@ -49,10 +49,13 @@ var details = function () { return ({
     },
     tags: '',
     isStartPlugin: false,
+    pType: '',
+    requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: '',
     inputs: [
         {
+            label: 'Custom Arguments',
             name: 'customArguments',
             type: 'string',
             defaultValue: '-Z "Fast 1080p30" --all-subtitles',
@@ -62,6 +65,7 @@ var details = function () { return ({
             tooltip: 'Specify HandBrake arguments',
         },
         {
+            label: 'JSON Preset',
             name: 'jsonPreset',
             type: 'string',
             defaultValue: '',
@@ -71,6 +75,7 @@ var details = function () { return ({
             tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
         },
         {
+            label: 'Container',
             name: 'container',
             type: 'string',
             defaultValue: 'mkv',
@@ -87,7 +92,7 @@ var details = function () { return ({
                     'mpeg',
                 ],
             },
-            tooltip: 'Specify HandBrake arguments',
+            tooltip: 'Specify output container',
         },
     ],
     outputs: [
@@ -112,7 +117,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 if (container === 'original') {
                     container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 }
-                outputFilePath = "".concat(args.workDir, "/tempFile_").concat(new Date().getTime(), ".").concat(container);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 presetString = String(args.inputs.jsonPreset);
                 cliArgs = [
                     '-i',

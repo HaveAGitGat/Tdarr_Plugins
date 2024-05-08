@@ -4,6 +4,7 @@ const run = async () => {
   const encoderProperties = await getEncoder({
     targetCodec: 'h264',
     hardwareEncoding: true,
+    hardwareType: 'auto',
     // @ts-expect-error type
     args: {
       workerType: 'transcodegpu',

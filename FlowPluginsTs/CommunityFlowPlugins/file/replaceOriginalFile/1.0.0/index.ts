@@ -1,3 +1,7 @@
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
+import {
+  getContainer, getFileAbosluteDir, getFileName,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -7,12 +11,14 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Replace Original File',
-  description: 'Replace the original file',
+  description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
   style: {
     borderColor: 'green',
   },
   tags: '',
   isStartPlugin: false,
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faArrowRight',
   inputs: [],
@@ -23,16 +29,6 @@ const details = (): IpluginDetails => ({
     },
   ],
 });
-
-const getNewPath = (originalPath: string, tempPath: string) => {
-  const tempPathParts = tempPath.split('.');
-  const container = tempPathParts[tempPathParts.length - 1];
-
-  const originalPathParts = originalPath.split('.');
-
-  originalPathParts[originalPathParts.length - 1] = container;
-  return originalPathParts.join('.');
-};
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -56,7 +52,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('File has changed, replacing original file');
 
   const currentPath = args.inputFileObj._id;
-  const newPath = getNewPath(args.originalLibraryFile._id, currentPath);
+  const orignalFolder = getFileAbosluteDir(args.originalLibraryFile._id);
+  const fileName = getFileName(args.inputFileObj._id);
+  const container = getContainer(args.inputFileObj._id);
+
+  const newPath = `${orignalFolder}/${fileName}.${container}`;
   const newPathTmp = `${newPath}.tmp`;
 
   args.jobLog(JSON.stringify({
@@ -67,20 +67,30 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  // delete temp file
-  if (fs.existsSync(newPath)) {
-    fs.unlinkSync(newPath);
-  }
-
-  fs.renameSync(currentPath, newPathTmp);
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: currentPath,
+    destinationPath: newPathTmp,
+    args,
+  });
 
   // delete original file
-  if (fs.existsSync(args.originalLibraryFile._id)) {
+  if (
+    fs.existsSync(args.originalLibraryFile._id)
+    && args.originalLibraryFile._id !== currentPath
+  ) {
+    args.jobLog(`Deleting original file:${args.originalLibraryFile._id}`);
     fs.unlinkSync(args.originalLibraryFile._id);
   }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
-  fs.renameSync(newPathTmp, newPath);
+
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: newPathTmp,
+    destinationPath: newPath,
+    args,
+  });
 
   return {
     outputFileObj: {
