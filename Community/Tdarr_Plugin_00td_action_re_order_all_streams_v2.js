@@ -83,10 +83,10 @@ The default order is suitable for most people.
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
@@ -100,6 +100,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (!Array.isArray(file.ffProbeData.streams)) {
     throw new Error('FFprobe was unable to extract any streams info on this file.'
       + 'This may be due to a corrupt file or permissions issue when scanning the file.');
+  }
+
+  if (file.container === 'mp4' && file.fileMedium === 'video') {
+    if (file.ffProbeData.streams[0].codec_type === 'video') {
+      response.infoLog += 'File is mp4 and already has the video stream in the correct order!'
+        + ' Due to FFmpeg issues when reordering streams in mp4 files, other stream ordering will be skipped';
+      return response;
+    }
+    response.processFile = true;
+    response.infoLog += 'File is mp4 and contains video but video is not first stream, remuxing';
+    response.preset = ',-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy';
+    return response;
   }
 
   let { streams } = JSON.parse(JSON.stringify(file.ffProbeData));
