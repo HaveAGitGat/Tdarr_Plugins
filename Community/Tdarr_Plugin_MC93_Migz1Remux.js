@@ -48,10 +48,10 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
@@ -136,8 +136,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // If Container .ts or .avi set genpts to fix unknown timestamp
-  if (file.container.toLowerCase() === 'ts' || file.container.toLowerCase() === 'avi') {
+  // If Container .ts|.avi|.mpg|.mpeg set genpts to fix unknown timestamp
+  if (
+    file.container.toLowerCase() === 'ts'
+     || file.container.toLowerCase() === 'avi'
+  || file.container.toLowerCase() === 'mpg'
+  || file.container.toLowerCase() === 'mpeg'
+  ) {
     genpts = '-fflags +genpts';
   }
 
