@@ -18,6 +18,7 @@ const details = (): IpluginDetails => ({
   icon: 'faBell',
   inputs: [
     {
+      label: 'Arr',
       name: 'arr',
       type: 'string',
       defaultValue: 'radarr',
@@ -28,6 +29,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify which arr to use',
     },
     {
+      label: 'Arr API Key',
       name: 'arr_api_key',
       type: 'string',
       defaultValue: '',
@@ -37,6 +39,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Input your arr api key here',
     },
     {
+      label: 'Arr Host',
       name: 'arr_host',
       type: 'string',
       defaultValue: 'http://192.168.1.1:7878',
@@ -67,7 +70,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { arr, arr_api_key } = args.inputs;
   const arr_host = String(args.inputs.arr_host).trim();
 
-  const { meta } = args.inputFileObj;
+  const fileName = args.originalLibraryFile?.meta?.FileName || '';
+
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
 
   const headers = {
@@ -83,7 +87,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     const requestConfig = {
       method: 'get',
-      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(meta?.FileName || '')}`,
+      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
       headers,
     };
 
@@ -108,7 +112,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     const requestConfig = {
       method: 'get',
-      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(meta?.FileName || '')}`,
+      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
       headers,
     };
 

@@ -5,7 +5,7 @@ on:
     branches: ['**']
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
         node-version: [18.x]
@@ -23,7 +23,10 @@ jobs:
         git config --global core.autocrlf false
         git config --global core.eol lf
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -33,3 +36,34 @@ jobs:
     - run: npm run checkPlugins
     - run: npm run lint
     - run: npm run test
+
+  auto_compile_and_push:
+    if: github.ref != 'refs/heads/master'
+    needs: [
+      test
+      ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the changed files back to the repository.
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+  
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+
+    - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
+
+    - uses: stefanzweifel/git-auto-commit-action@v5
+      if: ${{ github.event.pull_request.head.repo.full_name == 'org/repo' }}
+      with:
+        commit_message: Apply auto-build changes
+
+    - run: |
+        (git diff --quiet HEAD -- 2>/dev/null && echo "No uncommitted changes" \
+        || (echo "Error - Uncommitted changes found." && git --no-pager diff HEAD && exit 1))

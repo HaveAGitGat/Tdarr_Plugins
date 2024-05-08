@@ -29,6 +29,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Hardware Encoder',
       name: 'hardwareEncoder',
       type: 'string',
       defaultValue: 'hevc_nvenc',

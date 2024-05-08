@@ -21,6 +21,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Greater Than',
       name: 'greaterThan',
       type: 'number',
       defaultValue: '99.5',
@@ -31,6 +32,7 @@ const details = (): IpluginDetails => ({
       + 'Default value is 99.5% so new file duration must be at least 40% of original file duration.',
     },
     {
+      label: 'Less Than',
       name: 'lessThan',
       type: 'number',
       defaultValue: '100.5',

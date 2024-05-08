@@ -21,6 +21,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'File To Check',
       name: 'fileToCheck',
       type: 'string',
       // eslint-disable-next-line no-template-curly-in-string
@@ -32,6 +33,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify file to check using templating e.g. ${fileName}_720p.${container}',
     },
     {
+      label: 'Directory',
       name: 'directory',
       type: 'string',
       defaultValue: '',

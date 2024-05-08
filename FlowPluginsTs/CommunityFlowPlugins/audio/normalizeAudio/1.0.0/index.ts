@@ -21,6 +21,7 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'i',
       name: 'i',
       type: 'string',
       defaultValue: '-23.0',
@@ -31,6 +32,7 @@ const details = (): IpluginDetails => ({
               defaults to -23.0`,
     },
     {
+      label: 'lra',
       name: 'lra',
       type: 'string',
       defaultValue: '7.0',
@@ -41,6 +43,7 @@ const details = (): IpluginDetails => ({
             `,
     },
     {
+      label: 'tp',
       name: 'tp',
       type: 'string',
       defaultValue: '-2.0',

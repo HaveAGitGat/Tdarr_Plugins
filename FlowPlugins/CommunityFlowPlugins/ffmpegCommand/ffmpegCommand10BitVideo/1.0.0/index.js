@@ -32,7 +32,7 @@ var plugin = function (args) {
         var stream = args.variables.ffmpegCommand.streams[i];
         if (stream.codec_type === 'video') {
             stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
-            if (stream.outputArgs.includes('qsv')) {
+            if (stream.outputArgs.some(function (row) { return row.includes('qsv'); })) {
                 stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
             }
             else {

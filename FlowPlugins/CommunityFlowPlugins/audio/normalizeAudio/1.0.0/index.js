@@ -54,6 +54,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'i',
             name: 'i',
             type: 'string',
             defaultValue: '-23.0',
@@ -63,6 +64,7 @@ var details = function () { return ({
             tooltip: "\"i\" value used in loudnorm pass \\n\n              defaults to -23.0",
         },
         {
+            label: 'lra',
             name: 'lra',
             type: 'string',
             defaultValue: '7.0',
@@ -72,6 +74,7 @@ var details = function () { return ({
             tooltip: "Desired lra value. \\n Defaults to 7.0  \n            ",
         },
         {
+            label: 'tp',
             name: 'tp',
             type: 'string',
             defaultValue: '-2.0',

@@ -36,7 +36,7 @@ export const getSubStem = ({
   return parts.join('/');
 };
 
-const getFileSize = async (file:string):Promise<number> => {
+export const getFileSize = async (file:string):Promise<number> => {
   const stats = await fs.stat(file);
   const { size } = stats;
   return size;
@@ -75,6 +75,11 @@ export const moveFileAndValidate = async ({
   }
 
   if (!res1 || inputSize !== outputSize) {
+    if (inputSize !== outputSize) {
+      args.jobLog(`File sizes do not match, input: ${inputSize} `
+      + `does not equal  output: ${outputSize}`);
+    }
+
     args.jobLog(`Attempt 1  failed: Moving file from ${inputPath} to ${outputPath}`);
     args.jobLog(`Attempt 2: Moving file from ${inputPath} to ${outputPath}`);
 
@@ -92,6 +97,11 @@ export const moveFileAndValidate = async ({
     outputSize = await getFileSize(outputPath);
 
     if (!res2 || inputSize !== outputSize) {
+      if (inputSize !== outputSize) {
+        args.jobLog(`File sizes do not match, input: ${inputSize} `
+        + `does not equal  output: ${outputSize}`);
+      }
+
       const errMessage = `Failed to move file from ${inputPath} to ${outputPath}, check errors above`;
       args.jobLog(errMessage);
       throw new Error(errMessage);
