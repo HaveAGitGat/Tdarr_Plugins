@@ -1,0 +1,9 @@
+  // add COPYRIGHT=processed during video transcoding
+  // <io> -map 0 -c copy -c:v libx265 -metadata:s:v:0 COPYRIGHT=processed
+
+  // check  COPYRIGHT=processed metadata to see if file has been transcoded or not
+  if(file.ffProbeData.streams[0]?.tags?.COPYRIGHT === 'processed'){
+    response.infoLog += 'File has already been transcoded \n';
+    response.processFile = false;
+    return response;
+  }
