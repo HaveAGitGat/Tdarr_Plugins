@@ -64,4 +64,6 @@ jobs:
       with:
         commit_message: Apply auto-build changes
 
-    - run: (git diff --quiet HEAD -- 2>/dev/null && echo "No uncommitted changes" || (echo "Error: Uncommitted changes found." && exit 1))
+    - run: |
+        (git diff --quiet HEAD -- 2>/dev/null && echo "No uncommitted changes" \
+        || (echo "Error - Uncommitted changes found." && git --no-pager diff HEAD && exit 1))
