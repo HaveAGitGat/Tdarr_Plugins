@@ -20,14 +20,13 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Terms',
       name: 'terms',
       type: 'string',
-      // eslint-disable-next-line no-template-curly-in-string
       defaultValue: '_720p,_1080p',
       inputUI: {
         type: 'text',
       },
-      // eslint-disable-next-line no-template-curly-in-string
       tooltip: 'Specify terms to check for in file name using comma seperated list e.g. _720p,_1080p',
     },
   ],

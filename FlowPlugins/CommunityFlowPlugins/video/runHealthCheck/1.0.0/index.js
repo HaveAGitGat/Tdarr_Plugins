@@ -55,6 +55,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Type',
             name: 'type',
             type: 'string',
             defaultValue: 'quick',

@@ -58,6 +58,7 @@ var details = function () { return ({
     icon: 'faArrowRight',
     inputs: [
         {
+            label: 'Output Directory',
             name: 'outputDirectory',
             type: 'string',
             defaultValue: '',
@@ -67,28 +68,22 @@ var details = function () { return ({
             tooltip: 'Specify ouput directory',
         },
         {
+            label: 'Keep Relative Path',
             name: 'keepRelativePath',
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to keep the relative path',
         },
         {
+            label: 'Make Working File',
             name: 'makeWorkingFile',
             type: 'boolean',
             defaultValue: 'false',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Make the copied file the working file',
         },

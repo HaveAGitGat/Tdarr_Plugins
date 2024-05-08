@@ -55,6 +55,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Custom Arguments',
             name: 'customArguments',
             type: 'string',
             defaultValue: '-Z "Fast 1080p30" --all-subtitles',
@@ -64,6 +65,7 @@ var details = function () { return ({
             tooltip: 'Specify HandBrake arguments',
         },
         {
+            label: 'JSON Preset',
             name: 'jsonPreset',
             type: 'string',
             defaultValue: '',
@@ -73,6 +75,7 @@ var details = function () { return ({
             tooltip: 'Paste a HandBrake JSON preset here. Leave blank to disable.',
         },
         {
+            label: 'Container',
             name: 'container',
             type: 'string',
             defaultValue: 'mkv',
@@ -89,7 +92,7 @@ var details = function () { return ({
                     'mpeg',
                 ],
             },
-            tooltip: 'Specify HandBrake arguments',
+            tooltip: 'Specify output container',
         },
     ],
     outputs: [

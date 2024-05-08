@@ -51,6 +51,7 @@ var details = function () { return ({
     icon: 'faBell',
     inputs: [
         {
+            label: 'Arr',
             name: 'arr',
             type: 'string',
             defaultValue: 'radarr',
@@ -61,6 +62,7 @@ var details = function () { return ({
             tooltip: 'Specify which arr to use',
         },
         {
+            label: 'Arr API Key',
             name: 'arr_api_key',
             type: 'string',
             defaultValue: '',
@@ -70,6 +72,7 @@ var details = function () { return ({
             tooltip: 'Input your arr api key here',
         },
         {
+            label: 'Arr Host',
             name: 'arr_host',
             type: 'string',
             defaultValue: 'http://192.168.1.1:7878',
@@ -93,16 +96,17 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, meta, arrHost, headers, requestConfig, res, movieId, requestConfig2, requestConfig, res, seriesId, requestConfig2;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var lib, _a, arr, arr_api_key, arr_host, fileName, arrHost, headers, requestConfig, res, movieId, requestConfig2, requestConfig, res, seriesId, requestConfig2;
+    var _b, _c;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
                 arr_host = String(args.inputs.arr_host).trim();
-                meta = args.inputFileObj.meta;
+                fileName = ((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b.meta) === null || _c === void 0 ? void 0 : _c.FileName) || '';
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 headers = {
                     'Content-Type': 'application/json',
@@ -114,12 +118,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.jobLog('Refreshing Radarr...');
                 requestConfig = {
                     method: 'get',
-                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent((meta === null || meta === void 0 ? void 0 : meta.FileName) || '')),
+                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
                     headers: headers,
                 };
                 return [4 /*yield*/, args.deps.axios(requestConfig)];
             case 1:
-                res = _b.sent();
+                res = _d.sent();
                 movieId = res.data.movie.movieFile.movieId;
                 requestConfig2 = {
                     method: 'post',
@@ -132,7 +136,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 };
                 return [4 /*yield*/, args.deps.axios(requestConfig2)];
             case 2:
-                _b.sent();
+                _d.sent();
                 args.jobLog("\u2714 Refreshed movie ".concat(movieId, " in Radarr."));
                 return [3 /*break*/, 7];
             case 3:
@@ -140,12 +144,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.jobLog('Refreshing Sonarr...');
                 requestConfig = {
                     method: 'get',
-                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent((meta === null || meta === void 0 ? void 0 : meta.FileName) || '')),
+                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
                     headers: headers,
                 };
                 return [4 /*yield*/, args.deps.axios(requestConfig)];
             case 4:
-                res = _b.sent();
+                res = _d.sent();
                 seriesId = res.data.series.id;
                 requestConfig2 = {
                     method: 'post',
@@ -158,12 +162,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 };
                 return [4 /*yield*/, args.deps.axios(requestConfig2)];
             case 5:
-                _b.sent();
+                _d.sent();
                 args.jobLog("\u2714 Refreshed series ".concat(seriesId, " in Sonarr."));
                 return [3 /*break*/, 7];
             case 6:
                 args.jobLog('No arr specified in plugin inputs.');
-                _b.label = 7;
+                _d.label = 7;
             case 7: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: 1,

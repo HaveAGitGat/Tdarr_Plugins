@@ -37,7 +37,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
     if (stream.codec_type === 'video') {
       stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
 
-      if (stream.outputArgs.includes('qsv')) {
+      if (stream.outputArgs.some((row) => row.includes('qsv'))) {
         stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
       } else {
         stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');

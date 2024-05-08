@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Greater Than',
             name: 'greaterThan',
             type: 'number',
             defaultValue: '0',
@@ -25,6 +26,7 @@ var details = function () { return ({
             tooltip: 'Specify lower bound of fps',
         },
         {
+            label: 'Less Than',
             name: 'lessThan',
             type: 'number',
             defaultValue: '60',

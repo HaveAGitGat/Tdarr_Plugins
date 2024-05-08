@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Greater Than',
             name: 'greaterThan',
             type: 'number',
             defaultValue: '40',
@@ -26,6 +27,7 @@ var details = function () { return ({
                 + 'Default value is 40% so new file size must be at least 40% of original file size.',
         },
         {
+            label: 'Less Than',
             name: 'lessThan',
             type: 'number',
             defaultValue: '110',

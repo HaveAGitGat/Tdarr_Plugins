@@ -54,6 +54,7 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Output Codec',
             name: 'outputCodec',
             type: 'string',
             defaultValue: 'hevc',
@@ -70,6 +71,7 @@ var details = function () { return ({
             tooltip: 'Specify codec of the output file',
         },
         {
+            label: 'FFmpeg Preset',
             name: 'ffmpegPreset',
             type: 'string',
             defaultValue: 'fast',
@@ -90,6 +92,7 @@ var details = function () { return ({
             tooltip: 'Specify ffmpeg preset',
         },
         {
+            label: 'FFmpeg Quality',
             name: 'ffmpegQuality',
             type: 'number',
             defaultValue: '25',
@@ -99,19 +102,17 @@ var details = function () { return ({
             tooltip: 'Specify ffmpeg quality',
         },
         {
+            label: 'Hardware Encoding',
             name: 'hardwareEncoding',
             type: 'boolean',
             defaultValue: 'true',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to use hardware encoding if available',
         },
         {
+            label: 'Hardware Type',
             name: 'hardwareType',
             type: 'string',
             defaultValue: 'auto',
@@ -128,28 +129,22 @@ var details = function () { return ({
             tooltip: 'Specify codec of the output file',
         },
         {
+            label: 'Hardware Decoding',
             name: 'hardwareDecoding',
             type: 'boolean',
             defaultValue: 'true',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to use hardware decoding if available',
         },
         {
+            label: 'Force Encoding',
             name: 'forceEncoding',
             type: 'boolean',
             defaultValue: 'true',
             inputUI: {
-                type: 'dropdown',
-                options: [
-                    'false',
-                    'true',
-                ],
+                type: 'switch',
             },
             tooltip: 'Specify whether to force encoding if stream already has the target codec',
         },

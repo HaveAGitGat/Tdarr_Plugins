@@ -20,6 +20,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Plugin Source ID',
       name: 'pluginSourceId',
       type: 'string',
       defaultValue: 'Community:Tdarr_Plugin_00td_filter_by_codec',

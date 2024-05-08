@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Channel Count',
             name: 'channelCount',
             type: 'number',
             defaultValue: '2',

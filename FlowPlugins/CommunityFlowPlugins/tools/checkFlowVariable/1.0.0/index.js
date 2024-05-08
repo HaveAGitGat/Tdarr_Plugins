@@ -16,18 +16,20 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Variable',
             name: 'variable',
             type: 'string',
             defaultValue: '',
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Variable to check. For example args.librarySettings._id',
+            tooltip: "Variable to check. For example , \n      \n      \\nExample\\n\n      args.librarySettings._id\n      \n      \\nExample\\n\n      args.inputFileObj._id\n\n      \\nExample\\n\n      args.userVariables.library.test\n\n      \\nExample\\n\n      args.userVariables.global.test\n      ",
         },
         {
+            label: 'Condition',
             name: 'condition',
             type: 'string',
-            defaultValue: '',
+            defaultValue: '==',
             inputUI: {
                 type: 'dropdown',
                 options: [
@@ -38,13 +40,14 @@ var details = function () { return ({
             tooltip: 'Check condition',
         },
         {
+            label: 'Value',
             name: 'value',
             type: 'string',
             defaultValue: '',
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Value of variable to check',
+            tooltip: "Value of variable to check. \nYou can specify multiple values separated by comma. For example: value1,value2,value3",
         },
     ],
     outputs: [
@@ -64,7 +67,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    var variable = String(args.inputs.variable);
+    var variable = String(args.inputs.variable).trim();
     var condition = String(args.inputs.condition);
     var value = String(args.inputs.value);
     // variable could be e.g. args.librarySettings._id or args.inputFileObj._id
@@ -96,23 +99,24 @@ var plugin = function (args) {
     }
     targetValue = String(targetValue);
     var outputNumber = 1;
+    var valuesArr = value.trim().split(',');
     if (condition === '==') {
-        if (targetValue === value) {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(value));
+        if (valuesArr.includes(targetValue)) {
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 1;
         }
         else {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(value));
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 2;
         }
     }
     else if (condition === '!=') {
-        if (targetValue !== value) {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(value));
+        if (!valuesArr.includes(targetValue)) {
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " matches condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 1;
         }
         else {
-            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(value));
+            args.jobLog("Variable ".concat(variable, " of value ").concat(targetValue, " does not match condition ").concat(condition, " ").concat(valuesArr));
             outputNumber = 2;
         }
     }

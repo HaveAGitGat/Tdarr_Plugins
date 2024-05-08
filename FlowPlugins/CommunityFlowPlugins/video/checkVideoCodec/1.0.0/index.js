@@ -16,6 +16,7 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Codec',
             name: 'codec',
             type: 'string',
             defaultValue: 'hevc',
@@ -23,9 +24,17 @@ var details = function () { return ({
                 type: 'dropdown',
                 options: [
                     'hevc',
+                    'av1',
                     'vp9',
                     'h264',
                     'vp8',
+                    'wmv2',
+                    'wmv3',
+                    'mpeg4',
+                    'mpeg2video',
+                    'mjpeg',
+                    'flv',
+                    'theora',
                 ],
             },
             tooltip: 'Specify the codec check for',
