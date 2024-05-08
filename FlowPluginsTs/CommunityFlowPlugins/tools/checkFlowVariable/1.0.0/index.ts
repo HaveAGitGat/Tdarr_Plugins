@@ -64,7 +64,8 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Value of variable to check',
+      tooltip: `Value of variable to check. 
+You can specify multiple values separated by comma. For example: value1,value2,value3`,
     },
   ],
   outputs: [
@@ -122,20 +123,21 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   targetValue = String(targetValue);
   let outputNumber = 1;
 
+  const valuesArr = value.trim().split(',');
   if (condition === '==') {
-    if (targetValue === value) {
-      args.jobLog(`Variable ${variable} of value ${targetValue} matches condition ${condition} ${value}`);
+    if (valuesArr.includes(targetValue)) {
+      args.jobLog(`Variable ${variable} of value ${targetValue} matches condition ${condition} ${valuesArr}`);
       outputNumber = 1;
     } else {
-      args.jobLog(`Variable ${variable} of value ${targetValue} does not match condition ${condition} ${value}`);
+      args.jobLog(`Variable ${variable} of value ${targetValue} does not match condition ${condition} ${valuesArr}`);
       outputNumber = 2;
     }
   } else if (condition === '!=') {
-    if (targetValue !== value) {
-      args.jobLog(`Variable ${variable} of value ${targetValue} matches condition ${condition} ${value}`);
+    if (!valuesArr.includes(targetValue)) {
+      args.jobLog(`Variable ${variable} of value ${targetValue} matches condition ${condition} ${valuesArr}`);
       outputNumber = 1;
     } else {
-      args.jobLog(`Variable ${variable} of value ${targetValue} does not match condition ${condition} ${value}`);
+      args.jobLog(`Variable ${variable} of value ${targetValue} does not match condition ${condition} ${valuesArr}`);
       outputNumber = 2;
     }
   }
