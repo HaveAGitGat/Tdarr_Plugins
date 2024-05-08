@@ -157,4 +157,4 @@ const tests = [
   },
 ];
 
-run(tests);
+void run(tests);

@@ -55,10 +55,10 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     processFile: false,
@@ -68,6 +68,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     reQueueAfter: true,
     // Leave as true. File will be re-qeued afterwards and pass through the plugin
     // filter again to make sure it meets conditions.
+    preset: '', // Initialize with an empty string
   };
 
   // Check that inputs.container has been configured, else dump out
@@ -88,7 +89,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let duration = '';
 
   // Get duration of stream 0 and times it by 0.0166667 to get time in minutes
-  duration = file.ffProbeData.streams[0].duration * 0.0166667;
+  if (file.ffProbeData.streams[0].duration) {
+    duration = file.ffProbeData.streams[0].duration;
+  } else {
+    duration = file.ffProbeData.format.duration;
+  }
+
+  duration *= 0.0166667;
 
   // Set up required variables.
   let videoIdx = 0;
@@ -222,7 +229,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vp8_cuvid';
   }
 
-  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 -tune film ${bitrateSettings} `
+  response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 ${bitrateSettings} `
   + `-c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not h264. Transcoding. \n';

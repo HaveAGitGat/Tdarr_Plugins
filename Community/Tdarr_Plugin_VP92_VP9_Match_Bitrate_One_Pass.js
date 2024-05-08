@@ -252,7 +252,7 @@ class Configurator {
  * @param {string} type the typeo of stream.
  * @param {function} method the method to call.
  */
-function loopOverStreamsOfType(file, type, method) {
+const loopOverStreamsOfType = (file, type, method) => {
   let id = 0;
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
@@ -260,9 +260,9 @@ function loopOverStreamsOfType(file, type, method) {
       id += 1;
     }
   }
-}
+};
 
-function buildAudioConfiguration(inputs, file, logger) {
+const buildAudioConfiguration = (inputs, file, logger) => {
   const configuration = new Configurator(['-c:a copy']);
   let stream_count = 0;
   let streams_removing = 0;
@@ -351,9 +351,9 @@ function buildAudioConfiguration(inputs, file, logger) {
   }
 
   return configuration;
-}
+};
 
-function buildVideoConfiguration(inputs, file, logger) {
+const buildVideoConfiguration = (inputs, file, logger) => {
   const configuration = new Configurator(['-map 0', '-map -0:d', '-c:v copy']);
 
   loopOverStreamsOfType(file, 'video', (stream, id) => {
@@ -430,9 +430,9 @@ function buildVideoConfiguration(inputs, file, logger) {
   }
 
   return configuration;
-}
+};
 
-function buildSubtitleConfiguration(inputs, file, logger) {
+const buildSubtitleConfiguration = (inputs, file, logger) => {
   const configuration = new Configurator(['-c:s copy']);
   // webvtt
 
@@ -497,12 +497,12 @@ function buildSubtitleConfiguration(inputs, file, logger) {
   }
 
   return configuration;
-}
+};
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // Must return this object
   const response = {

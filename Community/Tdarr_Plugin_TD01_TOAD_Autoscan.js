@@ -75,10 +75,10 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const request = require('request');
@@ -115,7 +115,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     },
     url: `${ADDRESS}:${PORT}/triggers/manual?dir=${filepath}`,
   },
-  // eslint-disable-next-line no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (error, res, body) => {
     if (error) {
       // eslint-disable-next-line no-console
