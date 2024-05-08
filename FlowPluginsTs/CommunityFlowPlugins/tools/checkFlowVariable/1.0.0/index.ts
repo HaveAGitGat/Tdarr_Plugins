@@ -45,7 +45,7 @@ const details = (): IpluginDetails => ({
       {{{args.userVariables.library.test}}}
 
       \\nExample\\n
-      {{{args.userVariables.global.test
+      {{{args.userVariables.global.test}}}
 
       \\nExample\\n
       {{{args.inputFileObj.mediaInfo.track.0.IsStreamable}}}
