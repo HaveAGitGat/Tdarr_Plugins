@@ -1,4 +1,4 @@
-function filterBySize(file, lowerBound, upperBound) {
+const filterBySize = (file, lowerBound, upperBound) => {
   try {
     if (
       file.file_size / 1000 >= lowerBound
@@ -22,6 +22,6 @@ function filterBySize(file, lowerBound, upperBound) {
     };
     return response;
   }
-}
+};
 
 module.exports = filterBySize;

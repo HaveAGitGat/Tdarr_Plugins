@@ -28,3 +28,15 @@ Check plugins using some extra custom rules:
 Run tests:
 
 `npm run test`
+
+
+# Steps to write a Tdarr Flow plugin:
+
+1. Clone this repo
+2. Set env variable `pluginsDir` to the location of the plugins repo and run Tdarr Server and Node. E.g. `export pluginsDir=C:/Tdarr_Plugins`
+3. Browse the typescript plugins here https://github.com/HaveAGitGat/Tdarr_Plugins/tree/master/FlowPluginsTs/CommunityFlowPlugins and make edits locally or create a new one locally: 
+4. Make sure typescript is intalled with `npm i -g typescript` then run `tsc` to compile the changes.
+5. Refresh the browser and Tdarr will pick up the changes
+
+
+

@@ -1,4 +1,4 @@
-function filterByResolution(file, mode, resolution) {
+const filterByResolution = (file, mode, resolution) => {
   try {
     if (mode === 'exclude') {
       if (
@@ -40,6 +40,6 @@ function filterByResolution(file, mode, resolution) {
   }
 
   throw new Error('Plugin error, no  filter mode specified');
-}
+};
 
 module.exports = filterByResolution;

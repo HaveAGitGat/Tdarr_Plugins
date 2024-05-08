@@ -69,11 +69,11 @@ const details = () => {
   };
 }
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
     const lib = require('../methods/lib')(); const os = require('os');
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const response = {
     container: '.mkv',
@@ -172,7 +172,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // figure out final bitrate
   // Check if duration info is filled, if so times it by 0.0166667 to get time in minutes.
   // If not filled then get duration of stream 0 and do the same.
-  if (typeof file.meta.Duration !== 'undefined') {
+  if (parseFloat(file.ffProbeData?.format?.duration) > 0) {
+    duration = parseFloat(file.ffProbeData?.format?.duration) * 0.0166667;
+  } else if (typeof file.meta.Duration !== 'undefined') {
     duration = file.meta.Duration * 0.0166667;
   } else {
     duration = file.ffProbeData.streams[0].duration * 0.0166667;

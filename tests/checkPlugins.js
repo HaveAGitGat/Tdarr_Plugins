@@ -186,6 +186,12 @@ module.exports.plugin = plugin;`;
         } else if (inputs[j].defaultValue === undefined) {
           console.log(chalk.red(`Plugin Input does not have a default value: '${folder}/${files[i]}' : ${inputs[j].name}`));
           errorEncountered = true;
+        } else if (inputs[j].inputUI.type === 'dropdown' && !Array.isArray(inputs[j].inputUI.options)) {
+          console.log(chalk.red(`Plugin Input is dropdown but does not have dropdown array: '${folder}/${files[i]}' : ${inputs[j].name}`));
+          errorEncountered = true;
+        } else if (Array.isArray(inputs[j].inputUI.options) && inputs[j].inputUI.options.some((option) => typeof option === 'boolean')) {
+          console.log(chalk.red(`Plugin Input has a boolean dropdown input: '${folder}/${files[i]}' : ${inputs[j].name}`));
+          errorEncountered = true;
         }
 
         const count = read.split(inputs[j].name).length - 1;
