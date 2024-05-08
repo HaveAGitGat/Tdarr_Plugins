@@ -151,10 +151,10 @@ const details = () => ({
   ],
 });
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   let crf;
   // default values that will be returned
@@ -191,7 +191,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // check if the file contains a hevc track
   // it will not be transcoded if true and the plugin will exit
-  if (file.ffProbeData.streams.filter((x) => x.codec_name.toLowerCase() === 'hevc').length) {
+  if (file.ffProbeData.streams.some((x) => x.codec_name?.toLowerCase() === 'hevc')) {
     response.infoLog += '☑File is already in hevc! \n';
     return response;
   }

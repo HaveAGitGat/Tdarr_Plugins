@@ -132,7 +132,7 @@ const details = () => ({
   ],
 });
 
-function checkReply(response, statusCode, urlNoToken) {
+const checkReply = (response, statusCode, urlNoToken) => {
   if (statusCode === 200) {
     response.infoLog += '☒ Above shown folder scanned in Plex! \n';
   } else if (statusCode === 401) {
@@ -144,12 +144,12 @@ function checkReply(response, statusCode, urlNoToken) {
     response.infoLog += `There was an issue reaching Plex. The URL used was 
   ${urlNoToken}[redacted] \n`;
   }
-}
+};
 
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
-  // eslint-disable-next-line no-unused-vars,no-param-reassign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   const http = require('http');
   const https = require('https');

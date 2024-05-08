@@ -1,4 +1,4 @@
-function filterByMedium(file, medium) {
+const filterByMedium = (file, medium) => {
   try {
     if (file.fileMedium !== medium) {
       const response = {
@@ -19,6 +19,6 @@ function filterByMedium(file, medium) {
     };
     return response;
   }
-}
+};
 
 module.exports = filterByMedium;
