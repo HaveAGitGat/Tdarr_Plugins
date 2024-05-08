@@ -150,33 +150,31 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var doOperation = function (_a) {
-    var args = _a.args, sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, operation = _a.operation;
-    return __awaiter(void 0, void 0, void 0, function () {
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    args.jobLog("Input path: ".concat(sourcePath));
-                    args.jobLog("Output path: ".concat(destinationPath));
-                    if (!(sourcePath === destinationPath)) return [3 /*break*/, 1];
-                    args.jobLog("Input and output path are the same, skipping ".concat(operation));
-                    return [3 /*break*/, 3];
-                case 1:
-                    args.deps.fsextra.ensureDirSync((0, fileUtils_1.getFileAbosluteDir)(destinationPath));
-                    return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                            operation: operation,
-                            sourcePath: sourcePath,
-                            destinationPath: destinationPath,
-                            args: args,
-                        })];
-                case 2:
-                    _b.sent();
-                    _b.label = 3;
-                case 3: return [2 /*return*/];
-            }
-        });
+var doOperation = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var args = _b.args, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, operation = _b.operation;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                args.jobLog("Input path: ".concat(sourcePath));
+                args.jobLog("Output path: ".concat(destinationPath));
+                if (!(sourcePath === destinationPath)) return [3 /*break*/, 1];
+                args.jobLog("Input and output path are the same, skipping ".concat(operation));
+                return [3 /*break*/, 3];
+            case 1:
+                args.deps.fsextra.ensureDirSync((0, fileUtils_1.getFileAbosluteDir)(destinationPath));
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: operation,
+                        sourcePath: sourcePath,
+                        destinationPath: destinationPath,
+                        args: args,
+                    })];
+            case 2:
+                _c.sent();
+                _c.label = 3;
+            case 3: return [2 /*return*/];
+        }
     });
-};
+}); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
     var lib, _a, keepRelativePath, allFiles, sourceDirectory, outputDirectory, copyOrMove, fileExtensions, outputPath, subStem, sourceDir, filesInDir, i;
