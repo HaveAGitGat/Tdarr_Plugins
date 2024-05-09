@@ -9,8 +9,7 @@ const details = (): IpluginDetails => ({
   name: 'Set Flow Variable',
   description: `Set a Flow Variable to whatever you like. This can be used with the 'Check Flow Variable'
   plugin for complex flows with loops in them where you're wanting to keep track 
-  of where you are in the flow. For example, when attempting to transcode with NVENC, then QSV, then CPU.
-  `,
+  of where you are in the flow. For example, when attempting to transcode with NVENC, then QSV, then CPU.`,
   style: {
     borderColor: 'green',
   },
