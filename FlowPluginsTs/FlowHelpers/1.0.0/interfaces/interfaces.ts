@@ -98,7 +98,7 @@ export interface IffmpegCommand {
 export interface Ivariables {
     ffmpegCommand: IffmpegCommand,
     flowFailed: boolean,
-    inFlow: Record<string, string>,
+    user: Record<string, string>,
 }
 
 export interface IpluginOutputArgs {
