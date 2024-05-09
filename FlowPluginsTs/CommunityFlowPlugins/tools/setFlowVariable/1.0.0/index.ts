@@ -75,11 +75,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const value = String(args.inputs.value);
 
   if (!args.variables.user) {
+    // eslint-disable-next-line no-param-reassign
     args.variables.user = {};
   }
 
   args.jobLog(`Setting variable ${variable} to ${value}`);
 
+  // eslint-disable-next-line no-param-reassign
   args.variables.user[variable] = value;
 
   return {
