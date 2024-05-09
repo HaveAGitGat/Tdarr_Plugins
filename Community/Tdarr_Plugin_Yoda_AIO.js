@@ -7,6 +7,8 @@ const info = '🔵';
 const TRUE_FALSE = ['true', 'false'];
 const OFF_INCLUDE_EXCLUDE = ['off', 'include', 'exclude'];
 const OFF_CLEAN_REMOVE = ['off', 'clean', 'remove'];
+const MATROSKA_CONTAINER_LIST = ['mkv', 'mka', 'webm'];
+const MP4_CONTAINER_LIST = ['mp4', 'm4a', 'm4b'];
 
 const details = () => ({
   id: 'Tdarr_Plugin_Yoda_AIO',
@@ -42,7 +44,11 @@ const details = () => ({
       defaultValue: 'mkv',
       inputUI: {
         type: 'dropdown',
-        options: ['original', 'mkv', 'mp4', 'mka'],
+        options: [
+          'original',
+          ...MATROSKA_CONTAINER_LIST,
+          ...MP4_CONTAINER_LIST,
+        ],
       },
       tooltip: `Select the output container. 'original' keeps existing container.
                 \\nExample:\\n
@@ -65,13 +71,14 @@ const details = () => ({
       tooltip: `Discard stream types and codecs that cannot be encoded into selected container.
                 \\n
                 When false, some codecs / stream types may not be able to be encoded in the selected container.
-                E.g. matroska (mkv) does not support data streams or mov_text subtitles. You will get an error in this
-                case, but no data will be lost.
+                E.g. matroska (mkv, mka, webm) does not support data streams or mov_text subtitles.
+                You will get an error in this case, but no data will be lost.
                 \\nExample:\\n
                 false
                 \\n
                 When true, codecs / stream types that cannot be encoded into the selected container will be discarded.
-                E.g. for Matroska (mkv), mov_text subtitles will be discarded (unless subtitle transcoding is enabled).
+                E.g. for Matroska (mkv, mka, webm), mov_text subtitles will be discarded
+                (unless subtitle transcoding is enabled).
                 Bitmap-based subtitles will be discarded if the selected subtitle transcode codec is text-based,
                 and vice-versa.
                 \\nExample:\\n
@@ -105,6 +112,24 @@ const details = () => ({
         options: TRUE_FALSE,
       },
       tooltip: `Enable/disable removal of unwanted image streams.
+                \\nExample:\\n
+                false
+
+                \\nExample:\\n
+                true`,
+    },
+    {
+      name: 'optimise_for_streaming',
+      type: 'boolean',
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: TRUE_FALSE,
+      },
+      tooltip: `Enable/disable optimisation of file for Streaming.
+                This only takes effect if other transcoding work is being done.
+                \\nFor mp4, this adds the flag "-movflags faststart".
+                \\nFor mkv, this adds the flag "-cues_to_front 1".
                 \\nExample:\\n
                 false
 
@@ -179,7 +204,11 @@ const details = () => ({
                 eng
 
                 \\nExample:\\n
-                und,eng,jpn`,
+                und,eng,jpn
+
+                \\nTip: to filter out all subtitle streams, use a value here that does not correspond to any language
+                \\nExample:\\n
+                nosuchlanguage`,
     },
     // TODO: optionally tag 'und' audio/subtitle streams with a user-provided language
     // TODO: optionally remove commentary audio/subtitles
@@ -321,6 +350,7 @@ const details = () => ({
       },
       tooltip: `Comma-separated list of codecs to transcode.
                 \\nThis is only used when 'video_transcode' is set to 'include'.
+                \\ni.e. when 'video_transcode' is 'include', transcode only these codecs.
                 \\nExample:\\n
                 mpeg4
 
@@ -336,6 +366,7 @@ const details = () => ({
       },
       tooltip: `Comma-separated list of codecs to not transcode.
                 \\nThis is only used when 'video_transcode' is set to 'exclude'.
+                \\ni.e. when 'video_transcode' is 'exclude', transcode all video except these codecs.
                 \\nExample:\\n
                 hevc,h264,vp9
 
@@ -414,6 +445,7 @@ const details = () => ({
       },
       tooltip: `Comma-separated list of codecs to transcode.
                 \\nThis is only used when 'audio_transcode' is set to 'include'.
+                \\ni.e. when 'audio_transcode' is 'include', transcode only these codecs.
                 \\nExample:\\n
                 mp3,eac3,ac3
 
@@ -429,6 +461,7 @@ const details = () => ({
       },
       tooltip: `Comma-separated list of codecs to not transcode.
                 \\nThis is only used when 'audio_transcode' is set to 'exclude'.
+                \\ni.e. when 'audio_transcode' is 'exclude', transcode all audio except these codecs.
                 \\nExample:\\n
                 vorbis,opus,aac,flac
 
@@ -483,6 +516,7 @@ const details = () => ({
       },
       tooltip: `Comma-separated list of codecs to transcode.
                 \\nThis is only used when 'subtitle_transcode' is set to 'include'.
+                \\ni.e. when 'subtitle_transcode' is 'include', transcode only these codecs.
                 \\nExample:\\n
                 mov_text
 
@@ -498,6 +532,7 @@ const details = () => ({
       },
       tooltip: `Comma-separated list of codecs to not transcode.
                 \\nThis is only used when 'subtitle_transcode' is set to 'exclude'.
+                \\ni.e. when 'subtitle_transcode' is 'exclude', transcode all subtitles except these codecs.
                 \\nExample:\\n
                 ass,ssa,subrip
 
@@ -554,7 +589,8 @@ const details = () => ({
         type: 'dropdown',
         options: TRUE_FALSE,
       },
-      tooltip: `Extract subtitles to separate files (in addition to remuxing/transcoding).
+      tooltip: `Extract subtitles to separate files
+                (in addition to remuxing/transcoding - if no other work is being performed this does nothing).
                 \\nWhen true, the subtitle stream will be extracted to a file alongside the output file in addition to
                 being included as a subtitle stream within the output file.
                 \\nExample:\\n
@@ -706,13 +742,33 @@ class Stream {
     return this.#stream.channels;
   }
 
+  get bitRate() {
+    return this.#stream.bit_rate;
+  }
+
+  get bitRatePretty() {
+    const formatter = Intl.NumberFormat('en', {
+      notation: 'compact',
+      style: 'unit',
+      unit: 'bit-per-second',
+      unitDisplay: 'short',
+      roundingMode: 'trunc',
+    });
+    const result = formatter.format(this.bitRate);
+    return result;
+  }
+
+  get sampleRate() {
+    return this.#stream.sample_rate;
+  }
+
   get channelLayout() {
     return this.#stream.channel_layout;
   }
 
-  static TEXT_SUBTITLES = ['webvtt', 'ass', 'ssa', 'subrip'];
+  static TEXT_SUBTITLES = ['webvtt', 'ass', 'ssa', 'subrip', 'mov_text'];
 
-  static BITMAP_SUBTITLES = ['dvdsub', 'hdmv_pgs_subtitle', 'dvd_subtitle'];
+  static BITMAP_SUBTITLES = ['dvdsub', 'hdmv_pgs_subtitle', 'dvd_subtitle', 'dvb_subtitle'];
 
   static isTextSubtitle(codec) {
     return Stream.TEXT_SUBTITLES.includes(codec);
@@ -803,6 +859,35 @@ class File {
     return this.getStreamsByType(Stream.TYPE.video);
   }
 
+  get numVideoStreams() {
+    return this.videoStreams.length;
+  }
+
+  // excludes attached images, which are 'video' streams in mp4
+  get realVideoStreams() {
+    return this.videoStreams.filter((stream) => !stream.isImageVideo);
+  }
+
+  get numRealVideoStreams() {
+    return this.realVideoStreams.length;
+  }
+
+  get outputVideoStreams() {
+    return this.videoStreams.filter((stream) => !stream.isMarkedForDiscard);
+  }
+
+  get numOutputVideoStreams() {
+    return this.outputVideoStreams.length;
+  }
+
+  get outputRealVideoStreams() {
+    return this.realVideoStreams.filter((stream) => !stream.isMarkedForDiscard);
+  }
+
+  get numOutputRealVideoStreams() {
+    return this.outputRealVideoStreams.length;
+  }
+
   get audioStreams() {
     return this.getStreamsByType(Stream.TYPE.audio);
   }
@@ -860,7 +945,6 @@ class Plugin {
   #config;
 
   // settings is what should be used, it's the parsed config from loadDefaultValues
-  // TODO: investigate usefulness of a settings class
   #settings;
 
   // our subclass instance of the file passed to us from tdarr, has helper functions to abstract away some logic
@@ -903,7 +987,10 @@ class Plugin {
   }
 
   #parseFile() {
-    this.#file = new File(this.#config.file, this.#config.otherArguments.originalLibraryFile);
+    this.#file = new File(
+      this.#config.file,
+      this.#config.otherArguments.originalLibraryFile,
+    );
     this.#debug('processing file:', this.#file.pathname);
   }
 
@@ -968,7 +1055,9 @@ class Plugin {
               + 'result in zero audio streams, keeping',
           );
         } else {
-          this.#log(`${cross} audio stream 0:${stream.index} is unwanted language '${stream.language}', discarding`);
+          this.#log(
+            `${cross} audio stream 0:${stream.index} is unwanted language '${stream.language}', discarding`,
+          );
           stream.markForDiscard();
         }
       }
@@ -981,7 +1070,9 @@ class Plugin {
     }
     this.#file.subtitleStreams.forEach((stream) => {
       if (!this.#isWantedSubtitleLanguage(stream.language)) {
-        this.#log(`${cross} subtitle stream 0:${stream.index} is unwanted language '${stream.language}'`);
+        this.#log(
+          `${cross} subtitle stream 0:${stream.index} is unwanted language '${stream.language}'`,
+        );
         stream.markForDiscard();
       }
     });
@@ -1009,27 +1100,27 @@ class Plugin {
   #titleRequiresCleaning(title) {
     // if no title tag, doesn't require cleaning
     if (typeof title === 'undefined') {
+      this.#debug("no title tag, doesn't require cleaning");
       return false;
     }
 
     // null/empty title - let's remove the tag entirely
     if (!title) {
+      this.#debug('null/empty title, removing title tag');
       return true;
     }
 
     // more than 3 periods in the string - it's probably junk
     if (title.split('.').length > 3) {
+      this.#debug('more than 3 periods in title, removing title tag');
       return true;
     }
 
-    let ret = false;
-
-    // if matches a custom string
-    this.#customTitleMatches.forEach((re) => {
-      ret = ret || re.test(title);
+    return this.#customTitleMatches.some((re) => {
+      const ret = re.test(title);
+      this.#debug('testing title against custom regex:', re, ret);
+      return ret;
     });
-
-    return ret;
   }
 
   #cleanFileTitle() {
@@ -1049,7 +1140,11 @@ class Plugin {
         }
         break;
       default:
-        throw new Error(`Unknown configuration option for clean_file_title: '${this.#settings.clean_file_title}'`);
+        throw new Error(
+          `Unknown configuration option for clean_file_title: '${
+            this.#settings.clean_file_title
+          }'`,
+        );
     }
   }
 
@@ -1060,7 +1155,9 @@ class Plugin {
       case 'clean':
         this.#file.videoStreams.forEach((stream) => {
           if (this.#titleRequiresCleaning(stream.title)) {
-            this.#log(`${cross} video stream 0:${stream.index} title requires cleaning`);
+            this.#log(
+              `${cross} video stream 0:${stream.index} title requires cleaning`,
+            );
             stream.markForTitleClean();
           }
         });
@@ -1068,13 +1165,19 @@ class Plugin {
       case 'remove':
         this.#file.videoStreams.forEach((stream) => {
           if (typeof this.title !== 'undefined') {
-            this.#log(`${cross} video stream 0:${stream.index} title is being removed`);
+            this.#log(
+              `${cross} video stream 0:${stream.index} title is being removed`,
+            );
             stream.markForTitleClean();
           }
         });
         break;
       default:
-        throw new Error(`unknown option for clean_video_title: '${this.#settings.clean_video_title}`);
+        throw new Error(
+          `unknown option for clean_video_title: '${
+            this.#settings.clean_video_title
+          }`,
+        );
     }
   }
 
@@ -1085,7 +1188,9 @@ class Plugin {
       case 'clean':
         this.#file.videoStreams.forEach((stream) => {
           if (this.#titleRequiresCleaning(stream.title)) {
-            this.#log(`${cross} audio stream 0:${stream.index} title requires cleaning`);
+            this.#log(
+              `${cross} audio stream 0:${stream.index} title requires cleaning`,
+            );
             stream.markForTitleClean();
           }
         });
@@ -1093,13 +1198,19 @@ class Plugin {
       case 'remove':
         this.#file.videoStreams.forEach((stream) => {
           if (typeof this.title !== 'undefined') {
-            this.#log(`${cross} audio stream 0:${stream.index} title is being removed`);
+            this.#log(
+              `${cross} audio stream 0:${stream.index} title is being removed`,
+            );
             stream.markForTitleClean();
           }
         });
         break;
       default:
-        throw new Error(`unknown option for clean_audio_title: '${this.#settings.clean_audio_title}`);
+        throw new Error(
+          `unknown option for clean_audio_title: '${
+            this.#settings.clean_audio_title
+          }`,
+        );
     }
   }
 
@@ -1110,7 +1221,9 @@ class Plugin {
       case 'clean':
         this.#file.videoStreams.forEach((stream) => {
           if (this.#titleRequiresCleaning(stream.title)) {
-            this.#log(`${cross} subtitle stream 0:${stream.index} title requires cleaning`);
+            this.#log(
+              `${cross} subtitle stream 0:${stream.index} title requires cleaning`,
+            );
             stream.markForTitleClean();
           }
         });
@@ -1118,13 +1231,19 @@ class Plugin {
       case 'remove':
         this.#file.videoStreams.forEach((stream) => {
           if (typeof this.title !== 'undefined') {
-            this.#log(`${cross} subtitle stream 0:${stream.index} title is being removed`);
+            this.#log(
+              `${cross} subtitle stream 0:${stream.index} title is being removed`,
+            );
             stream.markForTitleClean();
           }
         });
         break;
       default:
-        throw new Error(`unknown option for clean_subtitle_title: '${this.#settings.clean_subtitle_title}`);
+        throw new Error(
+          `unknown option for clean_subtitle_title: '${
+            this.#settings.clean_subtitle_title
+          }`,
+        );
     }
   }
 
@@ -1150,9 +1269,13 @@ class Plugin {
   shouldTranscodeStream(transcodeSetting, type, stream) {
     return (
       (transcodeSetting === 'include'
-        && this.#getCodecsForOperation(type, transcodeSetting).includes(stream.codecName))
+        && this.#getCodecsForOperation(type, transcodeSetting).includes(
+          stream.codecName,
+        ))
       || (transcodeSetting === 'exclude'
-        && !this.#getCodecsForOperation(type, transcodeSetting).includes(stream.codecName))
+        && !this.#getCodecsForOperation(type, transcodeSetting).includes(
+          stream.codecName,
+        ))
     );
   }
 
@@ -1185,9 +1308,13 @@ class Plugin {
           // remove incompatible codecs
           if (!this.shouldTranscodeStream(transcodeSetting, type, stream)) {
             if (forceConform) {
-              if (['mkv', 'mka'].includes(this.container)) {
+              if (MATROSKA_CONTAINER_LIST.includes(this.container)) {
                 // these subtitle codecs are not permitted in matroska
-                if (['mov_text', 'eia_608', 'timed_id3'].includes(stream.codecName)) {
+                if (
+                  ['mov_text', 'eia_608', 'timed_id3'].includes(
+                    stream.codecName,
+                  )
+                ) {
                   this.#log(
                     `${cross} ${type} stream 0:${stream.index} has codec '${stream.codecName}' incompatible with `
                       + `chosen container ${this.container}, discarding`,
@@ -1196,12 +1323,19 @@ class Plugin {
                   return;
                 }
               }
-              if (this.container === 'mp4') {
+              if (MP4_CONTAINER_LIST.includes(this.container)) {
                 // these subtitle codecs are not permitted in mp4
-                if (['hdmv_pgs_subtitle', 'eia_608', 'subrip', 'timed_id3'].includes(stream.codecName)) {
+                if (
+                  [
+                    'hdmv_pgs_subtitle',
+                    'eia_608',
+                    'subrip',
+                    'timed_id3',
+                  ].includes(stream.codecName)
+                ) {
                   this.#log(
                     `${cross} ${type} stream 0:${stream.index} has codec '${stream.codecName}' incompatible with `
-                      + 'chosen container mp4, discarding',
+                      + `chosen container ${this.container}, discarding`,
                   );
                   stream.markForDiscard();
                   return;
@@ -1212,10 +1346,14 @@ class Plugin {
           }
 
           if (stream.isSubtitle) {
-            if (stream.subtitleType !== Stream.getSubtitleType(transcodeCodec)) {
+            if (
+              stream.subtitleType !== Stream.getSubtitleType(transcodeCodec)
+            ) {
               if (subtitleTranscodeIncompatibleBehaviour === 'discard') {
                 this.#log(
-                  `${cross} ${type} stream 0:${stream.index} is ${stream.subtitleType}/${
+                  `${cross} ${type} stream 0:${stream.index} is ${
+                    stream.subtitleType
+                  }/${
                     stream.codecName
                   } cannot be transcoded to ${Stream.getSubtitleType(
                     transcodeCodec,
@@ -1226,7 +1364,9 @@ class Plugin {
               }
               if (subtitleTranscodeIncompatibleBehaviour === 'keep') {
                 this.#log(
-                  `${cross} ${type} stream 0:${stream.index} is ${stream[`${type}Type`]}/${
+                  `${cross} ${type} stream 0:${stream.index} is ${
+                    stream[`${type}Type`]
+                  }/${
                     stream.codecName
                   } cannot be transcoded to ${Stream.getSubtitleType(
                     transcodeCodec,
@@ -1245,7 +1385,9 @@ class Plugin {
         });
         break;
       default:
-        throw new Error(`unknown option for ${transcodeSettingKey}: '${transcodeSetting}`);
+        throw new Error(
+          `unknown option for ${transcodeSettingKey}: '${transcodeSetting}`,
+        );
     }
   }
 
@@ -1304,7 +1446,9 @@ class Plugin {
   }
 
   get container() {
-    return this.#settings.container === 'original' ? this.#config.file.container : this.#settings.container;
+    return this.#settings.container === 'original'
+      ? this.#config.file.container
+      : this.#settings.container;
   }
 
   get #isDoingWork() {
@@ -1323,7 +1467,6 @@ class Plugin {
 
   generateResponse() {
     let index = 0;
-    let countVideo = 0;
     const commands = [];
 
     // tdarr can only detect one output file. this must be the multimedia file
@@ -1349,7 +1492,9 @@ class Plugin {
           if (stream.isMarkedForExtract) {
             let subfile = this.#file.basename;
 
-            this.#debug(`subtitle stream 0:${stream.index} is flagged for extraction`);
+            this.#debug(
+              `subtitle stream 0:${stream.index} is flagged for extraction`,
+            );
 
             // append language
             subfile = `${subfile}.${stream.language}`;
@@ -1369,7 +1514,9 @@ class Plugin {
             }
 
             // append the extension
-            subfile = `${subfile}.${SUBTITLE_CODEC_EXTENSIONS[this.#settings.subtitle_transcode_codec]}`;
+            subfile = `${subfile}.${
+              SUBTITLE_CODEC_EXTENSIONS[this.#settings.subtitle_transcode_codec]
+            }`;
 
             // prepend full path
             subfile = `${this.#file.dirname}${Imports.path.sep}${subfile}`;
@@ -1387,7 +1534,11 @@ class Plugin {
               }) is being extracted to file`,
             );
 
-            commands.push(`-map 0:${stream.index} -c:0 ${this.#settings.subtitle_transcode_codec} "${subfile}"`);
+            commands.push(
+              `-map 0:${stream.index} -c:0 ${
+                this.#settings.subtitle_transcode_codec
+              } "${subfile}"`,
+            );
           }
         });
       }
@@ -1400,6 +1551,10 @@ class Plugin {
     // for each video stream, get mapping and tagging commands
     this.#file.videoStreams.forEach((stream) => {
       if (stream.isMarkedForDiscard) {
+        return;
+      }
+      if (stream.isImageVideo) {
+        // i want images as attachments with a higher stream index than the video and audio streams
         return;
       }
       commands.push(`-map 0:${stream.index}`);
@@ -1415,7 +1570,6 @@ class Plugin {
         commands.push(`-c:${index} copy`);
       }
       index += 1;
-      countVideo += 1;
     });
 
     // for each audio stream, get mapping and tagging commands
@@ -1429,13 +1583,56 @@ class Plugin {
       }
       if (stream.isMarkedForTranscode) {
         commands.push(`-c:${index} ${this.#settings.audio_transcode_codec}`);
+
         if (this.#settings.audio_transcode_codec === 'libopus') {
-          // set bitrate depending on number of channels.
-          // Opus docs claim 128k for stereo (2ch audio) is "pretty much transparent"
-          // https://wiki.xiph.org/Opus_Recommended_Settings
-          // from this, 64k per channel should be transparent
-          // not sure what libopus default bitrate is so setting it explicitly to avoid sound degradation
-          commands.push(`-b:${index} ${stream.audioChannels * 64}k`);
+          // ffmpeg leverages opusenc for encoding libopus
+          // i assume that if no bitrate is specified to ffmpeg, it doesn't pass a bitrate flag to opusenc
+          // so opusenc would use its own default bitrate
+          // when opusenc is in vbr (variable bit rate) mode (which is the default if unspecified)
+          // it will use 64 kbit/s for each mono stream, and 96 kbit/s for each coupled pair (stereo)
+          // for sample rates 44.1 kHz or higher
+          // (no information about lower kHz rates)
+          // there does not appear to be a way to specify a qrf.
+          // there is --comp, but it's already set to maximum quality
+
+          // testing on file with:
+          // * sample rate 22.05 kHz (sample_rate == 22050)
+          // * bitrate of 62 kb/s (bit_rate == 62794)
+          // * two audio channels (channels == 2)
+          // per the ffmpeg/libopus output, if bit rate is not set, it defaults to 96000 bps
+          // > No bit rate set. Defaulting to 96000 bps.
+          // it's unclear if this came from opusenc or libopus (assuming libopus is a wrapper for opusenc)
+          // sample rate is matched, bitrate is set to 96000
+
+          // might wanna do something here that sets up a bitrate based on the source material
+          // it's possible that opusenc makes more a sophisticated decision than 96k for stereo and 64k for mono
+          // but if it doesn't, it's going to hurt the quality of high-bitrate source material
+          // counterpoint: 64k per stream is 'transparent' according to opus docs
+          if (
+            // for stereo, opusenc will use 96 kbit/s
+            // if this is stereo, and the origical bitrate is less, preserve the original bitrate
+            // (under the assumption that opus will have better quality at the same bitrate of/at the source material)
+            // (otherwise don't specify bitrate and let opusenc decide)
+            (stream.audioChannels === 1 && stream.bitRate < 64000) // mono
+            || (stream.audioChannels === 2 && stream.bitRate < 96000) // stereo
+            // TODO: add support for 5.1 ?
+            // the goal here is preserve the original bitrate if the source bitrate is below opus defaults
+            // this is in order to conserve file size for low-bitrate source material
+            // which is mostly audiobooks
+            // and the idea of 5.1 is kinda antithetical to the audiobook experience
+          ) {
+            this.#log(
+              `${info} source material bitrate is less than 96k, `
+              + `preserving original bitrate of ${stream.bitRatePretty} (${stream.bitRate})`,
+            );
+            commands.push(`-b:${index} ${stream.bitRate}`);
+            // commands.push(`-ar:${index} ${stream.sampleRate}`);
+            // opusenc automatically selects a good sample rate for encoding, but reports 48000 when decoding
+            // for reasons I don't understand,
+            // opus is pretty much always decoded at 48000 regardless of the encoding sample rate
+            // so reading the sample rate from the resulting file is misleading
+            // but the ffmpeg logs do indicate the sample rate used for encoding
+          }
 
           // TODO: remove this when ffmpeg bug is fixed
           // https://trac.ffmpeg.org/ticket/8939
@@ -1456,6 +1653,8 @@ class Plugin {
             commands.push(`-filter:${index} channelmap=channel_layout=5.1`);
           }
         }
+
+        // TODO: maybe set up options for other codecs too?
       } else {
         commands.push(`-c:${index} copy`);
       }
@@ -1479,6 +1678,22 @@ class Plugin {
       index += 1;
     });
 
+    // attach image video streams
+    this.#file.videoStreams.forEach((stream) => {
+      if (stream.isMarkedForDiscard) {
+        return;
+      }
+      if (!stream.isImageVideo) {
+        return;
+      }
+      commands.push(`-map 0:${stream.index}`);
+      if (stream.isMarkedForTitleClean) {
+        commands.push(`-metadata:s:${index} title=`);
+      }
+      commands.push(`-c:${index} copy`);
+      index += 1;
+    });
+
     // only add extra bits if we're actually producing a multimedia file
     if (this.#isDoingWork) {
       // copy attachment streams if enabled
@@ -1487,7 +1702,7 @@ class Plugin {
       }
 
       // discard data streams for matroska, keep for mp4
-      if (['mkv', 'mka'].includes(this.container)) {
+      if (MATROSKA_CONTAINER_LIST.includes(this.container)) {
         if (this.#settings.force_conform) {
           commands.push('-map -0:d?');
         } else {
@@ -1496,12 +1711,32 @@ class Plugin {
           commands.push('-map 0:d? -c:d copy');
         }
       }
-      if (this.container === 'mp4') {
+      if (MP4_CONTAINER_LIST.includes(this.container)) {
         commands.push('-map 0:d? -c:d copy');
       }
 
-      if (this.#file.videoStreams.length > 0 && countVideo === 0) {
-        throw new Error('Cancelling plugin to avoid discarding all video streams');
+      if (this.#settings.optimise_for_streaming) {
+        if (MATROSKA_CONTAINER_LIST.includes(this.container)) {
+          commands.push('-cues_to_front 1');
+        }
+        if (MP4_CONTAINER_LIST.includes(this.container)) {
+          commands.push('-movflags +faststart');
+        }
+      }
+
+      if (
+        this.#file.numRealVideoStreams > 0
+        && this.#file.numOutputRealVideoStreams === 0
+      ) {
+        throw new Error(
+          'Cancelling plugin to avoid discarding all video streams',
+        );
+      }
+
+      // explicitly specify output container for mp4
+      // ffmpeg doesn't like opus in m4b but it is permitted
+      if (MP4_CONTAINER_LIST.includes(this.container)) {
+        commands.push('-f mp4');
       }
     }
 
@@ -1518,6 +1753,8 @@ class Plugin {
       FFmpegMode: true,
       infoLog: this.#logs.join('\n'),
     };
+
+    this.#log(ret);
 
     return ret;
   }
