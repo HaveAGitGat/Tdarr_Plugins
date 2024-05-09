@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Set Flow Variable',
-    description: "Set a Flow Variable to whatever you like. This can be used with the 'Check Flow Variable'\n  plugin for complex flows with loops in them where you're wanting to keep track \n  of where you are in the flow. For example, when attempting to transcode with NVENC, then QSV, then CPU.\n  ",
+    description: "Set a Flow Variable to whatever you like. This can be used with the 'Check Flow Variable'\n  plugin for complex flows with loops in them where you're wanting to keep track \n  of where you are in the flow. For example, when attempting to transcode with NVENC, then QSV, then CPU.",
     style: {
         borderColor: 'green',
     },
