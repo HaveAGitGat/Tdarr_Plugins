@@ -22,7 +22,7 @@ const details = (): IpluginDetails => ({
   inputs: [
     {
       label: 'CLI',
-      name: 'cli',
+      name: 'userCli',
       type: 'string',
       defaultValue: 'mkvmerge',
       inputUI: {
@@ -140,7 +140,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  let selectedCli = String(args.inputs.cli);
+  let userCli = String(args.inputs.userCli);
   const {
     outputFileBecomesWorkingFile,
   } = args.inputs;
@@ -175,16 +175,16 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     mkvmerge: 'mkvmerge',
   };
 
-  if (!availableCli[selectedCli]) {
-    const msg = `CLI ${selectedCli} not available to run in this plugin`;
+  if (!availableCli[userCli]) {
+    const msg = `CLI ${userCli} not available to run in this plugin`;
     args.jobLog(msg);
     throw new Error(msg);
   }
 
-  selectedCli = availableCli[selectedCli];
+  userCli = availableCli[userCli];
 
   const cli = new CLI({
-    cli: selectedCli,
+    cli: userCli,
     spawnArgs: cliArgs,
     spawnOpts: {},
     jobLog: args.jobLog,
@@ -197,7 +197,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const res = await cli.runCli();
 
   if (res.cliExitCode !== 0) {
-    const msg = `Running ${selectedCli} failed`;
+    const msg = `Running ${userCli} failed`;
     args.jobLog(msg);
     throw new Error(msg);
   }
