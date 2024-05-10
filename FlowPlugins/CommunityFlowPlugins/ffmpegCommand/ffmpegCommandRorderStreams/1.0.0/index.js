@@ -80,11 +80,11 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var streams = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
-    var originalStreams = JSON.stringify(streams);
     streams.forEach(function (stream, index) {
         // eslint-disable-next-line no-param-reassign
         stream.typeIndex = index;
     });
+    var originalStreams = JSON.stringify(streams);
     var sortStreams = function (sortType) {
         var items = sortType.inputs.split(',');
         items.reverse();
