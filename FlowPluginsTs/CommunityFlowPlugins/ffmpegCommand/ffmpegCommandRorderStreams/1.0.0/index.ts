@@ -111,12 +111,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
 
-  const originalStreams = JSON.stringify(streams);
-
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
     stream.typeIndex = index;
   });
+
+  const originalStreams = JSON.stringify(streams);
 
   const sortStreams = (sortType: {
     inputs: string,
