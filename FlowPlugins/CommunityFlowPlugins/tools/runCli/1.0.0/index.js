@@ -64,7 +64,7 @@ var details = function () { return ({
     inputs: [
         {
             label: 'CLI',
-            name: 'cli',
+            name: 'userCli',
             type: 'string',
             defaultValue: 'mkvmerge',
             inputUI: {
@@ -159,14 +159,14 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, selectedCli, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
+    var lib, userCli, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                selectedCli = String(args.inputs.cli);
+                userCli = String(args.inputs.userCli);
                 outputFileBecomesWorkingFile = args.inputs.outputFileBecomesWorkingFile;
                 userOutputFilePath = String(args.inputs.userOutputFilePath);
                 cliArguments = String(args.inputs.cliArguments);
@@ -189,14 +189,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     mkvpropedit: args.mkvpropeditPath,
                     mkvmerge: 'mkvmerge',
                 };
-                if (!availableCli[selectedCli]) {
-                    msg = "CLI ".concat(selectedCli, " not available to run in this plugin");
+                if (!availableCli[userCli]) {
+                    msg = "CLI ".concat(userCli, " not available to run in this plugin");
                     args.jobLog(msg);
                     throw new Error(msg);
                 }
-                selectedCli = availableCli[selectedCli];
+                userCli = availableCli[userCli];
                 cli = new cliUtils_1.CLI({
-                    cli: selectedCli,
+                    cli: userCli,
                     spawnArgs: cliArgs,
                     spawnOpts: {},
                     jobLog: args.jobLog,
@@ -209,7 +209,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 res = _a.sent();
                 if (res.cliExitCode !== 0) {
-                    msg = "Running ".concat(selectedCli, " failed");
+                    msg = "Running ".concat(userCli, " failed");
                     args.jobLog(msg);
                     throw new Error(msg);
                 }
