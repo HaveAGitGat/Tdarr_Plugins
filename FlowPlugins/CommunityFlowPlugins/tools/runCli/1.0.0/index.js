@@ -77,6 +77,67 @@ var details = function () { return ({
             tooltip: 'CLI to run',
         },
         {
+            label: 'Does Command Create Output File?',
+            name: 'doesCommandCreateOutputFile',
+            type: 'boolean',
+            defaultValue: 'true',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Toggle this on if the command creates an output file.',
+        },
+        {
+            label: 'Output File Path',
+            name: 'userOutputFilePath',
+            type: 'string',
+            // eslint-disable-next-line no-template-curly-in-string
+            defaultValue: '${cacheDir}/${fileName}.{{{args.inputFileObj.container}}}',
+            inputUI: {
+                type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'doesCommandCreateOutputFile',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: "\n      This path can be accessed using ${outputFilePath} in the \"CLI Arguments\" input below.\n\n      \\n\n      ${cacheDir} is a special variable that points to the Tdarr worker cache directory.\n\n      \\n \n      ${fileName} is a special variable for the filename without extension.\n      \n      \\nExample\\n\n      ${cacheDir}/${fileName}.{{{args.inputFileObj.container}}}\n      ",
+        },
+        {
+            label: 'Output File Becomes Working File?',
+            name: 'outputFileBecomesWorkingFile',
+            type: 'boolean',
+            defaultValue: 'true',
+            inputUI: {
+                type: 'switch',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'doesCommandCreateOutputFile',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Toggle this on to make the output file become the working file for the next plugin.',
+        },
+        {
             label: 'CLI Arguments',
             name: 'cliArguments',
             type: 'string',
@@ -85,7 +146,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Specify arguments to pass to the CLI. \n      Normal variable templating with {{{}}} applies but ${outputFilePath} is a special\n      variable for an output file in the Tdarr cache directory.\n\n      \\nExample\\n\n      -o \"${outputFilePath}\" \"{{{args.inputFileObj._id}}}\"\n      ",
+            tooltip: "Specify arguments to pass to the CLI. \n      Normal variable templating with {{{}}} applies but ${outputFilePath} is a special\n      variable from the \"Output File Path\" input above.\n\n      \\nExample\\n\n      -o \"${outputFilePath}\" \"{{{args.inputFileObj._id}}}\"\n      ",
         },
     ],
     outputs: [
@@ -98,7 +159,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, selectedCli, cliArguments, outputFilePath, cliArgs, availableCli, msg, cli, res, msg;
+    var lib, selectedCli, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -106,10 +167,23 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 selectedCli = String(args.inputs.cli);
+                outputFileBecomesWorkingFile = args.inputs.outputFileBecomesWorkingFile;
+                userOutputFilePath = String(args.inputs.userOutputFilePath);
                 cliArguments = String(args.inputs.cliArguments);
-                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
-                    + ".".concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
-                cliArguments = cliArguments.replace(/\${outputFilePath}/g, outputFilePath);
+                // eslint-disable-next-line no-template-curly-in-string
+                if (cliArguments.includes('${outputFilePath}')) {
+                    // eslint-disable-next-line no-template-curly-in-string
+                    if (userOutputFilePath.includes('${cacheDir}')) {
+                        cacheDir = (0, fileUtils_1.getPluginWorkDir)(args);
+                        userOutputFilePath = userOutputFilePath.replace(/\${cacheDir}/g, cacheDir);
+                    }
+                    // eslint-disable-next-line no-template-curly-in-string
+                    if (userOutputFilePath.includes('${fileName}')) {
+                        fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
+                        userOutputFilePath = userOutputFilePath.replace(/\${fileName}/g, fileName);
+                    }
+                    cliArguments = cliArguments.replace(/\${outputFilePath}/g, userOutputFilePath);
+                }
                 cliArgs = __spreadArray([], args.deps.parseArgsStringToArgv(cliArguments, '', ''), true);
                 availableCli = {
                     mkvpropedit: args.mkvpropeditPath,
@@ -126,7 +200,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     spawnArgs: cliArgs,
                     spawnOpts: {},
                     jobLog: args.jobLog,
-                    outputFilePath: outputFilePath,
+                    outputFilePath: userOutputFilePath,
                     inputFileObj: args.inputFileObj,
                     logFullCliOutput: args.logFullCliOutput,
                     updateWorker: args.updateWorker,
@@ -140,9 +214,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     throw new Error(msg);
                 }
                 return [2 /*return*/, {
-                        outputFileObj: {
-                            _id: outputFilePath,
-                        },
+                        outputFileObj: outputFileBecomesWorkingFile ? {
+                            _id: userOutputFilePath,
+                        }
+                            : args.inputFileObj,
                         outputNumber: 1,
                         variables: args.variables,
                     }];
