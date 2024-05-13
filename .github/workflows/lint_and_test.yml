@@ -23,7 +23,10 @@ jobs:
         git config --global core.autocrlf false
         git config --global core.eol lf
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -46,16 +49,22 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
       with:
-        ref: ${{ github.head_ref }}
+        ref: ${{ github.event.pull_request.head.sha }}
   
     - uses: actions/setup-node@v3
       with:
         node-version: '18.x'
 
-    - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc
+    - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
 
     - uses: stefanzweifel/git-auto-commit-action@v5
+      ## fix this check
+      if: github.event.pull_request.head.repo.full_name == github.repository
       with:
         commit_message: Apply auto-build changes
+
+    - run: |
+        (git diff --quiet HEAD -- 2>/dev/null && echo "No uncommitted changes" \
+        || (echo "Error - Uncommitted changes found." && git --no-pager diff HEAD && exit 1))
