@@ -36,7 +36,9 @@ const details = ():IpluginDetails => ({
 
 
      \\nExample\\n
-     -vv -t "Processing" -b "File {{{args.inputFileObj._id}}}" "discord://{{{args.userVariables.global.discord_webhook}}}"
+     -vv -t "Processing" -b "File {{{args.inputFileObj._id}}}" `
+
+     + `"discord://{{{args.userVariables.global.discord_webhook}}}"
       `,
     },
   ],
