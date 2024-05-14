@@ -315,7 +315,8 @@ class CLI {
         thread.on('error', () => {
           // catches execution error (bad file)
           // eslint-disable-next-line no-console
-          console.log(1, `Error executing binary: ${this.config.cli}`);
+          console.log(`Error executing binary: ${this.config.cli}`);
+          this.config.jobLog(`Error executing binary: ${this.config.cli}`);
           resolve(1);
         });
 
@@ -324,14 +325,16 @@ class CLI {
         thread.on('close', (code: number) => {
           if (code !== 0) {
             // eslint-disable-next-line no-console
-            console.log(code, 'CLI error');
+            console.log(`CLI error code: ${code}`);
+            this.config.jobLog(`CLI error code: ${code}`);
           }
           resolve(code);
         });
       } catch (err) {
         // catches execution error (no file)
         // eslint-disable-next-line no-console
-        console.log(1, `Error executing binary: ${this.config.cli}`);
+        console.log(`Error executing binary: ${this.config.cli}: ${err}`);
+        this.config.jobLog(`Error executing binary: ${this.config.cli}: ${err}`);
         resolve(1);
       }
     });
