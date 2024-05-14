@@ -289,7 +289,8 @@ var CLI = /** @class */ (function () {
                                     thread.on('error', function () {
                                         // catches execution error (bad file)
                                         // eslint-disable-next-line no-console
-                                        console.log(1, "Error executing binary: ".concat(_this.config.cli));
+                                        console.log("Error executing binary: ".concat(_this.config.cli));
+                                        _this.config.jobLog("Error executing binary: ".concat(_this.config.cli));
                                         resolve(1);
                                     });
                                     // thread.stdout.pipe(process.stdout);
@@ -297,7 +298,8 @@ var CLI = /** @class */ (function () {
                                     thread.on('close', function (code) {
                                         if (code !== 0) {
                                             // eslint-disable-next-line no-console
-                                            console.log(code, 'CLI error');
+                                            console.log("CLI error code: ".concat(code));
+                                            _this.config.jobLog("CLI error code: ".concat(code));
                                         }
                                         resolve(code);
                                     });
@@ -305,7 +307,8 @@ var CLI = /** @class */ (function () {
                                 catch (err) {
                                     // catches execution error (no file)
                                     // eslint-disable-next-line no-console
-                                    console.log(1, "Error executing binary: ".concat(_this.config.cli));
+                                    console.log("Error executing binary: ".concat(_this.config.cli, ": ").concat(err));
+                                    _this.config.jobLog("Error executing binary: ".concat(_this.config.cli, ": ").concat(err));
                                     resolve(1);
                                 }
                             })];
