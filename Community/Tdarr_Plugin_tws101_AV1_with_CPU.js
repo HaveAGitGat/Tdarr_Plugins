@@ -1,5 +1,3 @@
-/* eslint-disable */
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_AV1_with_CPU',
   Stage: 'Pre-processing',
