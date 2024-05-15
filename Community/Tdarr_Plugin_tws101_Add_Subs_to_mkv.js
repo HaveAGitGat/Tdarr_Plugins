@@ -1,5 +1,3 @@
-/* eslint-disable */
-// tdarrSkipTest
 module.exports.dependencies = ['@cospired/i18n-iso-languages'];
 const details = () => ({
   id: 'Tdarr_Plugin_tws101_Add_Subs_to_mkv',
