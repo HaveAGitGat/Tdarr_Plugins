@@ -19,7 +19,7 @@ var details = function () { return ({
             label: 'Variable',
             name: 'variable',
             type: 'string',
-            defaultValue: '{{{args.librarySettings._id}}}',
+            defaultValue: '',
             inputUI: {
                 type: 'text',
             },

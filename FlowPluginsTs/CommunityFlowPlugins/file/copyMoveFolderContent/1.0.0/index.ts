@@ -82,7 +82,8 @@ Useful if, for example, you want to move things like subtitle files or cover art
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'Specify whether to copy/move all files in the directory (excluding the original and working file)',
+      tooltip: `Specify whether to copy/move all files in the directory (excluding the original and working file)
+       or use the input below to specify file extensions`,
     },
     {
       label: 'File Extensions',
