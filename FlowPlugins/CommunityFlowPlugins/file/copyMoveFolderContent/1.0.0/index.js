@@ -114,7 +114,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: 'Specify whether to copy/move all files in the directory (excluding the original and working file)',
+            tooltip: "Specify whether to copy/move all files in the directory (excluding the original and working file)\n       or use the input below to specify file extensions",
         },
         {
             label: 'File Extensions',
