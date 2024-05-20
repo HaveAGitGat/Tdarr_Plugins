@@ -6,6 +6,7 @@ const details = () => ({
   Operation: 'Transcode',
   Description: `
   This plugin removes streams based on the specified property.
+  Checks FFprobe 'streams' and MediaInfo 'track' properties.
   `,
   Version: '1.00',
   Tags: 'action',
