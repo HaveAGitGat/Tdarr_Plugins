@@ -192,7 +192,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const userCli = String(args.inputs.userCli);
-  const useCustomCliPath = args.inputs.useCustomCliPath;
+  const { useCustomCliPath } = args.inputs;
   const customCliPath = String(args.inputs.customCliPath);
   let cliPath = '';
 
