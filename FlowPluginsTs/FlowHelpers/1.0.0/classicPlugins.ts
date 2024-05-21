@@ -3,6 +3,7 @@ import {
   getContainer, getFileName, getPluginWorkDir, getScanTypes,
 } from './fileUtils';
 import { IpluginInputArgs } from './interfaces/interfaces';
+import { IFileObject } from './interfaces/synced/IFileObject';
 
 export interface IrunClassicPlugin {
     result:{
@@ -90,8 +91,8 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
 
   const scanTypes = getScanTypes([pluginSrcStr]);
 
-  let pluginInputFileObj;
-  let originalLibraryFile;
+  let pluginInputFileObj:IFileObject;
+  let originalLibraryFile:IFileObject;
 
   const inputFileScanArgs = {
     _id: args.inputFileObj._id,
