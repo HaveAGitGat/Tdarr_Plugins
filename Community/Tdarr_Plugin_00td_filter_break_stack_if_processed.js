@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_break_stack_if_processed',
   Stage: 'Pre-processing',
-  Name: 'Filter - break out of plugin stack if processed',
+  Name: 'Filter - Break Out Of Plugin Stack If Processed',
   Type: 'Video',
   Operation: 'Filter',
   Description: `This plugin will break out of the plugin stack if the file has been processed

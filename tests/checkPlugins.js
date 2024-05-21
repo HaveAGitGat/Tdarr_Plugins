@@ -122,6 +122,13 @@ module.exports.plugin = plugin;`;
       errorEncountered = true;
     }
 
+    console.log(files[i]);
+    // check if words in pluginDetails.Name are not capitalized
+    if (pluginDetails.Name.split(' ').some((word) => word[0] !== word[0].toUpperCase())) {
+      console.log(chalk.red(`Plugin Name is not capitalized '${folder}/${files[i]}'`));
+      errorEncountered = true;
+    }
+
     if (!['Pre-processing', 'Post-processing'].includes(pluginDetails.Stage)) {
       console.log(chalk.red(`Plugin does not have a valid Type'${folder}/${files[i]}'`));
       errorEncountered = true;

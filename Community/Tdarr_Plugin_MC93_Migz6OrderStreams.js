@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz6OrderStreams',
   Stage: 'Pre-processing',
-  Name: 'Migz-Order Streams',
+  Name: 'Migz Order Streams',
   Type: 'Any',
   Operation: 'Transcode',
   Description: 'Orders streams into Video first, then Audio (2ch, 6ch, 8ch) and finally Subtitles. \n\n',

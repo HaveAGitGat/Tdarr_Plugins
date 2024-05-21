@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_stream_tag',
   Stage: 'Pre-processing',
-  Name: 'Filter by stream tag',
+  Name: 'Filter By Stream Tag',
   Type: 'Video',
   Operation: 'Filter',
   Description: `Filter by stream tag value. Will check all streams. Useful for when e.g. trying to force transcoding

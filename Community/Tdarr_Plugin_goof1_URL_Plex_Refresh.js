@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_goof1_URL_Plex_Refresh',
   Stage: 'Post-processing',
-  Name: 'Refresh Plex via URL',
+  Name: 'Refresh Plex Via URL',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Refreshes folder containing the current file in Plex so changes are picked up properly 

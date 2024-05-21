@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_hk76_GilbN_MP4_AAC_No_metaTitle",
     Stage: "Pre-processing",
-    Name: "GilbN MP4 Stereo AAC, No title meta data ",
+    Name: "GilbN MP4 Stereo AAC, No Title Meta Data",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is mp4. \n\n

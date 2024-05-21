@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_codec_tag_string',
   Stage: 'Pre-processing',
-  Name: 'Filter by codec tag string',
+  Name: 'Filter By Codec Tag String',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'Only allow files with specified codec tag strings to be processed \n\n',
