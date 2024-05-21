@@ -1,4 +1,5 @@
-import { IFileObject, Istreams } from './synced/IFileObject';
+import { IscanTypes } from '../fileUtils';
+import { IFileObject, IFileObjectMin, Istreams } from './synced/IFileObject';
 import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
@@ -136,6 +137,7 @@ export interface IpluginInputArgs {
     updateWorker: IupdateWorker,
     logFullCliOutput: boolean,
     logOutcome: (outcome: string) => void,
+    scanIndividualFile?: (filee: IFileObjectMin, scanTypes: IscanTypes) => IFileObject,
     deps: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fsextra: any,
