@@ -38,12 +38,18 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var outputNumber = 1;
     if (args.inputFileObj.file_size < args.originalLibraryFile.file_size) {
+        args.jobLog("Working of size ".concat(args.inputFileObj.file_size)
+            + " is smaller than original file of size ".concat(args.originalLibraryFile.file_size));
         outputNumber = 1;
     }
     else if (args.inputFileObj.file_size === args.originalLibraryFile.file_size) {
+        args.jobLog("Working of size ".concat(args.inputFileObj.file_size)
+            + " is same size as original file of size ".concat(args.originalLibraryFile.file_size));
         outputNumber = 2;
     }
     else if (args.inputFileObj.file_size > args.originalLibraryFile.file_size) {
+        args.jobLog("Working of size ".concat(args.inputFileObj.file_size)
+            + " is larger than original file of size ".concat(args.originalLibraryFile.file_size));
         outputNumber = 3;
     }
     return {
