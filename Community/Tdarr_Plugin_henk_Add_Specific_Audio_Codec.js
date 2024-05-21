@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_henk_Add_Specific_Audio_Codec',
   Stage: 'Pre-processing',
-  Name: '[MKV ONLY] Transcode given codec to other given codec and keep original',
+  Name: '[MKV ONLY] Transcode Given Codec To Other Given Codec And Keep Original',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'Re-encodes all audio tracks in a given codec to another given codec and keeps original.',

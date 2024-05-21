@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz4CleanSubs',
   Stage: 'Pre-processing',
-  Name: 'Migz-Clean subtitle streams',
+  Name: 'Migz Clean Subtitle Streams',
   Type: 'Subtitle',
   Operation: 'Transcode',
   Description: 'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',

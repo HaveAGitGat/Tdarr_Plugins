@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_standardise_audio_stream_codecs',
   Stage: 'Pre-processing',
-  Name: 'Standardise audio stream codecs',
+  Name: 'Standardise Audio Stream Codecs',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

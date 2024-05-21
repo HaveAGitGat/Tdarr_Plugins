@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_handbrake_ffmpeg_custom',
   Stage: 'Pre-processing',
-  Name: 'HandBrake or FFmpeg custom arguments',
+  Name: 'HandBrake Or FFmpeg Custom Arguments',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

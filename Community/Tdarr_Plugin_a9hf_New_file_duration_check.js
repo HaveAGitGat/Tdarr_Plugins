@@ -3,7 +3,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_a9hf_New_file_duration_check',
   Stage: 'Pre-processing',
-  Name: 'New file duration check',
+  Name: 'New File Duration Check',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Give an error if new file is not within the specified upper and lower bound duration limits.

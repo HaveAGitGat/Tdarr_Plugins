@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_hk75_Drawmonster_MP4_AAC_No_Subs_No_metaTitle",
     Stage: "Pre-processing",
-    Name: "Drawmonster MP4 Stereo AAC, No Subs, No title meta data ",
+    Name: "Drawmonster MP4 Stereo AAC, No Subs, No Title Meta Data",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (English or any) doesn't exist. The output container is mp4. \n\n

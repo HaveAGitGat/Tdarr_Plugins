@@ -5,7 +5,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_z18s_rename_files_based_on_codec",
     Stage: "Post-processing",
-    Name: "Rename based on codec",
+    Name: "Rename Based On Codec",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] If the filename contains '264' or '265', this plugin renames 264 files to 265 or vice versa depending on codec. \n\n`,

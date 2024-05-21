@@ -4,7 +4,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_078d_Output_embedded_subs_to_SRT_and_remove",
     Stage: "Pre-processing",
-    Name: "Output embedded subs to SRT and remove",
+    Name: "Output Embedded Subs To SRT And Remove",
     Type: "Video",
     Operation: "Transcode",
     Description: `This plugin outputs embedded subs to SRT and then removes them \n\n`,

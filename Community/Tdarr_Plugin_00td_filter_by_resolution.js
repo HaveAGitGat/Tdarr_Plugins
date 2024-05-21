@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_resolution',
   Stage: 'Pre-processing',
-  Name: 'Filter by resolution',
+  Name: 'Filter By Resolution',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'Only allow specified resolutions to be processed \n\n',
