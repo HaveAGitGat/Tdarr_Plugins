@@ -108,6 +108,7 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
     footprintId: args.originalLibraryFile.footprintId,
   };
 
+  // added in 2.19.01
   if (typeof args.scanIndividualFile !== 'undefined') {
     args.jobLog('Scanning files using Node');
     pluginInputFileObj = await args.scanIndividualFile(inputFileScanArgs, scanTypes);
