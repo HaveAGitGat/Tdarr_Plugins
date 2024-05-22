@@ -100,6 +100,7 @@ export interface Ivariables {
     ffmpegCommand: IffmpegCommand,
     flowFailed: boolean,
     user: Record<string, string>,
+    healthCheck?: 'Success',
 }
 
 export interface IpluginOutputArgs {
@@ -137,7 +138,8 @@ export interface IpluginInputArgs {
     updateWorker: IupdateWorker,
     logFullCliOutput: boolean,
     logOutcome: (outcome: string) => void,
-    scanIndividualFile?: (filee: IFileObjectMin, scanTypes: IscanTypes) => IFileObject,
+    scanIndividualFile?: (filee: IFileObjectMin, scanTypes: IscanTypes) => Promise<IFileObject>,
+    updateStat: (db: string, key: string, inc: number) => Promise<void>,
     deps: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fsextra: any,
