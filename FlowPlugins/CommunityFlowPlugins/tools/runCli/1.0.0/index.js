@@ -267,7 +267,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 res = _a.sent();
                 if (res.cliExitCode !== 0) {
-                    msg = "Running ".concat(userCli, " failed");
+                    msg = "Running ".concat(cliPath, " failed");
                     args.jobLog(msg);
                     throw new Error(msg);
                 }
