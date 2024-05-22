@@ -256,7 +256,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const res = await cli.runCli();
 
   if (res.cliExitCode !== 0) {
-    const msg = `Running ${userCli} failed`;
+    const msg = `Running ${cliPath} failed`;
     args.jobLog(msg);
     throw new Error(msg);
   }
