@@ -93,11 +93,14 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
           if (newContainer === 'mp4') {
             if (
-              [
+              codecType === 'attachment'
+              || [
                 'hdmv_pgs_subtitle',
                 'eia_608',
                 'timed_id3',
                 'subrip',
+                'ass',
+                'ssa',
               ].includes(codecName)
             ) {
               stream.removed = true;
@@ -107,6 +110,18 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
           // Error
         }
       }
+    }
+    // handle gents if coming from odd container
+    const container = args.inputFileObj.container.toLowerCase();
+    if (
+      [
+        'ts',
+        'avi',
+        'mpg',
+        'mpeg',
+      ].includes(container)
+    ) {
+      args.variables.ffmpegCommand.overallOuputArguments.push('-fflags', '+genpts');
     }
   }
 
