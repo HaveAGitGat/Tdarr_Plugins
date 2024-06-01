@@ -35,10 +35,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLI = exports.getFFmpegVar = void 0;
+var fs_1 = __importDefault(require("fs"));
 var cliParsers_1 = require("./cliParsers");
-var fs = require('fs');
+var fileUtils_1 = require("./fileUtils");
 var fancyTimeFormat = function (time) {
     // Hours, minutes and seconds
     // eslint-disable-next-line no-bitwise
@@ -93,60 +97,71 @@ var CLI = /** @class */ (function () {
         this.oldProgress = 0;
         this.lastProgCheck = 0;
         this.hbPass = 0;
-        this.updateETA = function (perc) {
-            if (perc > 0) {
-                if (_this.lastProgCheck === 0) {
-                    _this.lastProgCheck = new Date().getTime();
-                    _this.oldProgress = perc;
-                }
-                else if (perc !== _this.oldProgress) {
-                    var n = new Date().getTime();
-                    var secsSinceLastCheck = (n - _this.lastProgCheck) / 1000;
-                    if (secsSinceLastCheck > 1) {
-                        // eta total
-                        var eta = Math.round((100 / (perc - _this.oldProgress)) * secsSinceLastCheck);
+        this.updateETA = function (perc) { return __awaiter(_this, void 0, void 0, function () {
+            var n, secsSinceLastCheck, eta, sum, avg, estSize, outputFileSizeInGbytes, singleFileSize, err_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        if (!(perc > 0)) return [3 /*break*/, 6];
+                        if (!(this.lastProgCheck === 0)) return [3 /*break*/, 1];
+                        this.lastProgCheck = new Date().getTime();
+                        this.oldProgress = perc;
+                        return [3 /*break*/, 6];
+                    case 1:
+                        if (!(perc !== this.oldProgress)) return [3 /*break*/, 6];
+                        n = new Date().getTime();
+                        secsSinceLastCheck = (n - this.lastProgCheck) / 1000;
+                        if (!(secsSinceLastCheck > 1)) return [3 /*break*/, 6];
+                        eta = Math.round((100 / (perc - this.oldProgress)) * secsSinceLastCheck);
                         // eta remaining
                         eta *= ((100 - perc) / 100);
-                        _this.progAVG.push(eta);
-                        // let values = [2, 56, 3, 41, 0, 4, 100, 23];
-                        var sum = _this.progAVG.reduce(
+                        this.progAVG.push(eta);
+                        sum = this.progAVG.reduce(
                         // eslint-disable-next-line
                         function (previous, current) { return (current += previous); });
-                        var avg = sum / _this.progAVG.length;
-                        // est size
-                        var estSize = 0;
-                        var outputFileSizeInGbytes = void 0;
-                        try {
-                            if (fs.existsSync(_this.config.outputFilePath)) {
-                                var singleFileSize = fs.statSync(_this.config.outputFilePath);
-                                singleFileSize = singleFileSize.size;
-                                outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
-                                if (outputFileSizeInGbytes !== _this.oldOutSize) {
-                                    _this.oldOutSize = outputFileSizeInGbytes;
-                                    estSize = outputFileSizeInGbytes
-                                        + ((100 - perc) / perc) * outputFileSizeInGbytes;
-                                    _this.oldEstSize = estSize;
-                                }
+                        avg = sum / this.progAVG.length;
+                        estSize = 0;
+                        outputFileSizeInGbytes = void 0;
+                        _a.label = 2;
+                    case 2:
+                        _a.trys.push([2, 4, , 5]);
+                        return [4 /*yield*/, (0, fileUtils_1.fileExists)(this.config.outputFilePath)];
+                    case 3:
+                        if (_a.sent()) {
+                            singleFileSize = fs_1.default.statSync(this.config.outputFilePath);
+                            // @ts-expect-error type
+                            singleFileSize = singleFileSize.size;
+                            // @ts-expect-error type
+                            outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
+                            if (outputFileSizeInGbytes !== this.oldOutSize) {
+                                this.oldOutSize = outputFileSizeInGbytes;
+                                estSize = outputFileSizeInGbytes
+                                    + ((100 - perc) / perc) * outputFileSizeInGbytes;
+                                this.oldEstSize = estSize;
                             }
                         }
-                        catch (err) {
-                            // eslint-disable-next-line no-console
-                            console.log(err);
-                        }
-                        _this.config.updateWorker({
+                        return [3 /*break*/, 5];
+                    case 4:
+                        err_1 = _a.sent();
+                        // eslint-disable-next-line no-console
+                        console.log(err_1);
+                        return [3 /*break*/, 5];
+                    case 5:
+                        this.config.updateWorker({
                             ETA: fancyTimeFormat(avg),
                             outputFileSizeInGbytes: outputFileSizeInGbytes === undefined ? 0 : outputFileSizeInGbytes,
-                            estSize: _this.oldEstSize === undefined ? 0 : _this.oldEstSize,
+                            estSize: this.oldEstSize === undefined ? 0 : this.oldEstSize,
                         });
-                        if (_this.progAVG.length > 30) {
-                            _this.progAVG.splice(0, 1);
+                        if (this.progAVG.length > 30) {
+                            this.progAVG.splice(0, 1);
                         }
-                        _this.lastProgCheck = n;
-                        _this.oldProgress = perc;
-                    }
+                        this.lastProgCheck = n;
+                        this.oldProgress = perc;
+                        _a.label = 6;
+                    case 6: return [2 /*return*/];
                 }
-            }
-        };
+            });
+        }); };
         this.parseOutput = function (data) {
             var _a, _b, _c, _d, _e, _f, _g;
             var str = "".concat(data);
@@ -166,7 +181,7 @@ var CLI = /** @class */ (function () {
                     hbPass: _this.hbPass,
                 });
                 if (percentage > 0) {
-                    _this.updateETA(percentage);
+                    void _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,
                     });
@@ -214,7 +229,7 @@ var CLI = /** @class */ (function () {
                     });
                 }
                 if (percentage > 0) {
-                    _this.updateETA(percentage);
+                    void _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,
                     });
@@ -225,7 +240,7 @@ var CLI = /** @class */ (function () {
                     str: str,
                 });
                 if (percentage > 0) {
-                    _this.updateETA(percentage);
+                    void _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,
                     });
