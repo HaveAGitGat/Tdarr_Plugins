@@ -39,6 +39,28 @@ const handbrakeParser = ({
   return percentage;
 };
 
+const getHandBrakeFps = ({
+  str,
+}: {
+  str: string,
+}): number => {
+  try {
+    if (typeof str !== 'string' || !(str.includes('(') && str.includes('fps'))) {
+      return 0;
+    }
+
+    const out = parseInt(str.split('(')[1].split('fps')[0].trim(), 10);
+
+    // eslint-disable-next-line no-restricted-globals
+    if (!isNaN(out)) {
+      return out;
+    }
+  } catch (err) {
+    // err
+  }
+  return 0;
+};
+
 // frame=  889 fps=106 q=26.0 Lsize=   25526kB time=00:00:35.69 bitrate=5858.3kbits/s speed=4.25x
 const getFFmpegVar = ({
   str,
@@ -227,5 +249,6 @@ export {
   ffmpegParser,
   getFFmpegPercentage,
   getFFmpegVar,
+  getHandBrakeFps,
   editreadyParser,
 };
