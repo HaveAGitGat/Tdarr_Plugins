@@ -1,4 +1,6 @@
-import { editreadyParser, ffmpegParser, handbrakeParser } from './cliParsers';
+import {
+  editreadyParser, ffmpegParser, getHandBrakeFps, handbrakeParser,
+} from './cliParsers';
 import { Ilog, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
 
@@ -180,6 +182,16 @@ class CLI {
         this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
+        });
+      }
+
+      const fps = getHandBrakeFps({
+        str,
+      });
+
+      if (fps > 0) {
+        this.config.updateWorker({
+          fps,
         });
       }
     } else if (this.config.cli.toLowerCase().includes('ffmpeg')) {
