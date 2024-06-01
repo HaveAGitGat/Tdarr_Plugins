@@ -171,6 +171,14 @@ var CLI = /** @class */ (function () {
                         percentage: percentage,
                     });
                 }
+                var fps = (0, cliParsers_1.getHandBrakeFps)({
+                    str: str,
+                });
+                if (fps > 0) {
+                    _this.config.updateWorker({
+                        fps: fps,
+                    });
+                }
             }
             else if (_this.config.cli.toLowerCase().includes('ffmpeg')) {
                 var n = str.indexOf('fps');
