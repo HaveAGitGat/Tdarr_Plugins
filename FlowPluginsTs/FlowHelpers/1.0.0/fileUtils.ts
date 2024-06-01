@@ -1,6 +1,8 @@
 import { promises as fsp } from 'fs';
 import { IpluginInputArgs } from './interfaces/interfaces';
 
+export const fileExists = async (path:string): Promise<boolean> => !!(await fsp.stat(path).catch(() => false));
+
 export const getContainer = (filePath: string): string => {
   const parts = filePath.split('.');
   return parts[parts.length - 1];

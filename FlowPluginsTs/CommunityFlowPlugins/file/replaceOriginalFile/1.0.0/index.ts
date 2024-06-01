@@ -1,6 +1,7 @@
 import fs from 'fs';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
+  fileExists,
   getContainer, getFileAbosluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
@@ -76,7 +77,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   // delete original file
   if (
-    fs.existsSync(args.originalLibraryFile._id)
+    await fileExists(args.originalLibraryFile._id)
     && args.originalLibraryFile._id !== currentPath
   ) {
     args.jobLog(`Deleting original file:${args.originalLibraryFile._id}`);

@@ -4,6 +4,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import { fileExists } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
@@ -47,7 +48,7 @@ const details = ():IpluginDetails => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
+const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
@@ -55,7 +56,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const oldFile = args.inputFileObj._id;
   const newFile = `${args.inputFileObj._id}.tmp`;
 
-  if (fs.existsSync(newFile)) {
+  if (await fileExists(newFile)) {
     fs.unlinkSync(newFile);
   }
 
