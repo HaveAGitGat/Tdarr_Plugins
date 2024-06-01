@@ -36,8 +36,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
+exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = exports.fileExists = void 0;
 var fs_1 = require("fs");
+var fileExists = function (path) { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
+    switch (_a.label) {
+        case 0: return [4 /*yield*/, fs_1.promises.stat(path).catch(function () { return false; })];
+        case 1: return [2 /*return*/, !!(_a.sent())];
+    }
+}); }); };
+exports.fileExists = fileExists;
 var getContainer = function (filePath) {
     var parts = filePath.split('.');
     return parts[parts.length - 1];

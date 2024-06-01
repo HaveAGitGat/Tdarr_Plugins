@@ -1,10 +1,10 @@
+import fs from 'fs';
 import {
   editreadyParser, ffmpegParser, getHandBrakeFps, handbrakeParser,
 } from './cliParsers';
 import { Ilog, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
-
-const fs = require('fs');
+import { fileExists } from './fileUtils';
 
 const fancyTimeFormat = (time: number) => {
   // Hours, minutes and seconds
@@ -93,7 +93,7 @@ class CLI {
     this.config = config;
   }
 
-  updateETA = (perc: number): void => {
+  updateETA = async (perc: number): Promise<void> => {
     if (perc > 0) {
       if (this.lastProgCheck === 0) {
         this.lastProgCheck = new Date().getTime();
@@ -125,9 +125,11 @@ class CLI {
           let outputFileSizeInGbytes;
 
           try {
-            if (fs.existsSync(this.config.outputFilePath)) {
+            if (await fileExists(this.config.outputFilePath)) {
               let singleFileSize = fs.statSync(this.config.outputFilePath);
+              // @ts-expect-error type
               singleFileSize = singleFileSize.size;
+              // @ts-expect-error type
               outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
 
               if (outputFileSizeInGbytes !== this.oldOutSize) {
@@ -179,7 +181,7 @@ class CLI {
       });
 
       if (percentage > 0) {
-        this.updateETA(percentage);
+        void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
         });
@@ -235,7 +237,7 @@ class CLI {
       }
 
       if (percentage > 0) {
-        this.updateETA(percentage);
+        void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
         });
@@ -245,7 +247,7 @@ class CLI {
         str,
       });
       if (percentage > 0) {
-        this.updateETA(percentage);
+        void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
         });

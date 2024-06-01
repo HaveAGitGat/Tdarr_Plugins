@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 
 import {
   IpluginDetails,
@@ -86,7 +86,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const checkReadWrite = async (location: string) => {
     try {
-      await fs.access(location, fs.constants.R_OK);
+      await fsp.access(location, fsp.constants.R_OK);
     } catch (err) {
       args.jobLog(JSON.stringify(err));
       if (pauseNodeIfAccessChecksFail) {
@@ -97,7 +97,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     }
 
     try {
-      await fs.access(location, fs.constants.W_OK);
+      await fsp.access(location, fsp.constants.W_OK);
     } catch (err) {
       args.jobLog(JSON.stringify(err));
       if (pauseNodeIfAccessChecksFail) {
