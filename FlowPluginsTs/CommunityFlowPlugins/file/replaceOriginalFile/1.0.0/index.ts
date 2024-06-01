@@ -1,4 +1,4 @@
-import fs from 'fs';
+import { promises as fsp } from 'fs';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
   fileExists,
@@ -81,7 +81,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     && args.originalLibraryFile._id !== currentPath
   ) {
     args.jobLog(`Deleting original file:${args.originalLibraryFile._id}`);
-    fs.unlinkSync(args.originalLibraryFile._id);
+    await fsp.unlink(args.originalLibraryFile._id);
   }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));

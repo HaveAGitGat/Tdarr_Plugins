@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs, { promises as fsp } from 'fs';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -57,7 +57,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const newFile = `${args.inputFileObj._id}.tmp`;
 
   if (await fileExists(newFile)) {
-    fs.unlinkSync(newFile);
+    await fsp.unlink(newFile);
   }
 
   fs.copyFileSync(oldFile, newFile);
