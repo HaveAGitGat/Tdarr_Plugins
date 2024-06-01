@@ -1,10 +1,9 @@
+import fs from 'fs';
 import {
   editreadyParser, ffmpegParser, getHandBrakeFps, handbrakeParser,
 } from './cliParsers';
 import { Ilog, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
-
-const fs = require('fs');
 
 const fancyTimeFormat = (time: number) => {
   // Hours, minutes and seconds
@@ -127,7 +126,9 @@ class CLI {
           try {
             if (fs.existsSync(this.config.outputFilePath)) {
               let singleFileSize = fs.statSync(this.config.outputFilePath);
+              // @ts-expect-error type
               singleFileSize = singleFileSize.size;
+              // @ts-expect-error type
               outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
 
               if (outputFileSizeInGbytes !== this.oldOutSize) {

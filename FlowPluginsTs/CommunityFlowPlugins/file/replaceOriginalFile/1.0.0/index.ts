@@ -1,3 +1,4 @@
+import fs from 'fs';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
   getContainer, getFileAbosluteDir, getFileName,
@@ -32,7 +33,6 @@ const details = (): IpluginDetails => ({
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
-  const fs = require('fs');
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
