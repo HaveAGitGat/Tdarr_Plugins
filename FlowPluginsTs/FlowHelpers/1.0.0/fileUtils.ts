@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import { IpluginInputArgs } from './interfaces/interfaces';
 
 export const getContainer = (filePath: string): string => {
@@ -37,7 +37,7 @@ export const getSubStem = ({
 };
 
 export const getFileSize = async (file:string):Promise<number> => {
-  const stats = await fs.stat(file);
+  const stats = await fsp.stat(file);
   const { size } = stats;
   return size;
 };

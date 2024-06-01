@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import {
   getContainer, getFileAbosluteDir, getSubStem,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
@@ -188,7 +188,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     sourceDir = getFileAbosluteDir(args.inputFileObj._id);
   }
 
-  let filesInDir = (await fs.readdir(sourceDir))
+  let filesInDir = (await fsp.readdir(sourceDir))
     .map((row) => ({
       source: `${sourceDir}/${row}`,
       destination: normJoinPath({

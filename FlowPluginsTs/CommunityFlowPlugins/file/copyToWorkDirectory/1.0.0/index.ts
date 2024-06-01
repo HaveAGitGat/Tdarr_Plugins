@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import { getContainer, getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -67,7 +67,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.deps.fsextra.ensureDirSync(outputPath);
 
-  await fs.copyFile(args.inputFileObj._id, ouputFilePath);
+  await fsp.copyFile(args.inputFileObj._id, ouputFilePath);
 
   return {
     outputFileObj: {
