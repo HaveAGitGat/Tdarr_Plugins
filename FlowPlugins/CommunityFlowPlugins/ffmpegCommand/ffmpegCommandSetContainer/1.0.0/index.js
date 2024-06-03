@@ -77,12 +77,15 @@ var plugin = function (args) {
                         }
                     }
                     if (newContainer === 'mp4') {
-                        if ([
-                            'hdmv_pgs_subtitle',
-                            'eia_608',
-                            'timed_id3',
-                            'subrip',
-                        ].includes(codecName)) {
+                        if (codecType === 'attachment'
+                            || [
+                                'hdmv_pgs_subtitle',
+                                'eia_608',
+                                'timed_id3',
+                                'subrip',
+                                'ass',
+                                'ssa',
+                            ].includes(codecName)) {
                             stream.removed = true;
                         }
                     }
@@ -91,6 +94,16 @@ var plugin = function (args) {
                     // Error
                 }
             }
+        }
+        // handle genpts if coming from odd container
+        var container = args.inputFileObj.container.toLowerCase();
+        if ([
+            'ts',
+            'avi',
+            'mpg',
+            'mpeg',
+        ].includes(container)) {
+            args.variables.ffmpegCommand.overallOuputArguments.push('-fflags', '+genpts');
         }
     }
     return {

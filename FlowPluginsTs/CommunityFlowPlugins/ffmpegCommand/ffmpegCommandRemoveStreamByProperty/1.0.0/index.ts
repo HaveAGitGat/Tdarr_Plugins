@@ -85,7 +85,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
-  const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',');
+  const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map((item) => item.trim());
   const condition = String(args.inputs.condition);
 
   args.variables.ffmpegCommand.streams.forEach((stream) => {
@@ -101,7 +101,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       const prop = String(target).toLowerCase();
       for (let i = 0; i < valuesToRemove.length; i += 1) {
         const val = valuesToRemove[i].toLowerCase();
-
         const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
         if (condition === 'includes' && prop.includes(val)) {
           args.jobLog(`${prefix} includes ${val}\n`);

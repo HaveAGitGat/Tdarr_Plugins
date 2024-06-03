@@ -64,7 +64,7 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var propertyToCheck = String(args.inputs.propertyToCheck).trim();
-    var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',');
+    var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map(function (item) { return item.trim(); });
     var condition = String(args.inputs.condition);
     args.variables.ffmpegCommand.streams.forEach(function (stream) {
         var _a;
