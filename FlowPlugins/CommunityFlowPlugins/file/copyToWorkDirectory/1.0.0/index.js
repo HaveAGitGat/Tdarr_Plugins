@@ -75,7 +75,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                originalFileName = (0, fileUtils_1.getFileName)(args.originalLibraryFile._id);
+                originalFileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 newContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 outputPath = args.workDir;
                 ouputFilePath = (0, normJoinPath_1.default)({
