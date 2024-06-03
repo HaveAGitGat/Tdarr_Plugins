@@ -95,7 +95,7 @@ var plugin = function (args) {
                 }
             }
         }
-        // handle gents if coming from odd container
+        // handle genpts if coming from odd container
         var container = args.inputFileObj.container.toLowerCase();
         if ([
             'ts',
