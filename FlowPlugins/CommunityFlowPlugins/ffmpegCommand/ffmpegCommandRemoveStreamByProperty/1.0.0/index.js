@@ -64,13 +64,8 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var propertyToCheck = String(args.inputs.propertyToCheck).trim();
-    var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',');
+    var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map(function (item) { return item.trim(); });
     var condition = String(args.inputs.condition);
-    var valuesToRemoveTrimed = [];
-    valuesToRemove.forEach(function (element) {
-        var trimedElement = element.trim();
-        valuesToRemoveTrimed.push(trimedElement);
-    });
     args.variables.ffmpegCommand.streams.forEach(function (stream) {
         var _a;
         var target = '';
@@ -83,8 +78,8 @@ var plugin = function (args) {
         }
         if (target) {
             var prop = String(target).toLowerCase();
-            for (var i = 0; i < valuesToRemoveTrimed.length; i += 1) {
-                var val = valuesToRemoveTrimed[i].toLowerCase();
+            for (var i = 0; i < valuesToRemove.length; i += 1) {
+                var val = valuesToRemove[i].toLowerCase();
                 var prefix = "Removing stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop);
                 if (condition === 'includes' && prop.includes(val)) {
                     args.jobLog("".concat(prefix, " includes ").concat(val, "\n"));
