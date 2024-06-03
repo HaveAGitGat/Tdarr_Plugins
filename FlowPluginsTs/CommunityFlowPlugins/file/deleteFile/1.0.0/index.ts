@@ -1,4 +1,5 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
+
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -64,21 +65,21 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   if (fileToDelete === 'workingFile') {
     args.jobLog(`Deleting working file ${args.inputFileObj._id}`);
-    await fs.unlink(args.inputFileObj._id);
+    await fsp.unlink(args.inputFileObj._id);
   } else if (fileToDelete === 'originalFile') {
     args.jobLog(`Deleting original file ${args.originalLibraryFile._id}`);
-    await fs.unlink(args.originalLibraryFile._id);
+    await fsp.unlink(args.originalLibraryFile._id);
   }
 
   const fileDir = getFileAbosluteDir(args.originalLibraryFile._id);
 
   if (deleteParentFolderIfEmpty) {
     args.jobLog(`Checking if folder ${fileDir} is empty`);
-    const files = await fs.readdir(fileDir);
+    const files = await fsp.readdir(fileDir);
 
     if (files.length === 0) {
       args.jobLog(`Deleting empty folder ${fileDir}`);
-      await fs.rmdir(fileDir);
+      await fsp.rmdir(fileDir);
     } else {
       args.jobLog(`Folder ${fileDir} is not empty, skipping delete`);
     }

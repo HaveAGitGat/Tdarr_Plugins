@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import {
   getContainer, getFileName, getPluginWorkDir, getScanTypes,
 } from './fileUtils';
@@ -43,7 +43,7 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
   let pluginSrcStr = '';
   if (pluginSource === 'Community') {
     classicPlugin = args.deps.importFresh(relativePluginPath);
-    pluginSrcStr = await fs.readFile(absolutePath, 'utf8');
+    pluginSrcStr = await fsp.readFile(absolutePath, 'utf8');
   } else {
     // eslint-disable-next-line no-await-in-loop
     const res = await args.deps.axiosMiddleware('api/v2/read-plugin', {
