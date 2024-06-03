@@ -111,7 +111,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         }
       }
     }
-    // handle gents if coming from odd container
+    // handle genpts if coming from odd container
     const container = args.inputFileObj.container.toLowerCase();
     if (
       [
