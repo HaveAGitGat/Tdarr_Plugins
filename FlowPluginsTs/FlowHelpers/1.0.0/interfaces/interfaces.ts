@@ -101,6 +101,7 @@ export interface Ivariables {
     flowFailed: boolean,
     user: Record<string, string>,
     healthCheck?: 'Success',
+    queueTags?: string,
 }
 
 export interface IpluginOutputArgs {
