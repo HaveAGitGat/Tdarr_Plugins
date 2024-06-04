@@ -101,6 +101,7 @@ export interface Ivariables {
     flowFailed: boolean,
     user: Record<string, string>,
     healthCheck?: 'Success',
+    queueTags?: string,
 }
 
 export interface IpluginOutputArgs {
@@ -126,6 +127,7 @@ export interface IpluginInputArgs {
     originalLibraryFile: IFileObject,
     nodeHardwareType: string,
     workerType: string,
+    nodeTags?: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config: any,
     job: Ijob,
