@@ -1,3 +1,4 @@
+import os from 'os';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -37,7 +38,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
     if (stream.codec_type === 'video') {
       stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
 
-      if (stream.outputArgs.some((row) => row.includes('qsv'))) {
+      if (stream.outputArgs.some((row) => row.includes('qsv')) && os.platform() !== 'win32') {
         stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
       } else {
         stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');
