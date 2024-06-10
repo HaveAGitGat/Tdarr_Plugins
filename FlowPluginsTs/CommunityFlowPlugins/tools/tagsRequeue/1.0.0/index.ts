@@ -20,7 +20,7 @@ Subsequent tags must not use the reserved word 'require' in them.
 
 You can set the 'Node Tags' in the Node options panel.
 
-The the item tags in the staging section must be a subset of the required tags for a worker to process the file.
+A worker will only process a file if the Custom Queue Tags are a subset of the Worker/Node Tags
 `,
   style: {
     borderColor: 'yellow',

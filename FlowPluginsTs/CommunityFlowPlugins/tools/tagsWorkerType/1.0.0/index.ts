@@ -13,7 +13,8 @@ does not match the required worker type and tags.
 
 You can set the 'Node Tags' in the Node options panel.
 
-The current tags must be a subset of the required tags.
+The required tags must be a subset of the current tags for the current worker to process the item,
+else the item will be requeued with the required tags.
   `,
   style: {
     borderColor: 'yellow',
