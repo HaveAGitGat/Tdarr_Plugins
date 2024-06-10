@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Tags: Worker Type',
-    description: "\nRequeues the item into the staging section if the current worker\ndoes not match the required worker type and tags.\n\nYou can set the 'Node Tags' in the Node options panel.\n\nThe current tags must be a subset of the required tags.\n  ",
+    description: "\nRequeues the item into the staging section if the current worker\ndoes not match the required worker type and tags.\n\nYou can set the 'Node Tags' in the Node options panel.\n\nThe required tags must be a subset of the current tags for the current worker to process the item,\nelse the item will be requeued with the required tags.\n  ",
     style: {
         borderColor: 'yellow',
     },
@@ -91,22 +91,26 @@ var plugin = function (args) {
     args.jobLog("Required Tags: ".concat(requiredTags.join(',')));
     args.jobLog("Current Tags: ".concat(currentTags.join(',')));
     var isSubset = true;
-    for (var i = 0; i < currentTags.length; i += 1) {
-        if (!requiredTags.includes(currentTags[i])) {
+    for (var i = 0; i < requiredTags.length; i += 1) {
+        if (!currentTags.includes(requiredTags[i])) {
             isSubset = false;
             break;
         }
     }
+    // requiredTags needs to be subset of currentTags
+    args.jobLog("Current tags: ".concat(currentTags));
+    args.jobLog("Required tags: ".concat(requiredTags));
+    args.jobLog("Is Subset: ".concat(isSubset));
     if (isSubset) {
         // eslint-disable-next-line no-param-reassign
         args.variables.queueTags = '';
-        args.jobLog('Worker type and tags are subset of required tags');
+        args.jobLog('Required tags are subset of current tags, continuing to next plugin.');
     }
     else {
+        args.jobLog('Required tags are not subset of current tags, requeueing.');
         // eslint-disable-next-line no-param-reassign
         args.variables.queueTags = requiredTags.join(',');
-        args.jobLog('Worker type and tags are not subset of required tags,'
-            + " requeueing with tags ".concat(args.variables.queueTags));
+        args.jobLog("Requeueing with tags ".concat(args.variables.queueTags));
     }
     return {
         outputFileObj: args.inputFileObj,

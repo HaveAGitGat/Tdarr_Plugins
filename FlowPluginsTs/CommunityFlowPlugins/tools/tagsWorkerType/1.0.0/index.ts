@@ -13,7 +13,8 @@ does not match the required worker type and tags.
 
 You can set the 'Node Tags' in the Node options panel.
 
-The current tags must be a subset of the required tags.
+The required tags must be a subset of the current tags for the current worker to process the item,
+else the item will be requeued with the required tags.
   `,
   style: {
     borderColor: 'yellow',
@@ -109,22 +110,26 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let isSubset = true;
 
-  for (let i = 0; i < currentTags.length; i += 1) {
-    if (!requiredTags.includes(currentTags[i])) {
+  for (let i = 0; i < requiredTags.length; i += 1) {
+    if (!currentTags.includes(requiredTags[i])) {
       isSubset = false;
       break;
     }
   }
+  // requiredTags needs to be subset of currentTags
+  args.jobLog(`Current tags: ${currentTags}`);
+  args.jobLog(`Required tags: ${requiredTags}`);
+  args.jobLog(`Is Subset: ${isSubset}`);
 
   if (isSubset) {
     // eslint-disable-next-line no-param-reassign
     args.variables.queueTags = '';
-    args.jobLog('Worker type and tags are subset of required tags');
+    args.jobLog('Required tags are subset of current tags, continuing to next plugin.');
   } else {
+    args.jobLog('Required tags are not subset of current tags, requeueing.');
     // eslint-disable-next-line no-param-reassign
     args.variables.queueTags = requiredTags.join(',');
-    args.jobLog('Worker type and tags are not subset of required tags,'
-    + ` requeueing with tags ${args.variables.queueTags}`);
+    args.jobLog(`Requeueing with tags ${args.variables.queueTags}`);
   }
 
   return {
