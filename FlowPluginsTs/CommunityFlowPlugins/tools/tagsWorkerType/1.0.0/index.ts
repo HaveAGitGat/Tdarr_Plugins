@@ -84,7 +84,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   requiredTags.push(`require${requiredWorkerType}`);
   if (requiredNodeTags) {
-    requiredTags = requiredTags.concat(requiredNodeTags.split(',').map((tag) => tag.trim()));
+    requiredTags = requiredTags.concat(requiredNodeTags.split(','));
   }
 
   const currentWorkerType = args.workerType;
@@ -102,8 +102,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   if (args.nodeTags) {
-    currentTags = currentTags.concat(args.nodeTags.split(',').map((tag) => tag.trim()));
+    currentTags = currentTags.concat(args.nodeTags.split(','));
   }
+
+  requiredTags = requiredTags.map((tag) => tag.trim()).filter((tag) => tag !== '');
+  currentTags = currentTags.map((tag) => tag.trim()).filter((tag) => tag !== '');
 
   args.jobLog(`Required Tags: ${requiredTags.join(',')}`);
   args.jobLog(`Current Tags: ${currentTags.join(',')}`);
