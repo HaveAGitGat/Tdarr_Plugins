@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Tags: Requeue',
-    description: "\nPlace the file back in the staging queue with specific tags.\n\nOnly Nodes/Workers which match the tags will be able to process the file.\n\nThe tags must have one of the following: 'requireCPU', 'requireGPU', or 'requireCPUorGPU'.\n\nThe above tells the server what type of worker is required to process the file.\n\nSubsequent tags must not use the reserved word 'require' in them.\n\nYou can set the 'Node Tags' in the Node options panel.\n\nThe the item tags in the staging section must be a subset of the required tags for a worker to process the file.\n",
+    description: "\nPlace the file back in the staging queue with specific tags.\n\nOnly Nodes/Workers which match the tags will be able to process the file.\n\nThe tags must have one of the following: 'requireCPU', 'requireGPU', or 'requireCPUorGPU'.\n\nThe above tells the server what type of worker is required to process the file.\n\nSubsequent tags must not use the reserved word 'require' in them.\n\nYou can set the 'Node Tags' in the Node options panel.\n\nA worker will only process a file if the Custom Queue Tags are a subset of the Worker/Node Tags\n",
     style: {
         borderColor: 'yellow',
     },

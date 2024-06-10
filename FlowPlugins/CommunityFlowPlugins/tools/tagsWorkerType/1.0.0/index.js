@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Tags: Worker Type',
-    description: "\nRequeues the item into the staging section if the current worker\ndoes not match the required worker type and tags.\n\nYou can set the 'Node Tags' in the Node options panel.\n\nThe current tags must be a subset of the required tags.\n  ",
+    description: "\nRequeues the item into the staging section if the current worker\ndoes not match the required worker type and tags.\n\nYou can set the 'Node Tags' in the Node options panel.\n\nThe required tags must be a subset of the current tags for the current worker to process the item,\nelse the item will be requeued with the required tags.\n  ",
     style: {
         borderColor: 'yellow',
     },
