@@ -68,7 +68,7 @@ var plugin = function (args) {
     var currentTags = [];
     requiredTags.push("require".concat(requiredWorkerType));
     if (requiredNodeTags) {
-        requiredTags = requiredTags.concat(requiredNodeTags.split(',').map(function (tag) { return tag.trim(); }));
+        requiredTags = requiredTags.concat(requiredNodeTags.split(','));
     }
     var currentWorkerType = args.workerType;
     if (requiredWorkerType === 'CPUorGPU') {
@@ -86,8 +86,10 @@ var plugin = function (args) {
         }
     }
     if (args.nodeTags) {
-        currentTags = currentTags.concat(args.nodeTags.split(',').map(function (tag) { return tag.trim(); }));
+        currentTags = currentTags.concat(args.nodeTags.split(','));
     }
+    requiredTags = requiredTags.map(function (tag) { return tag.trim(); }).filter(function (tag) { return tag !== ''; });
+    currentTags = currentTags.map(function (tag) { return tag.trim(); }).filter(function (tag) { return tag !== ''; });
     args.jobLog("Required Tags: ".concat(requiredTags.join(',')));
     args.jobLog("Current Tags: ".concat(currentTags.join(',')));
     var isSubset = true;
