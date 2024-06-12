@@ -35,7 +35,9 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'Enable or disable this plugin. For example you may want to enable it for one set of transcoding tests.',
+      tooltip: `Enable or disable this plugin. For example you may want to enable it for one transcoding block and then
+      disable it for another block.
+      `,
     },
     {
       label: 'Compare Method',
