@@ -2,7 +2,7 @@ import fs from 'fs';
 import {
   editreadyParser, ffmpegParser, getHandBrakeFps, handbrakeParser,
 } from './cliParsers';
-import { Ilog, IupdateWorker } from './interfaces/interfaces';
+import { Ilog, IpluginInputArgs, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
 import { fileExists } from './fileUtils';
 
@@ -71,6 +71,7 @@ interface Iconfig {
   updateWorker: IupdateWorker,
   logFullCliOutput: boolean,
   inputFileObj: IFileObject,
+  args: IpluginInputArgs,
 }
 
 class CLI {
@@ -88,6 +89,13 @@ class CLI {
   lastProgCheck = 0;
 
   hbPass = 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+  thread: any;
+
+  cancelled = false;
+
+  startTime = new Date().getTime();
 
   constructor(config: Iconfig) {
     this.config = config;
@@ -156,6 +164,58 @@ class CLI {
 
           this.lastProgCheck = n;
           this.oldProgress = perc;
+
+          const secondsSinceStart = (new Date().getTime() - this.startTime) / 1000;
+
+          // live size compare
+          if (
+            this.config.args.variables.liveSizeCompare?.enabled
+          ) {
+            const {
+              compareMethod,
+              thresholdPerc,
+              checkDelaySeconds,
+            } = this.config.args.variables.liveSizeCompare;
+
+            if (secondsSinceStart > checkDelaySeconds) {
+              // MB
+              const inputFileSize = this.config.inputFileObj.file_size;
+              const inputFileSizeInGbytes = inputFileSize / 1024;
+
+              const cancel = (ratio:number) => {
+                this.config.jobLog(`Input file size: ${inputFileSizeInGbytes}GB`);
+                this.config.jobLog(`Ratio: ${ratio}%`);
+
+                this.config.jobLog(`Ratio is greater than threshold: ${thresholdPerc}%, cancelling job`);
+                this.cancelled = true;
+                this.killThread();
+              };
+
+              if (
+                compareMethod === 'estimatedFinalSize'
+              && estSize !== undefined
+              && estSize > 0
+              ) {
+                const ratio = (estSize / inputFileSizeInGbytes) * 100;
+
+                if (ratio > thresholdPerc) {
+                  this.config.jobLog(`Estimated final size: ${estSize}GB`);
+                  cancel(ratio);
+                }
+              } else if (
+                compareMethod === 'currentSize'
+              && outputFileSizeInGbytes !== undefined
+              && outputFileSizeInGbytes > 0
+              ) {
+                const ratio = (outputFileSizeInGbytes / inputFileSizeInGbytes) * 100;
+
+                if (ratio > thresholdPerc) {
+                  this.config.jobLog(`Current output size: ${outputFileSizeInGbytes}GB`);
+                  cancel(ratio);
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -255,8 +315,7 @@ class CLI {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
-  killThread = (thread:any): void => {
+  killThread = (): void => {
     const killArray = [
       'SIGKILL',
       'SIGHUP',
@@ -265,14 +324,14 @@ class CLI {
     ];
 
     try {
-      thread.kill();
+      this.thread.kill();
     } catch (err) {
       // err
     }
 
     killArray.forEach((com: string) => {
       try {
-        thread.kill(com);
+        this.thread.kill(com);
       } catch (err) {
         // err
       }
@@ -289,15 +348,12 @@ class CLI {
 
     this.config.jobLog(`Running ${this.config.cli} ${this.config.spawnArgs.join(' ')}`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
-    let thread: any;
-
     const exitHandler = () => {
-      if (thread) {
+      if (this.thread) {
         try {
         // eslint-disable-next-line no-console
           console.log('Main thread exiting, cleaning up running CLI');
-          this.killThread(thread);
+          this.killThread();
         } catch (err) {
         // eslint-disable-next-line no-console
           console.log('Error running cliUtils on Exit function');
@@ -309,24 +365,24 @@ class CLI {
 
     process.on('exit', exitHandler);
 
-    const cliExitCode: number = await new Promise((resolve) => {
+    let cliExitCode: number = await new Promise((resolve) => {
       try {
         const opts = this.config.spawnOpts || {};
         const spawnArgs = this.config.spawnArgs.map((row) => row.trim()).filter((row) => row !== '');
-        thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
+        this.thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
 
-        thread.stdout.on('data', (data: string) => {
+        this.thread.stdout.on('data', (data: string) => {
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
 
-        thread.stderr.on('data', (data: string) => {
+        this.thread.stderr.on('data', (data: string) => {
           // eslint-disable-next-line no-console
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
 
-        thread.on('error', () => {
+        this.thread.on('error', () => {
           // catches execution error (bad file)
           // eslint-disable-next-line no-console
           console.log(`Error executing binary: ${this.config.cli}`);
@@ -336,7 +392,7 @@ class CLI {
 
         // thread.stdout.pipe(process.stdout);
         // thread.stderr.pipe(process.stderr);
-        thread.on('close', (code: number) => {
+        this.thread.on('close', (code: number) => {
           if (code !== 0) {
             // eslint-disable-next-line no-console
             console.log(`CLI error code: ${code}`);
@@ -355,10 +411,14 @@ class CLI {
 
     process.removeListener('exit', exitHandler);
 
-    thread = undefined;
+    this.thread = undefined;
 
     if (!this.config.logFullCliOutput) {
       this.config.jobLog(errorLogFull.slice(-1000).join(''));
+    }
+
+    if (this.cancelled) {
+      cliExitCode = 1;
     }
 
     return {

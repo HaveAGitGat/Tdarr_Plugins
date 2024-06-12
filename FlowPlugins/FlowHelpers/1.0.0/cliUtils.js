@@ -97,10 +97,14 @@ var CLI = /** @class */ (function () {
         this.oldProgress = 0;
         this.lastProgCheck = 0;
         this.hbPass = 0;
+        this.cancelled = false;
+        this.startTime = new Date().getTime();
         this.updateETA = function (perc) { return __awaiter(_this, void 0, void 0, function () {
-            var n, secsSinceLastCheck, eta, sum, avg, estSize, outputFileSizeInGbytes, singleFileSize, err_1;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var n, secsSinceLastCheck, eta, sum, avg, estSize, outputFileSizeInGbytes, singleFileSize, err_1, secondsSinceStart, _a, compareMethod, thresholdPerc_1, checkDelaySeconds, inputFileSize, inputFileSizeInGbytes_1, cancel, ratio, ratio;
+            var _this = this;
+            var _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
                         if (!(perc > 0)) return [3 /*break*/, 6];
                         if (!(this.lastProgCheck === 0)) return [3 /*break*/, 1];
@@ -122,12 +126,12 @@ var CLI = /** @class */ (function () {
                         avg = sum / this.progAVG.length;
                         estSize = 0;
                         outputFileSizeInGbytes = void 0;
-                        _a.label = 2;
+                        _c.label = 2;
                     case 2:
-                        _a.trys.push([2, 4, , 5]);
+                        _c.trys.push([2, 4, , 5]);
                         return [4 /*yield*/, (0, fileUtils_1.fileExists)(this.config.outputFilePath)];
                     case 3:
-                        if (_a.sent()) {
+                        if (_c.sent()) {
                             singleFileSize = fs_1.default.statSync(this.config.outputFilePath);
                             // @ts-expect-error type
                             singleFileSize = singleFileSize.size;
@@ -142,7 +146,7 @@ var CLI = /** @class */ (function () {
                         }
                         return [3 /*break*/, 5];
                     case 4:
-                        err_1 = _a.sent();
+                        err_1 = _c.sent();
                         // eslint-disable-next-line no-console
                         console.log(err_1);
                         return [3 /*break*/, 5];
@@ -157,7 +161,41 @@ var CLI = /** @class */ (function () {
                         }
                         this.lastProgCheck = n;
                         this.oldProgress = perc;
-                        _a.label = 6;
+                        secondsSinceStart = (new Date().getTime() - this.startTime) / 1000;
+                        // live size compare
+                        if ((_b = this.config.args.variables.liveSizeCompare) === null || _b === void 0 ? void 0 : _b.enabled) {
+                            _a = this.config.args.variables.liveSizeCompare, compareMethod = _a.compareMethod, thresholdPerc_1 = _a.thresholdPerc, checkDelaySeconds = _a.checkDelaySeconds;
+                            if (secondsSinceStart > checkDelaySeconds) {
+                                inputFileSize = this.config.inputFileObj.file_size;
+                                inputFileSizeInGbytes_1 = inputFileSize / 1024;
+                                cancel = function (ratio) {
+                                    _this.config.jobLog("Input file size: ".concat(inputFileSizeInGbytes_1, "GB"));
+                                    _this.config.jobLog("Ratio: ".concat(ratio, "%"));
+                                    _this.config.jobLog("Ratio is greater than threshold: ".concat(thresholdPerc_1, "%, cancelling job"));
+                                    _this.cancelled = true;
+                                    _this.killThread();
+                                };
+                                if (compareMethod === 'estimatedFinalSize'
+                                    && estSize !== undefined
+                                    && estSize > 0) {
+                                    ratio = (estSize / inputFileSizeInGbytes_1) * 100;
+                                    if (ratio > thresholdPerc_1) {
+                                        this.config.jobLog("Estimated final size: ".concat(estSize, "GB"));
+                                        cancel(ratio);
+                                    }
+                                }
+                                else if (compareMethod === 'currentSize'
+                                    && outputFileSizeInGbytes !== undefined
+                                    && outputFileSizeInGbytes > 0) {
+                                    ratio = (outputFileSizeInGbytes / inputFileSizeInGbytes_1) * 100;
+                                    if (ratio > thresholdPerc_1) {
+                                        this.config.jobLog("Current output size: ".concat(outputFileSizeInGbytes, "GB"));
+                                        cancel(ratio);
+                                    }
+                                }
+                            }
+                        }
+                        _c.label = 6;
                     case 6: return [2 /*return*/];
                 }
             });
@@ -247,8 +285,7 @@ var CLI = /** @class */ (function () {
                 }
             }
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
-        this.killThread = function (thread) {
+        this.killThread = function () {
             var killArray = [
                 'SIGKILL',
                 'SIGHUP',
@@ -256,14 +293,14 @@ var CLI = /** @class */ (function () {
                 'SIGINT',
             ];
             try {
-                thread.kill();
+                _this.thread.kill();
             }
             catch (err) {
                 // err
             }
             killArray.forEach(function (com) {
                 try {
-                    thread.kill(com);
+                    _this.thread.kill(com);
                 }
                 catch (err) {
                     // err
@@ -271,7 +308,7 @@ var CLI = /** @class */ (function () {
             });
         };
         this.runCli = function () { return __awaiter(_this, void 0, void 0, function () {
-            var childProcess, errorLogFull, thread, exitHandler, cliExitCode;
+            var childProcess, errorLogFull, exitHandler, cliExitCode;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -280,11 +317,11 @@ var CLI = /** @class */ (function () {
                         errorLogFull = [];
                         this.config.jobLog("Running ".concat(this.config.cli, " ").concat(this.config.spawnArgs.join(' ')));
                         exitHandler = function () {
-                            if (thread) {
+                            if (_this.thread) {
                                 try {
                                     // eslint-disable-next-line no-console
                                     console.log('Main thread exiting, cleaning up running CLI');
-                                    _this.killThread(thread);
+                                    _this.killThread();
                                 }
                                 catch (err) {
                                     // eslint-disable-next-line no-console
@@ -299,17 +336,17 @@ var CLI = /** @class */ (function () {
                                 try {
                                     var opts = _this.config.spawnOpts || {};
                                     var spawnArgs = _this.config.spawnArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
-                                    thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
-                                    thread.stdout.on('data', function (data) {
+                                    _this.thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
+                                    _this.thread.stdout.on('data', function (data) {
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
-                                    thread.stderr.on('data', function (data) {
+                                    _this.thread.stderr.on('data', function (data) {
                                         // eslint-disable-next-line no-console
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
-                                    thread.on('error', function () {
+                                    _this.thread.on('error', function () {
                                         // catches execution error (bad file)
                                         // eslint-disable-next-line no-console
                                         console.log("Error executing binary: ".concat(_this.config.cli));
@@ -318,7 +355,7 @@ var CLI = /** @class */ (function () {
                                     });
                                     // thread.stdout.pipe(process.stdout);
                                     // thread.stderr.pipe(process.stderr);
-                                    thread.on('close', function (code) {
+                                    _this.thread.on('close', function (code) {
                                         if (code !== 0) {
                                             // eslint-disable-next-line no-console
                                             console.log("CLI error code: ".concat(code));
@@ -338,9 +375,12 @@ var CLI = /** @class */ (function () {
                     case 1:
                         cliExitCode = _a.sent();
                         process.removeListener('exit', exitHandler);
-                        thread = undefined;
+                        this.thread = undefined;
                         if (!this.config.logFullCliOutput) {
                             this.config.jobLog(errorLogFull.slice(-1000).join(''));
+                        }
+                        if (this.cancelled) {
+                            cliExitCode = 1;
                         }
                         return [2 /*return*/, {
                                 cliExitCode: cliExitCode,

@@ -15,7 +15,7 @@ const details = ():IpluginDetails => ({
   tags: '',
   isStartPlugin: false,
   pType: '',
-  requiresVersion: '2.11.01',
+  requiresVersion: '2.18.01',
   sidebarPosition: -1,
   icon: 'faBell',
   inputs: [
@@ -71,6 +71,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     inputFileObj: args.inputFileObj,
     logFullCliOutput: args.logFullCliOutput,
     updateWorker: args.updateWorker,
+    args,
   });
 
   const res = await cli.runCli();

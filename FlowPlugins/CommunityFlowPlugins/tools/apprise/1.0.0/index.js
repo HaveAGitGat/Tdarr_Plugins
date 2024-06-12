@@ -57,7 +57,7 @@ var details = function () { return ({
     tags: '',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.11.01',
+    requiresVersion: '2.18.01',
     sidebarPosition: -1,
     icon: 'faBell',
     inputs: [
@@ -104,6 +104,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     inputFileObj: args.inputFileObj,
                     logFullCliOutput: args.logFullCliOutput,
                     updateWorker: args.updateWorker,
+                    args: args,
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
