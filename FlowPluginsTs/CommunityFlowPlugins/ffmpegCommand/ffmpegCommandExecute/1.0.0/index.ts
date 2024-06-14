@@ -96,6 +96,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     throw new Error('No streams mapped for new file');
   }
 
+  if (args.variables.ffmpegCommand.multiInputArguments.length > 0) {
+    cliArgs.push(...args.variables.ffmpegCommand.multiInputArguments);
+    shouldProcess = true;
+  }
+  if (args.variables.ffmpegCommand.multiOutputArguments.length > 0) {
+    cliArgs.push(...args.variables.ffmpegCommand.multiOutputArguments);
+    shouldProcess = true;
+  }
+
   for (let i = 0; i < streams.length; i += 1) {
     const stream = streams[i];
 
@@ -104,7 +113,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         // eslint-disable-next-line no-param-reassign
         arg = arg.replace('{outputIndex}', String(getOuputStreamIndex(streams, stream)));
       }
-
       if (arg.includes('{outputTypeIndex}')) {
         // eslint-disable-next-line no-param-reassign
         arg = arg.replace('{outputTypeIndex}', String(getOuputStreamTypeIndex(streams, stream)));
@@ -168,7 +176,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     inputFileObj: args.inputFileObj,
     logFullCliOutput: args.logFullCliOutput,
     updateWorker: args.updateWorker,
-    args,
   });
 
   const res = await cli.runCli();
