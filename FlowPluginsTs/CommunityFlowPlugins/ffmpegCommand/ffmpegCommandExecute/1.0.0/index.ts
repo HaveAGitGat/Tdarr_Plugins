@@ -97,11 +97,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   }
 
   if (args.variables.ffmpegCommand.multiInputArguments.length > 0) {
-    cliArgs.push(...args.variables.ffmpegCommand.multiInputArguments);
+    cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.multiInputArguments);
     shouldProcess = true;
   }
   if (args.variables.ffmpegCommand.multiOutputArguments.length > 0) {
-    cliArgs.push(...args.variables.ffmpegCommand.multiOutputArguments);
+    cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.multiOutputArguments);
     shouldProcess = true;
   }
 
@@ -113,6 +113,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         // eslint-disable-next-line no-param-reassign
         arg = arg.replace('{outputIndex}', String(getOuputStreamIndex(streams, stream)));
       }
+
       if (arg.includes('{outputTypeIndex}')) {
         // eslint-disable-next-line no-param-reassign
         arg = arg.replace('{outputTypeIndex}', String(getOuputStreamTypeIndex(streams, stream)));
@@ -176,6 +177,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     inputFileObj: args.inputFileObj,
     logFullCliOutput: args.logFullCliOutput,
     updateWorker: args.updateWorker,
+    args,
   });
 
   const res = await cli.runCli();
