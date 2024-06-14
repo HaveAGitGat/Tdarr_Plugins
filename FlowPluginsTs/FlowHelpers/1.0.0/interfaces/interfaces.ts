@@ -98,12 +98,20 @@ export interface IffmpegCommand {
     multiOutputArguments: string[],
 }
 
+export interface IliveSizeCompare {
+    enabled: boolean,
+    compareMethod: string,
+    thresholdPerc: number,
+    checkDelaySeconds: number,
+}
+
 export interface Ivariables {
     ffmpegCommand: IffmpegCommand,
     flowFailed: boolean,
     user: Record<string, string>,
     healthCheck?: 'Success',
     queueTags?: string,
+    liveSizeCompare?: IliveSizeCompare
 }
 
 export interface IpluginOutputArgs {
