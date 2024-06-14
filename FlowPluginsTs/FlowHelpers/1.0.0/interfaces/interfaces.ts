@@ -94,13 +94,8 @@ export interface IffmpegCommand {
     shouldProcess: boolean,
     overallInputArguments: string[],
     overallOuputArguments: string[],
-}
-
-export interface IliveSizeCompare {
-    enabled: boolean,
-    compareMethod: string,
-    thresholdPerc: number,
-    checkDelaySeconds: number,
+    multiInputArguments: string[],
+    multiOutputArguments: string[],
 }
 
 export interface Ivariables {
@@ -109,7 +104,6 @@ export interface Ivariables {
     user: Record<string, string>,
     healthCheck?: 'Success',
     queueTags?: string,
-    liveSizeCompare?: IliveSizeCompare
 }
 
 export interface IpluginOutputArgs {
@@ -191,4 +185,23 @@ export interface IflowTemplate {
     flowPlugins: any[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     flowEdges: any[],
+}
+
+export interface IcospiredLanguages {
+    alpha2ToAlpha3T(alpha2: string): string | undefined;
+    alpha2ToAlpha3B(alpha2: string): string | undefined;
+    alpha3TToAlpha2(alpha3: string): string | undefined;
+    alpha3BToAlpha2(alpha3: string): string | undefined;
+    getAlpha2Codes(): { [alpha2Key: string]: string };
+    getAlpha3TCodes(): { [alpha3Key: string]: string };
+    getAlpha3BCodes(): { [alpha3Key: string]: string };
+    getName(alpha2orAlpha3: string, lang: string): string | undefined;
+    toAlpha3T(alpha2: string): string | undefined;
+    toAlpha3B(alpha2: string): string | undefined;
+    toAlpha2(alpha3: string): string | undefined;
+    getAlpha2Code(name: string, lang: string): string | undefined;
+    getAlpha3TCode(name: string, lang: string): string | undefined;
+    getAlpha3BCode(name: string, lang: string): string | undefined;
+    langs(): string[];
+    isValid(alpha2orAlpha3: string): boolean;
 }
