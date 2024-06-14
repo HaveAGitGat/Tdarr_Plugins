@@ -54,6 +54,8 @@ var plugin = function (args) {
         shouldProcess: false,
         overallInputArguments: [],
         overallOuputArguments: [],
+        multiInputArguments: [],
+        multiOutputArguments: [],
     };
     args.variables.ffmpegCommand = ffmpegCommand;
     return {
