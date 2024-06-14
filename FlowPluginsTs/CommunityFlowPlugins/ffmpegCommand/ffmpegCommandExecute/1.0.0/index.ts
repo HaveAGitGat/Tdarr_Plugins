@@ -97,11 +97,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   }
 
   if (args.variables.ffmpegCommand.multiInputArguments.length > 0) {
-    cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.multiInputArguments);
+    cliArgs.push(...args.variables.ffmpegCommand.multiInputArguments);
     shouldProcess = true;
   }
   if (args.variables.ffmpegCommand.multiOutputArguments.length > 0) {
-    cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.multiOutputArguments);
+    cliArgs.push(...args.variables.ffmpegCommand.multiOutputArguments);
     shouldProcess = true;
   }
 
