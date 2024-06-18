@@ -70,7 +70,7 @@ HandBrake examples:
         type: 'text',
       },
       tooltip:
-        'Enter the desired container',
+        'Enter the desired container. Set to "original" to keep the original container.',
     },
   ],
 });
@@ -91,7 +91,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   response.preset = inputs.arguments;
-  response.container = `.${inputs.container}`;
+
+  if (inputs.container === 'original') {
+    response.container = `.${file.container}`;
+  } else {
+    response.container = `.${inputs.container}`;
+  }
+
   response.handbrakeMode = inputs.cli === 'handbrake';
   response.ffmpegMode = inputs.cli === 'ffmpeg';
   response.reQueueAfter = true;
