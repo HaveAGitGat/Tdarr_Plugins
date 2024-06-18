@@ -173,6 +173,8 @@ var CLI = /** @class */ (function () {
                                     _this.config.jobLog("Ratio: ".concat(ratio, "%"));
                                     _this.config.jobLog("Ratio is greater than threshold: ".concat(thresholdPerc_1, "%, cancelling job"));
                                     _this.cancelled = true;
+                                    // @ts-expect-error must exist to be here
+                                    _this.config.args.variables.liveSizeCompare.error = true;
                                     _this.killThread();
                                 };
                                 if (compareMethod === 'estimatedFinalSize'

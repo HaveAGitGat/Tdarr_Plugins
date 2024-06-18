@@ -188,6 +188,8 @@ class CLI {
 
                 this.config.jobLog(`Ratio is greater than threshold: ${thresholdPerc}%, cancelling job`);
                 this.cancelled = true;
+                // @ts-expect-error must exist to be here
+                this.config.args.variables.liveSizeCompare.error = true;
                 this.killThread();
               };
 
