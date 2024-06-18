@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Compare File Size Ratio Live',
-    description: "\n  Compare either the estimated final size or current output size to the input size and \n  give an error if estimated final size or current size surpasses the threshold %.\n\n  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins \n  that output a file.\n\n  Can be placed anywhere before a plugin which outputs a new file.\n  ',\n  ",
+    description: "\n  Compare either the estimated final size or current output size to the input size and \n  give an error if estimated final size or current size surpasses the threshold %.\n\n  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins \n  that output a file.\n\n  Can be placed anywhere before a plugin which outputs a new file.\n\n  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if \n  {{{args.variables.liveSizeCompare.error}}} is true.\n  ',\n  ",
     style: {
         borderColor: 'orange',
     },
@@ -128,6 +128,7 @@ var plugin = function (args) {
         compareMethod: compareMethod,
         thresholdPerc: thresholdPerc,
         checkDelaySeconds: checkDelaySeconds,
+        error: false,
     };
     return {
         outputFileObj: args.inputFileObj,
