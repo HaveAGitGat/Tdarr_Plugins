@@ -15,6 +15,9 @@ const details = (): IpluginDetails => ({
   that output a file.
 
   Can be placed anywhere before a plugin which outputs a new file.
+
+  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if 
+  {{{args.variables.liveSizeCompare.error}}} is true.
   ',
   `,
   style: {
@@ -155,6 +158,7 @@ const plugin = (args: IpluginInputArgs):IpluginOutputArgs => {
     compareMethod,
     thresholdPerc,
     checkDelaySeconds,
+    error: false,
   };
 
   return {

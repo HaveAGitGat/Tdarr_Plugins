@@ -101,6 +101,7 @@ export interface IliveSizeCompare {
     compareMethod: string,
     thresholdPerc: number,
     checkDelaySeconds: number,
+    error: boolean,
 }
 
 export interface Ivariables {
