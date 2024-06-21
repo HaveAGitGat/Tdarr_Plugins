@@ -40,6 +40,8 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
       if (stream.outputArgs.some((row) => row.includes('qsv')) && os.platform() !== 'win32') {
         stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
+      } else if (stream.outputArgs.some((row) => row.includes('libsvtav1'))) {
+        stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');
       } else {
         stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');
       }
