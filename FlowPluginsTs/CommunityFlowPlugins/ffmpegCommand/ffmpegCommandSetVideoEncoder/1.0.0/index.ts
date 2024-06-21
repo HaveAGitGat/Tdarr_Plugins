@@ -39,6 +39,16 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify codec of the output file',
     },
     {
+      label: 'Enable FFmpeg Preset',
+      name: 'ffmpegPresetEnabled',
+      type: 'boolean',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'Specify whether to use an FFmpeg preset',
+    },
+    {
       label: 'FFmpeg Preset',
       name: 'ffmpegPreset',
       type: 'string',
@@ -56,8 +66,33 @@ const details = (): IpluginDetails => ({
           'superfast',
           'ultrafast',
         ],
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'ffmpegPresetEnabled',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
       },
       tooltip: 'Specify ffmpeg preset',
+    },
+    {
+      label: 'Enable FFmpeg CRF',
+      name: 'ffmpegQualityEnabled',
+      type: 'boolean',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'Specify whether to set crf (or qp for GPU encoding)',
     },
     {
       label: 'FFmpeg Quality',
@@ -66,6 +101,21 @@ const details = (): IpluginDetails => ({
       defaultValue: '25',
       inputUI: {
         type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'ffmpegQualityEnabled',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
       },
       tooltip: 'Specify ffmpeg quality',
     },
@@ -140,6 +190,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     if (stream.codec_type === 'video') {
       const targetCodec = String(args.inputs.outputCodec);
+      const { ffmpegPresetEnabled, ffmpegQualityEnabled } = args.inputs;
       const ffmpegPreset = String(args.inputs.ffmpegPreset);
       const ffmpegQuality = String(args.inputs.ffmpegQuality);
       const forceEncoding = args.inputs.forceEncoding === true;
@@ -161,14 +212,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
         stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
 
-        if (encoderProperties.isGpu) {
-          stream.outputArgs.push('-qp', ffmpegQuality);
-        } else {
-          stream.outputArgs.push('-crf', ffmpegQuality);
+        if (ffmpegQualityEnabled) {
+          if (encoderProperties.isGpu) {
+            stream.outputArgs.push('-qp', ffmpegQuality);
+          } else {
+            stream.outputArgs.push('-crf', ffmpegQuality);
+          }
         }
 
-        if (targetCodec !== 'av1' && ffmpegPreset) {
-          stream.outputArgs.push('-preset', ffmpegPreset);
+        if (ffmpegPresetEnabled) {
+          if (targetCodec !== 'av1' && ffmpegPreset) {
+            stream.outputArgs.push('-preset', ffmpegPreset);
+          }
         }
 
         if (hardwareDecoding) {
