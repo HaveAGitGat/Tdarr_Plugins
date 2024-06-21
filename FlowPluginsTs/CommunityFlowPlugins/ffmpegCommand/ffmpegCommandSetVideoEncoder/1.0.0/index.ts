@@ -85,7 +85,7 @@ const details = (): IpluginDetails => ({
       tooltip: 'Specify ffmpeg preset',
     },
     {
-      label: 'Enable FFmpeg CRF',
+      label: 'Enable FFmpeg Quality',
       name: 'ffmpegQualityEnabled',
       type: 'boolean',
       defaultValue: 'true',
@@ -117,7 +117,7 @@ const details = (): IpluginDetails => ({
           ],
         },
       },
-      tooltip: 'Specify ffmpeg quality',
+      tooltip: 'Specify ffmpeg quality crf (or qp for GPU encoding)',
     },
     {
       label: 'Hardware Encoding',

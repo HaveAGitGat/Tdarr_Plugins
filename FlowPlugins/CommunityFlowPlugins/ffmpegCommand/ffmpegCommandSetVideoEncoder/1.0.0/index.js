@@ -117,7 +117,7 @@ var details = function () { return ({
             tooltip: 'Specify ffmpeg preset',
         },
         {
-            label: 'Enable FFmpeg CRF',
+            label: 'Enable FFmpeg Quality',
             name: 'ffmpegQualityEnabled',
             type: 'boolean',
             defaultValue: 'true',
@@ -149,7 +149,7 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: 'Specify ffmpeg quality',
+            tooltip: 'Specify ffmpeg quality crf (or qp for GPU encoding)',
         },
         {
             label: 'Hardware Encoding',
