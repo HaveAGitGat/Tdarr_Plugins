@@ -423,6 +423,8 @@ class CLI {
       cliExitCode = 1;
     }
 
+    this.config.jobLog(`CLI ${this.config.cli} exited with code: ${cliExitCode}`);
+
     return {
       cliExitCode,
       errorLogFull,
