@@ -384,6 +384,7 @@ var CLI = /** @class */ (function () {
                         if (this.cancelled) {
                             cliExitCode = 1;
                         }
+                        this.config.jobLog("CLI ".concat(this.config.cli, " exited with code: ").concat(cliExitCode));
                         return [2 /*return*/, {
                                 cliExitCode: cliExitCode,
                                 errorLogFull: errorLogFull,
