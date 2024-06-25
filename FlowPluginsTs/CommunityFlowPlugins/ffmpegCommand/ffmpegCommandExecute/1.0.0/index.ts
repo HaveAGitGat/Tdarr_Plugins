@@ -180,6 +180,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.logOutcome('tSuc');
 
+  // eslint-disable-next-line no-param-reassign
+  args.variables.ffmpegCommand.init = false;
+
   return {
     outputFileObj: {
       _id: outputFilePath,

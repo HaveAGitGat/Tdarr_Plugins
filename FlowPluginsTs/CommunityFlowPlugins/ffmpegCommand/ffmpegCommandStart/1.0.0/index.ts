@@ -40,6 +40,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const container = getContainer(args.inputFileObj._id);
 
   const ffmpegCommand = {
+    init: true,
     inputFiles: [],
     streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map((stream:Istreams) => ({
       ...stream,
