@@ -193,6 +193,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     throw new Error('FFmpeg failed');
                 }
                 args.logOutcome('tSuc');
+                // eslint-disable-next-line no-param-reassign
+                args.variables.ffmpegCommand.init = false;
                 return [2 /*return*/, {
                         outputFileObj: {
                             _id: outputFilePath,

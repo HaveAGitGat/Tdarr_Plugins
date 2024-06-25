@@ -39,6 +39,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
+var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint-disable no-param-reassign */
 var details = function () { return ({
     name: 'Set Video Encoder',
@@ -217,6 +218,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
+                (0, flowUtils_1.checkFfmpegCommandInit)(args);
                 hardwareDecoding = args.inputs.hardwareDecoding === true;
                 hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
