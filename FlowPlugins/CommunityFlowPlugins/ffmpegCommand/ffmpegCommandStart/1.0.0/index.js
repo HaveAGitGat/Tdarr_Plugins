@@ -44,6 +44,7 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
     var ffmpegCommand = {
+        init: true,
         inputFiles: [],
         streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map(function (stream) { return (__assign(__assign({}, stream), { removed: false, mapArgs: [
                 '-map',
