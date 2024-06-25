@@ -48,6 +48,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Execute',
@@ -103,6 +104,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
+                (0, flowUtils_1.checkFfmpegCommandInit)(args);
                 cliArgs = [];
                 cliArgs.push('-y');
                 cliArgs.push('-i');
@@ -193,6 +195,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     throw new Error('FFmpeg failed');
                 }
                 args.logOutcome('tSuc');
+                // eslint-disable-next-line no-param-reassign
+                args.variables.ffmpegCommand.init = false;
                 return [2 /*return*/, {
                         outputFileObj: {
                             _id: outputFilePath,
