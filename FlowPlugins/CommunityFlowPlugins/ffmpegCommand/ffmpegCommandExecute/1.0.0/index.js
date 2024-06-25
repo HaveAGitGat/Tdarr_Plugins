@@ -124,6 +124,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args.jobLog('No streams mapped for new file');
                     throw new Error('No streams mapped for new file');
                 }
+                if (args.variables.ffmpegCommand.multiInputArguments.length > 0) {
+                    cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.multiInputArguments);
+                    shouldProcess = true;
+                }
+                if (args.variables.ffmpegCommand.multiOutputArguments.length > 0) {
+                    cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.multiOutputArguments);
+                    shouldProcess = true;
+                }
                 _loop_1 = function (i) {
                     var stream = streams[i];
                     stream.outputArgs = stream.outputArgs.map(function (arg) {
