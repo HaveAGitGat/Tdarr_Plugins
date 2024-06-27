@@ -24,12 +24,6 @@ module.exports = function transcodeAddAudioStream(
       audioCodec = "mp3";
     }
 
-    let extraArgs = "";
-
-    if (audioEncoder === 'truehd') {
-      extraArgs = " -strict -2";
-    }
-
     //Step 1: Check if the file already has the required stream codec/langtag/channel count
 
     var hasStreamAlready = file.ffProbeData.streams.filter((stream) => {
@@ -128,7 +122,7 @@ module.exports = function transcodeAddAudioStream(
           };
         } else {
           return {
-            preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount} -max_muxing_queue_size 9999${extraArgs}`,
+            preset: `,-map 0:v -map 0:${highestChannelCount.index} -metadata:s:a:0 title="${channelCount}" -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount}`,
             processFile: true,
             note: `The required channel count ${channelCount} is lower than the highest available channel count (${highestChannelCount.channels}). Adding! \n`,
           };
@@ -161,7 +155,7 @@ module.exports = function transcodeAddAudioStream(
           };
         } else {
           return {
-            preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels} -max_muxing_queue_size 9999${extraArgs}`,
+            preset: `,-map 0:v -map 0:${highestChannelCount.index} -metadata:s:a:0 title="${channelCount}" -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels}`,
             processFile: true,
             note: `The required channel count (${channelCount}) is higher than the highest channel available in specified lang tag (${highestChannelCount.channels}). Adding lower channel track. \n`,
           };
@@ -235,7 +229,7 @@ module.exports = function transcodeAddAudioStream(
           };
         } else {
           return {
-            preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount} -max_muxing_queue_size 9999${extraArgs}`,
+            preset: `,-map 0:v -map 0:${highestChannelCount.index} -metadata:s:a:0 title="${channelCount}" -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${channelCount}`,
             processFile: true,
             note: `The required channel count ${channelCount} is lower than the highest available channel count (${highestChannelCount.channels}). Adding! \n`,
           };
@@ -266,7 +260,7 @@ module.exports = function transcodeAddAudioStream(
           };
         } else {
           return {
-            preset: `,-map 0:v -map 0:${highestChannelCount.index} -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels} -max_muxing_queue_size 9999${extraArgs}`,
+            preset: `,-map 0:v -map 0:${highestChannelCount.index} -metadata:s:a:0 title="${channelCount}" -map 0:a -map 0:s? -map 0:d? -c copy -c:a:0 ${audioEncoder} -ac ${highestChannelCount.channels}`,
             processFile: true,
             note: `The required channel count (${channelCount}) is higher than the highest channel available in specified lang tag (${highestChannelCount.channels}). Adding lower channel track. \n`,
           };
