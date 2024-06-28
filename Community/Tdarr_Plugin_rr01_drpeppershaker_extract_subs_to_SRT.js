@@ -57,7 +57,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  const subsArr = file.ffProbeData.streams.filter((row) => (["subrip", "ass", "ssa", "text"].includes(row.codec_name)));
+  const subsArr = file.ffProbeData.streams.filter((row) => (['subrip', 'ass', 'ssa', 'text'].includes(row.codec_name)));
 
   if (subsArr.length === 0) {
     response.infoLog += 'No subs in file to extract!\n';
