@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz2CleanTitle',
   Stage: 'Pre-processing',
-  Name: 'Migz-Clean title metadata',
+  Name: 'Migz Clean Title Metadata',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin removes title metadata from video/audio/subtitles.\n\n',

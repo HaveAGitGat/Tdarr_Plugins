@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_remove_audio_by_channel_count',
   Stage: 'Pre-processing',
-  Name: 'Remove audio streams by channel count',
+  Name: 'Remove Audio Streams By Channel Count',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

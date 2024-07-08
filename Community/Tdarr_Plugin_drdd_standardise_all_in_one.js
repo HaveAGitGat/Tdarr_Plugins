@@ -4,7 +4,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_drdd_standardise_all_in_one",
     Stage: "Pre-processing",
-    Name: "DrDD H265 MKV AC3 audio subtitles [VAAPI & NVENC]",
+    Name: "DrDD H265 MKV AC3 Audio Subtitles [VAAPI & NVENC]",
     Stage: "Pre-processing",
     Type: "Video",
     Operation: "Transcode",

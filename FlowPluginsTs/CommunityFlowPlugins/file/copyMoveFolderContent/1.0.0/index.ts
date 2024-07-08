@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import {
   getContainer, getFileAbosluteDir, getSubStem,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
@@ -82,7 +82,8 @@ Useful if, for example, you want to move things like subtitle files or cover art
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'Specify whether to copy/move all files in the directory (excluding the original and working file)',
+      tooltip: `Specify whether to copy/move all files in the directory (excluding the original and working file)
+       or use the input below to specify file extensions`,
     },
     {
       label: 'File Extensions',
@@ -187,7 +188,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     sourceDir = getFileAbosluteDir(args.inputFileObj._id);
   }
 
-  let filesInDir = (await fs.readdir(sourceDir))
+  let filesInDir = (await fsp.readdir(sourceDir))
     .map((row) => ({
       source: `${sourceDir}/${row}`,
       destination: normJoinPath({

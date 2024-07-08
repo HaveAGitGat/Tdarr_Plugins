@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check Audio Codec',
-    description: 'Check if a file has a specific audio codec',
+    description: 'Check if a file has a specific audio codec.',
     style: {
         borderColor: 'orange',
     },

@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_vdka_Remove_DataStreams",
     Stage: "Pre-processing",
-    Name: "Remove Data Streams ",
+    Name: "Remove Data Streams",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes data streams if detected. The output container is mkv. Helps with issues like bin_data making files impossible to process. \n\n`,

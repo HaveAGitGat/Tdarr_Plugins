@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_076a_re_order_audio_streams",
     Stage: "Pre-processing",
-    Name: "Re-order audio streams",
+    Name: "Re-order Audio Streams",
     Type: "Audio",
     Operation: "Transcode",
     Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st audio track  \n\n`,

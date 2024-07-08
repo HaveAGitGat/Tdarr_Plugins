@@ -22,7 +22,7 @@ const details = (): IpluginDetails => ({
       label: 'Variable',
       name: 'variable',
       type: 'string',
-      defaultValue: '{{{args.librarySettings._id}}}',
+      defaultValue: '',
       inputUI: {
         type: 'text',
       },

@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_jeons001_Downmix_to_stereo_and_apply_DRC',
   Stage: 'Pre-processing',
-  Name: 'Downmix & Dynamic range compression',
+  Name: 'Downmix & Dynamic Range Compression',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'Downmixes surround to AAC stereo AND applies dynamic range compression.'

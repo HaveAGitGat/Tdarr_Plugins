@@ -63,6 +63,16 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Use Custom CLI Path?',
+            name: 'useCustomCliPath',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Specify whether to use a custom CLI path',
+        },
+        {
             label: 'CLI',
             name: 'userCli',
             type: 'string',
@@ -73,8 +83,48 @@ var details = function () { return ({
                     'mkvmerge',
                     'mkvpropedit',
                 ],
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'useCustomCliPath',
+                                    value: 'false',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
             },
             tooltip: 'CLI to run',
+        },
+        {
+            label: 'Custom CLI Path',
+            name: 'customCliPath',
+            type: 'string',
+            defaultValue: '/usr/bin/mkvmerge',
+            inputUI: {
+                type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'useCustomCliPath',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Specify the path to the CLI to run',
         },
         {
             label: 'Does Command Create Output File?',
@@ -113,6 +163,17 @@ var details = function () { return ({
             tooltip: "\n      This path can be accessed using ${outputFilePath} in the \"CLI Arguments\" input below.\n\n      \\n\n      ${cacheDir} is a special variable that points to the Tdarr worker cache directory.\n\n      \\n \n      ${fileName} is a special variable for the filename without extension.\n      \n      \\nExample\\n\n      ${cacheDir}/${fileName}.{{{args.inputFileObj.container}}}\n      ",
         },
         {
+            label: 'CLI Arguments',
+            name: 'cliArguments',
+            type: 'string',
+            // eslint-disable-next-line no-template-curly-in-string
+            defaultValue: '-o "${outputFilePath}" "{{{args.inputFileObj._id}}}"',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: "Specify arguments to pass to the CLI. \n      Normal variable templating with {{{}}} applies but ${outputFilePath} is a special\n      variable from the \"Output File Path\" input above.\n\n      \\nExample\\n\n      -o \"${outputFilePath}\" \"{{{args.inputFileObj._id}}}\"\n      ",
+        },
+        {
             label: 'Output File Becomes Working File?',
             name: 'outputFileBecomesWorkingFile',
             type: 'boolean',
@@ -137,17 +198,6 @@ var details = function () { return ({
             },
             tooltip: 'Toggle this on to make the output file become the working file for the next plugin.',
         },
-        {
-            label: 'CLI Arguments',
-            name: 'cliArguments',
-            type: 'string',
-            // eslint-disable-next-line no-template-curly-in-string
-            defaultValue: '-o "${outputFilePath}" "{{{args.inputFileObj._id}}}"',
-            inputUI: {
-                type: 'text',
-            },
-            tooltip: "Specify arguments to pass to the CLI. \n      Normal variable templating with {{{}}} applies but ${outputFilePath} is a special\n      variable from the \"Output File Path\" input above.\n\n      \\nExample\\n\n      -o \"${outputFilePath}\" \"{{{args.inputFileObj._id}}}\"\n      ",
-        },
     ],
     outputs: [
         {
@@ -159,7 +209,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, userCli, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
+    var lib, userCli, useCustomCliPath, customCliPath, cliPath, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -167,6 +217,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 userCli = String(args.inputs.userCli);
+                useCustomCliPath = args.inputs.useCustomCliPath;
+                customCliPath = String(args.inputs.customCliPath);
+                cliPath = '';
                 outputFileBecomesWorkingFile = args.inputs.outputFileBecomesWorkingFile;
                 userOutputFilePath = String(args.inputs.userOutputFilePath);
                 cliArguments = String(args.inputs.cliArguments);
@@ -189,14 +242,19 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     mkvpropedit: args.mkvpropeditPath,
                     mkvmerge: 'mkvmerge',
                 };
-                if (!availableCli[userCli]) {
-                    msg = "CLI ".concat(userCli, " not available to run in this plugin");
-                    args.jobLog(msg);
-                    throw new Error(msg);
+                if (useCustomCliPath) {
+                    cliPath = customCliPath;
                 }
-                userCli = availableCli[userCli];
+                else {
+                    if (!availableCli[userCli]) {
+                        msg = "CLI ".concat(userCli, " not available to run in this plugin");
+                        args.jobLog(msg);
+                        throw new Error(msg);
+                    }
+                    cliPath = availableCli[userCli];
+                }
                 cli = new cliUtils_1.CLI({
-                    cli: userCli,
+                    cli: cliPath,
                     spawnArgs: cliArgs,
                     spawnOpts: {},
                     jobLog: args.jobLog,
@@ -204,12 +262,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     inputFileObj: args.inputFileObj,
                     logFullCliOutput: args.logFullCliOutput,
                     updateWorker: args.updateWorker,
+                    args: args,
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
                 res = _a.sent();
                 if (res.cliExitCode !== 0) {
-                    msg = "Running ".concat(userCli, " failed");
+                    msg = "Running ".concat(cliPath, " failed");
                     args.jobLog(msg);
                     throw new Error(msg);
                 }

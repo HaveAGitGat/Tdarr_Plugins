@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_sdd3_Remove_Commentary_Tracks",
     Stage: "Pre-processing",
-    Name: "Remove video commentary tracks",
+    Name: "Remove Video Commentary Tracks",
     Type: "Video",
     Operation: 'Transcode',
     Description: `[Contains built-in filter] If commentary tracks are detected, they will be removed. \n\n`,
