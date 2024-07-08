@@ -115,16 +115,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     // eslint-disable-next-line no-param-reassign
     stream.typeIndex = index;
   });
-
-  const getSimplifiedStreams =
-    (streamsToSimplify: IffmpegCommandStream[]) =>
-      streamsToSimplify.map((stream) => ({
-        index: stream.typeIndex,
-        codec_name: stream.codec_name,
-        codec_type: stream.codec_type,
-      }));
-
-  const originalStreams = JSON.stringify(getSimplifiedStreams(streams));
+  
+  const originalStreams = JSON.stringify(streams);
 
   const sortStreams = (sortType: {
     inputs: string,

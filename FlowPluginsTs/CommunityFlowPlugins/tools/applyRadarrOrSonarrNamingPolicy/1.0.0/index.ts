@@ -63,11 +63,11 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'Radarr or Sonnar notified',
+      tooltip: 'Radarr or Sonarr notified',
     },
     {
       number: 2,
-      tooltip: 'Radarr or Sonnar do not know this file',
+      tooltip: 'Radarr or Sonarr do not know this file',
     },
   ],
 });
@@ -126,7 +126,7 @@ const getFileInfoFromLookup = async (
 )
   : Promise<IFileInfo> => {
   let fInfo: IFileInfo = { id: '-1' };
-  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)?.at(0) ?? '';
+  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
   if (imdbId !== '') {
     const lookupResponse: ILookupResponse = await args.deps.axios({
       method: 'get',

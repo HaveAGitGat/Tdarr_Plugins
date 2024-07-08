@@ -107,11 +107,11 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'Radarr or Sonnar notified',
+            tooltip: 'Radarr or Sonarr notified',
         },
         {
             number: 2,
-            tooltip: 'Radarr or Sonnar do not know this file',
+            tooltip: 'Radarr or Sonarr do not know this file',
         },
     ],
 }); };
@@ -123,7 +123,7 @@ var getFileInfoFromLookup = function (args, arrApp, fileName) { return __awaiter
         switch (_c.label) {
             case 0:
                 fInfo = { id: '-1' };
-                imdbId = (_b = (_a = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)) === null || _a === void 0 ? void 0 : _a.at(0)) !== null && _b !== void 0 ? _b : '';
+                imdbId = (_b = (_a = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _a === void 0 ? void 0 : _a.at(0)) !== null && _b !== void 0 ? _b : '';
                 if (!(imdbId !== '')) return [3 /*break*/, 2];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',

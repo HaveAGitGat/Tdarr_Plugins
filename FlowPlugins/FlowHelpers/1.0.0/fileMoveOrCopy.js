@@ -69,260 +69,248 @@ var compareOldNew = function (_a) {
             + " cache file of size ".concat(sourceFileSize));
     }
 };
-var tryMove = function (_a) {
-    var sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, sourceFileSize = _a.sourceFileSize, args = _a.args;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var error, err_2, destinationSize;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    args.jobLog("Attempting move from ".concat(sourcePath, " to ").concat(destinationPath, ", method 1"));
-                    error = false;
-                    _b.label = 1;
-                case 1:
-                    _b.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, fs_1.promises.rename(sourcePath, destinationPath)];
-                case 2:
-                    _b.sent();
-                    return [3 /*break*/, 4];
-                case 3:
-                    err_2 = _b.sent();
-                    error = true;
-                    args.jobLog("File move error: ".concat(JSON.stringify(err_2)));
-                    return [3 /*break*/, 4];
-                case 4: return [4 /*yield*/, getSizeBytes(destinationPath)];
-                case 5:
-                    destinationSize = _b.sent();
-                    compareOldNew({
-                        sourceFileSize: sourceFileSize,
-                        destinationSize: destinationSize,
-                        args: args,
-                    });
-                    if (error || destinationSize !== sourceFileSize) {
-                        return [2 /*return*/, false];
-                    }
-                    return [2 /*return*/, true];
-            }
-        });
+var tryMove = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var error, err_2, destinationSize;
+    var sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, sourceFileSize = _b.sourceFileSize, args = _b.args;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                args.jobLog("Attempting move from ".concat(sourcePath, " to ").concat(destinationPath, ", method 1"));
+                error = false;
+                _c.label = 1;
+            case 1:
+                _c.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, fs_1.promises.rename(sourcePath, destinationPath)];
+            case 2:
+                _c.sent();
+                return [3 /*break*/, 4];
+            case 3:
+                err_2 = _c.sent();
+                error = true;
+                args.jobLog("File move error: ".concat(JSON.stringify(err_2)));
+                return [3 /*break*/, 4];
+            case 4: return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 5:
+                destinationSize = _c.sent();
+                compareOldNew({
+                    sourceFileSize: sourceFileSize,
+                    destinationSize: destinationSize,
+                    args: args,
+                });
+                if (error || destinationSize !== sourceFileSize) {
+                    return [2 /*return*/, false];
+                }
+                return [2 /*return*/, true];
+        }
     });
-};
+}); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-var tryMvdir = function (_a) {
-    var sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, sourceFileSize = _a.sourceFileSize, args = _a.args;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var error, destinationSize;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    args.jobLog("Attempting move from ".concat(sourcePath, " to ").concat(destinationPath, ", method 2"));
-                    error = false;
-                    return [4 /*yield*/, new Promise(function (resolve) {
-                            // fs-extra and move-file don't work when destination is on windows root of drive
-                            // mvdir will try to move else fall back to copy/unlink
-                            // potential bug on unraid
-                            args.deps.mvdir(sourcePath, destinationPath, { overwrite: true })
-                                .then(function () {
-                                resolve(true);
-                            }).catch(function (err) {
-                                error = true;
-                                args.jobLog("File move error: ".concat(err));
-                                resolve(err);
-                            });
-                        })];
-                case 1:
-                    _b.sent();
-                    return [4 /*yield*/, getSizeBytes(destinationPath)];
-                case 2:
-                    destinationSize = _b.sent();
-                    compareOldNew({
-                        sourceFileSize: sourceFileSize,
-                        destinationSize: destinationSize,
-                        args: args,
-                    });
-                    if (error || destinationSize !== sourceFileSize) {
-                        return [2 /*return*/, false];
-                    }
-                    return [2 /*return*/, true];
-            }
-        });
+var tryMvdir = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var error, destinationSize;
+    var sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, sourceFileSize = _b.sourceFileSize, args = _b.args;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                args.jobLog("Attempting move from ".concat(sourcePath, " to ").concat(destinationPath, ", method 2"));
+                error = false;
+                return [4 /*yield*/, new Promise(function (resolve) {
+                        // fs-extra and move-file don't work when destination is on windows root of drive
+                        // mvdir will try to move else fall back to copy/unlink
+                        // potential bug on unraid
+                        args.deps.mvdir(sourcePath, destinationPath, { overwrite: true })
+                            .then(function () {
+                            resolve(true);
+                        }).catch(function (err) {
+                            error = true;
+                            args.jobLog("File move error: ".concat(err));
+                            resolve(err);
+                        });
+                    })];
+            case 1:
+                _c.sent();
+                return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 2:
+                destinationSize = _c.sent();
+                compareOldNew({
+                    sourceFileSize: sourceFileSize,
+                    destinationSize: destinationSize,
+                    args: args,
+                });
+                if (error || destinationSize !== sourceFileSize) {
+                    return [2 /*return*/, false];
+                }
+                return [2 /*return*/, true];
+        }
     });
-};
+}); };
 // Keep in e.g. https://github.com/HaveAGitGat/Tdarr/issues/858
-var tyNcp = function (_a) {
-    var sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, sourceFileSize = _a.sourceFileSize, args = _a.args;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var error_1, destinationSize;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    if (!args.deps.ncp) return [3 /*break*/, 3];
-                    args.jobLog("Attempting copy from ".concat(sourcePath, " to ").concat(destinationPath, " , method 1"));
-                    error_1 = false;
-                    return [4 /*yield*/, new Promise(function (resolve) {
-                            args.deps.ncp(sourcePath, destinationPath, function (err) {
-                                if (err) {
-                                    error_1 = true;
-                                    args.jobLog("File copy error: ".concat(err));
-                                    resolve(err);
-                                }
-                                else {
-                                    resolve(true);
-                                }
-                            });
-                        })];
-                case 1:
-                    _b.sent();
-                    return [4 /*yield*/, getSizeBytes(destinationPath)];
-                case 2:
-                    destinationSize = _b.sent();
-                    compareOldNew({
-                        sourceFileSize: sourceFileSize,
-                        destinationSize: destinationSize,
-                        args: args,
-                    });
-                    if (error_1 || destinationSize !== sourceFileSize) {
-                        return [2 /*return*/, false];
-                    }
-                    return [2 /*return*/, true];
-                case 3: return [2 /*return*/, false];
-            }
-        });
+var tyNcp = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var error_1, destinationSize;
+    var sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, sourceFileSize = _b.sourceFileSize, args = _b.args;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                if (!args.deps.ncp) return [3 /*break*/, 3];
+                args.jobLog("Attempting copy from ".concat(sourcePath, " to ").concat(destinationPath, " , method 1"));
+                error_1 = false;
+                return [4 /*yield*/, new Promise(function (resolve) {
+                        args.deps.ncp(sourcePath, destinationPath, function (err) {
+                            if (err) {
+                                error_1 = true;
+                                args.jobLog("File copy error: ".concat(err));
+                                resolve(err);
+                            }
+                            else {
+                                resolve(true);
+                            }
+                        });
+                    })];
+            case 1:
+                _c.sent();
+                return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 2:
+                destinationSize = _c.sent();
+                compareOldNew({
+                    sourceFileSize: sourceFileSize,
+                    destinationSize: destinationSize,
+                    args: args,
+                });
+                if (error_1 || destinationSize !== sourceFileSize) {
+                    return [2 /*return*/, false];
+                }
+                return [2 /*return*/, true];
+            case 3: return [2 /*return*/, false];
+        }
     });
-};
-var tryNormalCopy = function (_a) {
-    var sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, sourceFileSize = _a.sourceFileSize, args = _a.args;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var error, err_3, destinationSize;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    args.jobLog("Attempting copy from ".concat(sourcePath, " to ").concat(destinationPath, " , method 2"));
-                    error = false;
-                    _b.label = 1;
-                case 1:
-                    _b.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, fs_1.promises.copyFile(sourcePath, destinationPath)];
-                case 2:
-                    _b.sent();
-                    return [3 /*break*/, 4];
-                case 3:
-                    err_3 = _b.sent();
-                    error = true;
-                    args.jobLog("File copy error: ".concat(JSON.stringify(err_3)));
-                    return [3 /*break*/, 4];
-                case 4: return [4 /*yield*/, getSizeBytes(destinationPath)];
-                case 5:
-                    destinationSize = _b.sent();
-                    compareOldNew({
-                        sourceFileSize: sourceFileSize,
-                        destinationSize: destinationSize,
-                        args: args,
-                    });
-                    if (error || destinationSize !== sourceFileSize) {
-                        return [2 /*return*/, false];
-                    }
-                    return [2 /*return*/, true];
-            }
-        });
+}); };
+var tryNormalCopy = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var error, err_3, destinationSize;
+    var sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, sourceFileSize = _b.sourceFileSize, args = _b.args;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                args.jobLog("Attempting copy from ".concat(sourcePath, " to ").concat(destinationPath, " , method 2"));
+                error = false;
+                _c.label = 1;
+            case 1:
+                _c.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, fs_1.promises.copyFile(sourcePath, destinationPath)];
+            case 2:
+                _c.sent();
+                return [3 /*break*/, 4];
+            case 3:
+                err_3 = _c.sent();
+                error = true;
+                args.jobLog("File copy error: ".concat(JSON.stringify(err_3)));
+                return [3 /*break*/, 4];
+            case 4: return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 5:
+                destinationSize = _c.sent();
+                compareOldNew({
+                    sourceFileSize: sourceFileSize,
+                    destinationSize: destinationSize,
+                    args: args,
+                });
+                if (error || destinationSize !== sourceFileSize) {
+                    return [2 /*return*/, false];
+                }
+                return [2 /*return*/, true];
+        }
     });
-};
-var cleanSourceFile = function (_a) {
-    var args = _a.args, sourcePath = _a.sourcePath;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var err_4;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    _b.trys.push([0, 2, , 3]);
-                    args.jobLog("Deleting source file ".concat(sourcePath));
-                    return [4 /*yield*/, fs_1.promises.unlink(sourcePath)];
-                case 1:
-                    _b.sent();
-                    return [3 /*break*/, 3];
-                case 2:
-                    err_4 = _b.sent();
-                    args.jobLog("Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_4)));
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
-            }
-        });
+}); };
+var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var err_4;
+    var args = _b.args, sourcePath = _b.sourcePath;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                _c.trys.push([0, 2, , 3]);
+                args.jobLog("Deleting source file ".concat(sourcePath));
+                return [4 /*yield*/, fs_1.promises.unlink(sourcePath)];
+            case 1:
+                _c.sent();
+                return [3 /*break*/, 3];
+            case 2:
+                err_4 = _c.sent();
+                args.jobLog("Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_4)));
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
     });
-};
-var fileMoveOrCopy = function (_a) {
-    var operation = _a.operation, sourcePath = _a.sourcePath, destinationPath = _a.destinationPath, args = _a.args;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var sourceFileSize, moved, ncpd, copied;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0:
-                    args.jobLog('Calculating cache file size in bytes');
-                    return [4 /*yield*/, getSizeBytes(sourcePath)];
-                case 1:
-                    sourceFileSize = _b.sent();
-                    args.jobLog("".concat(sourceFileSize));
-                    if (!(operation === 'move')) return [3 /*break*/, 3];
-                    return [4 /*yield*/, tryMove({
-                            sourcePath: sourcePath,
-                            destinationPath: destinationPath,
-                            args: args,
-                            sourceFileSize: sourceFileSize,
-                        })];
-                case 2:
-                    moved = _b.sent();
-                    if (moved) {
-                        return [2 /*return*/, true];
-                    }
-                    // disable: https://github.com/HaveAGitGat/Tdarr/issues/885
-                    // const mvdird = await tryMvdir({
-                    //   sourcePath,
-                    //   destinationPath,
-                    //   args,
-                    //   sourceFileSize,
-                    // });
-                    // if (mvdird) {
-                    //   return true;
-                    // }
-                    args.jobLog('Failed to move file, trying copy');
-                    _b.label = 3;
-                case 3: return [4 /*yield*/, tyNcp({
+}); };
+var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var sourceFileSize, moved, ncpd, copied;
+    var operation = _b.operation, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, args = _b.args;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                args.jobLog('Calculating cache file size in bytes');
+                return [4 /*yield*/, getSizeBytes(sourcePath)];
+            case 1:
+                sourceFileSize = _c.sent();
+                args.jobLog("".concat(sourceFileSize));
+                if (!(operation === 'move')) return [3 /*break*/, 3];
+                return [4 /*yield*/, tryMove({
                         sourcePath: sourcePath,
                         destinationPath: destinationPath,
                         args: args,
                         sourceFileSize: sourceFileSize,
                     })];
-                case 4:
-                    ncpd = _b.sent();
-                    if (!ncpd) return [3 /*break*/, 7];
-                    if (!(operation === 'move')) return [3 /*break*/, 6];
-                    return [4 /*yield*/, cleanSourceFile({
-                            args: args,
-                            sourcePath: sourcePath,
-                        })];
-                case 5:
-                    _b.sent();
-                    _b.label = 6;
-                case 6: return [2 /*return*/, true];
-                case 7: return [4 /*yield*/, tryNormalCopy({
-                        sourcePath: sourcePath,
-                        destinationPath: destinationPath,
+            case 2:
+                moved = _c.sent();
+                if (moved) {
+                    return [2 /*return*/, true];
+                }
+                // disable: https://github.com/HaveAGitGat/Tdarr/issues/885
+                // const mvdird = await tryMvdir({
+                //   sourcePath,
+                //   destinationPath,
+                //   args,
+                //   sourceFileSize,
+                // });
+                // if (mvdird) {
+                //   return true;
+                // }
+                args.jobLog('Failed to move file, trying copy');
+                _c.label = 3;
+            case 3: return [4 /*yield*/, tyNcp({
+                    sourcePath: sourcePath,
+                    destinationPath: destinationPath,
+                    args: args,
+                    sourceFileSize: sourceFileSize,
+                })];
+            case 4:
+                ncpd = _c.sent();
+                if (!ncpd) return [3 /*break*/, 7];
+                if (!(operation === 'move')) return [3 /*break*/, 6];
+                return [4 /*yield*/, cleanSourceFile({
                         args: args,
-                        sourceFileSize: sourceFileSize,
+                        sourcePath: sourcePath,
                     })];
-                case 8:
-                    copied = _b.sent();
-                    if (!copied) return [3 /*break*/, 11];
-                    if (!(operation === 'move')) return [3 /*break*/, 10];
-                    return [4 /*yield*/, cleanSourceFile({
-                            args: args,
-                            sourcePath: sourcePath,
-                        })];
-                case 9:
-                    _b.sent();
-                    _b.label = 10;
-                case 10: return [2 /*return*/, true];
-                case 11: throw new Error("Failed to ".concat(operation, " file"));
-            }
-        });
+            case 5:
+                _c.sent();
+                _c.label = 6;
+            case 6: return [2 /*return*/, true];
+            case 7: return [4 /*yield*/, tryNormalCopy({
+                    sourcePath: sourcePath,
+                    destinationPath: destinationPath,
+                    args: args,
+                    sourceFileSize: sourceFileSize,
+                })];
+            case 8:
+                copied = _c.sent();
+                if (!copied) return [3 /*break*/, 11];
+                if (!(operation === 'move')) return [3 /*break*/, 10];
+                return [4 /*yield*/, cleanSourceFile({
+                        args: args,
+                        sourcePath: sourcePath,
+                    })];
+            case 9:
+                _c.sent();
+                _c.label = 10;
+            case 10: return [2 /*return*/, true];
+            case 11: throw new Error("Failed to ".concat(operation, " file"));
+        }
     });
-};
+}); };
 exports.default = fileMoveOrCopy;

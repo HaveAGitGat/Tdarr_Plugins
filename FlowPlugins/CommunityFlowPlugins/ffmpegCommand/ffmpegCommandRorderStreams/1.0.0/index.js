@@ -84,14 +84,7 @@ var plugin = function (args) {
         // eslint-disable-next-line no-param-reassign
         stream.typeIndex = index;
     });
-    var getSimplifiedStreams = function (streamsToSimplify) {
-        return streamsToSimplify.map(function (stream) { return ({
-            index: stream.typeIndex,
-            codec_name: stream.codec_name,
-            codec_type: stream.codec_type,
-        }); });
-    };
-    var originalStreams = JSON.stringify(getSimplifiedStreams(streams));
+    var originalStreams = JSON.stringify(streams);
     var sortStreams = function (sortType) {
         var items = sortType.inputs.split(',');
         items.reverse();

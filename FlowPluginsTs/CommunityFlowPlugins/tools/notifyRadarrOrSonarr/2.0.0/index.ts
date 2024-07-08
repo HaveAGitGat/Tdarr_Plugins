@@ -58,11 +58,11 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'Radarr or Sonnar notified',
+      tooltip: 'Radarr or Sonarr notified',
     },
     {
       number: 2,
-      tooltip: 'Radarr or Sonnar do not know this file',
+      tooltip: 'Radarr or Sonarr do not know this file',
     },
   ],
 });
@@ -95,7 +95,7 @@ const getId = async (
   fileName: string,
 )
   : Promise<number> => {
-  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}\b/i.exec(fileName)?.at(0) ?? '';
+  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
   let id = (imdbId !== '')
     ? Number((await args.deps.axios({
       method: 'get',
