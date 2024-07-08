@@ -15,7 +15,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_bsh1_Boosh_FFMPEG_QSV_HEVC',
   Stage: 'Pre-processing',
-  Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
+  Name: 'Boosh-Transcode Using QSV GPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `==DETAILS== This is a QSV plugin. 8th+ gen INTEL QSV enabled CPUs are recommended. VAAPI is NOT used. 

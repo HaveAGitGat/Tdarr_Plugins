@@ -89,7 +89,7 @@ Audio:  (Only one audio stream is used!!)
 const details = () => ({
   id: 'Tdarr_Plugin_JB69_JBHEVCQSV_MinimalFile',
   Stage: 'Pre-processing',
-  Name: 'JB - QSV(vaapi), H265, AAC, MKV, bitrate optimized',
+  Name: 'JB - QSV(vaapi), H265, AAC, MKV, Bitrate Optimized',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `***You should not use this*** until you read the comments at the top of the code and understand

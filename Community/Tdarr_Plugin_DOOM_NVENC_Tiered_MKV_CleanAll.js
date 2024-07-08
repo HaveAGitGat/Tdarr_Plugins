@@ -4,7 +4,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_DOOM_NVENC_Tiered_MKV_CleanAll",
     Stage: 'Pre-processing',
-    Name: "DOOM Tiered H265 MKV, remove audio & subtitles [NVENC]",
+    Name: "DOOM Tiered H265 MKV, Remove Audio & Subtitles [NVENC]",
     Stage: "Pre-processing",
     Type: "Video",
     Operation: "Transcode",

@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_x7ab_Remove_Subs",
     Stage: "Pre-processing",
-    Name: "Remove subtitles ",
+    Name: "Remove Subtitles",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin removes subtitles if detected. The output container is the same as the original. \n\n`,

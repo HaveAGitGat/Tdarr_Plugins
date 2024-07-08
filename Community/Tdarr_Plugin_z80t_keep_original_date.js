@@ -6,7 +6,7 @@ module.exports.dependencies = [
 const details = () => ({
   id: 'Tdarr_Plugin_z80t_keep_original_date',
   Stage: 'Post-processing',
-  Name: 'Keep original file dates and times after transcoding',
+  Name: 'Keep Original File Dates And Times After Transcoding',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin copies the original file dates and times to the transcoded file \n\n',

@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_transcode',
   Stage: 'Pre-processing',
-  Name: 'Transcode a video file',
+  Name: 'Transcode A Video File',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Transcode a video file using ffmpeg. GPU transcoding will be used if possible.',

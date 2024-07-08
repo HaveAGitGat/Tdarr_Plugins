@@ -14,7 +14,7 @@ module.exports.dependencies = [
 const details = () => ({
   id: 'Tdarr_Plugin_pre1_Pre_Proc_Example',
   Stage: 'Pre-processing', // Pre-processing or Post-processing. Determines when the plugin will be executed.
-  Name: 'No title meta data ',
+  Name: 'No Title Meta Data',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin removes metadata (if a title exists). The output container is the same as the original. \n\n',

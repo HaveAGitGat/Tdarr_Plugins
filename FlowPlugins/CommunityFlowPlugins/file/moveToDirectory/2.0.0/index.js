@@ -97,7 +97,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 keepRelativePath = args.inputs.keepRelativePath;
                 outputDirectory = String(args.inputs.outputDirectory);
-                originalFileName = (0, fileUtils_1.getFileName)(args.originalLibraryFile._id);
+                originalFileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 newContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 outputPath = '';
                 if (keepRelativePath) {

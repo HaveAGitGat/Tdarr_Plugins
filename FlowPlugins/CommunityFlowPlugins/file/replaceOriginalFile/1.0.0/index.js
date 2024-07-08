@@ -40,6 +40,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fs_1 = require("fs");
 var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
@@ -70,11 +71,10 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var fs, lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp;
+    var lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                fs = require('fs');
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
@@ -110,14 +110,17 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     })];
             case 2:
                 _a.sent();
-                // delete original file
-                if (fs.existsSync(args.originalLibraryFile._id)
-                    && args.originalLibraryFile._id !== currentPath) {
-                    args.jobLog("Deleting original file:".concat(args.originalLibraryFile._id));
-                    fs.unlinkSync(args.originalLibraryFile._id);
-                }
-                return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
+                return [4 /*yield*/, (0, fileUtils_1.fileExists)(args.originalLibraryFile._id)];
             case 3:
+                if (!((_a.sent())
+                    && args.originalLibraryFile._id !== currentPath)) return [3 /*break*/, 5];
+                args.jobLog("Deleting original file:".concat(args.originalLibraryFile._id));
+                return [4 /*yield*/, fs_1.promises.unlink(args.originalLibraryFile._id)];
+            case 4:
+                _a.sent();
+                _a.label = 5;
+            case 5: return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
+            case 6:
                 _a.sent();
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
@@ -125,7 +128,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         destinationPath: newPath,
                         args: args,
                     })];
-            case 4:
+            case 7:
                 _a.sent();
                 return [2 /*return*/, {
                         outputFileObj: {

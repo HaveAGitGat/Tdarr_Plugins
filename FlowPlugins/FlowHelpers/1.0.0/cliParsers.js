@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.editreadyParser = exports.getFFmpegVar = exports.getFFmpegPercentage = exports.ffmpegParser = exports.handbrakeParser = void 0;
+exports.editreadyParser = exports.getHandBrakeFps = exports.getFFmpegVar = exports.getFFmpegPercentage = exports.ffmpegParser = exports.handbrakeParser = void 0;
 var handbrakeParser = function (_a) {
     var str = _a.str, hbPass = _a.hbPass;
     if (typeof str !== 'string') {
@@ -30,6 +30,24 @@ var handbrakeParser = function (_a) {
     return percentage;
 };
 exports.handbrakeParser = handbrakeParser;
+var getHandBrakeFps = function (_a) {
+    var str = _a.str;
+    try {
+        if (typeof str !== 'string' || !(str.includes('(') && str.includes('fps'))) {
+            return 0;
+        }
+        var out = parseInt(str.split('(')[1].split('fps')[0].trim(), 10);
+        // eslint-disable-next-line no-restricted-globals
+        if (!isNaN(out)) {
+            return out;
+        }
+    }
+    catch (err) {
+        // err
+    }
+    return 0;
+};
+exports.getHandBrakeFps = getHandBrakeFps;
 // frame=  889 fps=106 q=26.0 Lsize=   25526kB time=00:00:35.69 bitrate=5858.3kbits/s speed=4.25x
 var getFFmpegVar = function (_a) {
     var str = _a.str, variable = _a.variable;
