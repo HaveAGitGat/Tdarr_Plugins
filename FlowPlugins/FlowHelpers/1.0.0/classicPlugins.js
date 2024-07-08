@@ -153,11 +153,11 @@ var runClassicPlugin = function (args, type) { return __awaiter(void 0, void 0, 
             case 16:
                 result = _b.sent();
                 if (((_a = result === null || result === void 0 ? void 0 : result.file) === null || _a === void 0 ? void 0 : _a._id) && args.inputFileObj._id !== result.file._id) {
+                    args.jobLog("File ID changed from ".concat(args.inputFileObj._id, " to ").concat(result.file._id));
                     // eslint-disable-next-line no-param-reassign
                     args.inputFileObj._id = result.file._id;
                     // eslint-disable-next-line no-param-reassign
                     args.inputFileObj.file = result.file.file;
-                    args.jobLog("File ID changed from ".concat(args.inputFileObj._id, " to ").concat(result.file._id));
                 }
                 return [2 /*return*/, {
                         result: result,
