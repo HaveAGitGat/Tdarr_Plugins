@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Reorder Streams',
@@ -79,6 +80,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
+    (0, flowUtils_1.checkFfmpegCommandInit)(args);
     var streams = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
     streams.forEach(function (stream, index) {
         // eslint-disable-next-line no-param-reassign
@@ -163,16 +165,12 @@ var plugin = function (args) {
             sortStreams(sortTypes[processOrderArr[k]]);
         }
     }
-    var sortedStreams = JSON.stringify(getSimplifiedStreams(streams));
-    if (sortedStreams !== originalStreams) {
+    if (JSON.stringify(streams) !== originalStreams) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.shouldProcess = true;
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.streams = streams;
-        args.jobLog('Streams are not in order. Reordering.');
     }
-    else
-        args.jobLog('✔ Streams are already in order. No reordering necessary.');
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,

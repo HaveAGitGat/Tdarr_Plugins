@@ -1,3 +1,4 @@
+import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import {
   IffmpegCommandStream,
   IpluginDetails,
@@ -109,13 +110,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  checkFfmpegCommandInit(args);
+
   let streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
 
   streams.forEach((stream, index) => {
     // eslint-disable-next-line no-param-reassign
     stream.typeIndex = index;
   });
-  
+
   const originalStreams = JSON.stringify(streams);
 
   const sortStreams = (sortType: {
@@ -153,7 +156,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     languages, codecs, channels, streamTypes,
   } = args.inputs;
 
-  const sortTypes: {
+  const sortTypes:{
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any,
   } = {
@@ -180,7 +183,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     },
     channels: {
       getValue: (stream: Istreams) => {
-        const chanMap: {
+        const chanMap:{
           [key: number]: string
         } = {
           8: '7.1',
@@ -198,7 +201,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       inputs: channels,
     },
     streamTypes: {
-      getValue: (stream: Istreams) => {
+      getValue: (stream:Istreams) => {
         if (stream.codec_type) {
           return stream.codec_type;
         }
@@ -216,14 +219,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     }
   }
 
-  const sortedStreams = JSON.stringify(getSimplifiedStreams(streams));
-  if (sortedStreams !== originalStreams) {
+  if (JSON.stringify(streams) !== originalStreams) {
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-    args.jobLog('Streams are not in order. Reordering.');
-  } else args.jobLog('✔ Streams are already in order. No reordering necessary.');
+  }
 
   return {
     outputFileObj: args.inputFileObj,
