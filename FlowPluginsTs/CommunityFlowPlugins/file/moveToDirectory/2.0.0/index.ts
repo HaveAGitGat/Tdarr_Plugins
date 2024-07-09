@@ -65,7 +65,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const outputDirectory = String(args.inputs.outputDirectory);
 
-  const originalFileName = getFileName(args.originalLibraryFile._id);
+  const originalFileName = getFileName(args.inputFileObj._id);
   const newContainer = getContainer(args.inputFileObj._id);
 
   let outputPath = '';

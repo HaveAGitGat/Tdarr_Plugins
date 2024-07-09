@@ -4,7 +4,7 @@ const details = () => {
     id: "Tdarr_Plugin_a9hc_HaveAGitGat_HandBrake_H264_Fast1080p30",
     Stage: "Pre-processing",
     Name:
-      "HaveAGitGat HandBrake Fast1080p30, No title meta, no subs, 192Kb AAC stereo,MP4 ",
+      "HaveAGitGat HandBrake Fast1080p30, No Title Meta, No Subs, 192Kb AAC Stereo,MP4",
     Type: "Video",
     Operation: 'Transcode',
     Description: `[Contains built-in filter] This plugin transcodes into H264 using HandBrake's 'Fast 1080p30' preset if the file is not in H264 already. It removes subs, metadata (if a title exists) and adds a stereo 192kbit AAC track if an AAC track (any) doesn't exist. The output container is MP4. \n\n

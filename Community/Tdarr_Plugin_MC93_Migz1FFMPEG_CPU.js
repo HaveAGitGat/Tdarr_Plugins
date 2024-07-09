@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz1FFMPEG_CPU',
   Stage: 'Pre-processing',
-  Name: 'Migz-Transcode Using CPU & FFMPEG',
+  Name: 'Migz Transcode Using CPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Files not in H265 will be transcoded into H265 using CPU with ffmpeg.

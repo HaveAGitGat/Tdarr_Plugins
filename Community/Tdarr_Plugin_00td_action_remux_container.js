@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_remux_container',
   Stage: 'Pre-processing',
-  Name: 'Remux container',
+  Name: 'Remux Container',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

@@ -21,6 +21,16 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Use Custom CLI Path?',
+      name: 'useCustomCliPath',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'Specify whether to use a custom CLI path',
+    },
+    {
       label: 'CLI',
       name: 'userCli',
       type: 'string',
@@ -31,8 +41,48 @@ const details = (): IpluginDetails => ({
           'mkvmerge',
           'mkvpropedit',
         ],
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'useCustomCliPath',
+                  value: 'false',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
       },
       tooltip: 'CLI to run',
+    },
+    {
+      label: 'Custom CLI Path',
+      name: 'customCliPath',
+      type: 'string',
+      defaultValue: '/usr/bin/mkvmerge',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'useCustomCliPath',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: 'Specify the path to the CLI to run',
     },
     {
       label: 'Does Command Create Output File?',
@@ -83,6 +133,24 @@ const details = (): IpluginDetails => ({
       `,
     },
     {
+      label: 'CLI Arguments',
+      name: 'cliArguments',
+      type: 'string',
+      // eslint-disable-next-line no-template-curly-in-string
+      defaultValue: '-o "${outputFilePath}" "{{{args.inputFileObj._id}}}"',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Specify arguments to pass to the CLI. 
+      Normal variable templating with {{{}}} applies but \${outputFilePath} is a special
+      variable from the "Output File Path" input above.
+
+      \\nExample\\n
+      -o "\${outputFilePath}" "{{{args.inputFileObj._id}}}"
+      `,
+    },
+
+    {
       label: 'Output File Becomes Working File?',
       name: 'outputFileBecomesWorkingFile',
       type: 'boolean',
@@ -108,23 +176,6 @@ const details = (): IpluginDetails => ({
       tooltip:
         'Toggle this on to make the output file become the working file for the next plugin.',
     },
-    {
-      label: 'CLI Arguments',
-      name: 'cliArguments',
-      type: 'string',
-      // eslint-disable-next-line no-template-curly-in-string
-      defaultValue: '-o "${outputFilePath}" "{{{args.inputFileObj._id}}}"',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: `Specify arguments to pass to the CLI. 
-      Normal variable templating with {{{}}} applies but \${outputFilePath} is a special
-      variable from the "Output File Path" input above.
-
-      \\nExample\\n
-      -o "\${outputFilePath}" "{{{args.inputFileObj._id}}}"
-      `,
-    },
   ],
   outputs: [
     {
@@ -140,7 +191,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  let userCli = String(args.inputs.userCli);
+  const userCli = String(args.inputs.userCli);
+  const { useCustomCliPath } = args.inputs;
+  const customCliPath = String(args.inputs.customCliPath);
+  let cliPath = '';
+
   const {
     outputFileBecomesWorkingFile,
   } = args.inputs;
@@ -175,16 +230,20 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     mkvmerge: 'mkvmerge',
   };
 
-  if (!availableCli[userCli]) {
-    const msg = `CLI ${userCli} not available to run in this plugin`;
-    args.jobLog(msg);
-    throw new Error(msg);
+  if (useCustomCliPath) {
+    cliPath = customCliPath;
+  } else {
+    if (!availableCli[userCli]) {
+      const msg = `CLI ${userCli} not available to run in this plugin`;
+      args.jobLog(msg);
+      throw new Error(msg);
+    }
+
+    cliPath = availableCli[userCli];
   }
 
-  userCli = availableCli[userCli];
-
   const cli = new CLI({
-    cli: userCli,
+    cli: cliPath,
     spawnArgs: cliArgs,
     spawnOpts: {},
     jobLog: args.jobLog,
@@ -192,12 +251,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     inputFileObj: args.inputFileObj,
     logFullCliOutput: args.logFullCliOutput,
     updateWorker: args.updateWorker,
+    args,
   });
 
   const res = await cli.runCli();
 
   if (res.cliExitCode !== 0) {
-    const msg = `Running ${userCli} failed`;
+    const msg = `Running ${cliPath} failed`;
     args.jobLog(msg);
     throw new Error(msg);
   }

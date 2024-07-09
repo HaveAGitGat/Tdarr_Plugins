@@ -5,7 +5,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Remove_Letterbox",
     Stage: "Pre-processing",
-    Name: "Remove letterbox",
+    Name: "Remove Letterbox",
     Type: "Video",
     Operation: "Transcode",
     Description: `Uses iiDrakeii's filter, and crops video files when letterboxing is detected.\nThis uses the FFMPEG NVENC transcoding(hw).\nIf a file is 4K it will be scaled down to 1080p.\nNow with user definable bitrates!(since 1.104 beta)\nCreated by @control#0405`,

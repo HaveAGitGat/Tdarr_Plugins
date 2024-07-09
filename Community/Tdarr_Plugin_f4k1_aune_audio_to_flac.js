@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_f4k1_aune_audio_to_flac',
   Stage: 'Pre-processing',
-  Name: 'Aune - Audio to FLAC',
+  Name: 'Aune - Audio To FLAC',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'This plugin transcodes different audio codecs to FLAC. '

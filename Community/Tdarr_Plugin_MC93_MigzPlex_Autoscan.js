@@ -7,7 +7,7 @@ module.exports.dependencies = [
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_MigzPlex_Autoscan',
   Stage: 'Post-processing',
-  Name: 'Send request for file to be scanned by plex_autoscan.',
+  Name: 'Send Request For File To Be Scanned By Plex_autoscan.',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Send request for file to be scanned by plex_autoscan. https://github.com/l3uddz/plex_autoscan \n\n',

@@ -122,14 +122,25 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     inputFileObj: args.inputFileObj,
                     logFullCliOutput: args.logFullCliOutput,
                     updateWorker: args.updateWorker,
+                    args: args,
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
                 res = _a.sent();
+                if (!(typeof args.updateStat !== 'undefined')) return [3 /*break*/, 3];
+                return [4 /*yield*/, args.updateStat(args.originalLibraryFile.DB, 'totalHealthCheckCount', 1)];
+            case 2:
+                _a.sent();
+                _a.label = 3;
+            case 3:
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running CLI failed');
+                    args.logOutcome('hErr');
                     throw new Error('Running CLI failed');
                 }
+                args.logOutcome('hSuc');
+                // will cause item to go into the health check success table
+                args.variables.healthCheck = 'Success';
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: 1,
