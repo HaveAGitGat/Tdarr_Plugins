@@ -29,7 +29,7 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter one stream property to check.
+        Enter one stream property to check. To resolve 'Subtitle codec 94213 is not supported' error, leave as codec_name.
         
         \\nExample:\\n
         codec_name
@@ -48,7 +48,7 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
+        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac. To resolve 'Subtitle codec 94213 is not supported' error, enter mov_text.
         
         \\nExample:\\n
         ac3,aac
