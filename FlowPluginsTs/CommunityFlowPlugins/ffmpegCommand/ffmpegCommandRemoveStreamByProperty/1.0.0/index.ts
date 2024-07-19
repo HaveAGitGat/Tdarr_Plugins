@@ -29,7 +29,8 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter one stream property to check. To resolve 'Subtitle codec 94213 is not supported' error, leave as codec_name.
+        Enter one stream property to check. 
+        To resolve 'Subtitle codec 94213 is not supported' error, leave as codec_name.
         
         \\nExample:\\n
         codec_name
@@ -48,7 +49,8 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac. To resolve 'Subtitle codec 94213 is not supported' error, enter mov_text.
+        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac. 
+        To resolve 'Subtitle codec 94213 is not supported' error, enter mov_text.
         
         \\nExample:\\n
         ac3,aac
@@ -102,7 +104,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
     if (target) {
       const prop: string = String(target).toLowerCase();
-      const prefix: string = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
+      const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
       if (condition === 'includes' && valuesToCompare.includes(prop)) {
         args.jobLog(`${prefix} includes ${valuesToCompare}\n`);
         // eslint-disable-next-line no-param-reassign
@@ -113,9 +115,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         args.jobLog(`${prefix} not_includes ${valuesToCompare}\n`);
         // eslint-disable-next-line no-param-reassign
         stream.removed = true;
-        return;
       }
-     }
     }
   });
 
