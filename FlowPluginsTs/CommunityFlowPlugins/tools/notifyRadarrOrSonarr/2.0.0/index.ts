@@ -95,24 +95,34 @@ const getId = async (
   fileName: string,
 )
   : Promise<number> => {
-  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
-  let id = (imdbId !== '')
+  const tmdbId = getFileName(fileName).match(/{tmdb-(.*?)}/i)?.at(0) ?? '';
+  let id = (tmdbId !== '')
     ? Number((await args.deps.axios({
       method: 'get',
-      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
+      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=tmdb:${tmdbId}`,
       headers: arrApp.headers,
     })).data?.at(0)?.id ?? -1)
     : -1;
-  args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for imdb '${imdbId}'`);
+  args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for tmdb '${tmdbId}'`);
   if (id === -1) {
+    const TheTitle = getFileName(fileName);
+    if (TheTitle.includes(', The')) {
+      // Found TitleThe
+      const TitleThe = TheTitle.split(',')[0];
+      const The = 'The';
+      const TheTitle2 = The.concat(' ', TitleThe);
+      args.jobLog(`Variable TheTitle = ${TheTitle2}`);
+    } else {
+      args.jobLog(`Variable TheTitle = ${TheTitle}`);
+    }
     id = arrApp.delegates.getIdFromParseResponse(
       (await args.deps.axios({
         method: 'get',
-        url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
+        url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(TheTitle)}`,
         headers: arrApp.headers,
       })),
     );
-    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${getFileName(fileName)}'`);
+    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${TheTitle}'`);
   }
   return id;
 };
