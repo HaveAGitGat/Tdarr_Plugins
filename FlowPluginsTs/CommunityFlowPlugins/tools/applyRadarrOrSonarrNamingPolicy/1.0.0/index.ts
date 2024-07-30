@@ -126,16 +126,16 @@ const getFileInfoFromLookup = async (
 )
   : Promise<IFileInfo> => {
   let fInfo: IFileInfo = { id: '-1' };
-  const tmdbId = getFileName(fileName).match(/{tmdb-(.*?)}/i)?.at(0) ?? '';
-  if (tmdbId !== '') {
+  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
+  if (imdbId !== '') {
     const lookupResponse: ILookupResponse = await args.deps.axios({
       method: 'get',
-      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=tmdb:${tmdbId}`,
+      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
       headers: arrApp.headers,
     });
     fInfo = arrApp.delegates.getFileInfoFromLookupResponse(lookupResponse, fileName);
     args.jobLog(`${arrApp.content} ${fInfo.id !== '-1' ? `'${fInfo.id}' found` : 'not found'}`
-      + ` for tmdb '${tmdbId}'`);
+      + ` for imdb '${imdbId}'`);
   }
   return fInfo;
 };
