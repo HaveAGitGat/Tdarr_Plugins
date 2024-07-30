@@ -101,17 +101,17 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var tmdbId, id, _a, _b, TheTitle, TitleThe, The, TheTitle2, _c, _d;
+    var imdbId, id, _a, _b, _c, _d;
     var _e, _f, _g, _h, _j;
     return __generator(this, function (_k) {
         switch (_k.label) {
             case 0:
-                tmdbId = (_f = (_e = (0, fileUtils_1.getFileName)(fileName).match(/{tmdb-(.*?)}/i)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
-                if (!(tmdbId !== '')) return [3 /*break*/, 2];
+                imdbId = (_f = (_e = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
+                if (!(imdbId !== '')) return [3 /*break*/, 2];
                 _b = Number;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=tmdb:").concat(tmdbId),
+                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
                         headers: arrApp.headers,
                     })];
             case 1:
@@ -122,27 +122,17 @@ var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0,
                 _k.label = 3;
             case 3:
                 id = _a;
-                args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for tmdb '").concat(tmdbId, "'"));
+                args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for imdb '").concat(imdbId, "'"));
                 if (!(id === -1)) return [3 /*break*/, 5];
-                TheTitle = (0, fileUtils_1.getFileName)(fileName);
-                if (TheTitle.includes(', The')) {
-                    TitleThe = TheTitle.split(',')[0];
-                    The = 'The';
-                    TheTitle2 = The.concat(' ', TitleThe);
-                    args.jobLog("Variable TheTitle = ".concat(TheTitle2));
-                }
-                else {
-                    args.jobLog("Variable TheTitle = ".concat(TheTitle));
-                }
                 _d = (_c = arrApp.delegates).getIdFromParseResponse;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/parse?title=").concat(encodeURIComponent(TheTitle)),
+                        url: "".concat(arrApp.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
                         headers: arrApp.headers,
                     })];
             case 4:
                 id = _d.apply(_c, [(_k.sent())]);
-                args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for '").concat(TheTitle, "'"));
+                args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
                 _k.label = 5;
             case 5: return [2 /*return*/, id];
         }

@@ -117,24 +117,24 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var getFileInfoFromLookup = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var fInfo, tmdbId, lookupResponse;
+    var fInfo, imdbId, lookupResponse;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
                 fInfo = { id: '-1' };
-                tmdbId = (_b = (_a = (0, fileUtils_1.getFileName)(fileName).match(/{tmdb-(.*?)}/i)) === null || _a === void 0 ? void 0 : _a.at(0)) !== null && _b !== void 0 ? _b : '';
-                if (!(tmdbId !== '')) return [3 /*break*/, 2];
+                imdbId = (_b = (_a = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _a === void 0 ? void 0 : _a.at(0)) !== null && _b !== void 0 ? _b : '';
+                if (!(imdbId !== '')) return [3 /*break*/, 2];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=tmdb:").concat(tmdbId),
+                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
                         headers: arrApp.headers,
                     })];
             case 1:
                 lookupResponse = _c.sent();
                 fInfo = arrApp.delegates.getFileInfoFromLookupResponse(lookupResponse, fileName);
                 args.jobLog("".concat(arrApp.content, " ").concat(fInfo.id !== '-1' ? "'".concat(fInfo.id, "' found") : 'not found')
-                    + " for tmdb '".concat(tmdbId, "'"));
+                    + " for imdb '".concat(imdbId, "'"));
                 _c.label = 2;
             case 2: return [2 /*return*/, fInfo];
         }
