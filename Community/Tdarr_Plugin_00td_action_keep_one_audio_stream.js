@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_keep_one_audio_stream',
   Stage: 'Pre-processing',
-  Name: 'Keep one audio stream',
+  Name: 'Keep One Audio Stream',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

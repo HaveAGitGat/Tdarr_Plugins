@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz5ConvertAudio',
   Stage: 'Pre-processing',
-  Name: 'Migz-Convert audio streams',
+  Name: 'Migz Convert Audio Streams',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'This plugin can convert any 2.0 audio track/s to AAC and can create downmixed audio tracks. \n\n',

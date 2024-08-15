@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 
 import { getFileSize } from './fileUtils';
 import { IpluginInputArgs } from './interfaces/interfaces';
@@ -48,7 +48,7 @@ const tryMove = async ({
 
   let error = false;
   try {
-    await fs.rename(sourcePath, destinationPath);
+    await fsp.rename(sourcePath, destinationPath);
   } catch (err) {
     error = true;
     args.jobLog(`File move error: ${JSON.stringify(err)}`);
@@ -157,7 +157,7 @@ const tryNormalCopy = async ({
 
   let error = false;
   try {
-    await fs.copyFile(sourcePath, destinationPath);
+    await fsp.copyFile(sourcePath, destinationPath);
   } catch (err) {
     error = true;
     args.jobLog(`File copy error: ${JSON.stringify(err)}`);
@@ -186,7 +186,7 @@ const cleanSourceFile = async ({
 }) => {
   try {
     args.jobLog(`Deleting source file ${sourcePath}`);
-    await fs.unlink(sourcePath);
+    await fsp.unlink(sourcePath);
   } catch (err) {
     args.jobLog(`Failed to delete source file ${sourcePath}: ${JSON.stringify(err)}`);
   }

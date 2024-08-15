@@ -93,14 +93,26 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     inputFileObj: args.inputFileObj,
     logFullCliOutput: args.logFullCliOutput,
     updateWorker: args.updateWorker,
+    args,
   });
 
   const res = await cli.runCli();
 
+  // Added in 2.19.01
+  if (typeof args.updateStat !== 'undefined') {
+    await args.updateStat(args.originalLibraryFile.DB, 'totalHealthCheckCount', 1);
+  }
+
   if (res.cliExitCode !== 0) {
     args.jobLog('Running CLI failed');
+    args.logOutcome('hErr');
     throw new Error('Running CLI failed');
   }
+
+  args.logOutcome('hSuc');
+
+  // will cause item to go into the health check success table
+  args.variables.healthCheck = 'Success';
 
   return {
     outputFileObj: args.inputFileObj,

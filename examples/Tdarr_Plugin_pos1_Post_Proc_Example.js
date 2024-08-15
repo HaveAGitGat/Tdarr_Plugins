@@ -14,7 +14,7 @@ module.exports.dependencies = [
 const details = () => ({
   id: 'Tdarr_Plugin_pos1_Post_Proc_Example',
   Stage: 'Post-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed. This plugin does some stuff after all plugins have been executed
-  Name: 'Post proc ',
+  Name: 'Post Proc',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin does some stuff after all plugins have been executed. \n\n',

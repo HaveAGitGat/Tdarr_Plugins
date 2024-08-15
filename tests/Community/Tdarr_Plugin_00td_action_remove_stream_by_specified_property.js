@@ -217,6 +217,30 @@ const tests = [
         + ' Files has streams which need to be removed, processing \n',
     },
   },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
+      librarySettings: {},
+      inputs: {
+        propertyToCheck: 'CodecID',
+        valuesToRemove: 'A_AAC-2,S_TEXT/UTF8',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: ', -map 0 -c copy -max_muxing_queue_size 9999 -map -0:4  -map -0:5  -map -0:6 ',
+      container: '.mkv',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: false,
+      infoLog: ' Removing stream 4 which is has CodecID of undefined \n'
+        + ' Removing stream 5 which is has CodecID of undefined \n'
+        + ' Removing stream 6 which is has CodecID of undefined \n'
+        + ' Files has streams which need to be removed, processing \n',
+    },
+  },
 ];
 
 void run(tests);

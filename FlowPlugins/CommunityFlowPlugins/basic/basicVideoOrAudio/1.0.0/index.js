@@ -51,7 +51,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Basic Video or Audio Settings',
-    description: "Basic Video or Audio settings designed to replicate\n   the Basic Video or Basic Audio  settings in the library settings\n   ",
+    description: "Basic Video or Audio settings designed to replicate\n   the Basic Video or Basic Audio  settings in the library settings.\n   ",
     style: {
         borderColor: 'green',
     },
@@ -383,6 +383,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     inputFileObj: args.inputFileObj,
                     logFullCliOutput: args.logFullCliOutput,
                     updateWorker: args.updateWorker,
+                    args: args,
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:

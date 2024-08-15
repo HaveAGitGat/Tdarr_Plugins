@@ -1,4 +1,5 @@
-import { IFileObject, Istreams } from './synced/IFileObject';
+import { IscanTypes } from '../fileUtils';
+import { IFileObject, IFileObjectMin, Istreams } from './synced/IFileObject';
 import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
@@ -86,6 +87,7 @@ export interface IffmpegCommandStream extends Istreams {
 }
 
 export interface IffmpegCommand {
+    init: boolean,
     inputFiles: string[],
     streams: IffmpegCommandStream[]
     container: string,
@@ -95,10 +97,21 @@ export interface IffmpegCommand {
     overallOuputArguments: string[],
 }
 
+export interface IliveSizeCompare {
+    enabled: boolean,
+    compareMethod: string,
+    thresholdPerc: number,
+    checkDelaySeconds: number,
+    error: boolean,
+}
+
 export interface Ivariables {
     ffmpegCommand: IffmpegCommand,
     flowFailed: boolean,
-    inFlow: Record<string, string>,
+    user: Record<string, string>,
+    healthCheck?: 'Success',
+    queueTags?: string,
+    liveSizeCompare?: IliveSizeCompare
 }
 
 export interface IpluginOutputArgs {
@@ -124,6 +137,7 @@ export interface IpluginInputArgs {
     originalLibraryFile: IFileObject,
     nodeHardwareType: string,
     workerType: string,
+    nodeTags?: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config: any,
     job: Ijob,
@@ -136,6 +150,8 @@ export interface IpluginInputArgs {
     updateWorker: IupdateWorker,
     logFullCliOutput: boolean,
     logOutcome: (outcome: string) => void,
+    scanIndividualFile?: (filee: IFileObjectMin, scanTypes: IscanTypes) => Promise<IFileObject>,
+    updateStat: (db: string, key: string, inc: number) => Promise<void>,
     deps: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fsextra: any,

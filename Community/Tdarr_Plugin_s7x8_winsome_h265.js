@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_s7x8_winsome_h265",
     Stage: "Pre-processing",
-    Name: "Winsome H265 ",
+    Name: "Winsome H265",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin transcodes all videos to h265 (if not in h265 already) and remuxes if not in mkv. If the English language track is not in AC3,EAC3 or DTS then an AC3 track is added.\n\n

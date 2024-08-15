@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_076b_re_order_subtitle_streams",
     Stage: "Pre-processing",
-    Name: "Re-order subtitle streams",
+    Name: "Re-order Subtitle Streams",
     Type: "Subtitle",
     Operation: "Transcode",
     Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st subtitle track  \n\n`,

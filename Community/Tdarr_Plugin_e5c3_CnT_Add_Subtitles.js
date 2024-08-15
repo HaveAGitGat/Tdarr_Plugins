@@ -5,7 +5,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Add_Subtitles",
     Stage: "Pre-processing",
-    Name: "Add subtitles to MKV files",
+    Name: "Add Subtitles To MKV Files",
     Type: "Video",
     Operation: 'Transcode',
     Description: `This plugin will check for subtitles, they should be named according to the ISO 639-2 language code.\nA subtitle could look like this: eng.srt\n If there are subtitles found they will be added with FFMPEG, if there are no subs of that language found.\n On first run node module iso-639-2 will be installed in the documents folder.\n Created by @control#0405`,

@@ -1,0 +1,21 @@
+name: Auto Build
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        node-version: [18.x]
+        os:
+          [
+            ["ubuntu-20.04"],
+          ]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Trigger
+      run: "curl -XPOST -u \"${{ secrets.PAT_USERNAME}}:${{secrets.PAT_TOKEN}}\" -H \"Accept: application/vnd.github.everest-preview+json\" -H \"Content-Type: application/json\" https://api.github.com/repos/HaveAGitGat/tdarr_docs/actions/workflows/build_plug_docs.yml/dispatches --data '{\"ref\": \"main\"}'"

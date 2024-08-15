@@ -4,7 +4,7 @@ module.exports.dependencies = ['axios@0.27.2', '@cospired/i18n-iso-languages'];
 const details = () => ({
   id: 'Tdarr_Plugin_henk_Keep_Native_Lang_Plus_Eng',
   Stage: 'Pre-processing',
-  Name: 'Remove all langs except native and English',
+  Name: 'Remove All Langs Except Native And English',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: `This plugin will remove all language audio tracks except the 'native'

@@ -8,7 +8,7 @@ const details = () => {
   return {
     id: 'Tdarr_Plugin_ER01_Transcode audio and video with HW (PC and Mac)',
     Stage: 'Pre-processing',
-    Name: 'Transcode Using QSV or VT & FFMPEG',
+    Name: 'Transcode Using QSV Or VT & FFMPEG',
     Type: 'Video',
     Operation: 'Transcode',
     Description: `Files not in H265 will be transcoded into H265 using hw with ffmpeg, assuming mkv container. Plugin uses QS if the node runs on a PC, or Videotoolbox if run on a Mac.
