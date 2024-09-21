@@ -70,16 +70,16 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const thresholdSecs = Number(args.inputs.thresholdSecs);
   const durationText = `File has duration is ${origFileDuration.toFixed(3)} seconds`;
-  const seriesText = 'File duration within series limits. must be a series.';
-  const filmText = 'File duration longer than series limits. must be a film.';
+  const belowText = 'File duration is below threshold.';
+  const aboveText = 'File duration is above threshold.';
 
   let outputNumber = 1;
 
   if (origFileDuration < thresholdSecs) {
-    args.jobLog(`${seriesText} ${durationText}, threshold is ${thresholdSecs} seconds`);
+    args.jobLog(`${belowText} ${durationText}, threshold is ${thresholdSecs} seconds`);
     outputNumber = 1;
   } else if (origFileDuration >= thresholdSecs) {
-    args.jobLog(`${filmText} ${durationText}, threshold is ${thresholdSecs} seconds`);
+    args.jobLog(`${aboveText} ${durationText}, threshold is ${thresholdSecs} seconds`);
     outputNumber = 2;
   } else {
     args.jobLog(durationText);

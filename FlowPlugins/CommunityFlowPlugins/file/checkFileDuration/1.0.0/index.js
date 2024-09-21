@@ -63,15 +63,15 @@ var plugin = function (args) {
     args.jobLog("origFileDuration: ".concat(origFileDuration));
     var thresholdSecs = Number(args.inputs.thresholdSecs);
     var durationText = "File has duration is ".concat(origFileDuration.toFixed(3), " seconds");
-    var seriesText = 'File duration within series limits. must be a series.';
-    var filmText = 'File duration longer than series limits. must be a film.';
+    var belowText = 'File duration is below threshold.';
+    var aboveText = 'File duration is above threshold.';
     var outputNumber = 1;
     if (origFileDuration < thresholdSecs) {
-        args.jobLog("".concat(seriesText, " ").concat(durationText, ", threshold is ").concat(thresholdSecs, " seconds"));
+        args.jobLog("".concat(belowText, " ").concat(durationText, ", threshold is ").concat(thresholdSecs, " seconds"));
         outputNumber = 1;
     }
     else if (origFileDuration >= thresholdSecs) {
-        args.jobLog("".concat(filmText, " ").concat(durationText, ", threshold is ").concat(thresholdSecs, " seconds"));
+        args.jobLog("".concat(aboveText, " ").concat(durationText, ", threshold is ").concat(thresholdSecs, " seconds"));
         outputNumber = 2;
     }
     else {
