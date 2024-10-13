@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
@@ -17,6 +16,26 @@ var details = function () { return ({
     sidebarPosition: -1,
     icon: '',
     inputs: [
+        {
+            label: 'Name of new audio stream',
+            name: 'streamName',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: 'Tdarr will add this name to the metadata title of the audio stream.',
+        },
+        {
+            label: 'Modify existing audio tracks Title',
+            name: 'enableTitleAdjust',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Append "(original)" to the existing audio tracks Title',
+        },
         {
             label: 'Audio Encoder',
             name: 'audioEncoder',
@@ -135,6 +154,41 @@ var details = function () { return ({
             },
             tooltip: 'Specify the audio samplerate for newly added channels',
         },
+        {
+            label: 'Enable Upmixing',
+            name: 'enableUpmixing',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Toggle whether to enable setting audio upmixing this will only get used if there is no higher channel count available',
+        },
+        {
+            label: 'Upmixing pan filter',
+            name: 'upmixingFilter',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'enableUpmixing',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Specify the audio filter for upmixing to desired channels',
+        },
     ],
     outputs: [
         {
@@ -157,6 +211,9 @@ var attemptMakeStream = function (_a) {
     var bitrate = String(args.inputs.bitrate);
     var enableSamplerate = Boolean(args.inputs.enableSamplerate);
     var samplerate = String(args.inputs.samplerate);
+    var enableUpmixing = Boolean(args.inputs.enableUpmixing);
+    var upmixingFilter = String(args.inputs.upmixingFilter);
+    var streamName = String(args.inputs.streamName);
     var langMatch = function (stream) {
         var _a;
         return ((langTag === 'und'
@@ -184,6 +241,11 @@ var attemptMakeStream = function (_a) {
         args.jobLog("The wanted channel count ".concat(wantedChannelCount, " is <= than the")
             + " highest available channel count (".concat(streamWithHighestChannel.channels, "). \n"));
     }
+    else if (enableUpmixing) {
+        targetChannels = wantedChannelCount;
+        args.jobLog("The wanted channel count ".concat(wantedChannelCount, " is higher than the")
+            + " highest available channel count (".concat(streamWithHighestChannel.channels, "). Will upmix audio.\n"));
+    }
     else {
         targetChannels = highestChannelCount;
         args.jobLog("The wanted channel count ".concat(wantedChannelCount, " is higher than the")
@@ -206,14 +268,23 @@ var attemptMakeStream = function (_a) {
     var streamCopy = JSON.parse(JSON.stringify(streamWithHighestChannel));
     streamCopy.removed = false;
     streamCopy.index = streams.length;
+    if (targetChannels > highestChannelCount && upmixingFilter !== '') {
+        streamCopy.outputArgs.push('-filter_complex', "[".concat(streamCopy.mapArgs[1], "]").concat(upmixingFilter, "[a_{outputIndex}]"));
+        streamCopy.outputArgs.push('-map', '[a_{outputIndex}]');
+        streamCopy.mapArgs = [];
+    }
+    else {
+        streamCopy.outputArgs.push('-ac', "".concat(targetChannels));
+    }
     streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
-    streamCopy.outputArgs.push('-ac', "".concat(targetChannels));
     if (enableBitrate) {
-        var ffType = (0, fileUtils_1.getFfType)(streamCopy.codec_type);
-        streamCopy.outputArgs.push("-b:".concat(ffType, ":{outputTypeIndex}"), "".concat(bitrate));
+        streamCopy.outputArgs.push("-b:a:{outputTypeIndex}", "".concat(bitrate));
     }
     if (enableSamplerate) {
         streamCopy.outputArgs.push('-ar', "".concat(samplerate));
+    }
+    if (streamName !== '') {
+        streamCopy.outputArgs.push('-metadata:s:a:{outputTypeIndex}', "title=".concat(streamName));
     }
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;

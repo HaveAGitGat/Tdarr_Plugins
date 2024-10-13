@@ -1,4 +1,3 @@
-import { getFfType } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import {
   IffmpegCommandStream,
@@ -21,6 +20,17 @@ const details = (): IpluginDetails => ({
   sidebarPosition: -1,
   icon: '',
   inputs: [
+    {
+      label: 'Name of new audio stream',
+      name: 'streamName',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip:
+        'Tdarr will add this name to the metadata title of the audio stream.',
+    },
     {
       label: 'Audio Encoder',
       name: 'audioEncoder',
@@ -146,6 +156,44 @@ const details = (): IpluginDetails => ({
       tooltip:
         'Specify the audio samplerate for newly added channels',
     },
+    {
+      label: 'Enable Upmixing',
+      name: 'enableUpmixing',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip:
+        'Toggle whether to enable setting audio upmixing this'
+        + 'will only get used if there is no higher channel count available',
+    },
+    {
+      label: 'Upmixing pan filter',
+      name: 'upmixingFilter',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'enableUpmixing',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip:
+        'Specify the audio filter for upmixing to desired channels',
+    },
   ],
   outputs: [
     {
@@ -182,6 +230,9 @@ const attemptMakeStream = ({
   const bitrate = String(args.inputs.bitrate);
   const enableSamplerate = Boolean(args.inputs.enableSamplerate);
   const samplerate = String(args.inputs.samplerate);
+  const enableUpmixing = Boolean(args.inputs.enableUpmixing);
+  const upmixingFilter = String(args.inputs.upmixingFilter);
+  const streamName = String(args.inputs.streamName);
 
   const langMatch = (stream: IffmpegCommandStream) => (
     (langTag === 'und'
@@ -216,6 +267,10 @@ const attemptMakeStream = ({
     targetChannels = wantedChannelCount;
     args.jobLog(`The wanted channel count ${wantedChannelCount} is <= than the`
       + ` highest available channel count (${streamWithHighestChannel.channels}). \n`);
+  } else if (enableUpmixing) {
+    targetChannels = wantedChannelCount;
+    args.jobLog(`The wanted channel count ${wantedChannelCount} is higher than the`
+      + ` highest available channel count (${streamWithHighestChannel.channels}). Will upmix audio.\n`);
   } else {
     targetChannels = highestChannelCount;
     args.jobLog(`The wanted channel count ${wantedChannelCount} is higher than the`
@@ -245,16 +300,25 @@ const attemptMakeStream = ({
   const streamCopy: IffmpegCommandStream = JSON.parse(JSON.stringify(streamWithHighestChannel));
   streamCopy.removed = false;
   streamCopy.index = streams.length;
+  if (targetChannels > highestChannelCount && upmixingFilter !== '') {
+    streamCopy.outputArgs.push('-filter_complex', `[${streamCopy.mapArgs[1]}]${upmixingFilter}[a_{outputIndex}]`);
+    streamCopy.outputArgs.push('-map', '[a_{outputIndex}]');
+    streamCopy.mapArgs = [];
+  } else {
+    streamCopy.outputArgs.push('-ac', `${targetChannels}`);
+  }
   streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
-  streamCopy.outputArgs.push('-ac', `${targetChannels}`);
 
   if (enableBitrate) {
-    const ffType = getFfType(streamCopy.codec_type);
-    streamCopy.outputArgs.push(`-b:${ffType}:{outputTypeIndex}`, `${bitrate}`);
+    streamCopy.outputArgs.push('-b:a:{outputTypeIndex}', `${bitrate}`);
   }
 
   if (enableSamplerate) {
     streamCopy.outputArgs.push('-ar', `${samplerate}`);
+  }
+
+  if (streamName !== '') {
+    streamCopy.outputArgs.push('-metadata:s:a:{outputTypeIndex}', `title=${streamName}`);
   }
 
   // eslint-disable-next-line no-param-reassign
