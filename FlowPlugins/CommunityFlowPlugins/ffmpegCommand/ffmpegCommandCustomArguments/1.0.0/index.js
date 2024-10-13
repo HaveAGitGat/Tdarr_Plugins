@@ -5,7 +5,7 @@ var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Custom Arguments',
-    description: 'Set FFmpeg custome input and output arguments',
+    description: 'Set FFmpeg custom input and output arguments',
     style: {
         borderColor: '#6efefc',
     },
@@ -45,6 +45,19 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var tokenize = function (arg) {
+    var regex = /(.*?)"(.+?)"(.*)/;
+    var arr = [];
+    var unprocessedString = arg;
+    var regexResult;
+    while ((regexResult = regex.exec(unprocessedString)) !== null) {
+        arr.push.apply(arr, regexResult[1].trim().split(' '));
+        arr.push(regexResult[2]);
+        unprocessedString = regexResult[3];
+    }
+    arr.push.apply(arr, unprocessedString.trim().split(' '));
+    return arr;
+};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var _a, _b;
@@ -55,10 +68,10 @@ var plugin = function (args) {
     var inputArguments = String(args.inputs.inputArguments);
     var outputArguments = String(args.inputs.outputArguments);
     if (inputArguments) {
-        (_a = args.variables.ffmpegCommand.overallInputArguments).push.apply(_a, inputArguments.split(' '));
+        (_a = args.variables.ffmpegCommand.overallInputArguments).push.apply(_a, tokenize(inputArguments));
     }
     if (outputArguments) {
-        (_b = args.variables.ffmpegCommand.overallOuputArguments).push.apply(_b, outputArguments.split(' '));
+        (_b = args.variables.ffmpegCommand.overallOuputArguments).push.apply(_b, tokenize(outputArguments));
     }
     return {
         outputFileObj: args.inputFileObj,

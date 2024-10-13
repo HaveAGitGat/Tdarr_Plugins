@@ -8,7 +8,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () :IpluginDetails => ({
   name: 'Custom Arguments',
-  description: 'Set FFmpeg custome input and output arguments',
+  description: 'Set FFmpeg custom input and output arguments',
   style: {
     borderColor: '#6efefc',
   },
@@ -49,6 +49,25 @@ const details = () :IpluginDetails => ({
   ],
 });
 
+const tokenize = (arg: string) => {
+  const regex = /(.*?)"(.+?)"(.*)/;
+  const arr = [];
+
+  let unprocessedString = '';
+  let regexResult = regex.exec(arg);
+  while (regexResult !== null) {
+    arr.push(...regexResult[1].trim().split(' '));
+    arr.push(regexResult[2]);
+    // eslint-disable-next-line prefer-destructuring
+    unprocessedString = regexResult[3];
+    regexResult = regex.exec(unprocessedString);
+  }
+  if (unprocessedString !== '') {
+    arr.push(...unprocessedString.trim().split(' '));
+  }
+  return arr;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
@@ -61,11 +80,11 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const outputArguments = String(args.inputs.outputArguments);
 
   if (inputArguments) {
-    args.variables.ffmpegCommand.overallInputArguments.push(...inputArguments.split(' '));
+    args.variables.ffmpegCommand.overallInputArguments.push(...tokenize(inputArguments));
   }
 
   if (outputArguments) {
-    args.variables.ffmpegCommand.overallOuputArguments.push(...outputArguments.split(' '));
+    args.variables.ffmpegCommand.overallOuputArguments.push(...tokenize(outputArguments));
   }
 
   return {
