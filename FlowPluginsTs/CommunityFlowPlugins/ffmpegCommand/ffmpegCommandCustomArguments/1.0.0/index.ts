@@ -49,23 +49,53 @@ const details = () :IpluginDetails => ({
   ],
 });
 
-const tokenize = (arg: string) => {
-  const regex = /(.*?)"(.+?)"(.*)/;
-  const arr = [];
+const search = (arg:string,i:number,originalIndex:number = i): [string | null,number] => {
+  const searchIndex = arg.indexOf(arg[i],i + 1);
 
-  let unprocessedString = '';
-  let regexResult = regex.exec(arg);
-  while (regexResult !== null) {
-    arr.push(...regexResult[1].trim().split(' '));
-    arr.push(regexResult[2]);
-    // eslint-disable-next-line prefer-destructuring
-    unprocessedString = regexResult[3];
-    regexResult = regex.exec(unprocessedString);
+  if(searchIndex === -1) {
+    return [null,i];
   }
-  if (unprocessedString !== '') {
-    arr.push(...unprocessedString.trim().split(' '));
+  if(arg[searchIndex - 1]  === '\\') {
+    return search(arg,searchIndex + 1,originalIndex);
   }
-  return arr;
+  return [arg.slice(originalIndex + 1,searchIndex),searchIndex];
+}
+
+const tokenize = (arg: string) => {
+  const tokens = [];
+  let token = '';
+  
+
+  for (let i = 0; i < arg.length; i++) {
+    const char = arg[i];
+    if(char === ' ') {
+      if (token !== '') {
+        tokens.push(token);
+        token = '';
+      }
+      continue;
+    }
+    if((char === '"' || char === '\'') && arg[i-1] !== '\\') {
+      let searchResult,searchIndex;
+      [searchResult,  searchIndex] = search(arg,i);
+      if(searchResult !== null) {
+        if (token !== '') {
+          tokens.push(token);
+          token = '';
+        }
+        tokens.push(searchResult);
+        i = searchIndex;
+        continue;
+      }
+      
+    }
+    token += char;
+  }
+  if (token !== '') {
+    tokens.push(token);
+  }
+
+  return tokens;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

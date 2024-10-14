@@ -45,18 +45,49 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var tokenize = function (arg) {
-    var regex = /(.*?)"(.+?)"(.*)/;
-    var arr = [];
-    var unprocessedString = arg;
-    var regexResult;
-    while ((regexResult = regex.exec(unprocessedString)) !== null) {
-        arr.push.apply(arr, regexResult[1].trim().split(' '));
-        arr.push(regexResult[2]);
-        unprocessedString = regexResult[3];
+var search = function (arg, i, originalIndex) {
+    if (originalIndex === void 0) { originalIndex = i; }
+    var searchIndex = arg.indexOf(arg[i], i + 1);
+    if (searchIndex === -1) {
+        return [null, i];
     }
-    arr.push.apply(arr, unprocessedString.trim().split(' '));
-    return arr;
+    if (arg[searchIndex - 1] === '\\') {
+        return search(arg, searchIndex + 1, originalIndex);
+    }
+    return [arg.slice(originalIndex + 1, searchIndex), searchIndex];
+};
+var tokenize = function (arg) {
+    var _a;
+    var tokens = [];
+    var token = '';
+    for (var i = 0; i < arg.length; i++) {
+        var char = arg[i];
+        if (char === ' ') {
+            if (token !== '') {
+                tokens.push(token);
+                token = '';
+            }
+            continue;
+        }
+        if ((char === '"' || char === '\'') && arg[i - 1] !== '\\') {
+            var searchResult = void 0, searchIndex = void 0;
+            _a = search(arg, i), searchResult = _a[0], searchIndex = _a[1];
+            if (searchResult !== null) {
+                if (token !== '') {
+                    tokens.push(token);
+                    token = '';
+                }
+                tokens.push(searchResult);
+                i = searchIndex;
+                continue;
+            }
+        }
+        token += char;
+    }
+    if (token !== '') {
+        tokens.push(token);
+    }
+    return tokens;
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
