@@ -27,16 +27,6 @@ var details = function () { return ({
             tooltip: 'Tdarr will add this name to the metadata title of the audio stream.',
         },
         {
-            label: 'Modify existing audio tracks Title',
-            name: 'enableTitleAdjust',
-            type: 'boolean',
-            defaultValue: 'false',
-            inputUI: {
-                type: 'switch',
-            },
-            tooltip: 'Append "(original)" to the existing audio tracks Title',
-        },
-        {
             label: 'Audio Encoder',
             name: 'audioEncoder',
             type: 'string',
@@ -162,7 +152,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: 'Toggle whether to enable setting audio upmixing this will only get used if there is no higher channel count available',
+            tooltip: 'Toggle whether to enable setting audio upmixing this'
+                + 'will only get used if there is no higher channel count available',
         },
         {
             label: 'Upmixing pan filter',
@@ -274,14 +265,14 @@ var attemptMakeStream = function (_a) {
         streamCopy.mapArgs = [];
     }
     else {
-        streamCopy.outputArgs.push('-ac', "".concat(targetChannels));
+        streamCopy.outputArgs.push('-ac:a:{outputTypeIndex}', "".concat(targetChannels));
     }
-    streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
+    streamCopy.outputArgs.push('-c:a:{outputTypeIndex}', audioEncoder);
     if (enableBitrate) {
-        streamCopy.outputArgs.push("-b:a:{outputTypeIndex}", "".concat(bitrate));
+        streamCopy.outputArgs.push('-b:a:{outputTypeIndex}', "".concat(bitrate));
     }
     if (enableSamplerate) {
-        streamCopy.outputArgs.push('-ar', "".concat(samplerate));
+        streamCopy.outputArgs.push('-ar:a:{outputTypeIndex}', "".concat(samplerate));
     }
     if (streamName !== '') {
         streamCopy.outputArgs.push('-metadata:s:a:{outputTypeIndex}', "title=".concat(streamName));

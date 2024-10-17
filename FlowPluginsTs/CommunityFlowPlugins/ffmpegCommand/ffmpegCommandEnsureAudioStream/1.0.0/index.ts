@@ -305,16 +305,16 @@ const attemptMakeStream = ({
     streamCopy.outputArgs.push('-map', '[a_{outputIndex}]');
     streamCopy.mapArgs = [];
   } else {
-    streamCopy.outputArgs.push('-ac', `${targetChannels}`);
+    streamCopy.outputArgs.push('-ac:a:{outputTypeIndex}', `${targetChannels}`);
   }
-  streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
+  streamCopy.outputArgs.push('-c:a:{outputTypeIndex}', audioEncoder);
 
   if (enableBitrate) {
     streamCopy.outputArgs.push('-b:a:{outputTypeIndex}', `${bitrate}`);
   }
 
   if (enableSamplerate) {
-    streamCopy.outputArgs.push('-ar', `${samplerate}`);
+    streamCopy.outputArgs.push('-ar:a:{outputTypeIndex}', `${samplerate}`);
   }
 
   if (streamName !== '') {
