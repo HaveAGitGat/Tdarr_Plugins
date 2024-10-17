@@ -217,7 +217,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
         if (ffmpegQualityEnabled) {
           if (encoderProperties.isGpu) {
-            stream.outputArgs.push('-qp', ffmpegQuality);
+            stream.outputArgs.push('-global_quality', ffmpegQuality);
           } else {
             stream.outputArgs.push('-crf', ffmpegQuality);
           }
