@@ -29,7 +29,8 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter one stream property to check.
+        Enter one stream property to check. 
+        To resolve 'Subtitle codec 94213 is not supported' error, leave as codec_name.
         
         \\nExample:\\n
         codec_name
@@ -39,8 +40,8 @@ const details = (): IpluginDetails => ({
         `,
     },
     {
-      label: 'Values To Remove',
-      name: 'valuesToRemove',
+      label: 'Values To Compare',
+      name: 'valuesToCompare',
       type: 'string',
       defaultValue: 'aac',
       inputUI: {
@@ -48,7 +49,8 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
+        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac. 
+        To resolve 'Subtitle codec 94213 is not supported' error, enter mov_text.
         
         \\nExample:\\n
         ac3,aac
@@ -88,7 +90,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   checkFfmpegCommandInit(args);
 
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
-  const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map((item) => item.trim());
+  const valuesToCompare = String(args.inputs.valuesToCompare).trim().split(',').map((item) => item.trim());
   const condition = String(args.inputs.condition);
 
   args.variables.ffmpegCommand.streams.forEach((stream) => {
@@ -101,19 +103,18 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     }
 
     if (target) {
-      const prop = String(target).toLowerCase();
-      for (let i = 0; i < valuesToRemove.length; i += 1) {
-        const val = valuesToRemove[i].toLowerCase();
-        const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
-        if (condition === 'includes' && prop.includes(val)) {
-          args.jobLog(`${prefix} includes ${val}\n`);
-          // eslint-disable-next-line no-param-reassign
-          stream.removed = true;
-        } else if (condition === 'not_includes' && !prop.includes(val)) {
-          args.jobLog(`${prefix} not_includes ${val}\n`);
-          // eslint-disable-next-line no-param-reassign
-          stream.removed = true;
-        }
+      const prop: string = String(target).toLowerCase();
+      const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
+      if (condition === 'includes' && valuesToCompare.includes(prop)) {
+        args.jobLog(`${prefix} includes ${valuesToCompare}\n`);
+        // eslint-disable-next-line no-param-reassign
+        stream.removed = true;
+        return;
+      }
+      if (condition === 'not_includes' && !valuesToCompare.includes(prop)) {
+        args.jobLog(`${prefix} not_includes ${valuesToCompare}\n`);
+        // eslint-disable-next-line no-param-reassign
+        stream.removed = true;
       }
     }
   });
