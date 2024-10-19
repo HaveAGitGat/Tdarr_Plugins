@@ -43,9 +43,9 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
-  const mode = parseInt(String(args.inputs.permissionMode),8);
+  const mode = parseInt(String(args.inputs.permissionMode), 8);
   args.jobLog(`Setting ${args.inputFileObj._id} to mode ${mode}`);
-  await fsp.chmod(args.inputFileObj._id,mode);
+  await fsp.chmod(args.inputFileObj._id, mode);
 
   return {
     outputFileObj: args.inputFileObj,
