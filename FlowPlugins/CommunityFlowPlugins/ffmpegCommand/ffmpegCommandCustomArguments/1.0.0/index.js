@@ -57,7 +57,6 @@ var search = function (arg, i, originalIndex) {
     return [arg.slice(originalIndex + 1, searchIndex), searchIndex];
 };
 var tokenize = function (arg) {
-    var _a;
     var tokens = [];
     var token = '';
     for (var i = 0; i < arg.length; i++) {
@@ -67,11 +66,9 @@ var tokenize = function (arg) {
                 tokens.push(token);
                 token = '';
             }
-            continue;
         }
-        if ((char === '"' || char === '\'') && arg[i - 1] !== '\\') {
-            var searchResult = void 0, searchIndex = void 0;
-            _a = search(arg, i), searchResult = _a[0], searchIndex = _a[1];
+        else if ((char === '"' || char === '\'') && arg[i - 1] !== '\\') {
+            var _a = search(arg, i), searchResult = _a[0], searchIndex = _a[1];
             if (searchResult !== null) {
                 if (token !== '') {
                     tokens.push(token);
@@ -79,10 +76,14 @@ var tokenize = function (arg) {
                 }
                 tokens.push(searchResult);
                 i = searchIndex;
-                continue;
+            }
+            else {
+                token += char;
             }
         }
-        token += char;
+        else {
+            token += char;
+        }
     }
     if (token !== '') {
         tokens.push(token);
