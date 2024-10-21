@@ -309,21 +309,21 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\nSet to reprocess HEVC, VP9 or AV1 files (i.e reduce bitrate of files already in those codecs). 
-      \\nSince this uses the same logic as normal, halving the current bitrate, this is NOT recommended 
-      unless you know what you are doing, so please leave FALSE if unsure! 
+      \\nSet to reprocess HEVC/VP9/AV1 files (i.e reduce bitrate of files already in those codecs).
+      \\nSince this uses the same logic as normal, halving the current bitrate, this is NOT recommended
+      unless you know what you are doing, so please leave FALSE if unsure!
       \\nNEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
       \\nThis is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
       bitrate and you'd like to reduce it.
       \\n
       ==WARNING== \\n
-      IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION. \\n
-      \\nThis option has the potential to LOOP your encodes! You can encode a file to HEVC and still 
-      be above your cutoff and it would be converted again & again if this is set to true (since it's now HEVC). 
-      So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping. 
+      IF YOU HAVE HEVC/VP9/AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION. \\n
+      \\nThis option has the potential to LOOP your encodes! You can encode a file to HEVC and still
+      be above your cutoff and it would be converted again & again if this is set to true (since it's now HEVC).
+      So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping.
       Also it is highly suggested that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
       \\nPlease be certain you want this enabled before setting it otherwise leave this as FALSE!
-      While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
+      While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so
       and will be forced to fall back onto estimates. Please bare this in mind when using the HEVC reprocess option.
       \\n
       \\nExample:\\n
@@ -341,13 +341,14 @@ const details = () => ({
       tooltip: `\\n
       ==DESCRIPTION==
       \\nHas no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
-      allowed average OVERALL bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
-      specifically for HEVC files. It should be set HIGHER then your standard cutoff for safety.
-      \\nAlso, it's highly suggested you use the min & max average bitrate options in combination with this. You
-      will want those to control the encoded video bitrate, otherwise you may end up repeatedly reprocessing HEVC files.
-      i.e your file might have a overall bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
-      multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful this is why it is NOT 
-      recommended!
+      allowed average OVERALL bitrate for HEVC/AV1/VP9 files. Much like the "bitrate_cutoff" option, but
+      specifically for these files. It should be set HIGHER then your standard cutoff for safety.
+      \\nAlso, it's highly suggested you use the min & max average bitrate options in combination with this. You will
+      want this to control the encoded video bitrate, otherwise you may end up unintentionally reprocessing these files.
+      i.e your file might have a overall bitrate of 20000, if your hevc cutoff is 5000 then it's going to
+      reconvert multiple times before it'll be below that cutoff.
+      \\nWhile HEVC/AV1/VP9 reprocessing can be useful this is why it is NOT recommended unless you know what you are
+      doing!
       \\n
       ==WARNING== \\n
       While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
