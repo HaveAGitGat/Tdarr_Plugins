@@ -633,15 +633,29 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           hdrEnabled = true;
         }
 
-        // Had at least one case where a file contained no evident HDR data but was marked as HDR content
-        // meaning transcode OR plex would butcher the file
+        // VALIDATE HDR - Ignore Dolby vision & badly formatted files
         if (hdrEnabled !== true) {
+          // Had at least one case where a file contained no evident HDR data but was marked as HDR content
+          // meaning transcode OR plex would butcher the file
           try {
             if (typeof file.mediaInfo.track[i + 1].HDR_Format !== 'undefined') {
               response.infoLog += '==ERROR== This file has Media data implying it is HDR '
                 + `(${file.mediaInfo.track[i + 1].HDR_Format}), `
                 + 'but no details about color space or primaries... '
                 + 'Unable to convert and safely keep HDR data. Aborting!\n';
+              return response;
+            }
+          } catch (err) {
+            // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+          }
+        } else {
+          // If specifically marked Dolby Vision
+          try {
+            if (file.mediaInfo.track[i + 1].HDR_Format.search('Dolby Vision') >= 0) {
+              response.infoLog += '==ERROR== This file has Media data implying it is Dolby Vision '
+                + `(${file.mediaInfo.track[i + 1].HDR_Format}), `
+                + 'Currently we cannot safely convert this HDR format and retain the Dolby Vision format. '
+                + 'Aborting!\n';
               return response;
             }
           } catch (err) {
