@@ -28,6 +28,7 @@ const details = () :IpluginDetails => ({
         type: 'dropdown',
         options: [
           '480p',
+          '576p',
           '720p',
           '1080p',
           '1440p',
@@ -50,7 +51,7 @@ const getVfScale = (
 ):string[] => {
   switch (targetResolution) {
     case '480p':
-      return ['-vf', 'scale=720:-2'];
+      return ['-vf', 'scale=640:-2'];
 
     case '576p':
       return ['-vf', 'scale=720:-2'];
