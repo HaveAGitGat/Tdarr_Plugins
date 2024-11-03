@@ -1,82 +1,69 @@
 /* eslint-disable */
-const details = () => ({
-  id: "Tdarr_Plugin_anym001_SetDefaultFirstAudioStream",
-  Stage: "Pre-processing",
-  Name: "Set first audio stream to default",
-  Type: "Audio",
-  Operation: "Transcode",
-  Description: `This plugin will set the first audio to default and remove default from all other audio streams \n\n`,
-  Version: "1.0.0",
-  Tags: "audio only,ffmpeg",
-  Inputs: [
-  ],
-});
+const details = () => {
+  return {
+    id: "Tdarr_Plugin_anym001_SetDefaultFirstAudioStream",
+    Stage: "Pre-processing",
+    Name: "Set first audio stream to default",
+    Type: "Audio",
+    Operation: "Transcode",
+    Description: `This plugin will set the first audio to default and remove default from all other audio streams \n\n`,
+    Version: "1.0.0",
+    Tags: "audio only,ffmpeg",
 
-/**
- * Loops over the file streams and executes the given method on
- * each stream when the matching codec_type is found.
- * @param {Object} file the file.
- * @param {string} type the typeo of stream.
- * @param {function} method the method to call.
- */
-function loopOverStreamsOfType(file, type, method) {
-    let id = 0;
-    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
-      if (file.ffProbeData.streams[i].codec_type.toLowerCase() === type) {
-        method(file.ffProbeData.streams[i], id);
-        id++;
-      }
-    }
-  }
+    Inputs: [
+    ],
+  };
+};
 
 // eslint-disable-next-line no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
-  const lib = require('../methods/lib')();
+    const lib = require('../methods/lib')();
   // eslint-disable-next-line no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
-  const response = {
-    container: `.${file.container}`,
-    FFmpegMode: true,
-    handBrakeMode: false,
-    infoLog: '',
+  var response = {
     processFile: false,
-    preset: ' , ',
-    reQueueAfter: true,
+    preset: "",
+    container: "." + file.container,
+    handBrakeMode: false,
+    FFmpegMode: true,
+    infoLog: "",
   };
 
-  let shouldProcess = false;
-  let defaultAudioStreams = 0;
-  let firstdefaultAudioStream = 0;
-  let matchingAudioStreams = 0;
-  let firstmatchingAudioStream = 0;
-  let defaultSet = false;
-  let ffmpegCommandInsert = "";
+  var shouldProcess = false;
+  var defaultAudioStreams = 0;
+  var firstdefaultAudioStream = 0;
+  var matchingAudioStreams = 0;
+  var firstmatchingAudioStream = 0;
+  var defaultSet = false;
+  var ffmpegCommandInsert = "";
 
   // Check if the audio streams meet the defined condition
-  function audioCheck(stream, id) {
-    firstmatchingAudioStream++;
-    matchingAudioStreams++;
-    if (firstmatchingAudioStream === 1 && stream.disposition.default === 1) {
-      firstdefaultAudioStream++;
-    }
-    if (stream.disposition.default === 1) {
-      defaultAudioStreams++;
-    }
-  }
-
-  loopOverStreamsOfType(file, 'audio', audioCheck);
-
-  function audioProcess(stream, id) {
-    if (!defaultSet) {
-      ffmpegCommandInsert += `-disposition:a:${id} default `;
-      defaultSet = true;
-    } else {
-      ffmpegCommandInsert += `-disposition:a:${id} 0 `;
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
+      firstmatchingAudioStream++;
+      matchingAudioStreams++;
+      if (firstmatchingAudioStream === 1 && file.ffProbeData.streams[i].disposition.default === 1) {
+        firstdefaultAudioStream++;
+      }
+      if (file.ffProbeData.streams[i].disposition.default === 1) {
+        defaultAudioStreams++;
+      }
     }
   }
 
-  loopOverStreamsOfType(file, 'audio', audioProcess);
+  // build command
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
+      if (!defaultSet) {
+        ffmpegCommandInsert += `-disposition:${i} default `;
+        defaultSet = true;
+      } 
+      else {
+        ffmpegCommandInsert += `-disposition:${i} 0 `;
+      }
+    }
+  }
 
   // Only process when there is a matching stream and
   // when there is either no default or more than 1 default stream set
@@ -92,6 +79,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   if (shouldProcess) {
     response.processFile = true;
+    response.reQueueAfter = true;
     response.preset = `,-map 0 -c copy ${ffmpegCommandInsert}`;
     response.infoLog +=
       "☒ Setting first audio stream to default. Remove default from all other audio streams \n";
