@@ -149,7 +149,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
+            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="Stereo 2.0" `;
             response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel from 6 channel. \n';
             convert = true;
             is2channelAdded = true;
