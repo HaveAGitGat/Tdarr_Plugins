@@ -396,7 +396,7 @@ const tests = [
     output: {
       linux: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -411,7 +411,7 @@ const tests = [
       },
       win32: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -426,7 +426,7 @@ const tests = [
       },
       darwin: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
+        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
