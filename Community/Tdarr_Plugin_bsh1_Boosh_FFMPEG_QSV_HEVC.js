@@ -366,7 +366,7 @@ const details = () => ({
   ],
 });
 
-// Set up required variables.
+// VARIABLES
 let currentBitrate = 0;
 let overallBitRate = 0;
 let targetBitrate = 0;
@@ -412,6 +412,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  // FILE VIDEO BITRATE & DURATION
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     // Check if stream is a video.
@@ -464,6 +465,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // CATCH BITRATE FAILURE OR SUCCESS
   if (Number.isNaN(videoBR) || videoBR <= 0) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
@@ -570,7 +572,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // i.e drop mov_text for mkv files and drop pgs_subtitles for mp4
   if (inputs.force_conform === true) {
     if (inputs.container.toLowerCase() === 'mkv') {
-      extraArguments += '-map -0:d ';
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
         try {
           if (
@@ -651,10 +652,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         } else {
           // If specifically marked Dolby Vision
           try {
-            if (file.mediaInfo.track[i + 1].HDR_Format.search('Dolby Vision') >= 0) {
-              response.infoLog += '==ERROR== This file has Media data implying it is Dolby Vision '
+            if (file.mediaInfo.track[i + 1].HDR_Format.search('Dolby Vision') >= 0
+              || file.mediaInfo.track[i + 1].HDR_Format.search('HDR10+') >= 0
+              || file.mediaInfo.track[i + 1].HDR_Format.search('SMPTE ST 2094 App 4') >= 0) {
+              response.infoLog += '==ERROR== This file has HDR metadata that cannot be re-encoded '
                 + `(${file.mediaInfo.track[i + 1].HDR_Format}), `
-                + 'Currently we cannot safely convert this HDR format and retain the Dolby Vision format. '
+                + 'Currently we cannot safely convert this HDR format and retain the Dolby Vision or HDR10+ format. '
                 + 'Aborting!\n';
               return response;
             }
