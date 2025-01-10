@@ -158,7 +158,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
           || isDescriptiveSubtitleStream
           || isForcedSubtitleStream)) {
         args.jobLog(`Stream ${index} (language ${streamLanguage}, descriptive ${isDescriptiveSubtitleStream}, `
-          + `forced ${isForcedSubtitleStream} set has not default`);
+          + `forced ${isForcedSubtitleStream}) set has not default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',
