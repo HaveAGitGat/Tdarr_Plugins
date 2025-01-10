@@ -162,6 +162,33 @@ var getFileInfo = function (args, arrApp, fileName) { return __awaiter(void 0, v
         }
     });
 }); };
+var getLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
+    var url, response, languages;
+    var _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                url = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/'
+                    + 'iso-language-codes-639-1-and-639-2@public/'
+                    + "records?select=alpha3_b&where=english%20%3D%20%22".concat(languageName, "%22&limit=1");
+                return [4 /*yield*/, fetch(url)];
+            case 1:
+                response = _c.sent();
+                if (!response.ok) {
+                    args.jobLog('Failed to fetch language data');
+                    return [2 /*return*/, null];
+                }
+                return [4 /*yield*/, response.json()];
+            case 2:
+                languages = _c.sent();
+                if (languages.total_count !== 1) {
+                    args.jobLog('Failed to fetch language data');
+                    return [2 /*return*/, null];
+                }
+                return [2 /*return*/, (_b = ((_a = languages.results[0]) === null || _a === void 0 ? void 0 : _a.alpha3_b)) !== null && _b !== void 0 ? _b : null];
+        }
+    });
+}); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
     var lib, isSuccessful, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, fInfo;
@@ -194,25 +221,35 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 var _a, _b, _c, _d, _e, _f, _g;
                                 return ({
                                     id: String((_c = (_b = (_a = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _a === void 0 ? void 0 : _a.at(0)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    languageCode: (_g = (_f = (_e = (_d = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _d === void 0 ? void 0 : _d.at(0)) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
+                                    languageName: (_g = (_f = (_e = (_d = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _d === void 0 ? void 0 : _d.at(0)) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
                                 });
                             },
                             getFileInfoFromParseResponse: function (parseResponse) {
                                 var _a, _b, _c, _d, _e, _f, _g;
                                 return ({
                                     id: String((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    languageCode: (_g = (_f = (_e = (_d = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _d === void 0 ? void 0 : _d.movie) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
+                                    languageName: (_g = (_f = (_e = (_d = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _d === void 0 ? void 0 : _d.movie) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
                                 });
                             },
-                            setFlowVariables: function (fInfo) {
+                            setFlowVariables: function (fInfo) { return __awaiter(void 0, void 0, void 0, function () {
+                                var languageCode;
                                 var _a, _b;
-                                // eslint-disable-next-line no-param-reassign
-                                args.variables.user.ArrId = fInfo.id;
-                                args.jobLog("Setting variable ArrId to ".concat(fInfo.id));
-                                // eslint-disable-next-line no-param-reassign
-                                args.variables.user.ArrOriginalLanguageCode = (_a = fInfo.languageCode) !== null && _a !== void 0 ? _a : '';
-                                args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat((_b = fInfo.languageCode) !== null && _b !== void 0 ? _b : ''));
-                            },
+                                return __generator(this, function (_c) {
+                                    switch (_c.label) {
+                                        case 0:
+                                            // eslint-disable-next-line no-param-reassign
+                                            args.variables.user.ArrId = fInfo.id;
+                                            args.jobLog("Setting variable ArrId to ".concat(fInfo.id));
+                                            return [4 /*yield*/, getLanguageCode(args, (_a = fInfo.languageName) !== null && _a !== void 0 ? _a : '')];
+                                        case 1:
+                                            languageCode = (_b = (_c.sent())) !== null && _b !== void 0 ? _b : '';
+                                            // eslint-disable-next-line no-param-reassign
+                                            args.variables.user.ArrOriginalLanguageCode = languageCode;
+                                            args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(languageCode));
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); },
                         },
                     }
                     : {
@@ -225,7 +262,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
                                 var fInfo = {
                                     id: String((_c = (_b = (_a = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _a === void 0 ? void 0 : _a.at(0)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    languageCode: (_g = (_f = (_e = (_d = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _d === void 0 ? void 0 : _d.at(0)) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
+                                    languageName: (_g = (_f = (_e = (_d = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _d === void 0 ? void 0 : _d.at(0)) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
                                 };
                                 if (fInfo.id !== '-1') {
                                     var seasonEpisodenumber = (_j = (_h = /\bS\d{1,3}E\d{1,4}\b/i.exec(fileName)) === null || _h === void 0 ? void 0 : _h.at(0)) !== null && _j !== void 0 ? _j : '';
@@ -242,24 +279,34 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                     id: String((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
                                     seasonNumber: (_f = (_e = (_d = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _d === void 0 ? void 0 : _d.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.seasonNumber) !== null && _f !== void 0 ? _f : 1,
                                     episodeNumber: (_k = (_j = (_h = (_g = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _g === void 0 ? void 0 : _g.parsedEpisodeInfo) === null || _h === void 0 ? void 0 : _h.episodeNumbers) === null || _j === void 0 ? void 0 : _j.at(0)) !== null && _k !== void 0 ? _k : 1,
-                                    languageCode: (_p = (_o = (_m = (_l = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _l === void 0 ? void 0 : _l.series) === null || _m === void 0 ? void 0 : _m.originalLanguage) === null || _o === void 0 ? void 0 : _o.name) !== null && _p !== void 0 ? _p : '',
+                                    languageName: (_p = (_o = (_m = (_l = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _l === void 0 ? void 0 : _l.series) === null || _m === void 0 ? void 0 : _m.originalLanguage) === null || _o === void 0 ? void 0 : _o.name) !== null && _p !== void 0 ? _p : '',
                                 });
                             },
-                            setFlowVariables: function (fInfo) {
+                            setFlowVariables: function (fInfo) { return __awaiter(void 0, void 0, void 0, function () {
+                                var languageCode;
                                 var _a, _b, _c, _d, _e, _f;
-                                // eslint-disable-next-line no-param-reassign
-                                args.variables.user.ArrId = fInfo.id;
-                                args.jobLog("Setting variable ArrId to ".concat(fInfo.id));
-                                // eslint-disable-next-line no-param-reassign
-                                args.variables.user.ArrSeasonNumber = String((_a = fInfo.seasonNumber) !== null && _a !== void 0 ? _a : 0);
-                                args.jobLog("Setting variable ArrSeasonNumber to ".concat(String((_b = fInfo.seasonNumber) !== null && _b !== void 0 ? _b : 0)));
-                                // eslint-disable-next-line no-param-reassign
-                                args.variables.user.ArrEpisodeNumber = String((_c = fInfo.episodeNumber) !== null && _c !== void 0 ? _c : 0);
-                                args.jobLog("Setting variable ArrEpisodeNumber to ".concat((_d = fInfo.episodeNumber) !== null && _d !== void 0 ? _d : 0));
-                                // eslint-disable-next-line no-param-reassign
-                                args.variables.user.ArrOriginalLanguageCode = (_e = fInfo.languageCode) !== null && _e !== void 0 ? _e : '';
-                                args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat((_f = fInfo.languageCode) !== null && _f !== void 0 ? _f : ''));
-                            },
+                                return __generator(this, function (_g) {
+                                    switch (_g.label) {
+                                        case 0:
+                                            // eslint-disable-next-line no-param-reassign
+                                            args.variables.user.ArrId = fInfo.id;
+                                            args.jobLog("Setting variable ArrId to ".concat(fInfo.id));
+                                            return [4 /*yield*/, getLanguageCode(args, (_a = fInfo.languageName) !== null && _a !== void 0 ? _a : '')];
+                                        case 1:
+                                            languageCode = (_b = (_g.sent())) !== null && _b !== void 0 ? _b : '';
+                                            // eslint-disable-next-line no-param-reassign
+                                            args.variables.user.ArrOriginalLanguageCode = languageCode;
+                                            args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(languageCode));
+                                            // eslint-disable-next-line no-param-reassign
+                                            args.variables.user.ArrSeasonNumber = String((_c = fInfo.seasonNumber) !== null && _c !== void 0 ? _c : 0);
+                                            args.jobLog("Setting variable ArrSeasonNumber to ".concat(String((_d = fInfo.seasonNumber) !== null && _d !== void 0 ? _d : 0)));
+                                            // eslint-disable-next-line no-param-reassign
+                                            args.variables.user.ArrEpisodeNumber = String((_e = fInfo.episodeNumber) !== null && _e !== void 0 ? _e : 0);
+                                            args.jobLog("Setting variable ArrEpisodeNumber to ".concat((_f = fInfo.episodeNumber) !== null && _f !== void 0 ? _f : 0));
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); },
                         },
                     };
                 return [4 /*yield*/, getFileInfo(args, arrApp, originalFileName)];
@@ -271,20 +318,21 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fInfo = _e.sent();
                 _e.label = 3;
             case 3:
-                // Checking that the file has been found
-                if (fInfo.id !== '-1') {
-                    if (!args.variables.user) {
-                        // eslint-disable-next-line no-param-reassign
-                        args.variables.user = {};
-                    }
-                    arrApp.delegates.setFlowVariables(fInfo);
-                    isSuccessful = true;
+                if (!(fInfo.id !== '-1')) return [3 /*break*/, 5];
+                if (!args.variables.user) {
+                    // eslint-disable-next-line no-param-reassign
+                    args.variables.user = {};
                 }
-                return [2 /*return*/, {
-                        outputFileObj: args.inputFileObj,
-                        outputNumber: isSuccessful ? 1 : 2,
-                        variables: args.variables,
-                    }];
+                return [4 /*yield*/, arrApp.delegates.setFlowVariables(fInfo)];
+            case 4:
+                _e.sent();
+                isSuccessful = true;
+                _e.label = 5;
+            case 5: return [2 /*return*/, {
+                    outputFileObj: args.inputFileObj,
+                    outputNumber: isSuccessful ? 1 : 2,
+                    variables: args.variables,
+                }];
         }
     });
 }); };

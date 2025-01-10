@@ -83,7 +83,7 @@ interface IFileInfo {
   id: string,
   seasonNumber?: number,
   episodeNumber?: number,
-  languageCode?: string,
+  languageName?: string,
 }
 interface IOriginalLanguage {
   id: number,
@@ -122,8 +122,14 @@ interface IArrApp {
     getFileInfoFromParseResponse:
     (parseResponse: IParseResponse) => IFileInfo,
     setFlowVariables:
-    (fInfo: IFileInfo) => void
+    (fInfo: IFileInfo) => Promise<void>
   }
+}interface ILanguage {
+  alpha3_b: string;
+}
+interface ILanguagesResponse {
+  total_count: number,
+  results: ILanguage[]
 }
 
 const getFileInfoFromLookup = async (
@@ -176,6 +182,28 @@ const getFileInfo = async (
     ? getFileInfoFromParse(args, arrApp, fileName)
     : fInfo;
 };
+const getLanguageCode = async (
+  args: IpluginInputArgs,
+  languageName: string,
+)
+  : Promise<string | null> => {
+  const url = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/'
+      + 'iso-language-codes-639-1-and-639-2@public/'
+      + `records?select=alpha3_b&where=english%20%3D%20%22${languageName}%22&limit=1`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    args.jobLog('Failed to fetch language data');
+    return null;
+  }
+
+  const languages: ILanguagesResponse = await response.json();
+  if (languages.total_count !== 1) {
+    args.jobLog('Failed to fetch language data');
+    return null;
+  }
+
+  return (languages.results[0]?.alpha3_b) ?? null;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -205,21 +233,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         getFileInfoFromLookupResponse:
           (lookupResponse) => ({
             id: String(lookupResponse?.data?.at(0)?.id ?? -1),
-            languageCode: lookupResponse?.data?.at(0)?.originalLanguage?.name ?? '',
+            languageName: lookupResponse?.data?.at(0)?.originalLanguage?.name ?? '',
           }),
         getFileInfoFromParseResponse:
           (parseResponse) => ({
             id: String(parseResponse?.data?.movie?.id ?? -1),
-            languageCode: parseResponse?.data?.movie?.originalLanguage?.name ?? '',
+            languageName: parseResponse?.data?.movie?.originalLanguage?.name ?? '',
           }),
         setFlowVariables:
-          (fInfo) => {
+          async (fInfo) => {
             // eslint-disable-next-line no-param-reassign
             args.variables.user.ArrId = fInfo.id;
             args.jobLog(`Setting variable ArrId to ${fInfo.id}`);
+
+            const languageCode = (await getLanguageCode(args, fInfo.languageName ?? '')) ?? '';
             // eslint-disable-next-line no-param-reassign
-            args.variables.user.ArrOriginalLanguageCode = fInfo.languageCode ?? '';
-            args.jobLog(`Setting variable ArrOriginalLanguageCode to ${fInfo.languageCode ?? ''}`);
+            args.variables.user.ArrOriginalLanguageCode = languageCode;
+            args.jobLog(`Setting variable ArrOriginalLanguageCode to ${languageCode}`);
           },
       },
     }
@@ -233,7 +263,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           (lookupResponse, fileName) => {
             const fInfo: IFileInfo = {
               id: String(lookupResponse?.data?.at(0)?.id ?? -1),
-              languageCode: lookupResponse?.data?.at(0)?.originalLanguage?.name ?? '',
+              languageName: lookupResponse?.data?.at(0)?.originalLanguage?.name ?? '',
             };
             if (fInfo.id !== '-1') {
               const seasonEpisodenumber = /\bS\d{1,3}E\d{1,4}\b/i.exec(fileName)?.at(0) ?? '';
@@ -250,22 +280,26 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
             id: String(parseResponse?.data?.series?.id ?? -1),
             seasonNumber: parseResponse?.data?.parsedEpisodeInfo?.seasonNumber ?? 1,
             episodeNumber: parseResponse?.data?.parsedEpisodeInfo?.episodeNumbers?.at(0) ?? 1,
-            languageCode: parseResponse?.data?.series?.originalLanguage?.name ?? '',
+            languageName: parseResponse?.data?.series?.originalLanguage?.name ?? '',
           }),
         setFlowVariables:
-          (fInfo) => {
+          async (fInfo) => {
             // eslint-disable-next-line no-param-reassign
             args.variables.user.ArrId = fInfo.id;
             args.jobLog(`Setting variable ArrId to ${fInfo.id}`);
+
+            const languageCode = (await getLanguageCode(args, fInfo.languageName ?? '')) ?? '';
+            // eslint-disable-next-line no-param-reassign
+            args.variables.user.ArrOriginalLanguageCode = languageCode;
+            args.jobLog(`Setting variable ArrOriginalLanguageCode to ${languageCode}`);
+
             // eslint-disable-next-line no-param-reassign
             args.variables.user.ArrSeasonNumber = String(fInfo.seasonNumber ?? 0);
             args.jobLog(`Setting variable ArrSeasonNumber to ${String(fInfo.seasonNumber ?? 0)}`);
+
             // eslint-disable-next-line no-param-reassign
             args.variables.user.ArrEpisodeNumber = String(fInfo.episodeNumber ?? 0);
             args.jobLog(`Setting variable ArrEpisodeNumber to ${fInfo.episodeNumber ?? 0}`);
-            // eslint-disable-next-line no-param-reassign
-            args.variables.user.ArrOriginalLanguageCode = fInfo.languageCode ?? '';
-            args.jobLog(`Setting variable ArrOriginalLanguageCode to ${fInfo.languageCode ?? ''}`);
           },
       },
     };
@@ -284,7 +318,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       args.variables.user = {};
     }
 
-    arrApp.delegates.setFlowVariables(fInfo);
+    await arrApp.delegates.setFlowVariables(fInfo);
     isSuccessful = true;
   }
 
