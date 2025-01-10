@@ -88,14 +88,18 @@ var plugin = function (args) {
     var streams = args.variables.ffmpegCommand.streams;
     var defaultSet = false;
     // Sets the language code used to determine the default audio stream
-    var languageCode = args.inputs.useRadarrOrSonarr
-        ? args.variables.user.ArrOriginalLanguageCode
-        : args.inputs.language;
+    var languageCode = args.inputs.language;
+    if (args.inputs.useRadarrOrSonarr) {
+        languageCode = args.variables.user.ArrOriginalLanguageCode;
+        args.jobLog("Language ".concat(languageCode, " read from flow variables"));
+    }
     // Sets the channels used to determine the default audio stream
-    var channels = args.inputs.useHightestNumberOfChannels
-        ? (_d = (_c = (_b = (_a = streams
-            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return (((_a = stream1.channels) !== null && _a !== void 0 ? _a : 0) > ((_b = stream2.channels) !== null && _b !== void 0 ? _b : 0) ? 1 : -1); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0
-        : args.inputs.channels;
+    var channels = args.inputs.channels;
+    if (args.inputs.useHightestNumberOfChannels) {
+        channels = (_d = (_c = (_b = (_a = streams
+            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return (((_a = stream1.channels) !== null && _a !== void 0 ? _a : 0) > ((_b = stream2.channels) !== null && _b !== void 0 ? _b : 0) ? 1 : -1); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
+        args.jobLog("Channels ".concat(channels, " determined has being the highest channels"));
+    }
     streams.forEach(function (stream, index) {
         var _a, _b, _c;
         if (stream.codec_type === 'audio') {
@@ -110,6 +114,12 @@ var plugin = function (args) {
                 stream.outputArgs.push("-disposition:".concat(index), '0');
         }
     });
+    if (defaultSet) {
+        // eslint-disable-next-line no-param-reassign
+        args.variables.ffmpegCommand.shouldProcess = true;
+        // eslint-disable-next-line no-param-reassign
+        args.variables.ffmpegCommand.streams = streams;
+    }
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: defaultSet ? 1 : 2,
