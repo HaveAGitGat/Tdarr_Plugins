@@ -41,11 +41,11 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Set Flow Variables From Radarr Or Sonarr',
-    description: 'Set Flow Variables From Radarr or Sonarr. The variables set are :'
-        + '\\n  ArrId : internal id for Radarr or Sonarr;'
-        + '\\n  ArrOriginalLanguageCode : code of the orignal language (ISO 639-2) as know by Radarr or Sonarr;'
-        + '\\n  ArrSeasonNumber : the season number of the episode;'
-        + '\\n  ArrEpisodeNumber : the episode number.',
+    description: 'Set Flow Variables From Radarr or Sonarr. The variables set are : '
+        + 'ArrId (internal id for Radarr or Sonarr), '
+        + 'ArrOriginalLanguageCode (code of the orignal language (ISO 639-2) as know by Radarr or Sonarr), '
+        + 'ArrSeasonNumber (the season number of the episode), '
+        + 'ArrEpisodeNumber (the episode number).',
     style: {
         borderColor: 'green',
     },
