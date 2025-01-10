@@ -175,12 +175,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         && !defaultSet) {
         args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
         const disposition = getFFMPEGDisposition(stream as IStreamDisposition, true);
-        args.jobLog(`Original disposition ${stream.disposition ?? 'undefined'}; new disposition ${disposition}`);
+        args.jobLog(`Original ${JSON.stringify(stream.disposition ?? {})}; new ${disposition}`);
         stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, disposition);
         defaultSet = true;
       } else {
         const disposition = getFFMPEGDisposition(stream as IStreamDisposition, false);
-        args.jobLog(`Original disposition ${stream.disposition ?? 'undefined'}; new disposition ${disposition}`);
+        args.jobLog(`Original ${JSON.stringify(stream.disposition ?? {})}}; new ${disposition}`);
         stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, disposition);
       }
     }

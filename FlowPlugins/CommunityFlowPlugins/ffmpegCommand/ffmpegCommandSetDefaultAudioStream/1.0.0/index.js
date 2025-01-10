@@ -142,13 +142,13 @@ var plugin = function (args) {
                 && !defaultSet) {
                 args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
                 var disposition = getFFMPEGDisposition(stream, true);
-                args.jobLog("Original disposition ".concat((_d = stream.disposition) !== null && _d !== void 0 ? _d : 'undefined', "; new disposition ").concat(disposition));
+                args.jobLog("Original ".concat(JSON.stringify((_d = stream.disposition) !== null && _d !== void 0 ? _d : {}), "; new ").concat(disposition));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), disposition);
                 defaultSet = true;
             }
             else {
                 var disposition = getFFMPEGDisposition(stream, false);
-                args.jobLog("Original disposition ".concat((_e = stream.disposition) !== null && _e !== void 0 ? _e : 'undefined', "; new disposition ").concat(disposition));
+                args.jobLog("Original ".concat(JSON.stringify((_e = stream.disposition) !== null && _e !== void 0 ? _e : {}), "}; new ").concat(disposition));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), disposition);
             }
         }
