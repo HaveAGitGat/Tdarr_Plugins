@@ -1,4 +1,13 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
@@ -77,40 +86,26 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var addDisposition = function (disposition, dispositionToAdd) { return (dispositionToAdd.length > 0
-    ? "".concat(disposition).concat(disposition.length > 0 ? '+' : '').concat(dispositionToAdd)
-    : disposition); };
-var getFFMPEGDisposition = function (stream, isDefault) {
-    if (!stream.disposition)
-        return '0';
-    var disposition = addDisposition(isDefault ? 'default' : '', Object.entries(stream.disposition)
-        .filter(function (_a) {
-        var value = _a[0];
-        return value === '1';
-    })
-        .map(function (_a) {
-        var key = _a[0];
-        return key;
-    })
-        .join('+'));
-    return disposition.length > 0 ? disposition : '0';
+var getFFMPEGDisposition = function (args, isDefault, dispositions) {
+    if (!dispositions)
+        return isDefault ? 'default' : '0';
+    args.jobLog("previous disposition ".concat(JSON.stringify(dispositions)));
+    var previousDispositions = Object.entries(dispositions)
+        .reduce(function (acc, _a) {
+        var key = _a[0], value = _a[1];
+        if (key !== 'default' && value === 1) {
+            acc.push(key);
+        }
+        return acc;
+    }, []);
+    var ffmpegDisposition = __spreadArray([
+        isDefault ? 'default' : ''
+    ], previousDispositions, true).filter(Boolean)
+        .join('+')
+        || '0';
+    args.jobLog("ffmpegDisposition ".concat(ffmpegDisposition));
+    return ffmpegDisposition;
 };
-// addDisposition(disposition, stream.disposition.dub === 1 ? 'dub' : '');
-// addDisposition(disposition, stream.disposition.original === 1 ? 'original' : '');
-// addDisposition(disposition, stream.disposition.comment === 1 ? 'comment' : '');
-// addDisposition(disposition, stream.disposition.lyrics === 1 ? 'lyrics' : '');
-// addDisposition(disposition, stream.disposition.karaoke === 1 ? 'karaoke' : '');
-// addDisposition(disposition, stream.disposition.forced === 1 ? 'forced' : '');
-// addDisposition(disposition, stream.disposition.hearing_impaired === 1 ? 'hearing_impaired' : '');
-// addDisposition(disposition, stream.disposition.visual_impaired === 1 ? 'visual_impaired' : '');
-// addDisposition(disposition, stream.disposition.clean_effects === 1 ? 'clean_effects' : '');
-// addDisposition(disposition, stream.disposition.attached_pic === 1 ? 'attached_pic' : '');
-// addDisposition(disposition, stream.disposition.timed_thumbnails === 1 ? 'timed_thumbnails' : '');
-// addDisposition(disposition, stream.disposition.captions === 1 ? 'captions' : '');
-// addDisposition(disposition, stream.disposition.descriptions === 1 ? 'descriptions' : '');
-// addDisposition(disposition, stream.disposition.metadata === 1 ? 'metadata' : '');
-// addDisposition(disposition, stream.disposition.dependent === 1 ? 'dependent' : '');
-// addDisposition(disposition, stream.disposition.still_image === 1 ? 'still_image' : '');
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var _a, _b, _c, _d;
@@ -135,21 +130,18 @@ var plugin = function (args) {
         args.jobLog("Channels ".concat(channels, " determined has being the highest match"));
     }
     streams.forEach(function (stream, index) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c;
         if (stream.codec_type === 'audio') {
+            var dispositions = stream.disposition;
             if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
                 && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
                 && !defaultSet) {
                 args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
-                var disposition = getFFMPEGDisposition(stream, true);
-                args.jobLog("Original ".concat(JSON.stringify((_d = stream.disposition) !== null && _d !== void 0 ? _d : {}), "; new ").concat(disposition));
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), disposition);
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(args, true, dispositions));
                 defaultSet = true;
             }
             else {
-                var disposition = getFFMPEGDisposition(stream, false);
-                args.jobLog("Original ".concat(JSON.stringify((_e = stream.disposition) !== null && _e !== void 0 ? _e : {}), "}; new ").concat(disposition));
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), disposition);
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(args, false, dispositions));
             }
         }
     });

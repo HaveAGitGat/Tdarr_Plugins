@@ -103,38 +103,33 @@ interface IStreamDisposition {
   disposition?: IDisposition
 }
 
-const addDisposition = (disposition: string, dispositionToAdd: string): string => (dispositionToAdd.length > 0
-  ? `${disposition}${disposition.length > 0 ? '+' : ''}${dispositionToAdd}`
-  : disposition);
+const getFFMPEGDisposition = (
+  args: IpluginInputArgs,
+  isDefault: boolean,
+  dispositions?: IDisposition,
+): string => {
+  if (!dispositions) return isDefault ? 'default' : '0';
+  args.jobLog(`previous disposition ${JSON.stringify(dispositions)}`);
 
-const getFFMPEGDisposition = (stream: IStreamDisposition, isDefault: boolean): string => {
-  if (!stream.disposition) return '0';
+  const previousDispositions = Object.entries(dispositions)
+    .reduce((acc, [key, value]) => {
+      if (key !== 'default' && value === 1) {
+        acc.push(key);
+      }
+      return acc;
+    }, [] as string[]);
 
-  const disposition = addDisposition(
+  const ffmpegDisposition = [
     isDefault ? 'default' : '',
-    Object.entries(stream.disposition)
-      .filter(([value]) => value === '1')
-      .map(([key]) => key)
-      .join('+'),
-  );
-  return disposition.length > 0 ? disposition : '0';
+    ...previousDispositions,
+  ]
+    .filter(Boolean)
+    .join('+')
+    || '0';
+  args.jobLog(`ffmpegDisposition ${ffmpegDisposition}`);
+
+  return ffmpegDisposition;
 };
-// addDisposition(disposition, stream.disposition.dub === 1 ? 'dub' : '');
-// addDisposition(disposition, stream.disposition.original === 1 ? 'original' : '');
-// addDisposition(disposition, stream.disposition.comment === 1 ? 'comment' : '');
-// addDisposition(disposition, stream.disposition.lyrics === 1 ? 'lyrics' : '');
-// addDisposition(disposition, stream.disposition.karaoke === 1 ? 'karaoke' : '');
-// addDisposition(disposition, stream.disposition.forced === 1 ? 'forced' : '');
-// addDisposition(disposition, stream.disposition.hearing_impaired === 1 ? 'hearing_impaired' : '');
-// addDisposition(disposition, stream.disposition.visual_impaired === 1 ? 'visual_impaired' : '');
-// addDisposition(disposition, stream.disposition.clean_effects === 1 ? 'clean_effects' : '');
-// addDisposition(disposition, stream.disposition.attached_pic === 1 ? 'attached_pic' : '');
-// addDisposition(disposition, stream.disposition.timed_thumbnails === 1 ? 'timed_thumbnails' : '');
-// addDisposition(disposition, stream.disposition.captions === 1 ? 'captions' : '');
-// addDisposition(disposition, stream.disposition.descriptions === 1 ? 'descriptions' : '');
-// addDisposition(disposition, stream.disposition.metadata === 1 ? 'metadata' : '');
-// addDisposition(disposition, stream.disposition.dependent === 1 ? 'dependent' : '');
-// addDisposition(disposition, stream.disposition.still_image === 1 ? 'still_image' : '');
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
@@ -170,18 +165,25 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   streams.forEach((stream, index) => {
     if (stream.codec_type === 'audio') {
+      const dispositions = (stream as IStreamDisposition).disposition;
       if ((stream.tags?.language ?? '') === languageCode
         && (stream.channels ?? 0) === channels
         && !defaultSet) {
         args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
-        const disposition = getFFMPEGDisposition(stream as IStreamDisposition, true);
-        args.jobLog(`Original ${JSON.stringify(stream.disposition ?? {})}; new ${disposition}`);
-        stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, disposition);
+        stream.outputArgs.push(
+          `-c:${index}`,
+          'copy',
+          `-disposition:${index}`,
+          getFFMPEGDisposition(args, true, dispositions),
+        );
         defaultSet = true;
       } else {
-        const disposition = getFFMPEGDisposition(stream as IStreamDisposition, false);
-        args.jobLog(`Original ${JSON.stringify(stream.disposition ?? {})}}; new ${disposition}`);
-        stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, disposition);
+        stream.outputArgs.push(
+          `-c:${index}`,
+          'copy',
+          `-disposition:${index}`,
+          getFFMPEGDisposition(args, false, dispositions),
+        );
       }
     }
   });
