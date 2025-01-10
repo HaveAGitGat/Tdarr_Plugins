@@ -7,7 +7,7 @@ import {
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
-  name: 'Set Default Audio Track',
+  name: 'Set Default Audio Stream',
   description: 'Sets the default audio track based on channels count and Radarr or Sonar',
   style: {
     borderColor: '#6efefc',
