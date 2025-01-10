@@ -164,7 +164,7 @@ var plugin = function (args) {
         args.variables.ffmpegCommand.streams = streams;
     }
     else
-        args.jobLog('No matching stream was found');
+        args.jobLog('No stream to modify');
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: shouldProcess ? 1 : 2,

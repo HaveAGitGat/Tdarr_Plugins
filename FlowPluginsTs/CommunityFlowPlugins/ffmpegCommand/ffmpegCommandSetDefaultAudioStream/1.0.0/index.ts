@@ -201,7 +201,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-  } else args.jobLog('No matching stream was found');
+  } else args.jobLog('No stream to modify');
 
   return {
     outputFileObj: args.inputFileObj,
