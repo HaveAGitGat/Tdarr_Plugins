@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Set Default Audio Track',
+    name: 'Set Default Audio Stream',
     description: 'Sets the default audio track based on channels count and Radarr or Sonar',
     style: {
         borderColor: '#6efefc',
