@@ -102,6 +102,7 @@ var plugin = function (args) {
             if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
                 && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
                 && !defaultSet) {
+                args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
                 stream.outputArgs.push("-disposition:".concat(index), 'default');
                 defaultSet = true;
             }
