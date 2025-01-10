@@ -108,6 +108,10 @@ const getIsDescriptiveSubtitleStream = (stream: IStreamDisposition): boolean => 
     || stream.disposition.visual_impaired
     || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '')));
 
+const getIsForcedSubtitleStream = (stream: IStreamDisposition): boolean => Boolean(stream.disposition
+  && (stream.disposition.forced
+    || /\b(forced|force|forcé|forces|forcés)\b/gi.test(stream.tags?.title || '')));
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
@@ -133,9 +137,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     if (stream.codec_type === 'subtitle') {
       const dispositions = (stream as IStreamDisposition).disposition;
       const isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream as IStreamDisposition);
+      const isForcedSubtitleStream = getIsForcedSubtitleStream(stream as IStreamDisposition);
       if ((stream.tags?.language ?? '') === languageCode
         && (dispositions?.default ?? 0) === 0
         && !isDescriptiveSubtitleStream
+        && !isForcedSubtitleStream
         && !defaultSet) {
         args.jobLog(`Stream ${index} (language ${languageCode}) set has default`);
         stream.outputArgs.push(
@@ -148,9 +154,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         shouldProcess = true;
       } else if ((dispositions?.default ?? 0) === 1
         && ((stream.tags?.language ?? '') !== languageCode
-        || isDescriptiveSubtitleStream)) {
-        args.jobLog(`Stream ${index} (language ${languageCode}, descriptive ${isDescriptiveSubtitleStream}) `
-          + 'set has not default');
+          || isDescriptiveSubtitleStream
+          || isForcedSubtitleStream)) {
+        args.jobLog(`Stream ${index} (language ${languageCode}, descriptive ${isDescriptiveSubtitleStream}, `
+          + `forced ${isForcedSubtitleStream} set has not default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',

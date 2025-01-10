@@ -88,6 +88,12 @@ var getIsDescriptiveSubtitleStream = function (stream) {
             || stream.disposition.visual_impaired
             || /\b(commentary|description|descriptive)\b/gi.test(((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.title) || '')));
 };
+var getIsForcedSubtitleStream = function (stream) {
+    var _a;
+    return Boolean(stream.disposition
+        && (stream.disposition.forced
+            || /\b(forced|force|forcé|forces|forcés)\b/gi.test(((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.title) || '')));
+};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
@@ -109,9 +115,11 @@ var plugin = function (args) {
         if (stream.codec_type === 'subtitle') {
             var dispositions = stream.disposition;
             var isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream);
+            var isForcedSubtitleStream = getIsForcedSubtitleStream(stream);
             if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
                 && ((_c = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _c !== void 0 ? _c : 0) === 0
                 && !isDescriptiveSubtitleStream
+                && !isForcedSubtitleStream
                 && !defaultSet) {
                 args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ") set has default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
@@ -120,9 +128,10 @@ var plugin = function (args) {
             }
             else if (((_d = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _d !== void 0 ? _d : 0) === 1
                 && (((_f = (_e = stream.tags) === null || _e === void 0 ? void 0 : _e.language) !== null && _f !== void 0 ? _f : '') !== languageCode
-                    || isDescriptiveSubtitleStream)) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", descriptive ").concat(isDescriptiveSubtitleStream, ") ")
-                    + 'set has not default');
+                    || isDescriptiveSubtitleStream
+                    || isForcedSubtitleStream)) {
+                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", descriptive ").concat(isDescriptiveSubtitleStream, ", ")
+                    + "forced ".concat(isForcedSubtitleStream, " set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;
             }
