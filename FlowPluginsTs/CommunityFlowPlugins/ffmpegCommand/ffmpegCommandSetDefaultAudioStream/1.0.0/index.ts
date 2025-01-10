@@ -167,13 +167,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   streams.forEach((stream, index) => {
     if (stream.codec_type === 'audio') {
       const dispositions = (stream as IStreamDisposition).disposition;
+      const streamChannels = stream.channels ?? 0;
+      const streamLanguage = stream.tags?.language ?? '';
       const isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream as IStreamDisposition);
-      if ((stream.tags?.language ?? '') === languageCode
-        && (stream.channels ?? 0) === channels
+      if (streamLanguage === languageCode
+        && streamChannels === channels
         && (dispositions?.default ?? 0) === 0
         && !isDescriptiveAudioStream
         && !defaultSet) {
-        args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}) set has default`);
+        args.jobLog(`Stream ${index} (language ${streamLanguage}, channels ${streamChannels}) set has default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',
@@ -186,7 +188,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         && ((stream.tags?.language ?? '') !== languageCode
         || (stream.channels ?? 0) !== channels
         || isDescriptiveAudioStream)) {
-        args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}, `
+        args.jobLog(`Stream ${index} (language ${streamLanguage}, channels ${streamChannels}, `
           + `descriptive ${isDescriptiveAudioStream}) set has not default`);
         stream.outputArgs.push(
           `-c:${index}`,

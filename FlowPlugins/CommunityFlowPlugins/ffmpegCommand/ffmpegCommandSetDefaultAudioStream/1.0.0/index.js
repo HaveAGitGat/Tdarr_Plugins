@@ -139,13 +139,15 @@ var plugin = function (args) {
         var _a, _b, _c, _d, _e, _f, _g, _h;
         if (stream.codec_type === 'audio') {
             var dispositions = stream.disposition;
+            var streamChannels = (_a = stream.channels) !== null && _a !== void 0 ? _a : 0;
+            var streamLanguage = (_c = (_b = stream.tags) === null || _b === void 0 ? void 0 : _b.language) !== null && _c !== void 0 ? _c : '';
             var isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream);
-            if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
-                && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
+            if (streamLanguage === languageCode
+                && streamChannels === channels
                 && ((_d = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _d !== void 0 ? _d : 0) === 0
                 && !isDescriptiveAudioStream
                 && !defaultSet) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") set has default"));
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", channels ").concat(streamChannels, ") set has default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
                 defaultSet = true;
                 shouldProcess = true;
@@ -154,7 +156,7 @@ var plugin = function (args) {
                 && (((_g = (_f = stream.tags) === null || _f === void 0 ? void 0 : _f.language) !== null && _g !== void 0 ? _g : '') !== languageCode
                     || ((_h = stream.channels) !== null && _h !== void 0 ? _h : 0) !== channels
                     || isDescriptiveAudioStream)) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ", ")
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", channels ").concat(streamChannels, ", ")
                     + "descriptive ".concat(isDescriptiveAudioStream, ") set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;
