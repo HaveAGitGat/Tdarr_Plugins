@@ -94,31 +94,42 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   let defaultSet = false;
 
   // Sets the language code used to determine the default audio stream
-  const languageCode = args.inputs.useRadarrOrSonarr
-    ? args.variables.user.ArrOriginalLanguageCode
-    : args.inputs.language;
+  let languageCode = args.inputs.language;
+  if (args.inputs.useRadarrOrSonarr) {
+    languageCode = args.variables.user.ArrOriginalLanguageCode;
+    args.jobLog(`Language ${languageCode} read from flow variables`);
+  }
 
   // Sets the channels used to determine the default audio stream
-  const channels = args.inputs.useHightestNumberOfChannels
-    ? streams
+  let { channels } = args.inputs;
+  if (args.inputs.useHightestNumberOfChannels) {
+    channels = streams
       .filter((stream) => stream.codec_type === 'audio' && (stream.tags?.language ?? languageCode === ''))
       ?.sort((stream1, stream2) => ((stream1.channels ?? 0) > (stream2.channels ?? 0) ? 1 : -1))
       ?.at(0)
       ?.channels
-    ?? 0
-    : args.inputs.channels;
+      ?? 0;
+    args.jobLog(`Channels ${channels} determined has being the highest channels`);
+  }
 
   streams.forEach((stream, index) => {
     if (stream.codec_type === 'audio') {
       if ((stream.tags?.language ?? '') === languageCode
-        && (stream.channels ?? 0) === channels
-        && !defaultSet) {
+      && (stream.channels ?? 0) === channels
+      && !defaultSet) {
         args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
         stream.outputArgs.push(`-disposition:${index}`, 'default');
         defaultSet = true;
       } else stream.outputArgs.push(`-disposition:${index}`, '0');
     }
   });
+
+  if (defaultSet) {
+  // eslint-disable-next-line no-param-reassign
+    args.variables.ffmpegCommand.shouldProcess = true;
+    // eslint-disable-next-line no-param-reassign
+    args.variables.ffmpegCommand.streams = streams;
+  }
 
   return {
     outputFileObj: args.inputFileObj,
