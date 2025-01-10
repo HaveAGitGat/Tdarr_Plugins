@@ -81,6 +81,7 @@ const details = (): IpluginDetails => ({
 });
 
 interface IDisposition {
+  default: number,
   dub: number,
   original: number,
   comment: number,
@@ -101,6 +102,7 @@ interface IDisposition {
 
 interface IStreamDisposition {
   disposition?: IDisposition
+  tags?: { title?: string }
 }
 
 const getFFMPEGDisposition = (isDefault: boolean, dispositions?: IDisposition): string => {
@@ -123,6 +125,12 @@ const getFFMPEGDisposition = (isDefault: boolean, dispositions?: IDisposition): 
     || '0';
 };
 
+const getIsDescriptiveAudioStream = (stream: IStreamDisposition): boolean => Boolean(stream.disposition
+    && (stream.disposition.comment
+      || stream.disposition.descriptions
+      || stream.disposition.visual_impaired
+      || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '')));
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
@@ -134,6 +142,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // const streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
   const { streams } = args.variables.ffmpegCommand;
 
+  let shouldProcess = false;
   let defaultSet = false;
 
   // Sets the language code used to determine the default audio stream
@@ -158,10 +167,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   streams.forEach((stream, index) => {
     if (stream.codec_type === 'audio') {
       const dispositions = (stream as IStreamDisposition).disposition;
+      const isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream as IStreamDisposition);
       if ((stream.tags?.language ?? '') === languageCode
         && (stream.channels ?? 0) === channels
+        && (dispositions?.default ?? 0) === 0
+        && !isDescriptiveAudioStream
         && !defaultSet) {
-        args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
+        args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}) set has default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',
@@ -169,18 +181,22 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
           getFFMPEGDisposition(true, dispositions),
         );
         defaultSet = true;
-      } else {
+        shouldProcess = true;
+      } else if ((dispositions?.default ?? 0) === 1) {
+        args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}, 
+          descriptive ${isDescriptiveAudioStream}) set has not default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',
           `-disposition:${index}`,
           getFFMPEGDisposition(false, dispositions),
         );
+        shouldProcess = true;
       }
     }
   });
 
-  if (defaultSet) {
+  if (shouldProcess) {
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
@@ -189,7 +205,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   return {
     outputFileObj: args.inputFileObj,
-    outputNumber: defaultSet ? 1 : 2,
+    outputNumber: shouldProcess ? 1 : 2,
     variables: args.variables,
   };
 };
