@@ -80,6 +80,62 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+interface IDisposition {
+  dub: number,
+  original: number,
+  comment: number,
+  lyrics: number,
+  karaoke: number,
+  forced: number,
+  hearing_impaired: number,
+  visual_impaired: number,
+  clean_effects: number,
+  attached_pic: number,
+  timed_thumbnails: number,
+  captions: number,
+  descriptions: number,
+  metadata: number,
+  dependent: number,
+  still_image: number,
+}
+
+interface IStreamDisposition {
+  disposition?: IDisposition
+}
+
+const addDisposition = (disposition: string, dispositionToAdd: string): string => (dispositionToAdd.length > 0
+  ? `${disposition}${disposition.length > 0 ? '+' : ''}${dispositionToAdd}`
+  : disposition);
+
+const getFFMPEGDisposition = (stream: IStreamDisposition, isDefault: boolean): string => {
+  if (!stream.disposition) return '0';
+
+  const disposition = addDisposition(
+    isDefault ? 'default' : '',
+    Object.entries(stream.disposition)
+      .filter(([value]) => value === '1')
+      .map(([key]) => key)
+      .join('+'),
+  );
+  return disposition.length > 0 ? disposition : '0';
+};
+// addDisposition(disposition, stream.disposition.dub === 1 ? 'dub' : '');
+// addDisposition(disposition, stream.disposition.original === 1 ? 'original' : '');
+// addDisposition(disposition, stream.disposition.comment === 1 ? 'comment' : '');
+// addDisposition(disposition, stream.disposition.lyrics === 1 ? 'lyrics' : '');
+// addDisposition(disposition, stream.disposition.karaoke === 1 ? 'karaoke' : '');
+// addDisposition(disposition, stream.disposition.forced === 1 ? 'forced' : '');
+// addDisposition(disposition, stream.disposition.hearing_impaired === 1 ? 'hearing_impaired' : '');
+// addDisposition(disposition, stream.disposition.visual_impaired === 1 ? 'visual_impaired' : '');
+// addDisposition(disposition, stream.disposition.clean_effects === 1 ? 'clean_effects' : '');
+// addDisposition(disposition, stream.disposition.attached_pic === 1 ? 'attached_pic' : '');
+// addDisposition(disposition, stream.disposition.timed_thumbnails === 1 ? 'timed_thumbnails' : '');
+// addDisposition(disposition, stream.disposition.captions === 1 ? 'captions' : '');
+// addDisposition(disposition, stream.disposition.descriptions === 1 ? 'descriptions' : '');
+// addDisposition(disposition, stream.disposition.metadata === 1 ? 'metadata' : '');
+// addDisposition(disposition, stream.disposition.dependent === 1 ? 'dependent' : '');
+// addDisposition(disposition, stream.disposition.still_image === 1 ? 'still_image' : '');
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
@@ -118,9 +174,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         && (stream.channels ?? 0) === channels
         && !defaultSet) {
         args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
-        stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, 'default');
+        const disposition = getFFMPEGDisposition(stream as IStreamDisposition, true);
+        args.jobLog(`Original disposition ${stream.disposition ?? 'undefined'}; new disposition ${disposition}`);
+        stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, disposition);
         defaultSet = true;
-      } else stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, '0');
+      } else {
+        const disposition = getFFMPEGDisposition(stream as IStreamDisposition, false);
+        args.jobLog(`Original disposition ${stream.disposition ?? 'undefined'}; new disposition ${disposition}`);
+        stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, disposition);
+      }
     }
   });
 
