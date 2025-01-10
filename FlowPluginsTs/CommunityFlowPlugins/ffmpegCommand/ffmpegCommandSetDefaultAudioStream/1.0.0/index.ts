@@ -105,11 +105,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   if (args.inputs.useHightestNumberOfChannels) {
     channels = streams
       .filter((stream) => stream.codec_type === 'audio' && (stream.tags?.language ?? languageCode === ''))
-      ?.sort((stream1, stream2) => ((stream1.channels ?? 0) > (stream2.channels ?? 0) ? 1 : -1))
+      ?.sort((stream1, stream2) => (stream2.channels ?? 0) - (stream1.channels ?? 0))
       ?.at(0)
       ?.channels
       ?? 0;
-    args.jobLog(`Channels ${channels} determined has being the highest channels`);
+    args.jobLog(`Channels ${channels} determined has being the highest match`);
   }
 
   streams.forEach((stream, index) => {

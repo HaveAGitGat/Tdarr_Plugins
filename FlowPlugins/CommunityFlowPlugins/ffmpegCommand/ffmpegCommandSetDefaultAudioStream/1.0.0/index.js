@@ -97,8 +97,8 @@ var plugin = function (args) {
     var channels = args.inputs.channels;
     if (args.inputs.useHightestNumberOfChannels) {
         channels = (_d = (_c = (_b = (_a = streams
-            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return (((_a = stream1.channels) !== null && _a !== void 0 ? _a : 0) > ((_b = stream2.channels) !== null && _b !== void 0 ? _b : 0) ? 1 : -1); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
-        args.jobLog("Channels ".concat(channels, " determined has being the highest channels"));
+            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return ((_a = stream2.channels) !== null && _a !== void 0 ? _a : 0) - ((_b = stream1.channels) !== null && _b !== void 0 ? _b : 0); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
+        args.jobLog("Channels ".concat(channels, " determined has being the highest match"));
     }
     streams.forEach(function (stream, index) {
         var _a, _b, _c;
