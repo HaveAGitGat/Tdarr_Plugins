@@ -161,7 +161,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       ?.at(0)
       ?.channels
       ?? 0;
-    args.jobLog(`Channels ${channels} determined has being the highest match`);
+    args.jobLog(`${channels} channels determined has being the highest match`);
   }
 
   streams.forEach((stream, index) => {
@@ -186,8 +186,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         && ((stream.tags?.language ?? '') !== languageCode
         || (stream.channels ?? 0) !== channels
         || isDescriptiveAudioStream)) {
-        args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}, 
-          descriptive ${isDescriptiveAudioStream}) set has not default`);
+        args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}, `
+          + `descriptive ${isDescriptiveAudioStream}) set has not default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',
