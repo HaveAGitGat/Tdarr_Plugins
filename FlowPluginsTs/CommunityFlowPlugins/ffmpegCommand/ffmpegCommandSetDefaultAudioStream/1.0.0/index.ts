@@ -115,8 +115,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   streams.forEach((stream, index) => {
     if (stream.codec_type === 'audio') {
       if ((stream.tags?.language ?? '') === languageCode
-      && (stream.channels ?? 0) === channels
-      && !defaultSet) {
+        && (stream.channels ?? 0) === channels
+        && !defaultSet) {
         args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
         stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, 'default');
         defaultSet = true;
@@ -125,11 +125,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   });
 
   if (defaultSet) {
-  // eslint-disable-next-line no-param-reassign
+    // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-  }
+  } else args.jobLog('No matching stream was found');
 
   return {
     outputFileObj: args.inputFileObj,
