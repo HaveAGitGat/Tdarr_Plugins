@@ -103,13 +103,8 @@ interface IStreamDisposition {
   disposition?: IDisposition
 }
 
-const getFFMPEGDisposition = (
-  args: IpluginInputArgs,
-  isDefault: boolean,
-  dispositions?: IDisposition,
-): string => {
+const getFFMPEGDisposition = (isDefault: boolean, dispositions?: IDisposition): string => {
   if (!dispositions) return isDefault ? 'default' : '0';
-  args.jobLog(`previous disposition ${JSON.stringify(dispositions)}`);
 
   const previousDispositions = Object.entries(dispositions)
     .reduce((acc, [key, value]) => {
@@ -119,16 +114,13 @@ const getFFMPEGDisposition = (
       return acc;
     }, [] as string[]);
 
-  const ffmpegDisposition = [
+  return [
     isDefault ? 'default' : '',
     ...previousDispositions,
   ]
     .filter(Boolean)
     .join('+')
     || '0';
-  args.jobLog(`ffmpegDisposition ${ffmpegDisposition}`);
-
-  return ffmpegDisposition;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -174,7 +166,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
           `-c:${index}`,
           'copy',
           `-disposition:${index}`,
-          getFFMPEGDisposition(args, true, dispositions),
+          getFFMPEGDisposition(true, dispositions),
         );
         defaultSet = true;
       } else {
@@ -182,7 +174,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
           `-c:${index}`,
           'copy',
           `-disposition:${index}`,
-          getFFMPEGDisposition(args, false, dispositions),
+          getFFMPEGDisposition(false, dispositions),
         );
       }
     }
