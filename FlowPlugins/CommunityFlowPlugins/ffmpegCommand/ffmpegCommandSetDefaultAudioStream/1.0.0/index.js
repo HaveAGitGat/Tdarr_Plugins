@@ -136,7 +136,7 @@ var plugin = function (args) {
         args.jobLog("Channels ".concat(channels, " determined has being the highest match"));
     }
     streams.forEach(function (stream, index) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         if (stream.codec_type === 'audio') {
             var dispositions = stream.disposition;
             var isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream);
@@ -150,7 +150,10 @@ var plugin = function (args) {
                 defaultSet = true;
                 shouldProcess = true;
             }
-            else if (((_e = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _e !== void 0 ? _e : 0) === 1) {
+            else if (((_e = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _e !== void 0 ? _e : 0) === 1
+                && (((_g = (_f = stream.tags) === null || _f === void 0 ? void 0 : _f.language) !== null && _g !== void 0 ? _g : '') !== languageCode
+                    || ((_h = stream.channels) !== null && _h !== void 0 ? _h : 0) !== channels
+                    || isDescriptiveAudioStream)) {
                 args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ", \n          descriptive ").concat(isDescriptiveAudioStream, ") set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;
@@ -164,7 +167,7 @@ var plugin = function (args) {
         args.variables.ffmpegCommand.streams = streams;
     }
     else
-        args.jobLog('No matching stream was found');
+        args.jobLog('No stream to modify');
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: shouldProcess ? 1 : 2,
