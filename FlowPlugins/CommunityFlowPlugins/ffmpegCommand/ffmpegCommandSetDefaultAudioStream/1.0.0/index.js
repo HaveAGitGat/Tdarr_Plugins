@@ -120,6 +120,8 @@ var plugin = function (args) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.streams = streams;
     }
+    else
+        args.jobLog('No matching stream was found');
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: defaultSet ? 1 : 2,
