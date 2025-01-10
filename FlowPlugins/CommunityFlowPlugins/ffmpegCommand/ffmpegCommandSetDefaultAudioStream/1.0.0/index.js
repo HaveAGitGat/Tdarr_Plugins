@@ -86,10 +86,9 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getFFMPEGDisposition = function (args, isDefault, dispositions) {
+var getFFMPEGDisposition = function (isDefault, dispositions) {
     if (!dispositions)
         return isDefault ? 'default' : '0';
-    args.jobLog("previous disposition ".concat(JSON.stringify(dispositions)));
     var previousDispositions = Object.entries(dispositions)
         .reduce(function (acc, _a) {
         var key = _a[0], value = _a[1];
@@ -98,13 +97,11 @@ var getFFMPEGDisposition = function (args, isDefault, dispositions) {
         }
         return acc;
     }, []);
-    var ffmpegDisposition = __spreadArray([
+    return __spreadArray([
         isDefault ? 'default' : ''
     ], previousDispositions, true).filter(Boolean)
         .join('+')
         || '0';
-    args.jobLog("ffmpegDisposition ".concat(ffmpegDisposition));
-    return ffmpegDisposition;
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
@@ -137,11 +134,11 @@ var plugin = function (args) {
                 && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
                 && !defaultSet) {
                 args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(args, true, dispositions));
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
                 defaultSet = true;
             }
             else {
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(args, false, dispositions));
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
             }
         }
     });
