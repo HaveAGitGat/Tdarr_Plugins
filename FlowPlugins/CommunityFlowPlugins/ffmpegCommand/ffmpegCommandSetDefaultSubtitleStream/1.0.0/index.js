@@ -132,7 +132,7 @@ var plugin = function (args) {
                     || isDescriptiveSubtitleStream
                     || isForcedSubtitleStream)) {
                 args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", descriptive ").concat(isDescriptiveSubtitleStream, ", ")
-                    + "forced ".concat(isForcedSubtitleStream, " set has not default"));
+                    + "forced ".concat(isForcedSubtitleStream, ") set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;
             }
