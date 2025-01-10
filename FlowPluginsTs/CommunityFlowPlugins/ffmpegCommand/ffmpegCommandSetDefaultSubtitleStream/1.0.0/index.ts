@@ -139,7 +139,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       const streamLanguage = (stream.tags?.language ?? '');
       const isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream as IStreamDisposition);
       const isForcedSubtitleStream = getIsForcedSubtitleStream(stream as IStreamDisposition);
-      if ((stream.tags?.language ?? '') === languageCode
+      if (streamLanguage === languageCode
         && (dispositions?.default ?? 0) === 0
         && !isDescriptiveSubtitleStream
         && !isForcedSubtitleStream
