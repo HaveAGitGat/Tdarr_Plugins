@@ -60,10 +60,10 @@ const details = (): IpluginDetails => ({
       label: 'Channels ',
       name: 'channels',
       type: 'string',
-      defaultValue: '5.1',
+      defaultValue: '6',
       inputUI: {
         type: 'dropdown',
-        options: ['7.1', '5.1', '2.0'],
+        options: ['8', '6', '2'],
       },
       tooltip: 'Specify what number of channels should be used as the default channel.',
     },
