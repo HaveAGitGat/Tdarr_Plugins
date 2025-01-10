@@ -8,7 +8,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Set Default Audio Track',
-  description: 'Sets the default audio track based on channels count and Radarr or SOnnar',
+  description: 'Sets the default audio track based on channels count and Radarr or Sonar',
   style: {
     borderColor: '#6efefc',
   },
@@ -28,7 +28,7 @@ const details = (): IpluginDetails => ({
         type: 'switch',
       },
       tooltip: 'Should the language of the default audio track be read from Radarr or Sonarr ? If yes, '
-        + 'the Arr, Arr API Key and Arr Host properties are mandatory and the Language property will be '
+        + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
         + 'ignored. If no, please indicate the language to use in the Language property.',
     },
     {
