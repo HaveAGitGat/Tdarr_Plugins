@@ -118,9 +118,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       && (stream.channels ?? 0) === channels
       && !defaultSet) {
         args.jobLog(`Setting stream ${index} (language ${languageCode}, channels ${channels}) has default`);
-        stream.outputArgs.push(`-disposition:${index}`, 'default');
+        stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, 'default');
         defaultSet = true;
-      } else stream.outputArgs.push(`-disposition:${index}`, '0');
+      } else stream.outputArgs.push(`-c:${index}`, 'copy', `-disposition:${index}`, '0');
     }
   });
 

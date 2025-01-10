@@ -107,11 +107,11 @@ var plugin = function (args) {
                 && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
                 && !defaultSet) {
                 args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
-                stream.outputArgs.push("-disposition:".concat(index), 'default');
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), 'default');
                 defaultSet = true;
             }
             else
-                stream.outputArgs.push("-disposition:".concat(index), '0');
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), '0');
         }
     });
     if (defaultSet) {
