@@ -133,7 +133,7 @@ var plugin = function (args) {
     if (args.inputs.useHightestNumberOfChannels) {
         channels = (_d = (_c = (_b = (_a = streams
             .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return ((_a = stream2.channels) !== null && _a !== void 0 ? _a : 0) - ((_b = stream1.channels) !== null && _b !== void 0 ? _b : 0); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
-        args.jobLog("Channels ".concat(channels, " determined has being the highest match"));
+        args.jobLog("".concat(channels, " channels determined has being the highest match"));
     }
     streams.forEach(function (stream, index) {
         var _a, _b, _c, _d, _e, _f, _g, _h;
@@ -154,7 +154,8 @@ var plugin = function (args) {
                 && (((_g = (_f = stream.tags) === null || _f === void 0 ? void 0 : _f.language) !== null && _g !== void 0 ? _g : '') !== languageCode
                     || ((_h = stream.channels) !== null && _h !== void 0 ? _h : 0) !== channels
                     || isDescriptiveAudioStream)) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ", \n          descriptive ").concat(isDescriptiveAudioStream, ") set has not default"));
+                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ", ")
+                    + "descriptive ".concat(isDescriptiveAudioStream, ") set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;
             }
