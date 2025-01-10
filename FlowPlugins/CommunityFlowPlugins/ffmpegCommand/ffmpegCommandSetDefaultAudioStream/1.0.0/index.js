@@ -103,6 +103,14 @@ var getFFMPEGDisposition = function (isDefault, dispositions) {
         .join('+')
         || '0';
 };
+var getIsDescriptiveAudioStream = function (stream) {
+    var _a;
+    return Boolean(stream.disposition
+        && (stream.disposition.comment
+            || stream.disposition.descriptions
+            || stream.disposition.visual_impaired
+            || /\b(commentary|description|descriptive)\b/gi.test(((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.title) || '')));
+};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var _a, _b, _c, _d;
@@ -112,6 +120,7 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     // const streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
     var streams = args.variables.ffmpegCommand.streams;
+    var shouldProcess = false;
     var defaultSet = false;
     // Sets the language code used to determine the default audio stream
     var languageCode = args.inputs.language;
@@ -127,22 +136,28 @@ var plugin = function (args) {
         args.jobLog("Channels ".concat(channels, " determined has being the highest match"));
     }
     streams.forEach(function (stream, index) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d, _e;
         if (stream.codec_type === 'audio') {
             var dispositions = stream.disposition;
+            var isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream);
             if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
                 && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
+                && ((_d = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _d !== void 0 ? _d : 0) === 0
+                && !isDescriptiveAudioStream
                 && !defaultSet) {
-                args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
+                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") set has default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
                 defaultSet = true;
+                shouldProcess = true;
             }
-            else {
+            else if (((_e = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _e !== void 0 ? _e : 0) === 1) {
+                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ", \n          descriptive ").concat(isDescriptiveAudioStream, ") set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
+                shouldProcess = true;
             }
         }
     });
-    if (defaultSet) {
+    if (shouldProcess) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.shouldProcess = true;
         // eslint-disable-next-line no-param-reassign
@@ -152,7 +167,7 @@ var plugin = function (args) {
         args.jobLog('No matching stream was found');
     return {
         outputFileObj: args.inputFileObj,
-        outputNumber: defaultSet ? 1 : 2,
+        outputNumber: shouldProcess ? 1 : 2,
         variables: args.variables,
     };
 };
