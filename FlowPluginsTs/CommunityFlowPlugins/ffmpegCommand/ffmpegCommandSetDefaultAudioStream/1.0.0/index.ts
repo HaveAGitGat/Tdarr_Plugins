@@ -126,10 +126,10 @@ const getFFMPEGDisposition = (isDefault: boolean, dispositions?: IDisposition): 
 };
 
 const getIsDescriptiveAudioStream = (stream: IStreamDisposition): boolean => Boolean(stream.disposition
-    && (stream.disposition.comment
-      || stream.disposition.descriptions
-      || stream.disposition.visual_impaired
-      || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '')));
+  && (stream.disposition.comment
+    || stream.disposition.descriptions
+    || stream.disposition.visual_impaired
+    || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '')));
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
@@ -182,7 +182,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         );
         defaultSet = true;
         shouldProcess = true;
-      } else if ((dispositions?.default ?? 0) === 1) {
+      } else if ((dispositions?.default ?? 0) === 1
+        && ((stream.tags?.language ?? '') !== languageCode
+        || (stream.channels ?? 0) !== channels
+        || isDescriptiveAudioStream)) {
         args.jobLog(`Stream ${index} (language ${languageCode}, channels ${channels}, 
           descriptive ${isDescriptiveAudioStream}) set has not default`);
         stream.outputArgs.push(
