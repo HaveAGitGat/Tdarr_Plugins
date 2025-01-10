@@ -111,26 +111,27 @@ var plugin = function (args) {
         args.jobLog("Language ".concat(languageCode, " read from flow variables"));
     }
     streams.forEach(function (stream, index) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         if (stream.codec_type === 'subtitle') {
             var dispositions = stream.disposition;
+            var streamLanguage = ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '');
             var isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream);
             var isForcedSubtitleStream = getIsForcedSubtitleStream(stream);
-            if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
-                && ((_c = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _c !== void 0 ? _c : 0) === 0
+            if (((_d = (_c = stream.tags) === null || _c === void 0 ? void 0 : _c.language) !== null && _d !== void 0 ? _d : '') === languageCode
+                && ((_e = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _e !== void 0 ? _e : 0) === 0
                 && !isDescriptiveSubtitleStream
                 && !isForcedSubtitleStream
                 && !defaultSet) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ") set has default"));
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ") set has default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
                 defaultSet = true;
                 shouldProcess = true;
             }
-            else if (((_d = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _d !== void 0 ? _d : 0) === 1
-                && (((_f = (_e = stream.tags) === null || _e === void 0 ? void 0 : _e.language) !== null && _f !== void 0 ? _f : '') !== languageCode
+            else if (((_f = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _f !== void 0 ? _f : 0) === 1
+                && (((_h = (_g = stream.tags) === null || _g === void 0 ? void 0 : _g.language) !== null && _h !== void 0 ? _h : '') !== languageCode
                     || isDescriptiveSubtitleStream
                     || isForcedSubtitleStream)) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", descriptive ").concat(isDescriptiveSubtitleStream, ", ")
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", descriptive ").concat(isDescriptiveSubtitleStream, ", ")
                     + "forced ".concat(isForcedSubtitleStream, " set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;
