@@ -77,6 +77,40 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var addDisposition = function (disposition, dispositionToAdd) { return (dispositionToAdd.length > 0
+    ? "".concat(disposition).concat(disposition.length > 0 ? '+' : '').concat(dispositionToAdd)
+    : disposition); };
+var getFFMPEGDisposition = function (stream, isDefault) {
+    if (!stream.disposition)
+        return '0';
+    var disposition = addDisposition(isDefault ? 'default' : '', Object.entries(stream.disposition)
+        .filter(function (_a) {
+        var value = _a[0];
+        return value === '1';
+    })
+        .map(function (_a) {
+        var key = _a[0];
+        return key;
+    })
+        .join('+'));
+    return disposition.length > 0 ? disposition : '0';
+};
+// addDisposition(disposition, stream.disposition.dub === 1 ? 'dub' : '');
+// addDisposition(disposition, stream.disposition.original === 1 ? 'original' : '');
+// addDisposition(disposition, stream.disposition.comment === 1 ? 'comment' : '');
+// addDisposition(disposition, stream.disposition.lyrics === 1 ? 'lyrics' : '');
+// addDisposition(disposition, stream.disposition.karaoke === 1 ? 'karaoke' : '');
+// addDisposition(disposition, stream.disposition.forced === 1 ? 'forced' : '');
+// addDisposition(disposition, stream.disposition.hearing_impaired === 1 ? 'hearing_impaired' : '');
+// addDisposition(disposition, stream.disposition.visual_impaired === 1 ? 'visual_impaired' : '');
+// addDisposition(disposition, stream.disposition.clean_effects === 1 ? 'clean_effects' : '');
+// addDisposition(disposition, stream.disposition.attached_pic === 1 ? 'attached_pic' : '');
+// addDisposition(disposition, stream.disposition.timed_thumbnails === 1 ? 'timed_thumbnails' : '');
+// addDisposition(disposition, stream.disposition.captions === 1 ? 'captions' : '');
+// addDisposition(disposition, stream.disposition.descriptions === 1 ? 'descriptions' : '');
+// addDisposition(disposition, stream.disposition.metadata === 1 ? 'metadata' : '');
+// addDisposition(disposition, stream.disposition.dependent === 1 ? 'dependent' : '');
+// addDisposition(disposition, stream.disposition.still_image === 1 ? 'still_image' : '');
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var _a, _b, _c, _d;
@@ -97,21 +131,26 @@ var plugin = function (args) {
     var channels = args.inputs.channels;
     if (args.inputs.useHightestNumberOfChannels) {
         channels = (_d = (_c = (_b = (_a = streams
-            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return (((_a = stream1.channels) !== null && _a !== void 0 ? _a : 0) > ((_b = stream2.channels) !== null && _b !== void 0 ? _b : 0) ? 1 : -1); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
-        args.jobLog("Channels ".concat(channels, " determined has being the highest channels"));
+            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return ((_a = stream2.channels) !== null && _a !== void 0 ? _a : 0) - ((_b = stream1.channels) !== null && _b !== void 0 ? _b : 0); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
+        args.jobLog("Channels ".concat(channels, " determined has being the highest match"));
     }
     streams.forEach(function (stream, index) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d, _e;
         if (stream.codec_type === 'audio') {
             if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
                 && ((_c = stream.channels) !== null && _c !== void 0 ? _c : 0) === channels
                 && !defaultSet) {
                 args.jobLog("Setting stream ".concat(index, " (language ").concat(languageCode, ", channels ").concat(channels, ") has default"));
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), 'default');
+                var disposition = getFFMPEGDisposition(stream, true);
+                args.jobLog("Original disposition ".concat((_d = stream.disposition) !== null && _d !== void 0 ? _d : 'undefined', "; new disposition ").concat(disposition));
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), disposition);
                 defaultSet = true;
             }
-            else
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), '0');
+            else {
+                var disposition = getFFMPEGDisposition(stream, false);
+                args.jobLog("Original disposition ".concat((_e = stream.disposition) !== null && _e !== void 0 ? _e : 'undefined', "; new disposition ").concat(disposition));
+                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), disposition);
+            }
         }
     });
     if (defaultSet) {
