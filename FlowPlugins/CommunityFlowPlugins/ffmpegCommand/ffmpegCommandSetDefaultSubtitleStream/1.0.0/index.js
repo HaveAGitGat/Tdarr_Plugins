@@ -114,14 +114,15 @@ var plugin = function (args) {
         var _a, _b, _c, _d, _e, _f;
         if (stream.codec_type === 'subtitle') {
             var dispositions = stream.disposition;
+            var streamLanguage = ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '');
             var isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream);
             var isForcedSubtitleStream = getIsForcedSubtitleStream(stream);
-            if (((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode
+            if (streamLanguage === languageCode
                 && ((_c = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _c !== void 0 ? _c : 0) === 0
                 && !isDescriptiveSubtitleStream
                 && !isForcedSubtitleStream
                 && !defaultSet) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ") set has default"));
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ") set has default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
                 defaultSet = true;
                 shouldProcess = true;
@@ -130,7 +131,7 @@ var plugin = function (args) {
                 && (((_f = (_e = stream.tags) === null || _e === void 0 ? void 0 : _e.language) !== null && _f !== void 0 ? _f : '') !== languageCode
                     || isDescriptiveSubtitleStream
                     || isForcedSubtitleStream)) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(languageCode, ", descriptive ").concat(isDescriptiveSubtitleStream, ", ")
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", descriptive ").concat(isDescriptiveSubtitleStream, ", ")
                     + "forced ".concat(isForcedSubtitleStream, " set has not default"));
                 stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
                 shouldProcess = true;

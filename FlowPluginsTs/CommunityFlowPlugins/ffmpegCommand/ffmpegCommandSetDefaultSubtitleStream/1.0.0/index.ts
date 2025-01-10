@@ -136,14 +136,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   streams.forEach((stream, index) => {
     if (stream.codec_type === 'subtitle') {
       const dispositions = (stream as IStreamDisposition).disposition;
+      const streamLanguage = (stream.tags?.language ?? '');
       const isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream as IStreamDisposition);
       const isForcedSubtitleStream = getIsForcedSubtitleStream(stream as IStreamDisposition);
-      if ((stream.tags?.language ?? '') === languageCode
+      if (streamLanguage === languageCode
         && (dispositions?.default ?? 0) === 0
         && !isDescriptiveSubtitleStream
         && !isForcedSubtitleStream
         && !defaultSet) {
-        args.jobLog(`Stream ${index} (language ${languageCode}) set has default`);
+        args.jobLog(`Stream ${index} (language ${streamLanguage}) set has default`);
         stream.outputArgs.push(
           `-c:${index}`,
           'copy',
@@ -156,7 +157,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         && ((stream.tags?.language ?? '') !== languageCode
           || isDescriptiveSubtitleStream
           || isForcedSubtitleStream)) {
-        args.jobLog(`Stream ${index} (language ${languageCode}, descriptive ${isDescriptiveSubtitleStream}, `
+        args.jobLog(`Stream ${index} (language ${streamLanguage}, descriptive ${isDescriptiveSubtitleStream}, `
           + `forced ${isForcedSubtitleStream} set has not default`);
         stream.outputArgs.push(
           `-c:${index}`,
