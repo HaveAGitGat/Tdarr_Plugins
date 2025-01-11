@@ -1,3 +1,4 @@
+import path from 'path';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
   getContainer,
@@ -127,7 +128,7 @@ const buildNewPath = (currentFileName: string, fileToRename: IFileToRename): str
   const directory = getFileAbosluteDir(currentFileName);
   const fileName = getFileName(fileToRename.newPath);
   const container = getContainer(fileToRename.newPath);
-  return `${directory}/${fileName}.${container}`;
+  return path.join(directory, fileName, container);
 };
 
 const previewRename = async (
