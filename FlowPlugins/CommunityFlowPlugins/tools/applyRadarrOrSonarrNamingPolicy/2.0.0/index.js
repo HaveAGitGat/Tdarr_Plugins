@@ -51,6 +51,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var path_1 = __importDefault(require("path"));
 var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
@@ -139,7 +140,7 @@ var buildNewPath = function (currentFileName, fileToRename) {
     var directory = (0, fileUtils_1.getFileAbosluteDir)(currentFileName);
     var fileName = (0, fileUtils_1.getFileName)(fileToRename.newPath);
     var container = (0, fileUtils_1.getContainer)(fileToRename.newPath);
-    return "".concat(directory, "/").concat(fileName, ".").concat(container);
+    return path_1.default.join(directory, fileName, container);
 };
 var previewRename = function (args, host, headers, fileInfo, config) { return __awaiter(void 0, void 0, void 0, function () {
     var response, error_1;
