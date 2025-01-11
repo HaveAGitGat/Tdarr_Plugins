@@ -80,85 +80,103 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: 'Input your arr host here.'
-                + '\\nExample:\\n'
-                + 'http://192.168.1.1:7878\\n'
-                + 'http://192.168.1.1:8989\\n'
-                + 'https://radarr.domain.com\\n'
-                + 'https://sonarr.domain.com\\n',
+            tooltip: 'Input your arr host here.\nExample:\n'
+                + 'http://192.168.1.1:7878\n'
+                + 'http://192.168.1.1:8989\n'
+                + 'https://radarr.domain.com\n'
+                + 'https://sonarr.domain.com',
         },
     ],
     outputs: [
-        {
-            number: 1,
-            tooltip: 'Radarr or Sonarr notified',
-        },
-        {
-            number: 2,
-            tooltip: 'Radarr or Sonarr do not know this file',
-        },
+        { number: 1, tooltip: 'Radarr or Sonarr notified' },
+        { number: 2, tooltip: 'Radarr or Sonarr do not know this file' },
     ],
 }); };
 exports.details = details;
+var API_VERSION = 'v3';
+var CONTENT_TYPE = 'application/json';
+var arrConfigs = {
+    radarr: {
+        content: 'Movie',
+        buildRefreshRequest: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); },
+    },
+    sonarr: {
+        content: 'Serie',
+        buildRefreshRequest: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); },
+    },
+};
+var normalizeHost = function (host) {
+    var trimmedHost = host.trim();
+    return trimmedHost.endsWith('/') ? trimmedHost.slice(0, -1) : trimmedHost;
+};
+var createArrApp = function (arrType, host, apiKey) {
+    var headers = {
+        'Content-Type': CONTENT_TYPE,
+        'X-Api-Key': apiKey,
+        Accept: CONTENT_TYPE,
+    };
+    var config = arrConfigs[arrType];
+    return {
+        name: arrType,
+        host: normalizeHost(host),
+        headers: headers,
+        content: config.content,
+        buildRefreshRequest: config.buildRefreshRequest,
+    };
+};
+var refreshArr = function (arrApp, id, args) { return __awaiter(void 0, void 0, void 0, function () {
+    var error_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                if (id === -1) {
+                    args.jobLog('No valid ID found in variables');
+                    return [2 /*return*/, false];
+                }
+                _a.label = 1;
+            case 1:
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'post',
+                        url: "".concat(arrApp.host, "/api/").concat(API_VERSION, "/command"),
+                        headers: arrApp.headers,
+                        data: arrApp.buildRefreshRequest(id),
+                    })];
+            case 2:
+                _a.sent();
+                args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' refreshed in ").concat(arrApp.name, "."));
+                return [2 /*return*/, true];
+            case 3:
+                error_1 = _a.sent();
+                args.jobLog("Error refreshing ".concat(arrApp.name, ": ").concat(error_1.message));
+                return [2 /*return*/, false];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, headers, arrApp, id;
-    var _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var lib, _a, arr, arr_api_key, arr_host, arrApp, id, refreshed;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                refreshed = false;
-                arr = String(args.inputs.arr);
-                arr_host = String(args.inputs.arr_host).trim();
-                arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                headers = {
-                    'Content-Type': 'application/json',
-                    'X-Api-Key': String(args.inputs.arr_api_key),
-                    Accept: 'application/json',
-                };
-                arrApp = arr === 'radarr'
-                    ? {
-                        name: arr,
-                        host: arrHost,
-                        headers: headers,
-                        content: 'Movie',
-                        delegates: {
-                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); },
-                        },
-                    }
-                    : {
-                        name: arr,
-                        host: arrHost,
-                        headers: headers,
-                        content: 'Serie',
-                        delegates: {
-                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); },
-                        },
-                    };
+                _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key, arr_host = _a.arr_host;
+                arrApp = createArrApp(arr, arr_host, arr_api_key);
                 args.jobLog('Going to force scan');
                 args.jobLog("Refreshing ".concat(arrApp.name, "..."));
-                id = Number((_a = args.variables.user.ArrId) !== null && _a !== void 0 ? _a : -1);
-                if (!(id !== -1)) return [3 /*break*/, 2];
-                // Using command endpoint to queue a refresh task
-                return [4 /*yield*/, args.deps.axios({
-                        method: 'post',
-                        url: "".concat(arrApp.host, "/api/v3/command"),
-                        headers: headers,
-                        data: arrApp.delegates.buildRefreshResquestData(id),
-                    })];
+                id = Number((_b = args.variables.user.ArrId) !== null && _b !== void 0 ? _b : -1);
+                args.jobLog("ArrId ".concat(id, " read from flow variables"));
+                return [4 /*yield*/, refreshArr(arrApp, id, args)];
             case 1:
-                // Using command endpoint to queue a refresh task
-                _b.sent();
-                refreshed = true;
-                args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' refreshed in ").concat(arrApp.name, "."));
-                _b.label = 2;
-            case 2: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: refreshed ? 1 : 2,
-                    variables: args.variables,
-                }];
+                refreshed = _c.sent();
+                return [2 /*return*/, {
+                        outputFileObj: args.inputFileObj,
+                        outputNumber: refreshed ? 1 : 2,
+                        variables: args.variables,
+                    }];
         }
     });
 }); };

@@ -47,94 +47,118 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Input your arr host here.'
-        + '\\nExample:\\n'
-        + 'http://192.168.1.1:7878\\n'
-        + 'http://192.168.1.1:8989\\n'
-        + 'https://radarr.domain.com\\n'
-        + 'https://sonarr.domain.com\\n',
+      tooltip: 'Input your arr host here.\nExample:\n'
+        + 'http://192.168.1.1:7878\n'
+        + 'http://192.168.1.1:8989\n'
+        + 'https://radarr.domain.com\n'
+        + 'https://sonarr.domain.com',
     },
   ],
   outputs: [
-    {
-      number: 1,
-      tooltip: 'Radarr or Sonarr notified',
-    },
-    {
-      number: 2,
-      tooltip: 'Radarr or Sonarr do not know this file',
-    },
+    { number: 1, tooltip: 'Radarr or Sonarr notified' },
+    { number: 2, tooltip: 'Radarr or Sonarr do not know this file' },
   ],
 });
 
 interface IHTTPHeaders {
-  'Content-Type': string,
-  'X-Api-Key': string,
-  Accept: string,
+  'Content-Type': string;
+  'X-Api-Key': string;
+  Accept: string;
 }
+
 interface IArrApp {
-  name: string,
-  host: string,
-  headers: IHTTPHeaders,
-  content: string,
-  delegates: {
-    buildRefreshResquestData: (id: number) => string
-  }
+  name: string;
+  host: string;
+  headers: IHTTPHeaders;
+  content: string;
+  buildRefreshRequest: (id: number) => string;
 }
+
+const API_VERSION = 'v3';
+const CONTENT_TYPE = 'application/json';
+
+const arrConfigs = {
+  radarr: {
+    content: 'Movie',
+    buildRefreshRequest: (id: number) => JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }),
+  },
+  sonarr: {
+    content: 'Serie',
+    buildRefreshRequest: (id: number) => JSON.stringify({ name: 'RefreshSeries', seriesId: id }),
+  },
+} as const;
+
+const normalizeHost = (host: string): string => {
+  const trimmedHost = host.trim();
+  return trimmedHost.endsWith('/') ? trimmedHost.slice(0, -1) : trimmedHost;
+};
+
+const createArrApp = (
+  arrType: 'radarr' | 'sonarr',
+  host: string,
+  apiKey: string,
+): IArrApp => {
+  const headers: IHTTPHeaders = {
+    'Content-Type': CONTENT_TYPE,
+    'X-Api-Key': apiKey,
+    Accept: CONTENT_TYPE,
+  };
+
+  const config = arrConfigs[arrType];
+
+  return {
+    name: arrType,
+    host: normalizeHost(host),
+    headers,
+    content: config.content,
+    buildRefreshRequest: config.buildRefreshRequest,
+  };
+};
+
+const refreshArr = async (
+  arrApp: IArrApp,
+  id: number,
+  args: IpluginInputArgs,
+): Promise<boolean> => {
+  if (id === -1) {
+    args.jobLog('No valid ID found in variables');
+    return false;
+  }
+
+  try {
+    await args.deps.axios({
+      method: 'post',
+      url: `${arrApp.host}/api/${API_VERSION}/command`,
+      headers: arrApp.headers,
+      data: arrApp.buildRefreshRequest(id),
+    });
+
+    args.jobLog(`✔ ${arrApp.content} '${id}' refreshed in ${arrApp.name}.`);
+    return true;
+  } catch (error) {
+    args.jobLog(`Error refreshing ${arrApp.name}: ${(error as Error).message}`);
+    return false;
+  }
+};
 
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  // Variables initialization
-  let refreshed = false;
-  const arr = String(args.inputs.arr);
-  const arr_host = String(args.inputs.arr_host).trim();
-  const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const headers: IHTTPHeaders = {
-    'Content-Type': 'application/json',
-    'X-Api-Key': String(args.inputs.arr_api_key),
-    Accept: 'application/json',
+  const { arr, arr_api_key, arr_host } = args.inputs as {
+    arr: 'radarr' | 'sonarr';
+    arr_api_key: string;
+    arr_host: string;
   };
-  const arrApp: IArrApp = arr === 'radarr'
-    ? {
-      name: arr,
-      host: arrHost,
-      headers,
-      content: 'Movie',
-      delegates: {
-        buildRefreshResquestData:
-          (id) => JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }),
-      },
-    }
-    : {
-      name: arr,
-      host: arrHost,
-      headers,
-      content: 'Serie',
-      delegates: {
-        buildRefreshResquestData:
-          (id) => JSON.stringify({ name: 'RefreshSeries', seriesId: id }),
-      },
-    };
+  const arrApp = createArrApp(arr, arr_host, arr_api_key);
 
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
 
   const id = Number(args.variables.user.ArrId ?? -1);
-  if (id !== -1) {
-    // Using command endpoint to queue a refresh task
-    await args.deps.axios({
-      method: 'post',
-      url: `${arrApp.host}/api/v3/command`,
-      headers,
-      data: arrApp.delegates.buildRefreshResquestData(id),
-    });
-
-    refreshed = true;
-    args.jobLog(`✔ ${arrApp.content} '${id}' refreshed in ${arrApp.name}.`);
-  }
+  args.jobLog(`ArrId ${id} read from flow variables`);
+  const refreshed = await refreshArr(arrApp, id, args);
 
   return {
     outputFileObj: args.inputFileObj,
@@ -143,7 +167,4 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   };
 };
 
-export {
-  details,
-  plugin,
-};
+export { details, plugin };
