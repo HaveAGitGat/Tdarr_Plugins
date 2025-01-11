@@ -279,18 +279,22 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // Set common variables
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrId = fileInfo.id;
+                args.jobLog("Setting variable ArrId to ".concat(args.variables.user.ArrId));
                 // eslint-disable-next-line no-param-reassign
                 _a = args.variables.user;
                 return [4 /*yield*/, getLanguageCode(args, (_f = fileInfo.languageName) !== null && _f !== void 0 ? _f : '')];
             case 7:
                 // eslint-disable-next-line no-param-reassign
                 _a.ArrOriginalLanguageCode = _j.sent();
+                args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(args.variables.user.ArrOriginalLanguageCode));
                 // Set Sonarr-specific variables
                 if (config.name === 'sonarr') {
                     // eslint-disable-next-line no-param-reassign
                     args.variables.user.ArrSeasonNumber = String((_g = fileInfo.seasonNumber) !== null && _g !== void 0 ? _g : 0);
+                    args.jobLog("Setting variable ArrSeasonNumber to ".concat(args.variables.user.ArrSeasonNumber));
                     // eslint-disable-next-line no-param-reassign
                     args.variables.user.ArrEpisodeNumber = String((_h = fileInfo.episodeNumber) !== null && _h !== void 0 ? _h : 0);
+                    args.jobLog("Setting variable ArrEpisodeNumber to ".concat(args.variables.user.ArrEpisodeNumber));
                 }
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,

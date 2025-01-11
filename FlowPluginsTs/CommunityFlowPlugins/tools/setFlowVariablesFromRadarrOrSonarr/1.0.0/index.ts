@@ -237,15 +237,19 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     // Set common variables
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrId = fileInfo.id;
+    args.jobLog(`Setting variable ArrId to ${args.variables.user.ArrId}`);
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrOriginalLanguageCode = await getLanguageCode(args, fileInfo.languageName ?? '');
+    args.jobLog(`Setting variable ArrOriginalLanguageCode to ${args.variables.user.ArrOriginalLanguageCode}`);
 
     // Set Sonarr-specific variables
     if (config.name === 'sonarr') {
       // eslint-disable-next-line no-param-reassign
       args.variables.user.ArrSeasonNumber = String(fileInfo.seasonNumber ?? 0);
+      args.jobLog(`Setting variable ArrSeasonNumber to ${args.variables.user.ArrSeasonNumber}`);
       // eslint-disable-next-line no-param-reassign
       args.variables.user.ArrEpisodeNumber = String(fileInfo.episodeNumber ?? 0);
+      args.jobLog(`Setting variable ArrEpisodeNumber to ${args.variables.user.ArrEpisodeNumber}`);
     }
 
     return {
