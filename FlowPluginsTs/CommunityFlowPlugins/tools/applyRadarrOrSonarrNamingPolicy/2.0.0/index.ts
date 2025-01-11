@@ -128,7 +128,7 @@ const buildNewPath = (currentFileName: string, fileToRename: IFileToRename): str
   const directory = getFileAbosluteDir(currentFileName);
   const fileName = getFileName(fileToRename.newPath);
   const container = getContainer(fileToRename.newPath);
-  return path.join(directory, fileName, container);
+  return path.join(directory, `${fileName}.${container}`);
 };
 
 const previewRename = async (
