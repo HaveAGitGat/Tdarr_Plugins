@@ -1,17 +1,7 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Set Default Audio Stream',
     description: 'Sets the default audio track based on channels count and language',
@@ -30,10 +20,8 @@ var details = function () { return ({
             name: 'useRadarrOrSonarr',
             type: 'boolean',
             defaultValue: 'false',
-            inputUI: {
-                type: 'switch',
-            },
-            tooltip: 'Should the language of the default audio track be read from Radarr or Sonarr ? If yes, '
+            inputUI: { type: 'switch' },
+            tooltip: 'Should the language of the default audio track be read from Radarr or Sonarr? If yes, '
                 + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
                 + 'ignored. If no, please indicate the language to use in the Language property.',
         },
@@ -42,29 +30,22 @@ var details = function () { return ({
             name: 'language',
             type: 'string',
             defaultValue: 'eng',
-            inputUI: {
-                type: 'text',
-            },
-            tooltip: 'Specify what language to use in the ISO 639-2 format.'
-                + '\\nExample:\\n'
-                + 'eng\\n'
-                + 'fre\\n',
+            inputUI: { type: 'text' },
+            tooltip: 'Specify what language to use in the ISO 639-2 format.\nExample:\neng\nfre',
         },
         {
             label: 'Use the highest number of channels as default',
             name: 'useHightestNumberOfChannels',
             type: 'boolean',
             defaultValue: 'false',
-            inputUI: {
-                type: 'switch',
-            },
+            inputUI: { type: 'switch' },
             tooltip: 'Should the audio stream, matching the language, with the highest number of channels be set '
-                + 'as the default audio stream ? If yes, the Channels property will be ignored. If no, please indicate '
-                + 'the channels to use in the Channels property.',
+                + 'as the default audio stream? If yes, the Channels property will be ignored. If no, please indicate '
+                + 'the channels to use in the Channels count property.',
         },
         {
-            label: 'Channels ',
-            name: 'channels',
+            label: 'Channels count',
+            name: 'channelsCount',
             type: 'string',
             defaultValue: '6',
             inputUI: {
@@ -73,94 +54,107 @@ var details = function () { return ({
             },
             tooltip: 'Specify what number of channels should be used as the default channel.',
         },
+        {
+            label: 'Allow descriptive streams to be default',
+            name: 'allowDescriptive',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: { type: 'switch' },
+            tooltip: 'If set to yes, descriptive streams will not be discarded when finding the default stream.',
+        },
     ],
     outputs: [
-        {
-            number: 1,
-            tooltip: 'Default has been set',
-        },
-        {
-            number: 2,
-            tooltip: 'No default has been set',
-        },
+        { number: 1, tooltip: 'Default has been set' },
+        { number: 2, tooltip: 'No default has been set' },
     ],
 }); };
 exports.details = details;
+var DESCRIPTIVE_KEYWORDS = /\b(commentary|description|descriptive|sdh)\b/gi;
 var getFFMPEGDisposition = function (isDefault, dispositions) {
     if (!dispositions)
         return isDefault ? 'default' : '0';
-    var previousDispositions = Object.entries(dispositions)
-        .reduce(function (acc, _a) {
+    var activeDispositions = Object.entries(dispositions)
+        .filter(function (_a) {
         var key = _a[0], value = _a[1];
-        if (key !== 'default' && value === 1) {
-            acc.push(key);
-        }
-        return acc;
-    }, []);
-    return __spreadArray([
-        isDefault ? 'default' : ''
-    ], previousDispositions, true).filter(Boolean)
-        .join('+')
-        || '0';
+        return key !== 'default' && value === 1;
+    })
+        .map(function (_a) {
+        var key = _a[0];
+        return key;
+    });
+    if (isDefault) {
+        activeDispositions.unshift('default');
+    }
+    return activeDispositions.length ? activeDispositions.join('+') : '0';
 };
 var getIsDescriptiveAudioStream = function (stream) {
-    var _a;
-    return Boolean(stream.disposition
-        && (stream.disposition.comment
-            || stream.disposition.descriptions
-            || stream.disposition.visual_impaired
-            || /\b(commentary|description|descriptive)\b/gi.test(((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.title) || '')));
+    var disposition = stream.disposition, tags = stream.tags;
+    return Boolean((disposition === null || disposition === void 0 ? void 0 : disposition.comment)
+        || (disposition === null || disposition === void 0 ? void 0 : disposition.descriptions)
+        || (disposition === null || disposition === void 0 ? void 0 : disposition.visual_impaired)
+        || DESCRIPTIVE_KEYWORDS.test((tags === null || tags === void 0 ? void 0 : tags.title) || ''));
 };
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+var findHighestChannelCount = function (streams, languageCode) {
+    var audioStreams = streams.filter(function (stream) {
+        var _a, _b;
+        return stream.codec_type === 'audio'
+            && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '') === languageCode;
+    });
+    if (!audioStreams.length)
+        return 0;
+    return Math.max.apply(Math, audioStreams.map(function (stream) { var _a; return (_a = stream.channels) !== null && _a !== void 0 ? _a : 0; }));
+};
 var plugin = function (args) {
-    var _a, _b, _c, _d;
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
-    // const streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
-    var streams = args.variables.ffmpegCommand.streams;
     var shouldProcess = false;
-    var defaultSet = false;
-    // Sets the language code used to determine the default audio stream
-    var languageCode = args.inputs.language;
-    if (args.inputs.useRadarrOrSonarr) {
+    var streams = args.variables.ffmpegCommand.streams;
+    var _a = args.inputs, allowDescriptive = _a.allowDescriptive, useRadarrOrSonarr = _a.useRadarrOrSonarr, useHightestNumberOfChannels = _a.useHightestNumberOfChannels;
+    // Sets the language code used to determine the default subtitle stream
+    var languageCode = String(args.inputs.language);
+    if (useRadarrOrSonarr) {
         languageCode = args.variables.user.ArrOriginalLanguageCode;
         args.jobLog("Language ".concat(languageCode, " read from flow variables"));
     }
-    // Sets the channels used to determine the default audio stream
-    var channels = args.inputs.channels;
-    if (args.inputs.useHightestNumberOfChannels) {
-        channels = (_d = (_c = (_b = (_a = streams
-            .filter(function (stream) { var _a, _b; return stream.codec_type === 'audio' && ((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : languageCode === ''); })) === null || _a === void 0 ? void 0 : _a.sort(function (stream1, stream2) { var _a, _b; return ((_a = stream2.channels) !== null && _a !== void 0 ? _a : 0) - ((_b = stream1.channels) !== null && _b !== void 0 ? _b : 0); })) === null || _b === void 0 ? void 0 : _b.at(0)) === null || _c === void 0 ? void 0 : _c.channels) !== null && _d !== void 0 ? _d : 0;
-        args.jobLog("".concat(channels, " channels determined has being the highest match"));
+    // Determine target channel count
+    var targetChannelsCount = useHightestNumberOfChannels
+        ? findHighestChannelCount(streams, languageCode)
+        : parseInt(String(args.inputs.channelsCount), 10);
+    if (useHightestNumberOfChannels) {
+        args.jobLog("".concat(targetChannelsCount, " channels count determined as being the highest match"));
     }
+    var defaultSet = false;
     streams.forEach(function (stream, index) {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
-        if (stream.codec_type === 'audio') {
-            var dispositions = stream.disposition;
-            var streamChannels = (_a = stream.channels) !== null && _a !== void 0 ? _a : 0;
-            var streamLanguage = (_c = (_b = stream.tags) === null || _b === void 0 ? void 0 : _b.language) !== null && _c !== void 0 ? _c : '';
-            var isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream);
-            if (streamLanguage === languageCode
-                && streamChannels === channels
-                && ((_d = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _d !== void 0 ? _d : 0) === 0
-                && !isDescriptiveAudioStream
-                && !defaultSet) {
-                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", channels ").concat(streamChannels, ") set has default"));
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(true, dispositions));
+        var _a, _b, _c, _d, _e;
+        if (stream.codec_type !== 'audio')
+            return;
+        var streamLanguage = (_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) !== null && _b !== void 0 ? _b : '';
+        var streamChannels = (_c = stream.channels) !== null && _c !== void 0 ? _c : 0;
+        var isDefault = ((_d = stream.disposition) === null || _d === void 0 ? void 0 : _d.default) !== 0;
+        var isDescriptive = getIsDescriptiveAudioStream(stream);
+        var shouldBeDefault = streamLanguage === languageCode
+            && streamChannels === targetChannelsCount
+            && !isDefault
+            && (!isDescriptive || allowDescriptive)
+            && !defaultSet;
+        var shouldRemoveDefault = isDefault
+            && (streamLanguage !== languageCode
+                || streamChannels !== targetChannelsCount
+                || (isDescriptive && !allowDescriptive)
+                || defaultSet);
+        if (shouldBeDefault || shouldRemoveDefault) {
+            (_e = stream.outputArgs) === null || _e === void 0 ? void 0 : _e.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(shouldBeDefault, stream.disposition));
+            if (shouldBeDefault) {
                 defaultSet = true;
-                shouldProcess = true;
+                args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", channels ").concat(streamChannels, ") set as default"));
             }
-            else if (((_e = dispositions === null || dispositions === void 0 ? void 0 : dispositions.default) !== null && _e !== void 0 ? _e : 0) === 1
-                && (((_g = (_f = stream.tags) === null || _f === void 0 ? void 0 : _f.language) !== null && _g !== void 0 ? _g : '') !== languageCode
-                    || ((_h = stream.channels) !== null && _h !== void 0 ? _h : 0) !== channels
-                    || isDescriptiveAudioStream)) {
+            else {
                 args.jobLog("Stream ".concat(index, " (language ").concat(streamLanguage, ", channels ").concat(streamChannels, ", ")
-                    + "descriptive ".concat(isDescriptiveAudioStream, ") set has not default"));
-                stream.outputArgs.push("-c:".concat(index), 'copy', "-disposition:".concat(index), getFFMPEGDisposition(false, dispositions));
-                shouldProcess = true;
+                    + "descriptive ".concat(isDescriptive, ") set as not default"));
             }
+            shouldProcess = true;
         }
     });
     if (shouldProcess) {
@@ -169,8 +163,9 @@ var plugin = function (args) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.streams = streams;
     }
-    else
+    else {
         args.jobLog('No stream to modify');
+    }
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: shouldProcess ? 1 : 2,
