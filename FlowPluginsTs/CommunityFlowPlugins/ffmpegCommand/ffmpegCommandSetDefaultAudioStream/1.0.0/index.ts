@@ -5,7 +5,6 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Set Default Audio Stream',
   description: 'Sets the default audio track based on channels count and language',
@@ -24,10 +23,8 @@ const details = (): IpluginDetails => ({
       name: 'useRadarrOrSonarr',
       type: 'boolean',
       defaultValue: 'false',
-      inputUI: {
-        type: 'switch',
-      },
-      tooltip: 'Should the language of the default audio track be read from Radarr or Sonarr ? If yes, '
+      inputUI: { type: 'switch' },
+      tooltip: 'Should the language of the default audio track be read from Radarr or Sonarr? If yes, '
         + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
         + 'ignored. If no, please indicate the language to use in the Language property.',
     },
@@ -36,29 +33,22 @@ const details = (): IpluginDetails => ({
       name: 'language',
       type: 'string',
       defaultValue: 'eng',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: 'Specify what language to use in the ISO 639-2 format.'
-        + '\\nExample:\\n'
-        + 'eng\\n'
-        + 'fre\\n',
+      inputUI: { type: 'text' },
+      tooltip: 'Specify what language to use in the ISO 639-2 format.\nExample:\neng\nfre',
     },
     {
       label: 'Use the highest number of channels as default',
       name: 'useHightestNumberOfChannels',
       type: 'boolean',
       defaultValue: 'false',
-      inputUI: {
-        type: 'switch',
-      },
+      inputUI: { type: 'switch' },
       tooltip: 'Should the audio stream, matching the language, with the highest number of channels be set '
-        + 'as the default audio stream ? If yes, the Channels property will be ignored. If no, please indicate '
-        + 'the channels to use in the Channels property.',
+        + 'as the default audio stream? If yes, the Channels property will be ignored. If no, please indicate '
+        + 'the channels to use in the Channels count property.',
     },
     {
-      label: 'Channels ',
-      name: 'channels',
+      label: 'Channels count',
+      name: 'channelsCount',
       type: 'string',
       defaultValue: '6',
       inputUI: {
@@ -67,71 +57,88 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify what number of channels should be used as the default channel.',
     },
+    {
+      label: 'Allow descriptive streams to be default',
+      name: 'allowDescriptive',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: { type: 'switch' },
+      tooltip: 'If set to yes, descriptive streams will not be discarded when finding the default stream.',
+    },
   ],
   outputs: [
-    {
-      number: 1,
-      tooltip: 'Default has been set',
-    },
-    {
-      number: 2,
-      tooltip: 'No default has been set',
-    },
+    { number: 1, tooltip: 'Default has been set' },
+    { number: 2, tooltip: 'No default has been set' },
   ],
 });
 
+// Enhanced interfaces with better type definitions
 interface IDisposition {
-  default: number,
-  dub: number,
-  original: number,
-  comment: number,
-  lyrics: number,
-  karaoke: number,
-  forced: number,
-  hearing_impaired: number,
-  visual_impaired: number,
-  clean_effects: number,
-  attached_pic: number,
-  timed_thumbnails: number,
-  captions: number,
-  descriptions: number,
-  metadata: number,
-  dependent: number,
-  still_image: number,
+  default: number;
+  dub: number;
+  original: number;
+  comment: number;
+  lyrics: number;
+  karaoke: number;
+  forced: number;
+  hearing_impaired: number;
+  visual_impaired: number;
+  clean_effects: number;
+  attached_pic: number;
+  timed_thumbnails: number;
+  captions: number;
+  descriptions: number;
+  metadata: number;
+  dependent: number;
+  still_image: number;
 }
 
 interface IStreamDisposition {
-  disposition?: IDisposition
-  tags?: { title?: string }
+  disposition?: IDisposition;
+  tags?: {
+    title?: string;
+    language?: string;
+  };
+  codec_type?: string;
+  channels?: number;
+  outputArgs?: string[];
 }
+
+const DESCRIPTIVE_KEYWORDS = /\b(commentary|description|descriptive|sdh)\b/gi;
 
 const getFFMPEGDisposition = (isDefault: boolean, dispositions?: IDisposition): string => {
   if (!dispositions) return isDefault ? 'default' : '0';
 
-  const previousDispositions = Object.entries(dispositions)
-    .reduce((acc, [key, value]) => {
-      if (key !== 'default' && value === 1) {
-        acc.push(key);
-      }
-      return acc;
-    }, [] as string[]);
+  const activeDispositions = Object.entries(dispositions)
+    .filter(([key, value]) => key !== 'default' && value === 1)
+    .map(([key]) => key);
 
-  return [
-    isDefault ? 'default' : '',
-    ...previousDispositions,
-  ]
-    .filter(Boolean)
-    .join('+')
-    || '0';
+  if (isDefault) {
+    activeDispositions.unshift('default');
+  }
+
+  return activeDispositions.length ? activeDispositions.join('+') : '0';
 };
 
-const getIsDescriptiveAudioStream = (stream: IStreamDisposition): boolean => Boolean(stream.disposition
-  && (stream.disposition.comment
-    || stream.disposition.descriptions
-    || stream.disposition.visual_impaired
-    || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '')));
+const getIsDescriptiveAudioStream = (stream: IStreamDisposition): boolean => {
+  const { disposition, tags } = stream;
+  return Boolean(
+    disposition?.comment
+    || disposition?.descriptions
+    || disposition?.visual_impaired
+    || DESCRIPTIVE_KEYWORDS.test(tags?.title || ''),
+  );
+};
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const findHighestChannelCount = (streams: IStreamDisposition[], languageCode: string): number => {
+  const audioStreams = streams.filter((stream) => stream.codec_type === 'audio'
+    && (stream.tags?.language ?? '') === languageCode);
+
+  if (!audioStreams.length) return 0;
+
+  return Math.max(...audioStreams.map((stream) => stream.channels ?? 0));
+};
+
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -139,65 +146,77 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   checkFfmpegCommandInit(args);
 
-  // const streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
-  const { streams } = args.variables.ffmpegCommand;
-
   let shouldProcess = false;
-  let defaultSet = false;
+  const { streams } = args.variables.ffmpegCommand;
+  const {
+    allowDescriptive,
+    useRadarrOrSonarr,
+    useHightestNumberOfChannels,
+  } = args.inputs as {
+    allowDescriptive: boolean;
+    useRadarrOrSonarr: boolean;
+    useHightestNumberOfChannels: boolean;
+  };
 
-  // Sets the language code used to determine the default audio stream
-  let languageCode = args.inputs.language;
-  if (args.inputs.useRadarrOrSonarr) {
+  // Sets the language code used to determine the default subtitle stream
+  let languageCode = String(args.inputs.language);
+  if (useRadarrOrSonarr) {
     languageCode = args.variables.user.ArrOriginalLanguageCode;
     args.jobLog(`Language ${languageCode} read from flow variables`);
   }
 
-  // Sets the channels used to determine the default audio stream
-  let { channels } = args.inputs;
-  if (args.inputs.useHightestNumberOfChannels) {
-    channels = streams
-      .filter((stream) => stream.codec_type === 'audio' && (stream.tags?.language ?? languageCode === ''))
-      ?.sort((stream1, stream2) => (stream2.channels ?? 0) - (stream1.channels ?? 0))
-      ?.at(0)
-      ?.channels
-      ?? 0;
-    args.jobLog(`${channels} channels determined has being the highest match`);
+  // Determine target channel count
+  const targetChannelsCount = useHightestNumberOfChannels
+    ? findHighestChannelCount(streams, languageCode)
+    : parseInt(String(args.inputs.channelsCount), 10);
+
+  if (useHightestNumberOfChannels) {
+    args.jobLog(`${targetChannelsCount} channels count determined as being the highest match`);
   }
 
-  streams.forEach((stream, index) => {
-    if (stream.codec_type === 'audio') {
-      const dispositions = (stream as IStreamDisposition).disposition;
-      const streamChannels = stream.channels ?? 0;
-      const streamLanguage = stream.tags?.language ?? '';
-      const isDescriptiveAudioStream = getIsDescriptiveAudioStream(stream as IStreamDisposition);
-      if (streamLanguage === languageCode
-        && streamChannels === channels
-        && (dispositions?.default ?? 0) === 0
-        && !isDescriptiveAudioStream
-        && !defaultSet) {
-        args.jobLog(`Stream ${index} (language ${streamLanguage}, channels ${streamChannels}) set has default`);
-        stream.outputArgs.push(
-          `-c:${index}`,
-          'copy',
-          `-disposition:${index}`,
-          getFFMPEGDisposition(true, dispositions),
-        );
+  let defaultSet = false;
+
+  streams.forEach((stream: IStreamDisposition, index: number) => {
+    if (stream.codec_type !== 'audio') return;
+
+    const streamLanguage = stream.tags?.language ?? '';
+    const streamChannels = stream.channels ?? 0;
+    const isDefault = stream.disposition?.default !== 0;
+    const isDescriptive = getIsDescriptiveAudioStream(stream);
+
+    const shouldBeDefault = streamLanguage === languageCode
+      && streamChannels === targetChannelsCount
+      && !isDefault
+      && (!isDescriptive || allowDescriptive)
+      && !defaultSet;
+
+    const shouldRemoveDefault = isDefault
+      && (streamLanguage !== languageCode
+        || streamChannels !== targetChannelsCount
+        || (isDescriptive && !allowDescriptive)
+        || defaultSet);
+
+    if (shouldBeDefault || shouldRemoveDefault) {
+      stream.outputArgs?.push(
+        `-c:${index}`,
+        'copy',
+        `-disposition:${index}`,
+        getFFMPEGDisposition(shouldBeDefault, stream.disposition),
+      );
+
+      if (shouldBeDefault) {
         defaultSet = true;
-        shouldProcess = true;
-      } else if ((dispositions?.default ?? 0) === 1
-        && ((stream.tags?.language ?? '') !== languageCode
-        || (stream.channels ?? 0) !== channels
-        || isDescriptiveAudioStream)) {
-        args.jobLog(`Stream ${index} (language ${streamLanguage}, channels ${streamChannels}, `
-          + `descriptive ${isDescriptiveAudioStream}) set has not default`);
-        stream.outputArgs.push(
-          `-c:${index}`,
-          'copy',
-          `-disposition:${index}`,
-          getFFMPEGDisposition(false, dispositions),
+        args.jobLog(
+          `Stream ${index} (language ${streamLanguage}, channels ${streamChannels}) set as default`,
         );
-        shouldProcess = true;
+      } else {
+        args.jobLog(
+          `Stream ${index} (language ${streamLanguage}, channels ${streamChannels}, `
+          + `descriptive ${isDescriptive}) set as not default`,
+        );
       }
+
+      shouldProcess = true;
     }
   });
 
@@ -206,7 +225,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-  } else args.jobLog('No stream to modify');
+  } else {
+    args.jobLog('No stream to modify');
+  }
 
   return {
     outputFileObj: args.inputFileObj,
@@ -214,7 +235,5 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     variables: args.variables,
   };
 };
-export {
-  details,
-  plugin,
-};
+
+export { details, plugin };
