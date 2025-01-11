@@ -5,7 +5,7 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+// Optimized plugin details with better type safety
 const details = (): IpluginDetails => ({
   name: 'Set Default Subtitle Stream',
   description: 'Sets the default subtitle track based on language',
@@ -24,10 +24,8 @@ const details = (): IpluginDetails => ({
       name: 'useRadarrOrSonarr',
       type: 'boolean',
       defaultValue: 'false',
-      inputUI: {
-        type: 'switch',
-      },
-      tooltip: 'Should the language of the default subtitle track be read from Radarr or Sonarr ? If yes, '
+      inputUI: { type: 'switch' },
+      tooltip: 'Should the language of the default subtitle track be read from Radarr or Sonarr? If yes, '
         + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
         + 'ignored. If no, please indicate the language to use in the Language property.',
     },
@@ -36,83 +34,94 @@ const details = (): IpluginDetails => ({
       name: 'language',
       type: 'string',
       defaultValue: 'eng',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip: 'Specify what language to use in the ISO 639-2 format.'
-        + '\\nExample:\\n'
-        + 'eng\\n'
-        + 'fre\\n',
+      inputUI: { type: 'text' },
+      tooltip: 'Specify what language to use in the ISO 639-2 format.\nExample:\neng\nfre',
+    },
+    {
+      label: 'Allow descriptive streams to be default',
+      name: 'allowDescriptive',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: { type: 'switch' },
+      tooltip: 'If set to yes, descriptive streams will not be discarded when finding the default stream.',
+    },
+    {
+      label: 'Allow forced streams to be default',
+      name: 'allowForced',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: { type: 'switch' },
+      tooltip: 'If set to yes, forced streams will not be discarded when finding the default stream.',
     },
   ],
   outputs: [
-    {
-      number: 1,
-      tooltip: 'Default has been set',
-    },
-    {
-      number: 2,
-      tooltip: 'No default has been set',
-    },
+    { number: 1, tooltip: 'Default has been set' },
+    { number: 2, tooltip: 'No default has been set' },
   ],
 });
 
 interface IDisposition {
-  default: number,
-  dub: number,
-  original: number,
-  comment: number,
-  lyrics: number,
-  karaoke: number,
-  forced: number,
-  hearing_impaired: number,
-  visual_impaired: number,
-  clean_effects: number,
-  attached_pic: number,
-  timed_thumbnails: number,
-  captions: number,
-  descriptions: number,
-  metadata: number,
-  dependent: number,
-  still_image: number,
+  default: number;
+  dub: number;
+  original: number;
+  comment: number;
+  lyrics: number;
+  karaoke: number;
+  forced: number;
+  hearing_impaired: number;
+  visual_impaired: number;
+  clean_effects: number;
+  attached_pic: number;
+  timed_thumbnails: number;
+  captions: number;
+  descriptions: number;
+  metadata: number;
+  dependent: number;
+  still_image: number;
 }
 
 interface IStreamDisposition {
-  disposition?: IDisposition
-  tags?: { title?: string }
+  disposition?: IDisposition;
+  tags?: {
+    title?: string;
+    language?: string;
+  };
+  codec_type?: string;
+  outputArgs?: string[];
 }
+
+const DESCRIPTIVE_KEYWORDS = /\b(commentary|description|descriptive|sdh)\b/gi;
+const FORCED_KEYWORDS = /\b(forced|force|forcé|forces|forcés)\b/gi;
 
 const getFFMPEGDisposition = (isDefault: boolean, dispositions?: IDisposition): string => {
   if (!dispositions) return isDefault ? 'default' : '0';
 
-  const previousDispositions = Object.entries(dispositions)
-    .reduce((acc, [key, value]) => {
-      if (key !== 'default' && value === 1) {
-        acc.push(key);
-      }
-      return acc;
-    }, [] as string[]);
+  const activeDispositions = Object.entries(dispositions)
+    .filter(([key, value]) => key !== 'default' && value === 1)
+    .map(([key]) => key);
+  if (isDefault) activeDispositions.unshift('default');
 
-  return [
-    isDefault ? 'default' : '',
-    ...previousDispositions,
-  ]
-    .filter(Boolean)
-    .join('+')
-    || '0';
+  return activeDispositions.length ? activeDispositions.join('+') : '0';
 };
 
-const getIsDescriptiveSubtitleStream = (stream: IStreamDisposition): boolean => Boolean(stream.disposition
-  && (stream.disposition.comment
-    || stream.disposition.descriptions
-    || stream.disposition.visual_impaired
-    || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '')));
+const getIsDescriptiveSubtitleStream = (stream: IStreamDisposition): boolean => {
+  const { disposition, tags } = stream;
+  return Boolean(
+    disposition?.comment
+    || disposition?.descriptions
+    || disposition?.visual_impaired
+    || DESCRIPTIVE_KEYWORDS.test(tags?.title || ''),
+  );
+};
 
-const getIsForcedSubtitleStream = (stream: IStreamDisposition): boolean => Boolean(stream.disposition
-  && (stream.disposition.forced
-    || /\b(forced|force|forcé|forces|forcés)\b/gi.test(stream.tags?.title || '')));
+const getIsForcedSubtitleStream = (stream: IStreamDisposition): boolean => {
+  const { disposition, tags } = stream;
+  return Boolean(
+    disposition?.forced
+    || FORCED_KEYWORDS.test(tags?.title || ''),
+  );
+};
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -120,53 +129,62 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   checkFfmpegCommandInit(args);
 
-  // const streams: IffmpegCommandStream[] = JSON.parse(JSON.stringify(args.variables.ffmpegCommand.streams));
-  const { streams } = args.variables.ffmpegCommand;
-
   let shouldProcess = false;
-  let defaultSet = false;
+  const { streams } = args.variables.ffmpegCommand;
+  const { allowDescriptive, allowForced, useRadarrOrSonarr } = args.inputs as {
+    allowDescriptive: boolean;
+    allowForced: boolean;
+    useRadarrOrSonarr: boolean;
+  };
 
   // Sets the language code used to determine the default subtitle stream
   let languageCode = args.inputs.language;
-  if (args.inputs.useRadarrOrSonarr) {
+  if (useRadarrOrSonarr) {
     languageCode = args.variables.user.ArrOriginalLanguageCode;
     args.jobLog(`Language ${languageCode} read from flow variables`);
   }
 
-  streams.forEach((stream, index) => {
-    if (stream.codec_type === 'subtitle') {
-      const dispositions = (stream as IStreamDisposition).disposition;
-      const streamLanguage = (stream.tags?.language ?? '');
-      const isDescriptiveSubtitleStream = getIsDescriptiveSubtitleStream(stream as IStreamDisposition);
-      const isForcedSubtitleStream = getIsForcedSubtitleStream(stream as IStreamDisposition);
-      if (streamLanguage === languageCode
-        && (dispositions?.default ?? 0) === 0
-        && !isDescriptiveSubtitleStream
-        && !isForcedSubtitleStream
-        && !defaultSet) {
-        args.jobLog(`Stream ${index} (language ${streamLanguage}) set has default`);
-        stream.outputArgs.push(
-          `-c:${index}`,
-          'copy',
-          `-disposition:${index}`,
-          getFFMPEGDisposition(true, dispositions),
-        );
+  let defaultSet = false;
+  streams.forEach((stream: IStreamDisposition, index: number) => {
+    if (stream.codec_type !== 'subtitle') return;
+
+    const streamLanguage = stream.tags?.language ?? '';
+    const dispositions = stream.disposition;
+    const isDefault = dispositions?.default !== 0;
+    const isDescriptive = getIsDescriptiveSubtitleStream(stream);
+    const isForced = getIsForcedSubtitleStream(stream);
+
+    const shouldBeDefault = streamLanguage === languageCode
+      && !isDefault
+      && (!isDescriptive || allowDescriptive)
+      && (!isForced || allowForced)
+      && !defaultSet;
+
+    const shouldRemoveDefault = isDefault
+      && (streamLanguage !== languageCode
+        || (isDescriptive && !allowDescriptive)
+        || (isForced && !allowForced)
+        || defaultSet);
+
+    if (shouldBeDefault || shouldRemoveDefault) {
+      stream.outputArgs?.push(
+        `-c:${index}`,
+        'copy',
+        `-disposition:${index}`,
+        getFFMPEGDisposition(shouldBeDefault, dispositions),
+      );
+
+      if (shouldBeDefault) {
         defaultSet = true;
-        shouldProcess = true;
-      } else if ((dispositions?.default ?? 0) === 1
-        && ((stream.tags?.language ?? '') !== languageCode
-          || isDescriptiveSubtitleStream
-          || isForcedSubtitleStream)) {
-        args.jobLog(`Stream ${index} (language ${streamLanguage}, descriptive ${isDescriptiveSubtitleStream}, `
-          + `forced ${isForcedSubtitleStream}) set has not default`);
-        stream.outputArgs.push(
-          `-c:${index}`,
-          'copy',
-          `-disposition:${index}`,
-          getFFMPEGDisposition(false, dispositions),
+        args.jobLog(`Stream ${index} (language ${streamLanguage}) set as default`);
+      } else {
+        args.jobLog(
+          `Stream ${index} (language ${streamLanguage}, descriptive ${isDescriptive}, `
+          + `forced ${isForced}) set as not default`,
         );
-        shouldProcess = true;
       }
+
+      shouldProcess = true;
     }
   });
 
@@ -175,7 +193,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     args.variables.ffmpegCommand.shouldProcess = true;
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.streams = streams;
-  } else args.jobLog('No stream to modify');
+  } else {
+    args.jobLog('No stream to modify');
+  }
 
   return {
     outputFileObj: args.inputFileObj,
@@ -183,7 +203,5 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     variables: args.variables,
   };
 };
-export {
-  details,
-  plugin,
-};
+
+export { details, plugin };
