@@ -139,14 +139,13 @@ const previewRename = async (
   config: IArrConfig,
 ): Promise<IFileToRename | undefined> => {
   try {
-    const response = await args.deps.axios({
+    const response: IPreviewRenameResponse = await args.deps.axios({
       method: 'get',
       url: config.buildPreviewRenameUrl(fileInfo, host),
       headers,
     });
-    args.jobLog(JSON.stringify(response.data));
 
-    return config.getFileToRename(response.data, fileInfo);
+    return config.getFileToRename(response, fileInfo);
   } catch (error) {
     throw new Error(`Failed to preview rename: ${(error as Error).message}`);
   }

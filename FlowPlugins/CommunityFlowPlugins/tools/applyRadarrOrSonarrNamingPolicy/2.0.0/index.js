@@ -155,8 +155,7 @@ var previewRename = function (args, host, headers, fileInfo, config) { return __
                     })];
             case 1:
                 response = _a.sent();
-                args.jobLog(JSON.stringify(response.data));
-                return [2 /*return*/, config.getFileToRename(response.data, fileInfo)];
+                return [2 /*return*/, config.getFileToRename(response, fileInfo)];
             case 2:
                 error_1 = _a.sent();
                 throw new Error("Failed to preview rename: ".concat(error_1.message));
