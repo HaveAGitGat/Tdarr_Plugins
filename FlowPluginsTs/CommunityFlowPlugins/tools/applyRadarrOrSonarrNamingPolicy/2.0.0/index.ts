@@ -144,6 +144,7 @@ const previewRename = async (
       url: config.buildPreviewRenameUrl(fileInfo, host),
       headers,
     });
+    args.jobLog(JSON.stringify(response.data));
 
     return config.getFileToRename(response.data, fileInfo);
   } catch (error) {
