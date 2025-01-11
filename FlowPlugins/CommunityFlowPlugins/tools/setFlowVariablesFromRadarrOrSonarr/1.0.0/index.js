@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -105,232 +116,190 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getFileInfoFromLookup = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var fInfo, imdbId, lookupResponse;
+var API_HEADERS = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+};
+// eslint-disable-next-line max-len
+var LANGUAGE_API_BASE_URL = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/iso-language-codes-639-1-and-639-2@public/records';
+var createHeaders = function (apiKey) { return (__assign(__assign({}, API_HEADERS), { 'X-Api-Key': apiKey })); };
+var extractImdbId = function (fileName) {
+    var _a;
+    var match = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName);
+    return (_a = match === null || match === void 0 ? void 0 : match.at(0)) !== null && _a !== void 0 ? _a : '';
+};
+var extractSeasonEpisodeInfo = function (fileName) {
     var _a, _b;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
-            case 0:
-                fInfo = { id: '-1' };
-                imdbId = (_b = (_a = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _a === void 0 ? void 0 : _a.at(0)) !== null && _b !== void 0 ? _b : '';
-                if (!(imdbId !== '')) return [3 /*break*/, 2];
-                return [4 /*yield*/, args.deps.axios({
-                        method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
-                        headers: arrApp.headers,
-                    })];
-            case 1:
-                lookupResponse = _c.sent();
-                fInfo = arrApp.delegates.getFileInfoFromLookupResponse(lookupResponse, fileName);
-                args.jobLog("".concat(arrApp.content, " ").concat(fInfo.id !== '-1' ? "'".concat(fInfo.id, "' found") : 'not found')
-                    + " for imdb '".concat(imdbId, "'"));
-                _c.label = 2;
-            case 2: return [2 /*return*/, fInfo];
-        }
-    });
-}); };
-var getFileInfoFromParse = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var fInfo, parseResponse;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                fInfo = { id: '-1' };
-                return [4 /*yield*/, args.deps.axios({
-                        method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
-                        headers: arrApp.headers,
-                    })];
-            case 1:
-                parseResponse = _a.sent();
-                fInfo = arrApp.delegates.getFileInfoFromParseResponse(parseResponse);
-                args.jobLog("".concat(arrApp.content, " ").concat(fInfo.id !== '-1' ? "'".concat(fInfo.id, "' found") : 'not found')
-                    + " for '".concat((0, fileUtils_1.getFileName)(fileName), "'"));
-                return [2 /*return*/, fInfo];
-        }
-    });
-}); };
-var getFileInfo = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var fInfo;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, getFileInfoFromLookup(args, arrApp, fileName)];
-            case 1:
-                fInfo = _a.sent();
-                return [2 /*return*/, (fInfo.id === '-1' || (arrApp.name === 'sonarr' && (fInfo.seasonNumber === -1 || fInfo.episodeNumber === -1)))
-                        ? getFileInfoFromParse(args, arrApp, fileName)
-                        : fInfo];
-        }
-    });
-}); };
+    var seasonEpisodeMatch = /\bS(\d{1,3})E(\d{1,4})\b/i.exec(fileName);
+    return {
+        seasonNumber: Number((_a = seasonEpisodeMatch === null || seasonEpisodeMatch === void 0 ? void 0 : seasonEpisodeMatch[1]) !== null && _a !== void 0 ? _a : -1),
+        episodeNumber: Number((_b = seasonEpisodeMatch === null || seasonEpisodeMatch === void 0 ? void 0 : seasonEpisodeMatch[2]) !== null && _b !== void 0 ? _b : -1),
+    };
+};
 var getLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
-    var url, response, languages;
+    var url, response, data, error_1;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
-                url = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/'
-                    + 'iso-language-codes-639-1-and-639-2@public/'
-                    + "records?select=alpha3_b&where=english%20%3D%20%22".concat(languageName, "%22&limit=1");
-                return [4 /*yield*/, fetch(url)];
+                if (!languageName)
+                    return [2 /*return*/, ''];
+                _c.label = 1;
             case 1:
-                response = _c.sent();
-                if (!response.ok) {
-                    args.jobLog('Failed to fetch language data');
-                    return [2 /*return*/, null];
-                }
-                return [4 /*yield*/, response.json()];
+                _c.trys.push([1, 4, , 5]);
+                url = "".concat(LANGUAGE_API_BASE_URL, "?select=alpha3_b&where=english%20%3D%20%22").concat(languageName, "%22&limit=1");
+                return [4 /*yield*/, fetch(url)];
             case 2:
-                languages = _c.sent();
-                if (languages.total_count !== 1) {
-                    args.jobLog('Failed to fetch language data');
-                    return [2 /*return*/, null];
-                }
-                return [2 /*return*/, (_b = ((_a = languages.results[0]) === null || _a === void 0 ? void 0 : _a.alpha3_b)) !== null && _b !== void 0 ? _b : null];
+                response = _c.sent();
+                if (!response.ok)
+                    throw new Error('Language API request failed');
+                return [4 /*yield*/, response.json()];
+            case 3:
+                data = _c.sent();
+                return [2 /*return*/, (_b = (_a = data.results[0]) === null || _a === void 0 ? void 0 : _a.alpha3_b) !== null && _b !== void 0 ? _b : ''];
+            case 4:
+                error_1 = _c.sent();
+                args.jobLog("Failed to fetch language data: ".concat(error_1.message));
+                return [2 /*return*/, ''];
+            case 5: return [2 /*return*/];
         }
     });
 }); };
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+var lookupContent = function (args, config, fileName) { return __awaiter(void 0, void 0, void 0, function () {
+    var imdbId, contentType, response, content, baseInfo, error_2;
+    var _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                imdbId = extractImdbId(fileName);
+                if (!imdbId)
+                    return [2 /*return*/, { id: '-1' }];
+                _c.label = 1;
+            case 1:
+                _c.trys.push([1, 3, , 4]);
+                contentType = config.name === 'radarr' ? 'movie' : 'series';
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(config.host, "/api/v3/").concat(contentType, "/lookup?term=imdb:").concat(imdbId),
+                        headers: createHeaders(config.apiKey),
+                    })];
+            case 2:
+                response = _c.sent();
+                content = response.data[0];
+                if (!content)
+                    return [2 /*return*/, { id: '-1' }];
+                baseInfo = {
+                    id: String(content.id),
+                    languageName: (_b = (_a = content.originalLanguage) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : '',
+                };
+                if (config.name === 'sonarr') {
+                    return [2 /*return*/, __assign(__assign({}, baseInfo), extractSeasonEpisodeInfo(fileName))];
+                }
+                return [2 /*return*/, baseInfo];
+            case 3:
+                error_2 = _c.sent();
+                args.jobLog("Lookup failed: ".concat(error_2.message));
+                return [2 /*return*/, { id: '-1' }];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
+var parseContent = function (args, config, fileName) { return __awaiter(void 0, void 0, void 0, function () {
+    var response, data, content, baseInfo, error_3;
+    var _a, _b, _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+        switch (_h.label) {
+            case 0:
+                _h.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(config.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
+                        headers: createHeaders(config.apiKey),
+                    })];
+            case 1:
+                response = _h.sent();
+                data = response.data;
+                content = config.name === 'radarr' ? data.movie : data.series;
+                if (!content)
+                    return [2 /*return*/, { id: '-1' }];
+                baseInfo = {
+                    id: String(content.id),
+                    languageName: (_b = (_a = content.originalLanguage) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : '',
+                };
+                if (config.name === 'sonarr') {
+                    return [2 /*return*/, __assign(__assign({}, baseInfo), { seasonNumber: (_d = (_c = data.parsedEpisodeInfo) === null || _c === void 0 ? void 0 : _c.seasonNumber) !== null && _d !== void 0 ? _d : 1, episodeNumber: (_g = (_f = (_e = data.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.episodeNumbers) === null || _f === void 0 ? void 0 : _f[0]) !== null && _g !== void 0 ? _g : 1 })];
+                }
+                return [2 /*return*/, baseInfo];
+            case 2:
+                error_3 = _h.sent();
+                args.jobLog("Parse failed: ".concat(error_3.message));
+                return [2 /*return*/, { id: '-1' }];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, isSuccessful, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, fInfo;
-    var _a, _b, _c, _d;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var lib, config, originalFileName, currentFileName, fileInfo, _a;
+    var _b, _c, _d, _e, _f, _g, _h;
+    return __generator(this, function (_j) {
+        switch (_j.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                isSuccessful = false;
-                arr = String(args.inputs.arr);
-                arr_host = String(args.inputs.arr_host).trim();
-                arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                originalFileName = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
-                currentFileName = (_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
-                headers = {
-                    'Content-Type': 'application/json',
-                    'X-Api-Key': String(args.inputs.arr_api_key),
-                    Accept: 'application/json',
+                config = {
+                    name: args.inputs.arr,
+                    host: String(args.inputs.arr_host).trim().replace(/\/$/, ''),
+                    apiKey: String(args.inputs.arr_api_key),
                 };
-                arrApp = arr === 'radarr'
-                    ? {
-                        name: arr,
-                        host: arrHost,
-                        headers: headers,
-                        content: 'Movie',
-                        delegates: {
-                            getFileInfoFromLookupResponse: function (lookupResponse) {
-                                var _a, _b, _c, _d, _e, _f, _g;
-                                return ({
-                                    id: String((_c = (_b = (_a = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _a === void 0 ? void 0 : _a.at(0)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    languageName: (_g = (_f = (_e = (_d = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _d === void 0 ? void 0 : _d.at(0)) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
-                                });
-                            },
-                            getFileInfoFromParseResponse: function (parseResponse) {
-                                var _a, _b, _c, _d, _e, _f, _g;
-                                return ({
-                                    id: String((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    languageName: (_g = (_f = (_e = (_d = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _d === void 0 ? void 0 : _d.movie) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
-                                });
-                            },
-                            setFlowVariables: function (fInfo) { return __awaiter(void 0, void 0, void 0, function () {
-                                var languageCode;
-                                var _a, _b;
-                                return __generator(this, function (_c) {
-                                    switch (_c.label) {
-                                        case 0:
-                                            // eslint-disable-next-line no-param-reassign
-                                            args.variables.user.ArrId = fInfo.id;
-                                            args.jobLog("Setting variable ArrId to ".concat(fInfo.id));
-                                            return [4 /*yield*/, getLanguageCode(args, (_a = fInfo.languageName) !== null && _a !== void 0 ? _a : '')];
-                                        case 1:
-                                            languageCode = (_b = (_c.sent())) !== null && _b !== void 0 ? _b : '';
-                                            // eslint-disable-next-line no-param-reassign
-                                            args.variables.user.ArrOriginalLanguageCode = languageCode;
-                                            args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(languageCode));
-                                            return [2 /*return*/];
-                                    }
-                                });
-                            }); },
-                        },
-                    }
-                    : {
-                        name: arr,
-                        host: arrHost,
-                        headers: headers,
-                        content: 'Serie',
-                        delegates: {
-                            getFileInfoFromLookupResponse: function (lookupResponse, fileName) {
-                                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
-                                var fInfo = {
-                                    id: String((_c = (_b = (_a = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _a === void 0 ? void 0 : _a.at(0)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    languageName: (_g = (_f = (_e = (_d = lookupResponse === null || lookupResponse === void 0 ? void 0 : lookupResponse.data) === null || _d === void 0 ? void 0 : _d.at(0)) === null || _e === void 0 ? void 0 : _e.originalLanguage) === null || _f === void 0 ? void 0 : _f.name) !== null && _g !== void 0 ? _g : '',
-                                };
-                                if (fInfo.id !== '-1') {
-                                    var seasonEpisodenumber = (_j = (_h = /\bS\d{1,3}E\d{1,4}\b/i.exec(fileName)) === null || _h === void 0 ? void 0 : _h.at(0)) !== null && _j !== void 0 ? _j : '';
-                                    var episodeNumber = (_l = (_k = /\d{1,4}$/i.exec(seasonEpisodenumber)) === null || _k === void 0 ? void 0 : _k.at(0)) !== null && _l !== void 0 ? _l : '';
-                                    fInfo.seasonNumber = Number((_o = (_m = /\d{1,3}/i
-                                        .exec(seasonEpisodenumber.slice(0, -episodeNumber.length))) === null || _m === void 0 ? void 0 : _m.at(0)) !== null && _o !== void 0 ? _o : '-1');
-                                    fInfo.episodeNumber = Number(episodeNumber !== '' ? episodeNumber : -1);
-                                }
-                                return fInfo;
-                            },
-                            getFileInfoFromParseResponse: function (parseResponse) {
-                                var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
-                                return ({
-                                    id: String((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1),
-                                    seasonNumber: (_f = (_e = (_d = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _d === void 0 ? void 0 : _d.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.seasonNumber) !== null && _f !== void 0 ? _f : 1,
-                                    episodeNumber: (_k = (_j = (_h = (_g = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _g === void 0 ? void 0 : _g.parsedEpisodeInfo) === null || _h === void 0 ? void 0 : _h.episodeNumbers) === null || _j === void 0 ? void 0 : _j.at(0)) !== null && _k !== void 0 ? _k : 1,
-                                    languageName: (_p = (_o = (_m = (_l = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _l === void 0 ? void 0 : _l.series) === null || _m === void 0 ? void 0 : _m.originalLanguage) === null || _o === void 0 ? void 0 : _o.name) !== null && _p !== void 0 ? _p : '',
-                                });
-                            },
-                            setFlowVariables: function (fInfo) { return __awaiter(void 0, void 0, void 0, function () {
-                                var languageCode;
-                                var _a, _b, _c, _d, _e, _f;
-                                return __generator(this, function (_g) {
-                                    switch (_g.label) {
-                                        case 0:
-                                            // eslint-disable-next-line no-param-reassign
-                                            args.variables.user.ArrId = fInfo.id;
-                                            args.jobLog("Setting variable ArrId to ".concat(fInfo.id));
-                                            return [4 /*yield*/, getLanguageCode(args, (_a = fInfo.languageName) !== null && _a !== void 0 ? _a : '')];
-                                        case 1:
-                                            languageCode = (_b = (_g.sent())) !== null && _b !== void 0 ? _b : '';
-                                            // eslint-disable-next-line no-param-reassign
-                                            args.variables.user.ArrOriginalLanguageCode = languageCode;
-                                            args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(languageCode));
-                                            // eslint-disable-next-line no-param-reassign
-                                            args.variables.user.ArrSeasonNumber = String((_c = fInfo.seasonNumber) !== null && _c !== void 0 ? _c : 0);
-                                            args.jobLog("Setting variable ArrSeasonNumber to ".concat(String((_d = fInfo.seasonNumber) !== null && _d !== void 0 ? _d : 0)));
-                                            // eslint-disable-next-line no-param-reassign
-                                            args.variables.user.ArrEpisodeNumber = String((_e = fInfo.episodeNumber) !== null && _e !== void 0 ? _e : 0);
-                                            args.jobLog("Setting variable ArrEpisodeNumber to ".concat((_f = fInfo.episodeNumber) !== null && _f !== void 0 ? _f : 0));
-                                            return [2 /*return*/];
-                                    }
-                                });
-                            }); },
-                        },
-                    };
-                return [4 /*yield*/, getFileInfo(args, arrApp, originalFileName)];
+                originalFileName = (_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : '';
+                currentFileName = (_e = (_d = args.inputFileObj) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : '';
+                return [4 /*yield*/, lookupContent(args, config, originalFileName)];
             case 1:
-                fInfo = _e.sent();
-                if (!(fInfo.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 3];
-                return [4 /*yield*/, getFileInfo(args, arrApp, currentFileName)];
+                fileInfo = _j.sent();
+                if (!(fileInfo.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 3];
+                return [4 /*yield*/, lookupContent(args, config, currentFileName)];
             case 2:
-                fInfo = _e.sent();
-                _e.label = 3;
+                fileInfo = _j.sent();
+                _j.label = 3;
             case 3:
-                if (!(fInfo.id !== '-1')) return [3 /*break*/, 5];
-                if (!args.variables.user) {
-                    // eslint-disable-next-line no-param-reassign
-                    args.variables.user = {};
-                }
-                return [4 /*yield*/, arrApp.delegates.setFlowVariables(fInfo)];
+                if (!(fileInfo.id === '-1')) return [3 /*break*/, 6];
+                return [4 /*yield*/, parseContent(args, config, originalFileName)];
             case 4:
-                _e.sent();
-                isSuccessful = true;
-                _e.label = 5;
-            case 5: return [2 /*return*/, {
+                fileInfo = _j.sent();
+                if (!(fileInfo.id === '-1' && currentFileName !== originalFileName)) return [3 /*break*/, 6];
+                return [4 /*yield*/, parseContent(args, config, currentFileName)];
+            case 5:
+                fileInfo = _j.sent();
+                _j.label = 6;
+            case 6:
+                if (!(fileInfo.id !== '-1')) return [3 /*break*/, 8];
+                // eslint-disable-next-line no-param-reassign
+                args.variables.user = args.variables.user || {};
+                // Set common variables
+                // eslint-disable-next-line no-param-reassign
+                args.variables.user.ArrId = fileInfo.id;
+                // eslint-disable-next-line no-param-reassign
+                _a = args.variables.user;
+                return [4 /*yield*/, getLanguageCode(args, (_f = fileInfo.languageName) !== null && _f !== void 0 ? _f : '')];
+            case 7:
+                // eslint-disable-next-line no-param-reassign
+                _a.ArrOriginalLanguageCode = _j.sent();
+                // Set Sonarr-specific variables
+                if (config.name === 'sonarr') {
+                    // eslint-disable-next-line no-param-reassign
+                    args.variables.user.ArrSeasonNumber = String((_g = fileInfo.seasonNumber) !== null && _g !== void 0 ? _g : 0);
+                    // eslint-disable-next-line no-param-reassign
+                    args.variables.user.ArrEpisodeNumber = String((_h = fileInfo.episodeNumber) !== null && _h !== void 0 ? _h : 0);
+                }
+                return [2 /*return*/, {
+                        outputFileObj: args.inputFileObj,
+                        outputNumber: 1,
+                        variables: args.variables,
+                    }];
+            case 8: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
-                    outputNumber: isSuccessful ? 1 : 2,
+                    outputNumber: 2,
                     variables: args.variables,
                 }];
         }
