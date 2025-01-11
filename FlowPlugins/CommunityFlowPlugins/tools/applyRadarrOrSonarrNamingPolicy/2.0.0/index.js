@@ -140,7 +140,7 @@ var buildNewPath = function (currentFileName, fileToRename) {
     var directory = (0, fileUtils_1.getFileAbosluteDir)(currentFileName);
     var fileName = (0, fileUtils_1.getFileName)(fileToRename.newPath);
     var container = (0, fileUtils_1.getContainer)(fileToRename.newPath);
-    return path_1.default.join(directory, fileName, container);
+    return path_1.default.join(directory, "".concat(fileName, ".").concat(container));
 };
 var previewRename = function (args, host, headers, fileInfo, config) { return __awaiter(void 0, void 0, void 0, function () {
     var response, error_1;
