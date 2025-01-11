@@ -155,6 +155,7 @@ var previewRename = function (args, host, headers, fileInfo, config) { return __
                     })];
             case 1:
                 response = _a.sent();
+                args.jobLog(JSON.stringify(response.data));
                 return [2 /*return*/, config.getFileToRename(response.data, fileInfo)];
             case 2:
                 error_1 = _a.sent();
