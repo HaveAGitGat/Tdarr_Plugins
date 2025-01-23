@@ -109,7 +109,7 @@ const getIsDescriptiveSubtitleStream = (stream: IStreamDisposition): boolean => 
   return Boolean(
     disposition?.comment
     || disposition?.descriptions
-    || disposition?.visual_impaired
+    || disposition?.hearing_impaired
     || DESCRIPTIVE_KEYWORDS.test(tags?.title || ''),
   );
 };

@@ -79,7 +79,7 @@ var getIsDescriptiveSubtitleStream = function (stream) {
     var disposition = stream.disposition, tags = stream.tags;
     return Boolean((disposition === null || disposition === void 0 ? void 0 : disposition.comment)
         || (disposition === null || disposition === void 0 ? void 0 : disposition.descriptions)
-        || (disposition === null || disposition === void 0 ? void 0 : disposition.visual_impaired)
+        || (disposition === null || disposition === void 0 ? void 0 : disposition.hearing_impaired)
         || DESCRIPTIVE_KEYWORDS.test((tags === null || tags === void 0 ? void 0 : tags.title) || ''));
 };
 var getIsForcedSubtitleStream = function (stream) {
