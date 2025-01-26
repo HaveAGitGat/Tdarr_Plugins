@@ -46,7 +46,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
-    description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
+    description: "\n  Replace the original file with the 'working' file passed into this plugin. \n  If the file hasn't changed then no action is taken.\n  Note: The 'working' filename and container will replace the original filename and container.\n  ",
     style: {
         borderColor: 'green',
     },
