@@ -13,7 +13,11 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Replace Original File',
-  description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
+  description: `
+  Replace the original file with the 'working' file passed into this plugin. 
+  If the file hasn't changed then no action is taken.
+  Note: The 'working' filename and container will replace the original filename and container.
+  `,
   style: {
     borderColor: 'green',
   },
