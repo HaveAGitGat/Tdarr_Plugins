@@ -10,7 +10,11 @@ import { getFileAbosluteDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Delete File',
-  description: 'Delete the working file or original file.',
+  description: `
+  Delete the working file or original file.
+  You don't need to use this plugin to clean up files in the cache, Tdarr will do this automatically after the flow.
+  To manually clear the cache, use the 'Clear Cache' flow plugin.
+  `,
   style: {
     borderColor: 'red',
   },
