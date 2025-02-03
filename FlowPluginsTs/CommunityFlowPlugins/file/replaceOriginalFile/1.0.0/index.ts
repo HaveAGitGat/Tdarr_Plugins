@@ -79,10 +79,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args,
   });
 
+  const originalFileExists = await fileExists(args.originalLibraryFile._id);
+  const currentFileIsNotOriginal = args.originalLibraryFile._id !== currentPath;
+
+  args.jobLog(JSON.stringify({
+    originalFileExists,
+    currentFileIsNotOriginal,
+  }));
+
   // delete original file
   if (
-    await fileExists(args.originalLibraryFile._id)
-    && args.originalLibraryFile._id !== currentPath
+    originalFileExists
+    && currentFileIsNotOriginal
   ) {
     args.jobLog(`Deleting original file:${args.originalLibraryFile._id}`);
     await fsp.unlink(args.originalLibraryFile._id);
