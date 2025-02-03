@@ -42,7 +42,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Delete File',
-    description: "\n  Delete the working file or original file.\n  You don't need to use this plugin to clean up files in the cache, Tdarr will do this automatically after the flow.\n  To manually clear the cache, use the 'Clear Cache' flow plugin.\n  ",
+    description: "\n  Delete the working file or original file.\n  You don't need to use this plugin to clean up files in the cache, Tdarr will do this automatically after the flow.\n  To manually clear the cache, use the 'Clear Cache' flow plugin.\n  If the working file is deleted, the plugin after this one should load a valid working file,\n  such as 'Set Original File' to load the original file, else subsequent plugins will error.\n  ",
     style: {
         borderColor: 'red',
     },
