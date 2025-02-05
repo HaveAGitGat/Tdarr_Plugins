@@ -6,17 +6,20 @@ const details = () => {
     Name: "Remove Video Commentary Tracks",
     Type: "Video",
     Operation: 'Transcode',
-    Description: `[Contains built-in filter] If commentary tracks are detected, they will be removed. \n\n`,
+    Description: `[Contains built-in filter] If commentary or descriptive tracks are detected, they will be removed. \n\n`,
     Version: "1.00",
     Tags: "pre-processing,ffmpeg,audio only",
-    Inputs:[],
+    Inputs: [],
   };
 }
 
+const isSDHAudioStream = (stream) => stream.disposition.hearing_impaired === 1 || /\b(ad|sdh)\b/gi.test(stream.tags?.title || '');
+const isDescriptiveAudioStream = (stream) => stream.disposition.comment == 1 || stream.disposition.descriptions === 1 || stream.disposition.visual_impaired === 1 || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '');
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
-    
-    const lib = require('../methods/lib')();
+
+  const lib = require('../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   //Must return this object
@@ -44,27 +47,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   var ffmpegCommandInsert = "";
 
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-    //keep track of audio streams for when removing commentary track
+    //keep track of audio streams for when removing tracks
     try {
       if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio") {
         audioIdx++;
       }
-    } catch (err) {}
+    } catch (err) { }
 
-    //check if commentary track and passing audio stream number
+    //check if commentary or descriptive track and passing audio stream number
     try {
       if (
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
-        file.ffProbeData.streams[i].disposition.comment == 1 ||
-        file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
-        file.ffProbeData.streams[i].tags.title
-          .toLowerCase()
-          .includes("commentary")
-      ) {
+        (isSDHAudioStream(file.ffProbeData.streams[i]) || isDescriptiveAudioStream(file.ffProbeData.streams[i]))) {
         ffmpegCommandInsert += ` -map -0:a:${audioIdx}`;
         hasCommentaryTrack = true;
       }
-    } catch (err) {}
+    } catch (err) { }
   }
 
   if (hasCommentaryTrack === true) {
@@ -74,10 +72,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.handBrakeMode = false;
     response.FFmpegMode = true;
     response.reQueueAfter = true;
-    response.infoLog += "☒File contains commentary tracks. Removing! \n";
+    response.infoLog += "☒File contains commentary or descriptive tracks. Removing! \n";
     return response;
   } else {
-    response.infoLog += "☑File doesn't contain commentary tracks! \n";
+    response.infoLog += "☑File doesn't contain commentary or descriptive tracks! \n";
   }
 
   response.processFile = false;
