@@ -62,6 +62,7 @@ var details = function () { return ({
                 options: [
                     'hevc_nvenc',
                     'hevc_amf',
+                    'hevc_rkmpp',
                     'hevc_vaapi',
                     'hevc_qsv',
                     'hevc_videotoolbox',
