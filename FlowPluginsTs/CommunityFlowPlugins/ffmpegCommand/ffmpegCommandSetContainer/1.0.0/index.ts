@@ -124,7 +124,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         'mpeg',
       ].includes(container)
     ) {
-      args.variables.ffmpegCommand.overallOuputArguments.push('-fflags', '+genpts');
+      args.variables.ffmpegCommand.overallInputArguments.push('-fflags', '+genpts');
     }
   }
 

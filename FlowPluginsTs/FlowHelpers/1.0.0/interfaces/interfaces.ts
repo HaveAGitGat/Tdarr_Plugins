@@ -111,7 +111,8 @@ export interface Ivariables {
     user: Record<string, string>,
     healthCheck?: 'Success',
     queueTags?: string,
-    liveSizeCompare?: IliveSizeCompare
+    liveSizeCompare?: IliveSizeCompare,
+    removeFromTdarr?: boolean,
 }
 
 export interface IpluginOutputArgs {
