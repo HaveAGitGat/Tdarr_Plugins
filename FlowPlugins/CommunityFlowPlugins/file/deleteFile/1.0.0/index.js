@@ -42,7 +42,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Delete File',
-    description: 'Delete the working file or original file.',
+    description: "\n  Delete the working file or original file.\n  You don't need to use this plugin to clean up files in the cache, Tdarr will do this automatically after the flow.\n  To manually clear the cache, use the 'Clear Cache' flow plugin.\n  If the working file is deleted, the plugin after this one should load a valid working file,\n  such as 'Set Original File' to load the original file, else subsequent plugins will error.\n  ",
     style: {
         borderColor: 'red',
     },
@@ -68,6 +68,32 @@ var details = function () { return ({
             tooltip: 'Specify the file to delete',
         },
         {
+            label: 'Delete Working File If It\'s The Original File',
+            name: 'deleteWorkingFileIfOriginal',
+            type: 'boolean',
+            defaultValue: 'true',
+            inputUI: {
+                type: 'switch',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'fileToDelete',
+                                    value: 'workingFile',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'If the option above is set to delete the working file,'
+                + ' and the working file is the original file, delete the file.',
+        },
+        {
             label: 'Delete Parent Folder If Empty',
             name: 'deleteParentFolderIfEmpty',
             type: 'boolean',
@@ -88,49 +114,62 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, fileToDelete, deleteParentFolderIfEmpty, fileDir, files;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, fileToDelete, _a, deleteParentFolderIfEmpty, deleteWorkingFileIfOriginal, workingFileIsOriginal, fileDir, files;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 fileToDelete = String(args.inputs.fileToDelete);
-                deleteParentFolderIfEmpty = args.inputs.deleteParentFolderIfEmpty;
-                if (!(fileToDelete === 'workingFile')) return [3 /*break*/, 2];
+                _a = args.inputs, deleteParentFolderIfEmpty = _a.deleteParentFolderIfEmpty, deleteWorkingFileIfOriginal = _a.deleteWorkingFileIfOriginal;
+                if (!(fileToDelete === 'workingFile')) return [3 /*break*/, 4];
+                workingFileIsOriginal = args.originalLibraryFile._id === args.inputFileObj._id;
+                if (workingFileIsOriginal) {
+                    args.jobLog('Working file is the original file!');
+                }
+                else {
+                    args.jobLog('Working file is not the original file!');
+                }
+                if (!((workingFileIsOriginal && deleteWorkingFileIfOriginal)
+                    || !workingFileIsOriginal)) return [3 /*break*/, 2];
                 args.jobLog("Deleting working file ".concat(args.inputFileObj._id));
                 return [4 /*yield*/, fs_1.promises.unlink(args.inputFileObj._id)];
             case 1:
-                _a.sent();
-                return [3 /*break*/, 4];
+                _b.sent();
+                return [3 /*break*/, 3];
             case 2:
-                if (!(fileToDelete === 'originalFile')) return [3 /*break*/, 4];
+                args.jobLog('Skipping delete of working file because it is the original file');
+                _b.label = 3;
+            case 3: return [3 /*break*/, 6];
+            case 4:
+                if (!(fileToDelete === 'originalFile')) return [3 /*break*/, 6];
                 args.jobLog("Deleting original file ".concat(args.originalLibraryFile._id));
                 return [4 /*yield*/, fs_1.promises.unlink(args.originalLibraryFile._id)];
-            case 3:
-                _a.sent();
-                _a.label = 4;
-            case 4:
+            case 5:
+                _b.sent();
+                _b.label = 6;
+            case 6:
                 fileDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
-                if (!deleteParentFolderIfEmpty) return [3 /*break*/, 9];
+                if (!deleteParentFolderIfEmpty) return [3 /*break*/, 11];
                 args.jobLog("Checking if folder ".concat(fileDir, " is empty"));
                 return [4 /*yield*/, fs_1.promises.readdir(fileDir)];
-            case 5:
-                files = _a.sent();
-                if (!(files.length === 0)) return [3 /*break*/, 7];
+            case 7:
+                files = _b.sent();
+                if (!(files.length === 0)) return [3 /*break*/, 9];
                 args.jobLog("Deleting empty folder ".concat(fileDir));
                 return [4 /*yield*/, fs_1.promises.rmdir(fileDir)];
-            case 6:
-                _a.sent();
-                return [3 /*break*/, 8];
-            case 7:
-                args.jobLog("Folder ".concat(fileDir, " is not empty, skipping delete"));
-                _a.label = 8;
-            case 8: return [3 /*break*/, 10];
+            case 8:
+                _b.sent();
+                return [3 /*break*/, 10];
             case 9:
+                args.jobLog("Folder ".concat(fileDir, " is not empty, skipping delete"));
+                _b.label = 10;
+            case 10: return [3 /*break*/, 12];
+            case 11:
                 args.jobLog("Skipping delete of parent folder ".concat(fileDir));
-                _a.label = 10;
-            case 10: return [2 /*return*/, {
+                _b.label = 12;
+            case 12: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: 1,
                     variables: args.variables,
