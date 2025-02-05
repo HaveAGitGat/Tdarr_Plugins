@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -46,7 +46,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
-    description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
+    description: "\n  Replace the original file with the 'working' file passed into this plugin. \n  If the file hasn't changed then no action is taken.\n  Note: The 'working' filename and container will replace the original filename and container.\n  ",
     style: {
         borderColor: 'green',
     },
@@ -67,7 +67,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp;
+    var lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp, originalFileExists, currentFileIsNotOriginal;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -108,8 +108,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a.sent();
                 return [4 /*yield*/, (0, fileUtils_1.fileExists)(args.originalLibraryFile._id)];
             case 3:
-                if (!((_a.sent())
-                    && args.originalLibraryFile._id !== currentPath)) return [3 /*break*/, 5];
+                originalFileExists = _a.sent();
+                currentFileIsNotOriginal = args.originalLibraryFile._id !== currentPath;
+                args.jobLog(JSON.stringify({
+                    originalFileExists: originalFileExists,
+                    currentFileIsNotOriginal: currentFileIsNotOriginal,
+                }));
+                if (!(originalFileExists
+                    && currentFileIsNotOriginal)) return [3 /*break*/, 5];
                 args.jobLog("Deleting original file:".concat(args.originalLibraryFile._id));
                 return [4 /*yield*/, fs_1.promises.unlink(args.originalLibraryFile._id)];
             case 4:

@@ -1,4 +1,5 @@
 "use strict";
+/* eslint-disable max-len */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,17 +36,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
+var fs_1 = require("fs");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Move To Original Directory',
-    description: 'Move working file original directory.',
+    name: 'Custom JS Function',
+    description: 'Write a custom function in JS to run with up to 4 outputs',
     style: {
         borderColor: 'green',
     },
@@ -55,53 +53,60 @@ var details = function () { return ({
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faArrowRight',
-    inputs: [],
+    inputs: [
+        {
+            label: 'JS Code',
+            name: 'code',
+            type: 'string',
+            defaultValue: "\nmodule.exports = async (args) => {\n\n// see args object data here https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces.ts\n// example setting flow variable: https://github.com/HaveAGitGat/Tdarr/issues/1147#issuecomment-2593348443\n// example reading ffmpeg metadata: https://github.com/HaveAGitGat/Tdarr_Plugins/issues/737#issuecomment-2581536112\n// example setting working file as previous working file: https://github.com/HaveAGitGat/Tdarr/issues/1106#issuecomment-2622177459\n\n// some example file data:\nconsole.log(args.inputFileObj._id)\nconsole.log(args.inputFileObj.file_size)\nconsole.log(args.inputFileObj.ffProbeData.streams[0].codec_name)\nconsole.log(args.inputFileObj.mediaInfo.track[0].BitRate)\n\n// access global variable:\nconsole.log(args.userVariables.global.test)\n// access library variable:\nconsole.log(args.userVariables.library.test)\n\n\n\n// do something here\n\n  return {\n    outputFileObj: args.inputFileObj,\n    outputNumber: 1,\n    variables: args.variables,\n  };\n}\n      ",
+            inputUI: {
+                type: 'textarea',
+                style: {
+                    height: '200px',
+                },
+            },
+            tooltip: 'Write your custom function here',
+        },
+    ],
     outputs: [
         {
             number: 1,
-            tooltip: 'Continue to next plugin',
+            tooltip: 'Continue to output 1',
+        },
+        {
+            number: 2,
+            tooltip: 'Continue to output 2',
+        },
+        {
+            number: 3,
+            tooltip: 'Continue to output 3',
+        },
+        {
+            number: 4,
+            tooltip: 'Continue to output 4',
         },
     ],
 }); };
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, fileName, container, outputDir, ouputFilePath;
+    var lib, code, outputFilePath, func, response;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
-                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                outputDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
-                ouputFilePath = "".concat(outputDir, "/").concat(fileName, ".").concat(container);
-                if (args.inputFileObj._id === ouputFilePath) {
-                    args.jobLog('Input and output path are the same, skipping move.');
-                    return [2 /*return*/, {
-                            outputFileObj: {
-                                _id: args.inputFileObj._id,
-                            },
-                            outputNumber: 1,
-                            variables: args.variables,
-                        }];
-                }
-                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                        operation: 'move',
-                        sourcePath: args.inputFileObj._id,
-                        destinationPath: ouputFilePath,
-                        args: args,
-                    })];
+                code = String(args.inputs.code);
+                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/script.js");
+                return [4 /*yield*/, fs_1.promises.writeFile(outputFilePath, code)];
             case 1:
                 _a.sent();
-                return [2 /*return*/, {
-                        outputFileObj: {
-                            _id: ouputFilePath,
-                        },
-                        outputNumber: 1,
-                        variables: args.variables,
-                    }];
+                func = require(outputFilePath);
+                return [4 /*yield*/, func(args)];
+            case 2:
+                response = _a.sent();
+                return [2 /*return*/, response];
         }
     });
 }); };
