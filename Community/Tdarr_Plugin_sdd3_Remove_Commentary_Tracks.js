@@ -72,10 +72,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.handBrakeMode = false;
     response.FFmpegMode = true;
     response.reQueueAfter = true;
-    response.infoLog += "☒File contains commentary or descriptive tracks. Removing! \n";
+    response.infoLog += "☒File contains commentary tracks. Removing! \n";
     return response;
   } else {
-    response.infoLog += "☑File doesn't contain commentary or descriptive tracks! \n";
+    response.infoLog += "☑File doesn't contain commentary tracks! \n";
   }
 
   response.processFile = false;
