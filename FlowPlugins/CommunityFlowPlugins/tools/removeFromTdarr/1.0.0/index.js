@@ -3,17 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Set Original File',
-    description: 'Set the working file to the original file path at the very start of the flow.',
+    name: 'Remove From Tdarr',
+    description: "\n  If this plugin is executed, then when the flow ends, the item will be \n  removed from the Tdarr database and won't appear in Transcode Success or Error tables on the 'Tdarr' tab.\n  Use the 'Delete File' plugin if you would like to delete the file from disk.\n  ",
     style: {
-        borderColor: 'green',
+        borderColor: 'red',
     },
     tags: '',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.11.01',
+    requiresVersion: '2.31.01',
     sidebarPosition: -1,
-    icon: '',
+    icon: 'faTrash',
     inputs: [],
     outputs: [
         {
@@ -25,13 +25,10 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
-    var lib = require('../../../../../methods/lib')();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
-    args.inputs = lib.loadDefaultValues(args.inputs, details);
+    // eslint-disable-next-line no-param-reassign
+    args.variables.removeFromTdarr = true;
     return {
-        outputFileObj: {
-            _id: args.originalLibraryFile._id,
-        },
+        outputFileObj: args.inputFileObj,
         outputNumber: 1,
         variables: args.variables,
     };

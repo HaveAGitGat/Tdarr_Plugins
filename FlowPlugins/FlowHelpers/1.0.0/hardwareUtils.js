@@ -227,6 +227,16 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         filter: '',
                     },
                     {
+                        encoder: 'hevc_rkmpp',
+                        enabled: false,
+                        inputArgs: [
+                            '-hwaccel',
+                            'rkmpp',
+                        ],
+                        outputArgs: [],
+                        filter: '',
+                    },
+                    {
                         encoder: 'hevc_amf',
                         enabled: false,
                         inputArgs: [],
@@ -291,6 +301,16 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         inputArgs: [
                             '-hwaccel',
                             'qsv',
+                        ],
+                        outputArgs: [],
+                        filter: '',
+                    },
+                    {
+                        encoder: 'h264_rkmpp',
+                        enabled: false,
+                        inputArgs: [
+                            '-hwaccel',
+                            'rkmpp',
                         ],
                         outputArgs: [],
                         filter: '',
