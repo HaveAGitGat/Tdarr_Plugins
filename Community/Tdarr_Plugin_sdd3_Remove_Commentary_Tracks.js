@@ -6,7 +6,7 @@ const details = () => {
     Name: "Remove Video Commentary Tracks",
     Type: "Video",
     Operation: 'Transcode',
-    Description: `[Contains built-in filter] If commentary or descriptive tracks are detected, they will be removed. \n\n`,
+    Description: `[Contains built-in filter] If commentary or descriptive (optional) tracks are detected, they will be removed. \n\n`,
     Version: "1.00",
     Tags: "pre-processing,ffmpeg,audio only",
     Inputs: [{
@@ -22,7 +22,7 @@ const details = () => {
       },
       tooltip: `
   Specify if descriptive audio tracks should also be removed. 
-  Optional. Will remove audio tracks that contain the words "ad", "sdh", "description" or "descriptive" in the title or are tagged as descriptions, visual_impaired or hearing_impaired in the dispositions.
+  Optional. Will remove audio tracks that contain the words "AD", "SDH", "description" or "descriptive" in the title (case insensitive) or are tagged as descriptions, visual_impaired or hearing_impaired in the dispositions.
                  \\nExample:\\n
                  true
   
