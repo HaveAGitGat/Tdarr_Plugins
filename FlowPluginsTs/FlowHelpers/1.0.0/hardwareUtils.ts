@@ -204,6 +204,16 @@ export const getEncoder = async ({
         filter: '',
       },
       {
+        encoder: 'hevc_rkmpp',
+        enabled: false,
+        inputArgs: [
+          '-hwaccel',
+          'rkmpp',
+        ],
+        outputArgs: [],
+        filter: '',
+      },
+      {
         encoder: 'hevc_amf',
         enabled: false,
         inputArgs: [],
@@ -271,6 +281,16 @@ export const getEncoder = async ({
         inputArgs: [
           '-hwaccel',
           'qsv',
+        ],
+        outputArgs: [],
+        filter: '',
+      },
+      {
+        encoder: 'h264_rkmpp',
+        enabled: false,
+        inputArgs: [
+          '-hwaccel',
+          'rkmpp',
         ],
         outputArgs: [],
         filter: '',

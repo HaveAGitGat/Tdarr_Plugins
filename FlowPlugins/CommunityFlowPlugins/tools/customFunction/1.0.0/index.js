@@ -1,4 +1,5 @@
 "use strict";
+/* eslint-disable max-len */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -57,7 +58,7 @@ var details = function () { return ({
             label: 'JS Code',
             name: 'code',
             type: 'string',
-            defaultValue: "\nmodule.exports = async (args) => {\n\n// do something here\n\n  return {\n    outputFileObj: args.inputFileObj,\n    outputNumber: 1,\n    variables: args.variables,\n  };\n}\n      ",
+            defaultValue: "\nmodule.exports = async (args) => {\n\n// see args object data here https://github.com/HaveAGitGat/Tdarr_Plugins/blob/master/FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces.ts\n// example setting flow variable: https://github.com/HaveAGitGat/Tdarr/issues/1147#issuecomment-2593348443\n// example reading ffmpeg metadata: https://github.com/HaveAGitGat/Tdarr_Plugins/issues/737#issuecomment-2581536112\n// example setting working file as previous working file: https://github.com/HaveAGitGat/Tdarr/issues/1106#issuecomment-2622177459\n\n// some example file data:\nconsole.log(args.inputFileObj._id)\nconsole.log(args.inputFileObj.file_size)\nconsole.log(args.inputFileObj.ffProbeData.streams[0].codec_name)\nconsole.log(args.inputFileObj.mediaInfo.track[0].BitRate)\n\n// access global variable:\nconsole.log(args.userVariables.global.test)\n// access library variable:\nconsole.log(args.userVariables.library.test)\n\n\n\n// do something here\n\n  return {\n    outputFileObj: args.inputFileObj,\n    outputNumber: 1,\n    variables: args.variables,\n  };\n}\n      ",
             inputUI: {
                 type: 'textarea',
                 style: {
