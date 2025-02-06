@@ -6,15 +6,34 @@ const details = () => {
     Name: "Remove Video Commentary Tracks",
     Type: "Video",
     Operation: 'Transcode',
-    Description: `[Contains built-in filter] If commentary or descriptive tracks are detected, they will be removed. \n\n`,
+    Description: `[Contains built-in filter] If commentary or descriptive (optional) tracks are detected, they will be removed. \n\n`,
     Version: "1.00",
     Tags: "pre-processing,ffmpeg,audio only",
-    Inputs: [],
+    Inputs: [{
+      name: 'descriptive',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `
+  Specify if descriptive audio tracks should also be removed. 
+  Optional. Will remove audio tracks that contain the words "AD", "SDH", "description" or "descriptive" in the title (case insensitive) or are tagged as descriptions, visual_impaired or hearing_impaired in the dispositions.
+                 \\nExample:\\n
+                 true
+  
+                 \\nExample:\\n
+                 false`,
+    }],
   };
 }
 
-const isSDHAudioStream = (stream) => stream.disposition.hearing_impaired === 1 || /\b(ad|sdh)\b/gi.test(stream.tags?.title || '');
-const isDescriptiveAudioStream = (stream) => stream.disposition.comment == 1 || stream.disposition.descriptions === 1 || stream.disposition.visual_impaired === 1 || /\b(commentary|description|descriptive)\b/gi.test(stream.tags?.title || '');
+const isCommentaryAudioStream = (stream) => stream.disposition.comment == 1 || /\bcommentary\b/gi.test(stream.tags?.title || '');
+const isDescriptiveAudioStream = (stream) => stream.disposition.hearing_impaired === 1 || stream.disposition.descriptions === 1 || stream.disposition.visual_impaired === 1 || /\b(ad|sdh|description|descriptive)\b/gi.test(stream.tags?.title || '');
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -56,9 +75,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     //check if commentary or descriptive track and passing audio stream number
     try {
-      if (
-        file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
-        (isSDHAudioStream(file.ffProbeData.streams[i]) || isDescriptiveAudioStream(file.ffProbeData.streams[i]))) {
+      if (file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio"
+        && (isCommentaryAudioStream(file.ffProbeData.streams[i])
+          || (inputs.descriptive === true && isDescriptiveAudioStream(file.ffProbeData.streams[i])))) {
         ffmpegCommandInsert += ` -map -0:a:${audioIdx}`;
         hasCommentaryTrack = true;
       }
