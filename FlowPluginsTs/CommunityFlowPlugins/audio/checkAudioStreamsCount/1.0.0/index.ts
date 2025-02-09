@@ -56,7 +56,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const { streams } = args.variables.ffmpegCommand;
+  const { ffProbeData } = args.inputFileObj;
+  if (!ffProbeData || !ffProbeData.streams) {
+    throw new Error('ffProbeData or ffProbeData.streams is not available.');
+  }
+
+  const { streams } = ffProbeData;
   const { audioStreamsTarget } = args.inputs as { audioStreamsTarget: number; };
 
   args.jobLog(`Checking for ${audioStreamsTarget} audio streams`);

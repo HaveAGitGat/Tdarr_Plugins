@@ -51,7 +51,11 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    var streams = args.variables.ffmpegCommand.streams;
+    var ffProbeData = args.inputFileObj.ffProbeData;
+    if (!ffProbeData || !ffProbeData.streams) {
+        throw new Error('ffProbeData or ffProbeData.streams is not available.');
+    }
+    var streams = ffProbeData.streams;
     var audioStreamsTarget = args.inputs.audioStreamsTarget;
     args.jobLog("Checking for ".concat(audioStreamsTarget, " audio streams"));
     if (!Array.isArray(streams)) {
