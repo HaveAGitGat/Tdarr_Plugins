@@ -51,17 +51,18 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
+    var audioStreamsTarget = args.inputs.audioStreamsTarget;
     var ffProbeData = args.inputFileObj.ffProbeData;
     if (!ffProbeData || !ffProbeData.streams) {
         throw new Error('ffProbeData or ffProbeData.streams is not available.');
     }
     var streams = ffProbeData.streams;
-    var audioStreamsTarget = args.inputs.audioStreamsTarget;
-    args.jobLog("Checking for ".concat(audioStreamsTarget, " audio streams"));
     if (!Array.isArray(streams)) {
         throw new Error('File has no valid stream data');
     }
+    args.jobLog("Checking for ".concat(audioStreamsTarget, " audio streams"));
     var audioStreamsCount = streams.reduce(function (count, stream) { return (stream.codec_type === 'audio' ? count + 1 : count); }, 0);
+    args.jobLog("".concat(audioStreamsCount, " audio streams found"));
     var getOutputNumber = function (count, target) {
         if (count === target)
             return 1;
