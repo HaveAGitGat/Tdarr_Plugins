@@ -56,23 +56,22 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  const { audioStreamsTarget } = args.inputs as { audioStreamsTarget: number; };
   const { ffProbeData } = args.inputFileObj;
   if (!ffProbeData || !ffProbeData.streams) {
     throw new Error('ffProbeData or ffProbeData.streams is not available.');
   }
-
   const { streams } = ffProbeData;
-  const { audioStreamsTarget } = args.inputs as { audioStreamsTarget: number; };
-
-  args.jobLog(`Checking for ${audioStreamsTarget} audio streams`);
-
   if (!Array.isArray(streams)) {
     throw new Error('File has no valid stream data');
   }
+
+  args.jobLog(`Checking for ${audioStreamsTarget} audio streams`);
   const audioStreamsCount = streams.reduce(
     (count, stream) => (stream.codec_type === 'audio' ? count + 1 : count),
     0,
   );
+  args.jobLog(`${audioStreamsCount} audio streams found`);
 
   const getOutputNumber = (count: number, target: number): number => {
     if (count === target) return 1;
