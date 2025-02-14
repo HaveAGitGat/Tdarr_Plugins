@@ -114,7 +114,7 @@ var removeDuplicates = function (args) {
     }
     if (hasDUPS) {
         var highestDUPS_1 = [];
-        var undhighestDUP_1 = [];
+        var undhighestDUP = [];
         var undefIsDUP_1 = false;
         if (duplicates.includes('und')) {
             undefIsDUP_1 = true;
@@ -125,15 +125,17 @@ var removeDuplicates = function (args) {
             duplicates.splice(iD, 1);
             var undStreams = undstreams(args);
             var streamwithhighestChannelCount = undStreams.reduce(getHighest);
-            undhighestDUP_1.push(streamwithhighestChannelCount);
+            undhighestDUP.push(streamwithhighestChannelCount);
         }
         duplicates.forEach(function (dup) {
             var streamWithTag = langStreams(args, dup);
             var streamwithhighestChannelCount = streamWithTag.reduce(getHighest);
             highestDUPS_1.push(streamwithhighestChannelCount);
         });
+        var undhighestDUPSet_1 = new Set(undhighestDUP.map(function (element) { return element.index; }));
+        var highestDUPSSet_1 = new Set(highestDUPS_1.map(function (element) { return element.index; }));
         args.variables.ffmpegCommand.streams.forEach(function (stream) {
-            var _a, _b;
+            var _a;
             if (stream.codec_type !== 'audio') {
                 return;
             }
@@ -144,27 +146,10 @@ var removeDuplicates = function (args) {
                     return;
                 }
             }
-            if (stream.tags === undefined
-                || stream.tags.language === undefined
-                || stream.tags.language.toLowerCase().includes('und')) {
-                if (stream.index === undhighestDUP_1[0].index) {
-                    return;
-                }
-                args.jobLog("Removing Stream ".concat(stream.index, " Duplicate Detected"));
-                // eslint-disable-next-line no-param-reassign
-                stream.removed = true;
-                audioStreamsRemoved += 1;
-            }
-            if (stream.tags && stream.tags.language && !(duplicates.includes((_b = (_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) === null || _b === void 0 ? void 0 : _b.toLowerCase()))) {
+            if (undhighestDUPSet_1.has(stream.index) || highestDUPSSet_1.has(stream.index)) {
                 return;
             }
-            var chosenStream = false;
-            highestDUPS_1.forEach(function (element) {
-                if (element.index === stream.index) {
-                    chosenStream = true;
-                }
-            });
-            if (chosenStream) {
+            if (((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) && duplicates.includes(stream.tags.language.toLowerCase())) {
                 return;
             }
             args.jobLog("Removing Stream ".concat(stream.index, " Duplicate Detected"));
