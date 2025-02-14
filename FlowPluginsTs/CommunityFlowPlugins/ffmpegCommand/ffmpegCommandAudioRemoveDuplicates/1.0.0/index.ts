@@ -151,6 +151,9 @@ const removeDuplicates = (args :IpluginInputArgs) => {
       highestDUPS.push(streamwithhighestChannelCount);
     });
 
+    const undhighestDUPSet = new Set(undhighestDUP.map((element: Istreams) => element.index));
+    const highestDUPSSet = new Set(highestDUPS.map((element: Istreams) => element.index));
+
     args.variables.ffmpegCommand.streams.forEach((stream) => {
       if (stream.codec_type !== 'audio') {
         return;
@@ -163,28 +166,10 @@ const removeDuplicates = (args :IpluginInputArgs) => {
           return;
         }
       }
-      if (stream.tags === undefined
-        || stream.tags.language === undefined
-        || stream.tags.language.toLowerCase().includes('und')
-      ) {
-        if (stream.index === undhighestDUP[0].index) {
-          return;
-        }
-        args.jobLog(`Removing Stream ${stream.index} Duplicate Detected`);
-        // eslint-disable-next-line no-param-reassign
-        stream.removed = true;
-        audioStreamsRemoved += 1;
-      }
-      if (stream.tags && stream.tags.language && !(duplicates.includes(stream.tags?.language?.toLowerCase()))) {
+      if (undhighestDUPSet.has(stream.index) || highestDUPSSet.has(stream.index)) {
         return;
       }
-      let chosenStream = false;
-      highestDUPS.forEach((element :Istreams) => {
-        if (element.index === stream.index) {
-          chosenStream = true;
-        }
-      });
-      if (chosenStream) {
+      if (stream.tags?.language && duplicates.includes(stream.tags.language.toLowerCase())) {
         return;
       }
       args.jobLog(`Removing Stream ${stream.index} Duplicate Detected`);
