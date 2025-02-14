@@ -149,7 +149,7 @@ var removeDuplicates = function (args) {
             if (undhighestDUPSet_1.has(stream.index) || highestDUPSSet_1.has(stream.index)) {
                 return;
             }
-            if (((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) && duplicates.includes(stream.tags.language.toLowerCase())) {
+            if (((_a = stream.tags) === null || _a === void 0 ? void 0 : _a.language) && !duplicates.includes(stream.tags.language.toLowerCase())) {
                 return;
             }
             args.jobLog("Removing Stream ".concat(stream.index, " Duplicate Detected"));
