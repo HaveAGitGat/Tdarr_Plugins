@@ -169,8 +169,8 @@ const removeDuplicates = (args :IpluginInputArgs) => {
       if (undhighestDUPSet.has(stream.index) || highestDUPSSet.has(stream.index)) {
         return;
       }
-      if (stream.tags?.language && duplicates.includes(stream.tags.language.toLowerCase())) {
-        return;
+      if (stream.tags?.language && !duplicates.includes(stream.tags.language.toLowerCase())) {
+        return;  
       }
       args.jobLog(`Removing Stream ${stream.index} Duplicate Detected`);
       // eslint-disable-next-line no-param-reassign
