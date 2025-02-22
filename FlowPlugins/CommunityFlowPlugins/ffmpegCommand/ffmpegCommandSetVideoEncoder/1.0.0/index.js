@@ -172,6 +172,7 @@ var details = function () { return ({
                 options: [
                     'auto',
                     'nvenc',
+                    'rkmpp',
                     'qsv',
                     'vaapi',
                     'videotoolbox',

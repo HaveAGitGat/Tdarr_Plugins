@@ -140,6 +140,7 @@ const details = (): IpluginDetails => ({
         options: [
           'auto',
           'nvenc',
+          'rkmpp',
           'qsv',
           'vaapi',
           'videotoolbox',
