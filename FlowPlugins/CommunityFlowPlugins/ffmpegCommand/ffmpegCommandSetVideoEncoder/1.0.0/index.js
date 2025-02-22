@@ -249,7 +249,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
                 if (ffmpegQualityEnabled) {
                     if (encoderProperties.isGpu) {
-                        stream.outputArgs.push('-qp', ffmpegQuality);
+                        if (encoderProperties.encoder === 'hevc_qsv') {
+                            stream.outputArgs.push('-global_quality', ffmpegQuality);
+                        }
+                        else {
+                            stream.outputArgs.push('-qp', ffmpegQuality);
+                        }
                     }
                     else {
                         stream.outputArgs.push('-crf', ffmpegQuality);
