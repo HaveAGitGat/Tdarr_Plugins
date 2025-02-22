@@ -111,7 +111,8 @@ export interface Ivariables {
     user: Record<string, string>,
     healthCheck?: 'Success',
     queueTags?: string,
-    liveSizeCompare?: IliveSizeCompare
+    liveSizeCompare?: IliveSizeCompare,
+    removeFromTdarr?: boolean,
 }
 
 export interface IpluginOutputArgs {
@@ -127,6 +128,10 @@ export interface IpluginInputArgs {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     librarySettings: any,
     inputs: Record<string, unknown>,
+    userVariables: {
+        global: Record<string, string>,
+        library: Record<string, string>,
+    },
     jobLog: Ilog,
     workDir: string,
     platform: string,

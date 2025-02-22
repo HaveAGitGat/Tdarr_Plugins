@@ -103,6 +103,16 @@ var details = function () { return ({
             },
             tooltip: 'Specify request body',
         },
+        {
+            label: 'Log Response Body',
+            name: 'logResponseBody',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Specify whether to log response body in the job report',
+        },
     ],
     outputs: [
         {
@@ -114,7 +124,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, method, requestUrl, requestHeaders, requestBody, requestConfig, res, err_1;
+    var lib, method, requestUrl, requestHeaders, requestBody, logResponseBody, requestConfig, res, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -125,6 +135,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 requestUrl = String(args.inputs.requestUrl);
                 requestHeaders = JSON.parse(String(args.inputs.requestHeaders));
                 requestBody = JSON.parse(String(args.inputs.requestBody));
+                logResponseBody = args.inputs.logResponseBody;
                 requestConfig = {
                     method: method,
                     url: requestUrl,
@@ -138,6 +149,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 2:
                 res = _a.sent();
                 args.jobLog("Web request succeeded: Status Code: ".concat(res.status));
+                if (logResponseBody) {
+                    args.jobLog("Response Body: ".concat(JSON.stringify(res.data)));
+                }
                 return [3 /*break*/, 4];
             case 3:
                 err_1 = _a.sent();
