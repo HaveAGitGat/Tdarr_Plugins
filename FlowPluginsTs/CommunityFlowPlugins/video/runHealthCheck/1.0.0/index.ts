@@ -45,6 +45,29 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+const getDecoder = (gpuSelect:string) : string => {
+  let accel = '';
+
+  if (gpuSelect === 'nvenc') {
+    accel = '-hwaccel nvdec -hwaccel_output_format cuda';
+  } else if (gpuSelect === 'vaapi') {
+    accel = '-hwaccel vaapi -hwaccel_output_format vaapi -hwaccel_device /dev/dri/renderD128';
+  } else if (gpuSelect === 'amf') {
+    // amf only on windows
+    accel = '-hwaccel d3d11va';
+  } else if (gpuSelect === 'qsv') {
+    accel = '-hwaccel qsv';
+  } else if (gpuSelect === 'videotoolbox') {
+    accel = '-hwaccel videotoolbox';
+  } else if (gpuSelect === 'rkmpp') {
+    accel = '-hwaccel rkmpp';
+  } else {
+    accel = '-hwaccel nvdec -hwaccel_output_format cuda';
+  }
+
+  return accel;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
@@ -53,34 +76,60 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const type = String(args.inputs.type);
 
-  args.jobLog(`Running health check of type ${type}`);
-
   const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}`
   + `.${getContainer(args.inputFileObj._id)}`;
 
-  let cliPath = args.handbrakePath;
-  let cliArgs = [
-    '-i',
-    args.inputFileObj._id,
-    '-o',
-    outputFilePath,
-    '--scan',
-  ];
+  let cliPath = '';
+  let cliArgs = [];
 
   if (type === 'thorough') {
+    args.jobLog('Running thorough health check');
+
     cliPath = args.ffmpegPath;
 
+    if (args.workerType.includes('gpu')) {
+      args.jobLog(`Using GPU acceleration, selected: ${args.nodeHardwareType}`);
+      args.jobLog('You can change the Node hardware type on the Node options tab on the Tdarr homepage');
+
+      const accel = getDecoder(args.nodeHardwareType).split(' ');
+
+      cliArgs = [
+        '-stats',
+        '-v',
+        'error',
+        ...accel,
+        '-i',
+        args.inputFileObj._id,
+        '-f',
+        'null',
+        '-max_muxing_queue_size',
+        '9999',
+        outputFilePath,
+      ];
+    } else {
+      args.jobLog('Using CPU acceleration');
+      cliArgs = [
+        '-stats',
+        '-v',
+        'error',
+        '-i',
+        args.inputFileObj._id,
+        '-f',
+        'null',
+        '-max_muxing_queue_size',
+        '9999',
+        outputFilePath,
+      ];
+    }
+  } else {
+    args.jobLog('Running quick health check');
+    cliPath = args.handbrakePath;
     cliArgs = [
-      '-stats',
-      '-v',
-      'error',
       '-i',
       args.inputFileObj._id,
-      '-f',
-      'null',
-      '-max_muxing_queue_size',
-      '9999',
+      '-o',
       outputFilePath,
+      '--scan',
     ];
   }
 
