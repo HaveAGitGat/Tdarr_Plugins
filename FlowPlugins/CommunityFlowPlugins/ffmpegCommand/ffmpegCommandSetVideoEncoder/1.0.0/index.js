@@ -248,7 +248,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
                 if (ffmpegQualityEnabled) {
                     if (encoderProperties.isGpu) {
-                        if (encoderProperties.encoder == 'hevc_qsv') {
+                        if (encoderProperties.encoder === 'hevc_qsv') {
                             stream.outputArgs.push('-global_quality', ffmpegQuality);
                         }
                         else {
