@@ -100,7 +100,7 @@ var plugin = function (args) {
         if (target) {
             var prop_1 = String(target).toLowerCase();
             // For includes: remove if the property includes ANY of the values
-            // For not_includes: remove if the property doesn't include ALL of the values
+            // For not_includes: remove if the property doesn't include ANY of the values
             var shouldRemove = condition === 'includes'
                 ? valuesToRemove.some(function (val) { return prop_1.includes(val.toLowerCase()); })
                 : !valuesToRemove.some(function (val) { return prop_1.includes(val.toLowerCase()); });
@@ -108,6 +108,9 @@ var plugin = function (args) {
                 var valuesStr = valuesToRemove.join(', ');
                 args.jobLog("Removing stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop_1, " ").concat(condition, " ").concat(valuesStr, "\n"));
                 stream.removed = true;
+            }
+            else {
+                args.jobLog("Keep stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop_1, " ").concat(condition, " ").concat(valuesStr, "\n"));
             }
         }
     });
