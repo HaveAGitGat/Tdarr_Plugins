@@ -133,6 +133,11 @@ var details = function () { return ({
             defaultValue: 'true',
             inputUI: {
                 type: 'switch',
+                onSelect: {
+                    false: {
+                        outputFileBecomesWorkingFile: 'false',
+                    },
+                },
             },
             tooltip: 'Toggle this on if the command creates an output file.',
         },
@@ -209,7 +214,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, userCli, useCustomCliPath, customCliPath, cliPath, doesCommandCreateOutputFile, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
+    var lib, userCli, useCustomCliPath, customCliPath, cliPath, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -220,11 +225,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 useCustomCliPath = args.inputs.useCustomCliPath;
                 customCliPath = String(args.inputs.customCliPath);
                 cliPath = '';
-                doesCommandCreateOutputFile = args.inputs.doesCommandCreateOutputFile;
                 outputFileBecomesWorkingFile = args.inputs.outputFileBecomesWorkingFile;
-                if (!doesCommandCreateOutputFile) {
-                    outputFileBecomesWorkingFile = false;
-                }
                 userOutputFilePath = String(args.inputs.userOutputFilePath);
                 cliArguments = String(args.inputs.cliArguments);
                 // eslint-disable-next-line no-template-curly-in-string
