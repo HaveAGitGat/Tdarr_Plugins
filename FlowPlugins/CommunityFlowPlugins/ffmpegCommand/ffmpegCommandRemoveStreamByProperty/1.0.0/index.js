@@ -17,6 +17,22 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Codec Type',
+            name: 'codecType',
+            type: 'string',
+            defaultValue: 'all',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'audio',
+                    'video',
+                    'subtitle',
+                    'any',
+                ],
+            },
+            tooltip: "\n      Stream Codec Type to check against the property.\n        ",
+        },
+        {
             label: 'Property To Check',
             name: 'propertyToCheck',
             type: 'string',
@@ -65,10 +81,13 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
+    var codecType = String(args.inputs.codecType).trim();
     var propertyToCheck = String(args.inputs.propertyToCheck).trim();
     var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map(function (item) { return item.trim(); });
     var condition = String(args.inputs.condition);
-    args.variables.ffmpegCommand.streams.forEach(function (stream) {
+    args.variables.ffmpegCommand.streams
+        .filter(function (stream) { return codecType === 'any' || stream.codec_type === codecType; })
+        .forEach(function (stream) {
         var _a;
         var target = '';
         if (propertyToCheck.includes('.')) {
