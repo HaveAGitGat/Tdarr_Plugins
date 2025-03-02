@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz1FFMPEG',
   Stage: 'Pre-processing',
-  Name: 'Migz-Transcode Using Nvidia GPU & FFMPEG',
+  Name: 'Migz Transcode Using Nvidia GPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg.

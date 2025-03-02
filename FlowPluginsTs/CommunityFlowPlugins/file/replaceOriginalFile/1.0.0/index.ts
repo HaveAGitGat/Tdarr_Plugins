@@ -1,5 +1,7 @@
+import { promises as fsp } from 'fs';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
+  fileExists,
   getContainer, getFileAbosluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
@@ -11,7 +13,11 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Replace Original File',
-  description: 'Replace the original file. If the file hasn\'t changed then no action is taken.',
+  description: `
+  Replace the original file with the 'working' file passed into this plugin. 
+  If the file hasn't changed then no action is taken.
+  Note: The 'working' filename and container will replace the original filename and container.
+  `,
   style: {
     borderColor: 'green',
   },
@@ -32,7 +38,6 @@ const details = (): IpluginDetails => ({
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
-  const fs = require('fs');
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
@@ -74,13 +79,21 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args,
   });
 
+  const originalFileExists = await fileExists(args.originalLibraryFile._id);
+  const currentFileIsNotOriginal = args.originalLibraryFile._id !== currentPath;
+
+  args.jobLog(JSON.stringify({
+    originalFileExists,
+    currentFileIsNotOriginal,
+  }));
+
   // delete original file
   if (
-    fs.existsSync(args.originalLibraryFile._id)
-    && args.originalLibraryFile._id !== currentPath
+    originalFileExists
+    && currentFileIsNotOriginal
   ) {
     args.jobLog(`Deleting original file:${args.originalLibraryFile._id}`);
-    fs.unlinkSync(args.originalLibraryFile._id);
+    await fsp.unlink(args.originalLibraryFile._id);
   }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));

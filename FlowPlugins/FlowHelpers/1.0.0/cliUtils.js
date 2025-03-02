@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -35,10 +35,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLI = exports.getFFmpegVar = void 0;
+var fs_1 = __importDefault(require("fs"));
 var cliParsers_1 = require("./cliParsers");
-var fs = require('fs');
+var fileUtils_1 = require("./fileUtils");
 var fancyTimeFormat = function (time) {
     // Hours, minutes and seconds
     // eslint-disable-next-line no-bitwise
@@ -93,60 +97,111 @@ var CLI = /** @class */ (function () {
         this.oldProgress = 0;
         this.lastProgCheck = 0;
         this.hbPass = 0;
-        this.updateETA = function (perc) {
-            if (perc > 0) {
-                if (_this.lastProgCheck === 0) {
-                    _this.lastProgCheck = new Date().getTime();
-                    _this.oldProgress = perc;
-                }
-                else if (perc !== _this.oldProgress) {
-                    var n = new Date().getTime();
-                    var secsSinceLastCheck = (n - _this.lastProgCheck) / 1000;
-                    if (secsSinceLastCheck > 1) {
-                        // eta total
-                        var eta = Math.round((100 / (perc - _this.oldProgress)) * secsSinceLastCheck);
+        this.cancelled = false;
+        this.startTime = new Date().getTime();
+        this.updateETA = function (perc) { return __awaiter(_this, void 0, void 0, function () {
+            var n, secsSinceLastCheck, eta, sum, avg, estSize, outputFileSizeInGbytes, singleFileSize, err_1, secondsSinceStart, _a, compareMethod, thresholdPerc_1, checkDelaySeconds, inputFileSize, inputFileSizeInGbytes_1, cancel, ratio, ratio;
+            var _this = this;
+            var _b;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        if (!(perc > 0)) return [3 /*break*/, 6];
+                        if (!(this.lastProgCheck === 0)) return [3 /*break*/, 1];
+                        this.lastProgCheck = new Date().getTime();
+                        this.oldProgress = perc;
+                        return [3 /*break*/, 6];
+                    case 1:
+                        if (!(perc !== this.oldProgress)) return [3 /*break*/, 6];
+                        n = new Date().getTime();
+                        secsSinceLastCheck = (n - this.lastProgCheck) / 1000;
+                        if (!(secsSinceLastCheck > 1)) return [3 /*break*/, 6];
+                        eta = Math.round((100 / (perc - this.oldProgress)) * secsSinceLastCheck);
                         // eta remaining
                         eta *= ((100 - perc) / 100);
-                        _this.progAVG.push(eta);
-                        // let values = [2, 56, 3, 41, 0, 4, 100, 23];
-                        var sum = _this.progAVG.reduce(
+                        this.progAVG.push(eta);
+                        sum = this.progAVG.reduce(
                         // eslint-disable-next-line
                         function (previous, current) { return (current += previous); });
-                        var avg = sum / _this.progAVG.length;
-                        // est size
-                        var estSize = 0;
-                        var outputFileSizeInGbytes = void 0;
-                        try {
-                            if (fs.existsSync(_this.config.outputFilePath)) {
-                                var singleFileSize = fs.statSync(_this.config.outputFilePath);
-                                singleFileSize = singleFileSize.size;
-                                outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
-                                if (outputFileSizeInGbytes !== _this.oldOutSize) {
-                                    _this.oldOutSize = outputFileSizeInGbytes;
-                                    estSize = outputFileSizeInGbytes
-                                        + ((100 - perc) / perc) * outputFileSizeInGbytes;
-                                    _this.oldEstSize = estSize;
+                        avg = sum / this.progAVG.length;
+                        estSize = 0;
+                        outputFileSizeInGbytes = void 0;
+                        _c.label = 2;
+                    case 2:
+                        _c.trys.push([2, 4, , 5]);
+                        return [4 /*yield*/, (0, fileUtils_1.fileExists)(this.config.outputFilePath)];
+                    case 3:
+                        if (_c.sent()) {
+                            singleFileSize = fs_1.default.statSync(this.config.outputFilePath);
+                            // @ts-expect-error type
+                            singleFileSize = singleFileSize.size;
+                            // @ts-expect-error type
+                            outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
+                            if (outputFileSizeInGbytes !== this.oldOutSize) {
+                                this.oldOutSize = outputFileSizeInGbytes;
+                                estSize = outputFileSizeInGbytes
+                                    + ((100 - perc) / perc) * outputFileSizeInGbytes;
+                                this.oldEstSize = estSize;
+                            }
+                        }
+                        return [3 /*break*/, 5];
+                    case 4:
+                        err_1 = _c.sent();
+                        // eslint-disable-next-line no-console
+                        console.log(err_1);
+                        return [3 /*break*/, 5];
+                    case 5:
+                        this.config.updateWorker({
+                            ETA: fancyTimeFormat(avg),
+                            outputFileSizeInGbytes: outputFileSizeInGbytes === undefined ? 0 : outputFileSizeInGbytes,
+                            estSize: this.oldEstSize === undefined ? 0 : this.oldEstSize,
+                        });
+                        if (this.progAVG.length > 30) {
+                            this.progAVG.splice(0, 1);
+                        }
+                        this.lastProgCheck = n;
+                        this.oldProgress = perc;
+                        secondsSinceStart = (new Date().getTime() - this.startTime) / 1000;
+                        // live size compare
+                        if ((_b = this.config.args.variables.liveSizeCompare) === null || _b === void 0 ? void 0 : _b.enabled) {
+                            _a = this.config.args.variables.liveSizeCompare, compareMethod = _a.compareMethod, thresholdPerc_1 = _a.thresholdPerc, checkDelaySeconds = _a.checkDelaySeconds;
+                            if (secondsSinceStart > checkDelaySeconds) {
+                                inputFileSize = this.config.inputFileObj.file_size;
+                                inputFileSizeInGbytes_1 = inputFileSize / 1024;
+                                cancel = function (ratio) {
+                                    _this.config.jobLog("Input file size: ".concat(inputFileSizeInGbytes_1, "GB"));
+                                    _this.config.jobLog("Ratio: ".concat(ratio, "%"));
+                                    _this.config.jobLog("Ratio is greater than threshold: ".concat(thresholdPerc_1, "%, cancelling job"));
+                                    _this.cancelled = true;
+                                    // @ts-expect-error must exist to be here
+                                    _this.config.args.variables.liveSizeCompare.error = true;
+                                    _this.killThread();
+                                };
+                                if (compareMethod === 'estimatedFinalSize'
+                                    && estSize !== undefined
+                                    && estSize > 0) {
+                                    ratio = (estSize / inputFileSizeInGbytes_1) * 100;
+                                    if (ratio > thresholdPerc_1) {
+                                        this.config.jobLog("Estimated final size: ".concat(estSize, "GB"));
+                                        cancel(ratio);
+                                    }
+                                }
+                                else if (compareMethod === 'currentSize'
+                                    && outputFileSizeInGbytes !== undefined
+                                    && outputFileSizeInGbytes > 0) {
+                                    ratio = (outputFileSizeInGbytes / inputFileSizeInGbytes_1) * 100;
+                                    if (ratio > thresholdPerc_1) {
+                                        this.config.jobLog("Current output size: ".concat(outputFileSizeInGbytes, "GB"));
+                                        cancel(ratio);
+                                    }
                                 }
                             }
                         }
-                        catch (err) {
-                            // eslint-disable-next-line no-console
-                            console.log(err);
-                        }
-                        _this.config.updateWorker({
-                            ETA: fancyTimeFormat(avg),
-                            outputFileSizeInGbytes: outputFileSizeInGbytes === undefined ? 0 : outputFileSizeInGbytes,
-                            estSize: _this.oldEstSize === undefined ? 0 : _this.oldEstSize,
-                        });
-                        if (_this.progAVG.length > 30) {
-                            _this.progAVG.splice(0, 1);
-                        }
-                        _this.lastProgCheck = n;
-                        _this.oldProgress = perc;
-                    }
+                        _c.label = 6;
+                    case 6: return [2 /*return*/];
                 }
-            }
-        };
+            });
+        }); };
         this.parseOutput = function (data) {
             var _a, _b, _c, _d, _e, _f, _g;
             var str = "".concat(data);
@@ -166,9 +221,17 @@ var CLI = /** @class */ (function () {
                     hbPass: _this.hbPass,
                 });
                 if (percentage > 0) {
-                    _this.updateETA(percentage);
+                    void _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,
+                    });
+                }
+                var fps = (0, cliParsers_1.getHandBrakeFps)({
+                    str: str,
+                });
+                if (fps > 0) {
+                    _this.config.updateWorker({
+                        fps: fps,
                     });
                 }
             }
@@ -206,7 +269,7 @@ var CLI = /** @class */ (function () {
                     });
                 }
                 if (percentage > 0) {
-                    _this.updateETA(percentage);
+                    void _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,
                     });
@@ -217,15 +280,14 @@ var CLI = /** @class */ (function () {
                     str: str,
                 });
                 if (percentage > 0) {
-                    _this.updateETA(percentage);
+                    void _this.updateETA(percentage);
                     _this.config.updateWorker({
                         percentage: percentage,
                     });
                 }
             }
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
-        this.killThread = function (thread) {
+        this.killThread = function () {
             var killArray = [
                 'SIGKILL',
                 'SIGHUP',
@@ -233,14 +295,14 @@ var CLI = /** @class */ (function () {
                 'SIGINT',
             ];
             try {
-                thread.kill();
+                _this.thread.kill();
             }
             catch (err) {
                 // err
             }
             killArray.forEach(function (com) {
                 try {
-                    thread.kill(com);
+                    _this.thread.kill(com);
                 }
                 catch (err) {
                     // err
@@ -248,7 +310,7 @@ var CLI = /** @class */ (function () {
             });
         };
         this.runCli = function () { return __awaiter(_this, void 0, void 0, function () {
-            var childProcess, errorLogFull, thread, exitHandler, cliExitCode;
+            var childProcess, errorLogFull, exitHandler, cliExitCode;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -257,11 +319,11 @@ var CLI = /** @class */ (function () {
                         errorLogFull = [];
                         this.config.jobLog("Running ".concat(this.config.cli, " ").concat(this.config.spawnArgs.join(' ')));
                         exitHandler = function () {
-                            if (thread) {
+                            if (_this.thread) {
                                 try {
                                     // eslint-disable-next-line no-console
                                     console.log('Main thread exiting, cleaning up running CLI');
-                                    _this.killThread(thread);
+                                    _this.killThread();
                                 }
                                 catch (err) {
                                     // eslint-disable-next-line no-console
@@ -276,28 +338,30 @@ var CLI = /** @class */ (function () {
                                 try {
                                     var opts = _this.config.spawnOpts || {};
                                     var spawnArgs = _this.config.spawnArgs.map(function (row) { return row.trim(); }).filter(function (row) { return row !== ''; });
-                                    thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
-                                    thread.stdout.on('data', function (data) {
+                                    _this.thread = childProcess.spawn(_this.config.cli, spawnArgs, opts);
+                                    _this.thread.stdout.on('data', function (data) {
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
-                                    thread.stderr.on('data', function (data) {
+                                    _this.thread.stderr.on('data', function (data) {
                                         // eslint-disable-next-line no-console
                                         errorLogFull.push(data.toString());
                                         _this.parseOutput(data);
                                     });
-                                    thread.on('error', function () {
+                                    _this.thread.on('error', function () {
                                         // catches execution error (bad file)
                                         // eslint-disable-next-line no-console
-                                        console.log(1, "Error executing binary: ".concat(_this.config.cli));
+                                        console.log("Error executing binary: ".concat(_this.config.cli));
+                                        _this.config.jobLog("Error executing binary: ".concat(_this.config.cli));
                                         resolve(1);
                                     });
                                     // thread.stdout.pipe(process.stdout);
                                     // thread.stderr.pipe(process.stderr);
-                                    thread.on('close', function (code) {
+                                    _this.thread.on('close', function (code) {
                                         if (code !== 0) {
                                             // eslint-disable-next-line no-console
-                                            console.log(code, 'CLI error');
+                                            console.log("CLI error code: ".concat(code));
+                                            _this.config.jobLog("CLI error code: ".concat(code));
                                         }
                                         resolve(code);
                                     });
@@ -305,17 +369,22 @@ var CLI = /** @class */ (function () {
                                 catch (err) {
                                     // catches execution error (no file)
                                     // eslint-disable-next-line no-console
-                                    console.log(1, "Error executing binary: ".concat(_this.config.cli));
+                                    console.log("Error executing binary: ".concat(_this.config.cli, ": ").concat(err));
+                                    _this.config.jobLog("Error executing binary: ".concat(_this.config.cli, ": ").concat(err));
                                     resolve(1);
                                 }
                             })];
                     case 1:
                         cliExitCode = _a.sent();
                         process.removeListener('exit', exitHandler);
-                        thread = undefined;
+                        this.thread = undefined;
                         if (!this.config.logFullCliOutput) {
                             this.config.jobLog(errorLogFull.slice(-1000).join(''));
                         }
+                        if (this.cancelled) {
+                            cliExitCode = 1;
+                        }
+                        this.config.jobLog("CLI ".concat(this.config.cli, " exited with code: ").concat(cliExitCode));
                         return [2 /*return*/, {
                                 cliExitCode: cliExitCode,
                                 errorLogFull: errorLogFull,

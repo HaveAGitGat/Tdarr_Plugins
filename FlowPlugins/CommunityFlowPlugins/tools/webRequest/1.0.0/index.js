@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -103,6 +103,16 @@ var details = function () { return ({
             },
             tooltip: 'Specify request body',
         },
+        {
+            label: 'Log Response Body',
+            name: 'logResponseBody',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Specify whether to log response body in the job report',
+        },
     ],
     outputs: [
         {
@@ -114,7 +124,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, method, requestUrl, requestHeaders, requestBody, requestConfig, res, err_1;
+    var lib, method, requestUrl, requestHeaders, requestBody, logResponseBody, requestConfig, res, err_1;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -125,6 +135,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 requestUrl = String(args.inputs.requestUrl);
                 requestHeaders = JSON.parse(String(args.inputs.requestHeaders));
                 requestBody = JSON.parse(String(args.inputs.requestBody));
+                logResponseBody = args.inputs.logResponseBody;
                 requestConfig = {
                     method: method,
                     url: requestUrl,
@@ -138,6 +149,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 2:
                 res = _a.sent();
                 args.jobLog("Web request succeeded: Status Code: ".concat(res.status));
+                if (logResponseBody) {
+                    args.jobLog("Response Body: ".concat(JSON.stringify(res.data)));
+                }
                 return [3 /*break*/, 4];
             case 3:
                 err_1 = _a.sent();

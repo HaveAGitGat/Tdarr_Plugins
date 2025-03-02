@@ -10,8 +10,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -39,6 +39,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
+var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint-disable no-param-reassign */
 var details = function () { return ({
     name: 'Set Video Encoder',
@@ -71,6 +72,16 @@ var details = function () { return ({
             tooltip: 'Specify codec of the output file',
         },
         {
+            label: 'Enable FFmpeg Preset',
+            name: 'ffmpegPresetEnabled',
+            type: 'boolean',
+            defaultValue: 'true',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Specify whether to use an FFmpeg preset',
+        },
+        {
             label: 'FFmpeg Preset',
             name: 'ffmpegPreset',
             type: 'string',
@@ -88,8 +99,33 @@ var details = function () { return ({
                     'superfast',
                     'ultrafast',
                 ],
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'ffmpegPresetEnabled',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
             },
             tooltip: 'Specify ffmpeg preset',
+        },
+        {
+            label: 'Enable FFmpeg Quality',
+            name: 'ffmpegQualityEnabled',
+            type: 'boolean',
+            defaultValue: 'true',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Specify whether to set crf (or qp for GPU encoding)',
         },
         {
             label: 'FFmpeg Quality',
@@ -98,8 +134,23 @@ var details = function () { return ({
             defaultValue: '25',
             inputUI: {
                 type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'ffmpegQualityEnabled',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
             },
-            tooltip: 'Specify ffmpeg quality',
+            tooltip: 'Specify ffmpeg quality crf (or qp for GPU encoding)',
         },
         {
             label: 'Hardware Encoding',
@@ -121,6 +172,7 @@ var details = function () { return ({
                 options: [
                     'auto',
                     'nvenc',
+                    'rkmpp',
                     'qsv',
                     'vaapi',
                     'videotoolbox',
@@ -159,24 +211,26 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
-    var _a, _b;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
+    var _b, _c;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
+                (0, flowUtils_1.checkFfmpegCommandInit)(args);
                 hardwareDecoding = args.inputs.hardwareDecoding === true;
                 hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
                 i = 0;
-                _c.label = 1;
+                _d.label = 1;
             case 1:
                 if (!(i < args.variables.ffmpegCommand.streams.length)) return [3 /*break*/, 4];
                 stream = args.variables.ffmpegCommand.streams[i];
                 if (!(stream.codec_type === 'video')) return [3 /*break*/, 3];
                 targetCodec = String(args.inputs.outputCodec);
+                _a = args.inputs, ffmpegPresetEnabled = _a.ffmpegPresetEnabled, ffmpegQualityEnabled = _a.ffmpegQualityEnabled;
                 ffmpegPreset = String(args.inputs.ffmpegPreset);
                 ffmpegQuality = String(args.inputs.ffmpegQuality);
                 forceEncoding = args.inputs.forceEncoding === true;
@@ -191,24 +245,33 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         args: args,
                     })];
             case 2:
-                encoderProperties = _c.sent();
+                encoderProperties = _d.sent();
                 stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
-                if (encoderProperties.isGpu) {
-                    stream.outputArgs.push('-qp', ffmpegQuality);
+                if (ffmpegQualityEnabled) {
+                    if (encoderProperties.isGpu) {
+                        if (encoderProperties.encoder === 'hevc_qsv') {
+                            stream.outputArgs.push('-global_quality', ffmpegQuality);
+                        }
+                        else {
+                            stream.outputArgs.push('-qp', ffmpegQuality);
+                        }
+                    }
+                    else {
+                        stream.outputArgs.push('-crf', ffmpegQuality);
+                    }
                 }
-                else {
-                    stream.outputArgs.push('-crf', ffmpegQuality);
-                }
-                if (targetCodec !== 'av1' && ffmpegPreset) {
-                    stream.outputArgs.push('-preset', ffmpegPreset);
+                if (ffmpegPresetEnabled) {
+                    if (targetCodec !== 'av1' && ffmpegPreset) {
+                        stream.outputArgs.push('-preset', ffmpegPreset);
+                    }
                 }
                 if (hardwareDecoding) {
-                    (_a = stream.inputArgs).push.apply(_a, encoderProperties.inputArgs);
+                    (_b = stream.inputArgs).push.apply(_b, encoderProperties.inputArgs);
                 }
                 if (encoderProperties.outputArgs) {
-                    (_b = stream.outputArgs).push.apply(_b, encoderProperties.outputArgs);
+                    (_c = stream.outputArgs).push.apply(_c, encoderProperties.outputArgs);
                 }
-                _c.label = 3;
+                _d.label = 3;
             case 3:
                 i += 1;
                 return [3 /*break*/, 1];
