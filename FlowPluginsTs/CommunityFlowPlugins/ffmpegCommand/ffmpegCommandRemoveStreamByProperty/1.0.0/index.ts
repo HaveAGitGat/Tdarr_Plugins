@@ -23,7 +23,7 @@ const details = (): IpluginDetails => ({
       label: 'Codec Type',
       name: 'codecType',
       type: 'string',
-      defaultValue: 'all',
+      defaultValue: 'any',
       inputUI: {
         type: 'dropdown',
         options: [

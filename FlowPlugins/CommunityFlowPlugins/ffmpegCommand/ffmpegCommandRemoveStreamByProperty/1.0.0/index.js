@@ -20,7 +20,7 @@ var details = function () { return ({
             label: 'Codec Type',
             name: 'codecType',
             type: 'string',
-            defaultValue: 'all',
+            defaultValue: 'any',
             inputUI: {
                 type: 'dropdown',
                 options: [
