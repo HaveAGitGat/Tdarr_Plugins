@@ -42,6 +42,25 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var getQsvVfScale = function (targetResolution) {
+    switch (targetResolution) {
+        case '480p':
+            return ['-vf', 'vpp_qsv=w=720:h=480'];
+        case '576p':
+            return ['-vf', 'vpp_qsv=w=720:h=576'];
+        case '720p':
+            return ['-vf', 'vpp_qsv=w=1280:h=720'];
+        case '1080p':
+            return ['-vf', 'vpp_qsv=w=1920:h=1080'];
+        case '1440p':
+            return ['-vf', 'vpp_qsv=w=2560:h=1440'];
+        case '4KUHD':
+            return ['-vf', 'vpp_qsv=w=3840:h=2160'];
+        default:
+            return ['-vf', 'vpp_qsv=w=1920:h=1080'];
+    }
+    ;
+};
 var getVfScale = function (targetResolution) {
     switch (targetResolution) {
         case '480p':
@@ -69,12 +88,13 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
         var stream = args.variables.ffmpegCommand.streams[i];
+        var usedQSV = stream.outputArgs.some(function (row) { return row.includes('qsv'); });
         if (stream.codec_type === 'video') {
             var targetResolution = String(args.inputs.targetResolution);
             if (targetResolution !== args.inputFileObj.video_resolution) {
                 // eslint-disable-next-line no-param-reassign
                 args.variables.ffmpegCommand.shouldProcess = true;
-                var scaleArgs = getVfScale(targetResolution);
+                var scaleArgs = usedQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
                 (_a = stream.outputArgs).push.apply(_a, scaleArgs);
             }
         }
