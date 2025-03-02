@@ -59,7 +59,6 @@ var getQsvVfScale = function (targetResolution) {
         default:
             return ['-vf', 'vpp_qsv=w=1920:h=1080'];
     }
-    ;
 };
 var getVfScale = function (targetResolution) {
     switch (targetResolution) {
