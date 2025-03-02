@@ -45,65 +45,94 @@ const details = () :IpluginDetails => ({
   ],
 });
 
+const getQsvVfScale = (
+  targetResolution: string,
+): string[] => {
+
+  switch (targetResolution) {
+    case '480p':
+      return ['-vf', 'vpp_qsv=w=720:h=480'];
+
+    case '576p':
+      return ['-vf', 'vpp_qsv=w=720:h=576'];
+
+    case '720p':
+      return ['-vf', 'vpp_qsv=w=1280:h=720'];
+
+    case '1080p':
+      return ['-vf', 'vpp_qsv=w=1920:h=1080'];
+
+    case '1440p':
+      return ['-vf', 'vpp_qsv=w=2560:h=1440'];
+
+    case '4KUHD':
+      return ['-vf', 'vpp_qsv=w=3840:h=2160'];
+
+    default:
+      return ['-vf', 'vpp_qsv=w=1920:h=1080'];
+
+  };
+}
+
 const getVfScale = (
   targetResolution: string,
 ):string[] => {
-  switch (targetResolution) {
-    case '480p':
-      return ['-vf', 'scale=720:-2'];
+    switch (targetResolution) {
+      case '480p':
+        return ['-vf', 'scale=720:-2'];
 
-    case '576p':
-      return ['-vf', 'scale=720:-2'];
+      case '576p':
+        return ['-vf', 'scale=720:-2'];
 
-    case '720p':
-      return ['-vf', 'scale=1280:-2'];
+      case '720p':
+        return ['-vf', 'scale=1280:-2'];
 
-    case '1080p':
-      return ['-vf', 'scale=1920:-2'];
+      case '1080p':
+        return ['-vf', 'scale=1920:-2'];
 
-    case '1440p':
-      return ['-vf', 'scale=2560:-2'];
+      case '1440p':
+        return ['-vf', 'scale=2560:-2'];
 
-    case '4KUHD':
-      return ['-vf', 'scale=3840:-2'];
+      case '4KUHD':
+        return ['-vf', 'scale=3840:-2'];
 
-    default:
-      return ['-vf', 'scale=1920:-2'];
-  }
-};
+      default:
+        return ['-vf', 'scale=1920:-2'];
+    }
+  };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
-  const lib = require('../../../../../methods/lib')();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
-  args.inputs = lib.loadDefaultValues(args.inputs, details);
+    const lib = require('../../../../../methods/lib')();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
+    args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  checkFfmpegCommandInit(args);
+    checkFfmpegCommandInit(args);
 
-  for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
-    const stream = args.variables.ffmpegCommand.streams[i];
+    for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
+      const stream = args.variables.ffmpegCommand.streams[i];
+      const usedQSV = stream.outputArgs.some((row) => row.includes('qsv'));
+      if (stream.codec_type === 'video') {
+        const targetResolution = String(args.inputs.targetResolution);
 
-    if (stream.codec_type === 'video') {
-      const targetResolution = String(args.inputs.targetResolution);
-
-      if (
-        targetResolution !== args.inputFileObj.video_resolution
-      ) {
-        // eslint-disable-next-line no-param-reassign
-        args.variables.ffmpegCommand.shouldProcess = true;
-        const scaleArgs = getVfScale(targetResolution);
-        stream.outputArgs.push(...scaleArgs);
+        if (
+          targetResolution !== args.inputFileObj.video_resolution
+        ) {
+          // eslint-disable-next-line no-param-reassign
+          args.variables.ffmpegCommand.shouldProcess = true;
+          const scaleArgs = usedQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
+          stream.outputArgs.push(...scaleArgs);
+        }
       }
     }
-  }
 
-  return {
-    outputFileObj: args.inputFileObj,
-    outputNumber: 1,
-    variables: args.variables,
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 1,
+      variables: args.variables,
+    };
   };
-};
-export {
-  details,
-  plugin,
-};
+  export {
+    details,
+    plugin,
+  };
