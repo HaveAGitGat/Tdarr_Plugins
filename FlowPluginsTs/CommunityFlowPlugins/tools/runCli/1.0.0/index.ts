@@ -196,9 +196,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const customCliPath = String(args.inputs.customCliPath);
   let cliPath = '';
 
-  const {
-    outputFileBecomesWorkingFile,
-  } = args.inputs;
+  const { doesCommandCreateOutputFile } = args.inputs;
+  let { outputFileBecomesWorkingFile } = args.inputs;
+
+  if (!doesCommandCreateOutputFile) {
+    outputFileBecomesWorkingFile = false;
+  }
+
   let userOutputFilePath = String(args.inputs.userOutputFilePath);
   let cliArguments = String(args.inputs.cliArguments);
 
