@@ -98,20 +98,16 @@ var plugin = function (args) {
             target = stream[propertyToCheck];
         }
         if (target) {
-            var prop = String(target).toLowerCase();
-            for (var i = 0; i < valuesToRemove.length; i += 1) {
-                var val = valuesToRemove[i].toLowerCase();
-                var prefix = "Removing stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop);
-                if (condition === 'includes' && prop.includes(val)) {
-                    args.jobLog("".concat(prefix, " includes ").concat(val, "\n"));
-                    // eslint-disable-next-line no-param-reassign
-                    stream.removed = true;
-                }
-                else if (condition === 'not_includes' && !prop.includes(val)) {
-                    args.jobLog("".concat(prefix, " not_includes ").concat(val, "\n"));
-                    // eslint-disable-next-line no-param-reassign
-                    stream.removed = true;
-                }
+            var prop_1 = String(target).toLowerCase();
+            // For includes: remove if the property includes ANY of the values
+            // For not_includes: remove if the property doesn't include ALL of the values
+            var shouldRemove = condition === 'includes'
+                ? valuesToRemove.some(function (val) { return prop_1.includes(val.toLowerCase()); })
+                : !valuesToRemove.some(function (val) { return prop_1.includes(val.toLowerCase()); });
+            if (shouldRemove) {
+                var valuesStr = valuesToRemove.join(', ');
+                args.jobLog("Removing stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop_1, " ").concat(condition, " ").concat(valuesStr, "\n"));
+                stream.removed = true;
             }
         }
     });

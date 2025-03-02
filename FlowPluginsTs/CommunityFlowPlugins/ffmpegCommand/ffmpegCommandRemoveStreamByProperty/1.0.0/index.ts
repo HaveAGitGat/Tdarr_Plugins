@@ -126,18 +126,19 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
     if (target) {
       const prop = String(target).toLowerCase();
-      for (let i = 0; i < valuesToRemove.length; i += 1) {
-        const val = valuesToRemove[i].toLowerCase();
-        const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
-        if (condition === 'includes' && prop.includes(val)) {
-          args.jobLog(`${prefix} includes ${val}\n`);
-          // eslint-disable-next-line no-param-reassign
-          stream.removed = true;
-        } else if (condition === 'not_includes' && !prop.includes(val)) {
-          args.jobLog(`${prefix} not_includes ${val}\n`);
-          // eslint-disable-next-line no-param-reassign
-          stream.removed = true;
-        }
+      
+      // For includes: remove if the property includes ANY of the values
+      // For not_includes: remove if the property doesn't include ANY of the values
+      const shouldRemove = condition === 'includes' 
+        ? valuesToRemove.some(val => prop.includes(val.toLowerCase()))
+        : !valuesToRemove.some(val => prop.includes(val.toLowerCase()));
+
+      if (shouldRemove) {
+        const valuesStr = valuesToRemove.join(', ');
+        args.jobLog(`Removing stream index ${stream.index} because ${propertyToCheck} of ${prop} ${condition} ${valuesStr}\n`);
+        stream.removed = true;
+      }else{
+        args.jobLog(`Keep stream index ${stream.index} because ${propertyToCheck} of ${prop} ${condition} ${valuesStr}\n`);
       }
     }
   });
