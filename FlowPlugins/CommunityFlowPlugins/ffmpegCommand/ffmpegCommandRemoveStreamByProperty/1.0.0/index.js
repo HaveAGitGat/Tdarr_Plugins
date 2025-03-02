@@ -97,21 +97,22 @@ var plugin = function (args) {
         else {
             target = stream[propertyToCheck];
         }
-        if (target) {
-            var prop_1 = String(target).toLowerCase();
-            // For includes:      remove if the property includes ANY of the values
-            // For not_includes:  remove if the property includes NONE of the values
-            var shouldRemove = condition === 'includes'
-                ? valuesToRemove.some(function (val) { return prop_1.includes(val.toLowerCase()); })
-                : !valuesToRemove.some(function (val) { return prop_1.includes(val.toLowerCase()); });
-            if (shouldRemove) {
-                var valuesStr = valuesToRemove.join(', ');
-                args.jobLog("Removing stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop_1, " ").concat(condition, " ").concat(valuesStr, "\n"));
-                stream.removed = true;
-            }
-            else {
-                args.jobLog("Keep stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop_1, " ").concat(condition, " ").concat(valuesStr, "\n"));
-            }
+        if (!target) {
+            return;
+        }
+        var prop = String(target).toLowerCase();
+        // For includes:      remove if the property includes ANY of the values
+        // For not_includes:  remove if the property includes NONE of the values
+        var shouldRemove = condition === 'includes'
+            ? valuesToRemove.some(function (val) { return prop.includes(val.toLowerCase()); })
+            : !valuesToRemove.some(function (val) { return prop.includes(val.toLowerCase()); });
+        var valuesStr = valuesToRemove.join(', ');
+        var action = shouldRemove ? 'Removing' : 'Keep';
+        // eslint-disable-next-line max-len
+        args.jobLog("".concat(action, " stream index ").concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop, " ").concat(condition, " ").concat(valuesStr, "\n"));
+        if (shouldRemove) {
+            // eslint-disable-next-line no-param-reassign
+            stream.removed = true;
         }
     });
     return {

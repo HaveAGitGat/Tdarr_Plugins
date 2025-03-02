@@ -39,7 +39,6 @@ const details = (): IpluginDetails => ({
         `,
     },
 
-
     {
       label: 'Property To Check',
       name: 'propertyToCheck',
@@ -107,41 +106,43 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   checkFfmpegCommandInit(args);
-  
+
   const codecType = String(args.inputs.codecType).trim();
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
   const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map((item) => item.trim());
   const condition = String(args.inputs.condition);
 
   args.variables.ffmpegCommand.streams
-  .filter((stream) => codecType === 'any' || stream.codec_type === codecType)
-  .forEach((stream) => {
-    let target = '';
-    if (propertyToCheck.includes('.')) {
-      const parts = propertyToCheck.split('.');
-      target = stream[parts[0]]?.[parts[1]];
-    } else {
-      target = stream[propertyToCheck];
-    }
+    .filter((stream) => codecType === 'any' || stream.codec_type === codecType)
+    .forEach((stream) => {
+      let target = '';
+      if (propertyToCheck.includes('.')) {
+        const parts = propertyToCheck.split('.');
+        target = stream[parts[0]]?.[parts[1]];
+      } else {
+        target = stream[propertyToCheck];
+      }
 
-    if (target) {
+      if (!target) {
+        return;
+      }
+
       const prop = String(target).toLowerCase();
-      
       // For includes:      remove if the property includes ANY of the values
       // For not_includes:  remove if the property includes NONE of the values
-      const shouldRemove = condition === 'includes' 
-        ? valuesToRemove.some(val => prop.includes(val.toLowerCase()))
-        : !valuesToRemove.some(val => prop.includes(val.toLowerCase()));
+      const shouldRemove = condition === 'includes'
+        ? valuesToRemove.some((val) => prop.includes(val.toLowerCase()))
+        : !valuesToRemove.some((val) => prop.includes(val.toLowerCase()));
 
+      const valuesStr = valuesToRemove.join(', ');
+      const action = shouldRemove ? 'Removing' : 'Keep';
+      // eslint-disable-next-line max-len
+      args.jobLog(`${action} stream index ${stream.index} because ${propertyToCheck} of ${prop} ${condition} ${valuesStr}\n`);
       if (shouldRemove) {
-        const valuesStr = valuesToRemove.join(', ');
-        args.jobLog(`Removing stream index ${stream.index} because ${propertyToCheck} of ${prop} ${condition} ${valuesStr}\n`);
+        // eslint-disable-next-line no-param-reassign
         stream.removed = true;
-      }else{
-        args.jobLog(`Keep stream index ${stream.index} because ${propertyToCheck} of ${prop} ${condition} ${valuesStr}\n`);
       }
-    }
-  });
+    });
 
   return {
     outputFileObj: args.inputFileObj,
