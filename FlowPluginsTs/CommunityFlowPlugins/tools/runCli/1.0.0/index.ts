@@ -91,6 +91,11 @@ const details = (): IpluginDetails => ({
       defaultValue: 'true',
       inputUI: {
         type: 'switch',
+        onSelect: {
+          false: {
+            outputFileBecomesWorkingFile: 'false',
+          },
+        },
       },
       tooltip:
         'Toggle this on if the command creates an output file.',
@@ -196,12 +201,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const customCliPath = String(args.inputs.customCliPath);
   let cliPath = '';
 
-  const { doesCommandCreateOutputFile } = args.inputs;
-  let { outputFileBecomesWorkingFile } = args.inputs;
-
-  if (!doesCommandCreateOutputFile) {
-    outputFileBecomesWorkingFile = false;
-  }
+  const {
+    outputFileBecomesWorkingFile,
+  } = args.inputs;
 
   let userOutputFilePath = String(args.inputs.userOutputFilePath);
   let cliArguments = String(args.inputs.cliArguments);
