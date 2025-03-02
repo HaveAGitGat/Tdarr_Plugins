@@ -88,13 +88,13 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
         var stream = args.variables.ffmpegCommand.streams[i];
-        var usedQSV = stream.outputArgs.some(function (row) { return row.includes('qsv'); });
+        var usesQSV = stream.outputArgs.some(function (row) { return row.includes('qsv'); });
         if (stream.codec_type === 'video') {
             var targetResolution = String(args.inputs.targetResolution);
             if (targetResolution !== args.inputFileObj.video_resolution) {
                 // eslint-disable-next-line no-param-reassign
                 args.variables.ffmpegCommand.shouldProcess = true;
-                var scaleArgs = usedQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
+                var scaleArgs = usesQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
                 (_a = stream.outputArgs).push.apply(_a, scaleArgs);
             }
         }

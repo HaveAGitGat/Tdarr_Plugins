@@ -111,7 +111,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
     for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
       const stream = args.variables.ffmpegCommand.streams[i];
-      const usedQSV = stream.outputArgs.some((row) => row.includes('qsv'));
+      const usesQSV = stream.outputArgs.some((row) => row.includes('qsv'));
       if (stream.codec_type === 'video') {
         const targetResolution = String(args.inputs.targetResolution);
 
@@ -120,7 +120,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
         ) {
           // eslint-disable-next-line no-param-reassign
           args.variables.ffmpegCommand.shouldProcess = true;
-          const scaleArgs = usedQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
+          const scaleArgs = usesQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
           stream.outputArgs.push(...scaleArgs);
         }
       }
