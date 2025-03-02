@@ -127,8 +127,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     if (target) {
       const prop = String(target).toLowerCase();
       
-      // For includes: remove if the property includes ANY of the values
-      // For not_includes: remove if the property doesn't include ANY of the values
+      // For includes:      remove if the property includes ANY of the values
+      // For not_includes:  remove if the property includes NONE of the values
       const shouldRemove = condition === 'includes' 
         ? valuesToRemove.some(val => prop.includes(val.toLowerCase()))
         : !valuesToRemove.some(val => prop.includes(val.toLowerCase()));
