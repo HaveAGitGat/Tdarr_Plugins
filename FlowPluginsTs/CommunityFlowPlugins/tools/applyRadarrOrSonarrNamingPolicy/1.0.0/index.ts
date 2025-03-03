@@ -1,3 +1,4 @@
+import { promises as fsp } from 'fs';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
   getContainer, getFileAbosluteDir, getFileName,
@@ -58,6 +59,17 @@ const details = (): IpluginDetails => ({
         + 'http://192.168.1.1:8989\\n'
         + 'https://radarr.domain.com\\n'
         + 'https://sonarr.domain.com\\n',
+    },
+    {
+      label: 'Rename subs',
+      name: 'renameSubs',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip:
+        'If enabled, the plugin will rename the subtitles files that match the video file name.',
     },
   ],
   outputs: [
@@ -177,6 +189,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   let newPath = '';
   let isSuccessful = false;
+  const { renameSubs } = args.inputs;
   const arr = String(args.inputs.arr);
   const arr_host = String(args.inputs.arr_host).trim();
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
@@ -271,6 +284,30 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         destinationPath: newPath,
         args,
       });
+
+      if (renameSubs) {
+        // file example : /path/to/file/serie.S01E01.mkv
+        // srt example 1: /path/to/file/serie.S01E01.srt
+        // srt example 2: /path/to/file/serie.S01E01.ro.srt
+
+        const basePath = `${getFileAbosluteDir(currentFileName)}/${getFileName(currentFileName)}`;
+        const matchingSrtFiles = (await fsp.readdir(getFileAbosluteDir(currentFileName)))
+          .map((row) => `${getFileAbosluteDir(currentFileName)}/${row}`)
+          .filter((row) => row.startsWith(basePath) && row !== currentFileName && row.endsWith('.srt'));
+
+        for (let i = 0; i < matchingSrtFiles.length; i += 1) {
+          const srtFile = matchingSrtFiles[i];
+          const lastPart = srtFile.slice(basePath.length);
+          const newSrtPath = `${basePath}${lastPart}`;
+          // eslint-disable-next-line no-await-in-loop
+          isSuccessful = await fileMoveOrCopy({
+            operation: 'move',
+            sourcePath: srtFile,
+            destinationPath: newSrtPath,
+            args,
+          });
+        }
+      }
     } else {
       isSuccessful = true;
       args.jobLog('✔ No rename necessary.');
