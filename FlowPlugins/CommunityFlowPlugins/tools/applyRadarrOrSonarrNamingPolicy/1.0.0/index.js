@@ -51,6 +51,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fs_1 = require("fs");
 var fileMoveOrCopy_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/fileMoveOrCopy"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
@@ -102,6 +103,16 @@ var details = function () { return ({
                 + 'http://192.168.1.1:8989\\n'
                 + 'https://radarr.domain.com\\n'
                 + 'https://sonarr.domain.com\\n',
+        },
+        {
+            label: 'Rename subs',
+            name: 'renameSubs',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'If enabled, the plugin will rename the subtitles files that match the video file name.'
         },
     ],
     outputs: [
@@ -174,7 +185,7 @@ var getFileInfo = function (args, arrApp, fileName) { return __awaiter(void 0, v
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, newPath, isSuccessful, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, fInfo, previewRenameRequestResult, fileToRename;
+    var lib, newPath, isSuccessful, renameSubs, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, fInfo, previewRenameRequestResult, fileToRename, basePath_1, matchingSrtFiles, i, srtFile, lastPart, newSrtPath;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -184,6 +195,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 newPath = '';
                 isSuccessful = false;
+                renameSubs = args.inputs.renameSubs;
                 arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
@@ -251,7 +263,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fInfo = _e.sent();
                 _e.label = 3;
             case 3:
-                if (!(fInfo.id !== '-1')) return [3 /*break*/, 7];
+                if (!(fInfo.id !== '-1')) return [3 /*break*/, 12];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
                         url: arrApp.delegates.buildPreviewRenameResquestUrl(fInfo),
@@ -261,7 +273,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 previewRenameRequestResult = _e.sent();
                 fileToRename = arrApp.delegates
                     .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult, fInfo);
-                if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
+                if (!(fileToRename !== undefined)) return [3 /*break*/, 11];
                 newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
@@ -271,12 +283,39 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     })];
             case 5:
                 isSuccessful = _e.sent();
-                return [3 /*break*/, 7];
+                if (!renameSubs) return [3 /*break*/, 10];
+                basePath_1 = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(currentFileName));
+                return [4 /*yield*/, fs_1.promises.readdir((0, fileUtils_1.getFileAbosluteDir)(currentFileName))];
             case 6:
+                matchingSrtFiles = (_e.sent())
+                    .map(function (row) { return "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat(row); })
+                    .filter(function (row) { return row.startsWith(basePath_1) && row !== currentFileName && row.endsWith('.srt'); });
+                i = 0;
+                _e.label = 7;
+            case 7:
+                if (!(i < matchingSrtFiles.length)) return [3 /*break*/, 10];
+                srtFile = matchingSrtFiles[i];
+                lastPart = srtFile.slice(basePath_1.length);
+                newSrtPath = "".concat(basePath_1).concat(lastPart);
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
+                        sourcePath: srtFile,
+                        destinationPath: newSrtPath,
+                        args: args,
+                    })];
+            case 8:
+                // eslint-disable-next-line no-await-in-loop
+                isSuccessful = _e.sent();
+                _e.label = 9;
+            case 9:
+                i += 1;
+                return [3 /*break*/, 7];
+            case 10: return [3 /*break*/, 12];
+            case 11:
                 isSuccessful = true;
                 args.jobLog('✔ No rename necessary.');
-                _e.label = 7;
-            case 7: return [2 /*return*/, {
+                _e.label = 12;
+            case 12: return [2 /*return*/, {
                     outputFileObj: isSuccessful && newPath !== ''
                         ? __assign(__assign({}, args.inputFileObj), { _id: newPath }) : args.inputFileObj,
                     outputNumber: isSuccessful ? 1 : 2,
