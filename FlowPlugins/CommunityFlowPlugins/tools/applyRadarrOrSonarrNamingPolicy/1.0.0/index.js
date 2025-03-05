@@ -112,7 +112,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: 'If enabled, the plugin will rename the subtitles files that match the video file name.'
+            tooltip: 'If enabled, the plugin will rename the subtitles files that match the video file name.',
         },
     ],
     outputs: [
@@ -185,7 +185,7 @@ var getFileInfo = function (args, arrApp, fileName) { return __awaiter(void 0, v
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, newPath, isSuccessful, renameSubs, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, fInfo, previewRenameRequestResult, fileToRename, basePath_1, matchingSrtFiles, i, srtFile, lastPart, newSrtPath;
+    var lib, newPath, isSuccessful, renameSubs, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, fInfo, previewRenameRequestResult, fileToRename, basePathOld_1, basePathNew, matchingSrtFiles, i, srtFile, lastPart, newSrtPath;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -284,19 +284,20 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 5:
                 isSuccessful = _e.sent();
                 if (!renameSubs) return [3 /*break*/, 10];
-                basePath_1 = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(currentFileName));
+                basePathOld_1 = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(currentFileName));
+                basePathNew = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(newPath));
                 return [4 /*yield*/, fs_1.promises.readdir((0, fileUtils_1.getFileAbosluteDir)(currentFileName))];
             case 6:
                 matchingSrtFiles = (_e.sent())
                     .map(function (row) { return "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat(row); })
-                    .filter(function (row) { return row.startsWith(basePath_1) && row !== currentFileName && row.endsWith('.srt'); });
+                    .filter(function (row) { return row.startsWith(basePathOld_1) && row !== currentFileName && row.endsWith('.srt'); });
                 i = 0;
                 _e.label = 7;
             case 7:
                 if (!(i < matchingSrtFiles.length)) return [3 /*break*/, 10];
                 srtFile = matchingSrtFiles[i];
-                lastPart = srtFile.slice(basePath_1.length);
-                newSrtPath = "".concat(basePath_1).concat(lastPart);
+                lastPart = srtFile.slice(basePathOld_1.length);
+                newSrtPath = "".concat(basePathNew).concat(lastPart);
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: srtFile,

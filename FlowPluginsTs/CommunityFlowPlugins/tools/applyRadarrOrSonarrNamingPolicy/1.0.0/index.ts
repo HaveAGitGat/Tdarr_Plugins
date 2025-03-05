@@ -290,15 +290,16 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         // srt example 1: /path/to/file/serie.S01E01.srt
         // srt example 2: /path/to/file/serie.S01E01.ro.srt
 
-        const basePath = `${getFileAbosluteDir(currentFileName)}/${getFileName(currentFileName)}`;
+        const basePathOld = `${getFileAbosluteDir(currentFileName)}/${getFileName(currentFileName)}`;
+        const basePathNew = `${getFileAbosluteDir(currentFileName)}/${getFileName(newPath)}`;
         const matchingSrtFiles = (await fsp.readdir(getFileAbosluteDir(currentFileName)))
           .map((row) => `${getFileAbosluteDir(currentFileName)}/${row}`)
-          .filter((row) => row.startsWith(basePath) && row !== currentFileName && row.endsWith('.srt'));
+          .filter((row) => row.startsWith(basePathOld) && row !== currentFileName && row.endsWith('.srt'));
 
         for (let i = 0; i < matchingSrtFiles.length; i += 1) {
           const srtFile = matchingSrtFiles[i];
-          const lastPart = srtFile.slice(basePath.length);
-          const newSrtPath = `${basePath}${lastPart}`;
+          const lastPart = srtFile.slice(basePathOld.length);
+          const newSrtPath = `${basePathNew}${lastPart}`;
           // eslint-disable-next-line no-await-in-loop
           isSuccessful = await fileMoveOrCopy({
             operation: 'move',
