@@ -38,5 +38,6 @@ Run tests:
 4. Make sure typescript is intalled with `npm i -g typescript` then run `tsc` to compile the changes.
 5. Refresh the browser and Tdarr will pick up the changes
 
+Note, `pluginsDir` directories that contain a `.git` folder (such as when cloning this repo) will cause Tdarr to skip plugin updates to prevent overwriting development changes.
 
 
