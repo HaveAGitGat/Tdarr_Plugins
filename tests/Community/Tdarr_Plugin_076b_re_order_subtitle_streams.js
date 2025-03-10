@@ -49,7 +49,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ', -c copy  -map 0:v -map 0:a  -map 0:s:1 -disposition:s:0 default -map 0:s:0  -disposition:s:1 0  -map 0:d? ',
+      preset: ', -c copy  -map 0:v -map 0:a  -map 0:s:1 -disposition:s:0 default -map 0:s:0  -disposition:s:1 0  -map 0:d? -map 0:t? ',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
