@@ -83,7 +83,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Specify the path to the Apprise executable. If the path is not specified, the plugin will use the default path.",
+            tooltip: 'Specify the path to the Apprise executable.'
+                + 'If the path is not specified, the plugin will use the default path.',
         },
     ],
     outputs: [
@@ -104,7 +105,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 command = String(args.inputs.command);
-                apprisePath = String(args.inputs.apprisePath);
+                apprisePath = String(args.inputs.apprisePath).trim();
                 cliArgs = __spreadArray([], args.deps.parseArgsStringToArgv(command, '', ''), true);
                 cli = new cliUtils_1.CLI({
                     cli: apprisePath,

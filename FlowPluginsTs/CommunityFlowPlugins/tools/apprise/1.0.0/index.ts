@@ -49,7 +49,8 @@ const details = ():IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Specify the path to the Apprise executable. If the path is not specified, the plugin will use the default path.',
+      tooltip: 'Specify the path to the Apprise executable.'
+      + 'If the path is not specified, the plugin will use the default path.',
     },
   ],
   outputs: [
