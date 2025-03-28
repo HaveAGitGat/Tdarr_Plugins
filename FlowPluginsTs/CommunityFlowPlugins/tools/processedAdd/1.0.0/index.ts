@@ -10,7 +10,7 @@ const details = ():IpluginDetails => ({
   name: 'Add To Processed',
   description: `
   Add file to processed list. Can be used with 'Check If Processed' plugin to check if file has already been processed.
-  You can clear the processed list by clicking the 'Clear History' button in the library 'Transcode Options' panel.
+  You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.
   `,
   style: {
     borderColor: 'orange',
