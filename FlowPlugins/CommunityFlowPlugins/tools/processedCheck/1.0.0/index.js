@@ -41,7 +41,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check If Processed',
-    description: "\n    Check if file has already been added to processed list by 'Add To Processed' flow plugin.\n    You can clear the processed list by clicking the 'Clear History' button in the library 'Transcode Options' panel.\n  ",
+    description: "\n    Check if file has already been added to processed list by 'Add To Processed' flow plugin.\n    You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.\n  ",
     style: {
         borderColor: 'orange',
     },
