@@ -134,9 +134,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       if (useInputBitrate) {
         args.jobLog('Attempting to use % of input bitrate as output bitrate');
         // check if input bitrate is available
-        const mediainfoIndex = stream.index + 1;
+        const tracks = args?.inputFileObj?.mediaInfo?.track;
+        let inputBitrate = tracks?.find((x) => x.StreamOrder === stream.index.toString())?.BitRate;
 
-        let inputBitrate = args?.inputFileObj?.mediaInfo?.track?.[mediainfoIndex]?.BitRate;
         if (inputBitrate) {
           args.jobLog(`Found input bitrate: ${inputBitrate}`);
           // @ts-expect-error type
