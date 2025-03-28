@@ -115,7 +115,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [3 /*break*/, 4];
             case 2:
                 if (!(checkType === 'fileHash')) return [3 /*break*/, 4];
-                return [4 /*yield*/, (0, fileUtils_1.hashFile)(args.inputFileObj._id, 'sha256')];
+                return [4 /*yield*/, (0, fileUtils_1.hashFile)(fileToAddObj._id, 'sha256')];
             case 3:
                 propertyToAdd = _a.sent();
                 _a.label = 4;
