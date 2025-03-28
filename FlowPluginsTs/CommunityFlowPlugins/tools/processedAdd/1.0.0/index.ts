@@ -80,7 +80,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   } else if (checkType === 'filePath') {
     propertyToAdd = fileToAddObj._id;
   } else if (checkType === 'fileHash') {
-    propertyToAdd = await hashFile(args.inputFileObj._id, 'sha256');
+    propertyToAdd = await hashFile(fileToAddObj._id, 'sha256');
   }
 
   await args.deps.crudTransDBN('F2FOutputJSONDB', 'removeOne', propertyToAdd, {});
