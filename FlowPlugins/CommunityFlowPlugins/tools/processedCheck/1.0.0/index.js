@@ -35,99 +35,91 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Apprise',
-    description: 'Use Apprise to send notifications.',
+    name: 'Check If Processed',
+    description: "\n    Check if file has already been added to processed list by 'Add To Processed' flow plugin.\n    You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.\n  ",
     style: {
-        borderColor: 'green',
+        borderColor: 'orange',
     },
     tags: '',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.18.01',
-    sidebarPosition: -1,
-    icon: 'faBell',
+    requiresVersion: '2.37.01',
+    sidebarPosition: 2,
+    icon: 'faFile',
     inputs: [
         {
-            label: 'Command',
-            name: 'command',
+            label: 'Check Type',
+            name: 'checkType',
             type: 'string',
-            defaultValue: '-vv -t "Success" -b "File {{{args.inputFileObj._id}}}" "discord://xxx/xxxx"',
+            defaultValue: 'filePath',
             inputUI: {
-                type: 'textarea',
-                style: {
-                    height: '100px',
-                },
+                type: 'dropdown',
+                options: [
+                    'filePath',
+                    'fileName',
+                    'fileHash',
+                ],
             },
-            tooltip: "Visit the following for more information on Apprise: https://github.com/caronc/apprise\n      \\nExample\\n\n     -vv -t \"Success\" -b \"File {{{args.inputFileObj._id}}}\" \"discord://xxx/xxxx\"\n\n\n     \\nExample\\n\n     -vv -t \"Processing\" -b \"File {{{args.inputFileObj._id}}}\" "
-                + "\"discord://{{{args.userVariables.global.discord_webhook}}}\"\n      ",
-        },
-        {
-            label: 'Apprise Path',
-            name: 'apprisePath',
-            type: 'string',
-            defaultValue: 'apprise',
-            inputUI: {
-                type: 'text',
-            },
-            tooltip: 'Specify the path to the Apprise executable.'
-                + 'If the path is not specified, the plugin will use the default path.',
+            tooltip: 'Specify the type of check to perform.',
         },
     ],
     outputs: [
         {
             number: 1,
-            tooltip: 'Continue to next plugin',
+            tooltip: 'File has not been processed',
+        },
+        {
+            number: 2,
+            tooltip: 'File has been processed',
         },
     ],
 }); };
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, command, apprisePath, cliArgs, cli, res;
+    var lib, checkType, propertyToCheck, outputHist, outputNumber;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                command = String(args.inputs.command);
-                apprisePath = String(args.inputs.apprisePath).trim();
-                cliArgs = __spreadArray([], args.deps.parseArgsStringToArgv(command, '', ''), true);
-                cli = new cliUtils_1.CLI({
-                    cli: apprisePath,
-                    spawnArgs: cliArgs,
-                    spawnOpts: {},
-                    jobLog: args.jobLog,
-                    outputFilePath: '',
-                    inputFileObj: args.inputFileObj,
-                    logFullCliOutput: args.logFullCliOutput,
-                    updateWorker: args.updateWorker,
-                    args: args,
-                });
-                return [4 /*yield*/, cli.runCli()];
+                checkType = String(args.inputs.checkType);
+                propertyToCheck = '';
+                if (!(checkType === 'fileName')) return [3 /*break*/, 1];
+                propertyToCheck = "".concat(args.inputFileObj.fileNameWithoutExtension, ".").concat(args.inputFileObj.container);
+                return [3 /*break*/, 4];
             case 1:
-                res = _a.sent();
-                if (res.cliExitCode !== 0) {
-                    args.jobLog('Running Apprise failed');
-                    throw new Error('Running Apprise failed');
+                if (!(checkType === 'filePath')) return [3 /*break*/, 2];
+                propertyToCheck = args.inputFileObj._id;
+                return [3 /*break*/, 4];
+            case 2:
+                if (!(checkType === 'fileHash')) return [3 /*break*/, 4];
+                return [4 /*yield*/, (0, fileUtils_1.hashFile)(args.inputFileObj._id, 'sha256')];
+            case 3:
+                propertyToCheck = _a.sent();
+                _a.label = 4;
+            case 4:
+                args.jobLog("Checking if file has already been processed: ".concat(propertyToCheck));
+                return [4 /*yield*/, args.deps.crudTransDBN('F2FOutputJSONDB', 'getById', propertyToCheck, {})];
+            case 5:
+                outputHist = _a.sent();
+                outputNumber = 1;
+                if (outputHist !== undefined && outputHist.DB === args.inputFileObj.DB) {
+                    args.jobLog('File has already been processed by this library');
+                    outputNumber = 2;
+                }
+                else {
+                    args.jobLog('File has not been processed by this library');
                 }
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
-                        outputNumber: 1,
+                        outputNumber: outputNumber,
                         variables: args.variables,
                     }];
         }
