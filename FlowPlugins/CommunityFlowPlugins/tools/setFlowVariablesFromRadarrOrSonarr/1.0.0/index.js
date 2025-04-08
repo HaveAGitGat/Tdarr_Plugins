@@ -123,6 +123,7 @@ var API_HEADERS = {
 // eslint-disable-next-line max-len
 var LANGUAGE_API_BASE_URL = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/iso-language-codes-639-1-and-639-2@public/records';
 var createHeaders = function (apiKey) { return (__assign(__assign({}, API_HEADERS), { 'X-Api-Key': apiKey })); };
+
 var buildTerm = function (filePath) {
     var tvdbMatch = filePath.match(/tvdb-(\d+)/);
     var tmdbMatch = filePath.match(/tmdb-(\d+)/);
@@ -143,14 +144,18 @@ var extractSeasonEpisodeInfo = function (fileName) {
         episodeNumber: Number((_b = seasonEpisodeMatch === null || seasonEpisodeMatch === void 0 ? void 0 : seasonEpisodeMatch[2]) !== null && _b !== void 0 ? _b : -1),
     };
 };
+
 var lookupContent = function (args, config, fileName) { return __awaiter(void 0, void 0, void 0, function () {
     var term, contentType, response, content, baseInfo, error_1;
+
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
+
                 term = buildTerm(fileName);
                 if (!term)
+
                     return [2 /*return*/, { id: '-1' }];
                 _c.label = 1;
             case 1:
@@ -216,6 +221,7 @@ var parseContent = function (args, config, fileName) { return __awaiter(void 0, 
         }
     });
 }); };
+
 var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
     var url, response, data, error_3;
     var _a, _b;
