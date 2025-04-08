@@ -1,160 +1,232 @@
-const details = () => ({
-  id: 'Tdarr_Plugin_jordy_filter_by_audio_codec_and_channels',
-  Stage: 'Pre-processing',
-  Name: 'Filter By Audio Codec and Channels',
-  Type: 'Audio',
-  Operation: 'Filter',
-  Description: 'Only allow specified audio codecs with specific channel counts to be processed \n\n',
-  Version: '1.00',
-  Tags: 'filter,audio',
-  Inputs: [
-    {
-      name: 'codecsToProcess',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip:
-        'Enter a comma separated list of audio codecs to be processed. Leave blank if using codecsToNotProcess',
-    },
-    {
-      name: 'channelsToProcess',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip:
-        'Enter a comma separated list of channel counts to be processed (1=mono, 2=stereo, 6=5.1, 8=7.1). Leave blank to ignore channel count.',
-    },
-    {
-      name: 'codecsToNotProcess',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip:
-        'Enter a comma separated list of audio codecs to not be processed. Leave blank if using codecsToProcess',
-    },
-    {
-      name: 'channelsToNotProcess',
-      type: 'string',
-      defaultValue: '',
-      inputUI: {
-        type: 'text',
-      },
-      tooltip:
-        'Enter a comma separated list of channel counts to not be processed (1=mono, 2=stereo, 6=5.1, 8=7.1). Leave blank to ignore channel count.',
-    },
-    {
-      name: 'requireAllStreams',
-      type: 'boolean',
-      defaultValue: 'false',
-      inputUI: {
-        type: 'dropdown',
-        options: [
-          'false',
-          'true'
-        ],
-      },
-      tooltip:
-        'If true, all audio streams must match the criteria. If false, at least one stream must match.',
-    }
-  ],
-});
+/* eslint max-len: 0 */
+const _ = require('lodash');
+const run = require('../helpers/run');
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
-  const lib = require('../methods/lib')();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
-  inputs = lib.loadDefaultValues(inputs, details);
+const tests = [
+  // Test 1: Basic functionality - match specific codec and channel count
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        // Ensure one audio stream is AAC stereo
+        if (file.ffProbeData.streams[1].codec_type === 'audio') {
+          file.ffProbeData.streams[1].codec_name = 'aac';
+          file.ffProbeData.streams[1].channels = 2;
+        }
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: 'aac',
+        channelsToProcess: '2',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: expect.stringContaining('meets audio codec and channel criteria'),
+    },
+  },
   
-  const response = {
-    processFile: false,
-    infoLog: '',
-  };
+  // Test 2: File doesn't have matching codec
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        // Set audio stream to non-matching codec
+        if (file.ffProbeData.streams[1].codec_type === 'audio') {
+          file.ffProbeData.streams[1].codec_name = 'ac3';
+          file.ffProbeData.streams[1].channels = 2;
+        }
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: 'aac',
+        channelsToProcess: '2',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+    },
+  },
   
-  // Check if file has audio streams
-  if (!file.ffProbeData || !file.ffProbeData.streams) {
-    response.infoLog += 'No streams data found. Breaking out of plugin stack.\n';
-    return response;
-  }
+  // Test 3: File has matching codec but wrong channel count
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        // Set audio stream to matching codec but wrong channels
+        if (file.ffProbeData.streams[1].codec_type === 'audio') {
+          file.ffProbeData.streams[1].codec_name = 'aac';
+          file.ffProbeData.streams[1].channels = 6;
+        }
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: 'aac',
+        channelsToProcess: '2',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+    },
+  },
   
-  // Get all audio streams
-  const audioStreams = file.ffProbeData.streams.filter(stream => 
-    stream.codec_type && stream.codec_type.toLowerCase() === 'audio'
-  );
+  // Test 4: Multiple audio streams with only one matching (should pass with requireAllStreams=false)
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
+        // First audio stream matches
+        file.ffProbeData.streams[1].codec_name = 'aac';
+        file.ffProbeData.streams[1].channels = 2;
+        // Second audio stream doesn't match
+        file.ffProbeData.streams[2].codec_name = 'ac3';
+        file.ffProbeData.streams[2].channels = 6;
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: 'aac',
+        channelsToProcess: '2',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: expect.stringContaining('meets audio codec and channel criteria'),
+    },
+  },
   
-  if (audioStreams.length === 0) {
-    response.infoLog += 'No audio streams found. Breaking out of plugin stack.\n';
-    return response;
-  }
+  // Test 5: Multiple audio streams with only one matching (should fail with requireAllStreams=true)
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
+        // First audio stream matches
+        file.ffProbeData.streams[1].codec_name = 'aac';
+        file.ffProbeData.streams[1].channels = 2;
+        // Second audio stream doesn't match
+        file.ffProbeData.streams[2].codec_name = 'ac3';
+        file.ffProbeData.streams[2].channels = 6;
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: 'aac',
+        channelsToProcess: '2',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'true'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+    },
+  },
   
-  // Parse inputs
-  const codecsToProcess = inputs.codecsToProcess ? inputs.codecsToProcess.toLowerCase().split(',').map(item => item.trim()) : [];
-  const channelsToProcess = inputs.channelsToProcess ? inputs.channelsToProcess.split(',').map(item => parseInt(item.trim(), 10)) : [];
-  const codecsToNotProcess = inputs.codecsToNotProcess ? inputs.codecsToNotProcess.toLowerCase().split(',').map(item => item.trim()) : [];
-  const channelsToNotProcess = inputs.channelsToNotProcess ? inputs.channelsToNotProcess.split(',').map(item => parseInt(item.trim(), 10)) : [];
-  const requireAllStreams = inputs.requireAllStreams === 'true' || inputs.requireAllStreams === true;
+  // Test 6: Using codecsToNotProcess and channelsToNotProcess
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        // Set audio stream to a codec that should be excluded
+        if (file.ffProbeData.streams[1].codec_type === 'audio') {
+          file.ffProbeData.streams[1].codec_name = 'aac';
+          file.ffProbeData.streams[1].channels = 2;
+        }
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: '',
+        channelsToProcess: '',
+        codecsToNotProcess: 'aac',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+    },
+  },
   
-  // Function to check if a stream matches criteria using improved logic
-  const streamMatchesCriteria = (stream) => {
-    const codecName = stream.codec_name ? stream.codec_name.toLowerCase() : '';
-    const channels = stream.channels || 0;
-    
-    // Check positive filters (codecs to process)
-    if (codecsToProcess.length > 0 && !codecsToProcess.includes(codecName)) {
-      return false;
-    }
-    
-    // Check positive filters (channels to process)
-    if (channelsToProcess.length > 0 && !channelsToProcess.includes(channels)) {
-      return false;
-    }
-    
-    // Check negative filters (codecs to not process)
-    if (codecsToNotProcess.length > 0 && codecsToNotProcess.includes(codecName)) {
-      return false;
-    }
-    
-    // Check negative filters (channels to not process)
-    if (channelsToNotProcess.length > 0 && channelsToNotProcess.includes(channels)) {
-      return false;
-    }
-    
-    return true;
-  };
+  // Test 7: Only filtering by channel count
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        // Set audio stream to a specific channel count
+        if (file.ffProbeData.streams[1].codec_type === 'audio') {
+          file.ffProbeData.streams[1].codec_name = 'aac';
+          file.ffProbeData.streams[1].channels = 6;
+        }
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: '',
+        channelsToProcess: '6',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      infoLog: expect.stringContaining('meets audio codec and channel criteria'),
+    },
+  },
   
-  // Check streams based on requireAllStreams setting
-  let matchingStreams = audioStreams.filter(streamMatchesCriteria);
-  let shouldProcess = requireAllStreams ? 
-    (matchingStreams.length === audioStreams.length) :
-    (matchingStreams.length > 0);
-  
-  // Set response
-  response.processFile = shouldProcess;
-  
-  if (shouldProcess) {
-    response.infoLog += 'File meets audio codec and channel criteria. Moving to next plugin.\n';
-    
-    // Log matching streams for information
-    matchingStreams.forEach((stream, idx) => {
-      response.infoLog += `Stream ${idx}: codec=${stream.codec_name}, channels=${stream.channels}\n`;
-    });
-  } else {
-    response.infoLog += 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n';
-    
-    // Log details about why file failed
-    audioStreams.forEach((stream, idx) => {
-      const matches = streamMatchesCriteria(stream);
-      response.infoLog += `Stream ${idx}: codec=${stream.codec_name}, channels=${stream.channels}, matches=${matches}\n`;
-    });
-  }
-  
-  return response;
-};
+  // Test 8: No audio streams
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        // Remove audio streams
+        file.ffProbeData.streams = file.ffProbeData.streams.filter(
+          stream => stream.codec_type !== 'audio'
+        );
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: 'aac',
+        channelsToProcess: '2',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false'
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: expect.stringContaining('No audio streams found'),
+    },
+  },
+];
 
-module.exports.details = details;
-module.exports.plugin = plugin;
+void run(tests);
