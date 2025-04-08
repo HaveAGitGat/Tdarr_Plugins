@@ -39,10 +39,20 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
   const container = getContainer(args.inputFileObj._id);
 
+  let streams = [];
+
+  try {
+    streams = JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams));
+  } catch (err) {
+    const message = `Error parsing FFprobe streams, it seems FFprobe could not scan the file: ${JSON.stringify(err)}`;
+    args.jobLog(message);
+    throw new Error(message);
+  }
+
   const ffmpegCommand = {
     init: true,
     inputFiles: [],
-    streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map((stream:Istreams) => ({
+    streams: streams.map((stream:Istreams) => ({
       ...stream,
       removed: false,
       mapArgs: [
