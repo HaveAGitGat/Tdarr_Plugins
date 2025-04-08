@@ -20,16 +20,6 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
-      label: 'Use Radarr or Sonarr to get original language',
-      name: 'useRadarrOrSonarr',
-      type: 'boolean',
-      defaultValue: 'false',
-      inputUI: { type: 'switch' },
-      tooltip: 'Should the language of the default subtitle track be read from Radarr or Sonarr? If yes, '
-        + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
-        + 'ignored. If no, please indicate the language to use in the Language property.',
-    },
-    {
       label: 'Language',
       name: 'language',
       type: 'string',
@@ -131,18 +121,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   let shouldProcess = false;
   const { streams } = args.variables.ffmpegCommand;
-  const { allowDescriptive, allowForced, useRadarrOrSonarr } = args.inputs as {
+  const { allowDescriptive, allowForced } = args.inputs as {
     allowDescriptive: boolean;
     allowForced: boolean;
-    useRadarrOrSonarr: boolean;
   };
 
   // Sets the language code used to determine the default subtitle stream
-  let languageCode = args.inputs.language;
-  if (useRadarrOrSonarr) {
-    languageCode = args.variables.user.ArrOriginalLanguageCode;
-    args.jobLog(`Language ${languageCode} read from flow variables`);
-  }
+  const languageCode = args.inputs.language;
 
   let defaultSet = false;
   streams.forEach((stream: IStreamDisposition, index: number) => {

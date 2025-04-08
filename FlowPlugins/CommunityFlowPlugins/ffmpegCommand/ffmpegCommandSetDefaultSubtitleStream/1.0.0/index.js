@@ -17,16 +17,6 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
-            label: 'Use Radarr or Sonarr to get original language',
-            name: 'useRadarrOrSonarr',
-            type: 'boolean',
-            defaultValue: 'false',
-            inputUI: { type: 'switch' },
-            tooltip: 'Should the language of the default subtitle track be read from Radarr or Sonarr? If yes, '
-                + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
-                + 'ignored. If no, please indicate the language to use in the Language property.',
-        },
-        {
             label: 'Language',
             name: 'language',
             type: 'string',
@@ -94,13 +84,9 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     var shouldProcess = false;
     var streams = args.variables.ffmpegCommand.streams;
-    var _a = args.inputs, allowDescriptive = _a.allowDescriptive, allowForced = _a.allowForced, useRadarrOrSonarr = _a.useRadarrOrSonarr;
+    var _a = args.inputs, allowDescriptive = _a.allowDescriptive, allowForced = _a.allowForced;
     // Sets the language code used to determine the default subtitle stream
     var languageCode = args.inputs.language;
-    if (useRadarrOrSonarr) {
-        languageCode = args.variables.user.ArrOriginalLanguageCode;
-        args.jobLog("Language ".concat(languageCode, " read from flow variables"));
-    }
     var defaultSet = false;
     streams.forEach(function (stream, index) {
         var _a, _b, _c;
