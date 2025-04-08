@@ -128,6 +128,10 @@ export interface IpluginInputArgs {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     librarySettings: any,
     inputs: Record<string, unknown>,
+    userVariables: {
+        global: Record<string, string>,
+        library: Record<string, string>,
+    },
     jobLog: Ilog,
     workDir: string,
     platform: string,

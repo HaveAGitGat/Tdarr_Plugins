@@ -25,6 +25,7 @@ var details = function () { return ({
                 options: [
                     '1',
                     '2',
+                    '3',
                     '6',
                     '8',
                 ],
