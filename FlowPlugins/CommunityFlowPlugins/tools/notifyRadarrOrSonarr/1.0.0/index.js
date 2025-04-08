@@ -37,6 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
     name: 'Notify Radarr or Sonarr',
     description: 'Notify Radarr or Sonarr to refresh after file change',
@@ -90,89 +91,119 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'Continue to next plugin',
+            tooltip: 'Radarr or Sonnar notified',
         },
+        {
+            number: 2,
+            tooltip: 'Radarr or Sonnar do not know this file',
+        }
     ],
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, fileName, arrHost, headers, requestConfig, res, movieId, requestConfig2, requestConfig, res, seriesId, requestConfig2;
-    var _b, _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var lib, _a, arr, arr_api_key, arr_host, arrHost, fileNames, refresh, refreshTypes, refreshed;
+    var _b, _c, _d, _e;
+    return __generator(this, function (_f) {
+        switch (_f.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
                 arr_host = String(args.inputs.arr_host).trim();
-                fileName = ((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b.meta) === null || _c === void 0 ? void 0 : _c.FileName) || '';
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                headers = {
-                    'Content-Type': 'application/json',
-                    'X-Api-Key': arr_api_key,
-                    Accept: 'application/json',
+                fileNames = {
+                    originalFileName: (0, fileUtils_1.getFileName)((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b._id) !== null && _c !== void 0 ? _c : ''),
+                    currentFileName: (0, fileUtils_1.getFileName)((_e = (_d = args.inputFileObj) === null || _d === void 0 ? void 0 : _d._id) !== null && _e !== void 0 ? _e : '')
                 };
-                args.jobLog('Going to force scan');
-                if (!(arr === 'radarr')) return [3 /*break*/, 3];
-                args.jobLog('Refreshing Radarr...');
-                requestConfig = {
-                    method: 'get',
-                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
-                    headers: headers,
+                refresh = function (refreshType) { return __awaiter(void 0, void 0, void 0, function () {
+                    var refreshed, headers, getId, fileName, id, refreshResquestConfig;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                args.jobLog('Going to force scan');
+                                args.jobLog("Refreshing ".concat(refreshType.appName, "..."));
+                                refreshed = false;
+                                headers = {
+                                    'Content-Type': 'application/json',
+                                    'X-Api-Key': arr_api_key,
+                                    Accept: 'application/json',
+                                };
+                                getId = function (fileName) { return __awaiter(void 0, void 0, void 0, function () {
+                                    var parseRequestConfig, parseRequestResult, id;
+                                    return __generator(this, function (_a) {
+                                        switch (_a.label) {
+                                            case 0:
+                                                parseRequestConfig = {
+                                                    method: 'get',
+                                                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
+                                                    headers: headers,
+                                                };
+                                                return [4 /*yield*/, args.deps.axios(parseRequestConfig)];
+                                            case 1:
+                                                parseRequestResult = _a.sent();
+                                                id = refreshType.delegates.getIdFromParseRequestResult(parseRequestResult);
+                                                args.jobLog(id !== -1 ?
+                                                    "Found ".concat(refreshType.contentName, " ").concat(id, " with a file named '").concat(fileName, "'")
+                                                    : "Didn't find ".concat(refreshType.contentName, " with a file named '").concat(fileName, "' in ").concat(arrHost, "."));
+                                                return [2 /*return*/, id];
+                                        }
+                                    });
+                                }); };
+                                fileName = fileNames.originalFileName;
+                                return [4 /*yield*/, getId(fileName)];
+                            case 1:
+                                id = _a.sent();
+                                if (!(id == -1 && fileNames.currentFileName !== fileNames.originalFileName)) return [3 /*break*/, 3];
+                                fileName = fileNames.currentFileName;
+                                return [4 /*yield*/, getId(fileName)];
+                            case 2:
+                                id = _a.sent();
+                                _a.label = 3;
+                            case 3:
+                                if (!(id !== -1)) return [3 /*break*/, 5];
+                                refreshResquestConfig = {
+                                    method: 'post',
+                                    url: "".concat(arrHost, "/api/v3/command"),
+                                    headers: headers,
+                                    data: refreshType.delegates.buildRefreshResquestData(id)
+                                };
+                                return [4 /*yield*/, args.deps.axios(refreshResquestConfig)];
+                            case 4:
+                                _a.sent();
+                                refreshed = true;
+                                args.jobLog("\u2714 Refreshed ".concat(refreshType.contentName, " ").concat(id, " in ").concat(refreshType.appName, "."));
+                                _a.label = 5;
+                            case 5: return [2 /*return*/, refreshed];
+                        }
+                    });
+                }); };
+                refreshTypes = {
+                    radarr: {
+                        appName: 'Radarr',
+                        contentName: 'movie',
+                        delegates: {
+                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c, _d; return Number((_d = (_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.movieFile) === null || _c === void 0 ? void 0 : _c.movieId) !== null && _d !== void 0 ? _d : -1); },
+                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); }
+                        }
+                    },
+                    sonarr: {
+                        appName: 'Sonarr',
+                        contentName: 'serie',
+                        delegates: {
+                            getIdFromParseRequestResult: function (parseRequestResult) { var _a, _b, _c; return Number((_c = (_b = (_a = parseRequestResult.data) === null || _a === void 0 ? void 0 : _a.series) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
+                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); }
+                        },
+                    },
                 };
-                return [4 /*yield*/, args.deps.axios(requestConfig)];
+                return [4 /*yield*/, refresh(arr === 'radarr' ? refreshTypes.radarr : refreshTypes.sonarr)];
             case 1:
-                res = _d.sent();
-                movieId = res.data.movie.movieFile.movieId;
-                requestConfig2 = {
-                    method: 'post',
-                    url: "".concat(arrHost, "/api/v3/command"),
-                    headers: headers,
-                    data: JSON.stringify({
-                        name: 'RefreshMovie',
-                        movieIds: [movieId],
-                    }),
-                };
-                return [4 /*yield*/, args.deps.axios(requestConfig2)];
-            case 2:
-                _d.sent();
-                args.jobLog("\u2714 Refreshed movie ".concat(movieId, " in Radarr."));
-                return [3 /*break*/, 7];
-            case 3:
-                if (!(arr === 'sonarr')) return [3 /*break*/, 6];
-                args.jobLog('Refreshing Sonarr...');
-                requestConfig = {
-                    method: 'get',
-                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
-                    headers: headers,
-                };
-                return [4 /*yield*/, args.deps.axios(requestConfig)];
-            case 4:
-                res = _d.sent();
-                seriesId = res.data.series.id;
-                requestConfig2 = {
-                    method: 'post',
-                    url: "".concat(arrHost, "/api/v3/command"),
-                    headers: headers,
-                    data: JSON.stringify({
-                        name: 'RefreshSeries',
-                        seriesId: seriesId,
-                    }),
-                };
-                return [4 /*yield*/, args.deps.axios(requestConfig2)];
-            case 5:
-                _d.sent();
-                args.jobLog("\u2714 Refreshed series ".concat(seriesId, " in Sonarr."));
-                return [3 /*break*/, 7];
-            case 6:
-                args.jobLog('No arr specified in plugin inputs.');
-                _d.label = 7;
-            case 7: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: 1,
-                    variables: args.variables,
-                }];
+                refreshed = _f.sent();
+                return [2 /*return*/, {
+                        outputFileObj: args.inputFileObj,
+                        outputNumber: refreshed ? 1 : 2,
+                        variables: args.variables,
+                    }];
         }
     });
 }); };
