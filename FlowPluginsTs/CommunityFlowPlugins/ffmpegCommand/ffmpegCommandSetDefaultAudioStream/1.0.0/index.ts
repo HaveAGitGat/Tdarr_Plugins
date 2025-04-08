@@ -19,16 +19,6 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
-      label: 'Use Radarr or Sonarr to get original language',
-      name: 'useRadarrOrSonarr',
-      type: 'boolean',
-      defaultValue: 'false',
-      inputUI: { type: 'switch' },
-      tooltip: 'Should the language of the default audio track be read from Radarr or Sonarr? If yes, '
-        + 'the "Set Flow Variables From Radarr Or Sonarr" has to be run before and the Language property will be '
-        + 'ignored. If no, please indicate the language to use in the Language property.',
-    },
-    {
       label: 'Language',
       name: 'language',
       type: 'string',
@@ -150,20 +140,14 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const { streams } = args.variables.ffmpegCommand;
   const {
     allowDescriptive,
-    useRadarrOrSonarr,
     useHightestNumberOfChannels,
   } = args.inputs as {
     allowDescriptive: boolean;
-    useRadarrOrSonarr: boolean;
     useHightestNumberOfChannels: boolean;
   };
 
   // Sets the language code used to determine the default subtitle stream
-  let languageCode = String(args.inputs.language);
-  if (useRadarrOrSonarr) {
-    languageCode = args.variables.user.ArrOriginalLanguageCode;
-    args.jobLog(`Language ${languageCode} read from flow variables`);
-  }
+  const languageCode = String(args.inputs.language);
 
   // Determine target channel count
   const targetChannelsCount = useHightestNumberOfChannels
