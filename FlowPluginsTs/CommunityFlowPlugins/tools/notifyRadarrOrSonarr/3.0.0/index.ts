@@ -7,7 +7,7 @@ import {
 const details = (): IpluginDetails => ({
   name: 'Notify Radarr or Sonarr',
   description: 'Notify Radarr or Sonarr to refresh after file change. '
-      + 'Has to be used after the "Set Flow Variables From Radarr Or Sonarr" plugin.',
+    + 'Has to be used after the "Set Flow Variables From Radarr Or Sonarr" plugin.',
   style: {
     borderColor: 'green',
   },
@@ -48,10 +48,10 @@ const details = (): IpluginDetails => ({
         type: 'text',
       },
       tooltip: 'Input your arr host here.\nExample:\n'
-          + 'http://192.168.1.1:7878\n'
-          + 'http://192.168.1.1:8989\n'
-          + 'https://radarr.domain.com\n'
-          + 'https://sonarr.domain.com',
+        + 'http://192.168.1.1:7878\n'
+        + 'http://192.168.1.1:8989\n'
+        + 'https://radarr.domain.com\n'
+        + 'https://sonarr.domain.com',
     },
   ],
   outputs: [
@@ -60,19 +60,19 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-  interface IHTTPHeaders {
-    'Content-Type': string;
-    'X-Api-Key': string;
-    Accept: string;
-  }
+interface IHTTPHeaders {
+  'Content-Type': string;
+  'X-Api-Key': string;
+  Accept: string;
+}
 
-  interface IArrApp {
-    name: string;
-    host: string;
-    headers: IHTTPHeaders;
-    content: string;
-    buildRefreshRequest: (id: number) => string;
-  }
+interface IArrApp {
+  name: string;
+  host: string;
+  headers: IHTTPHeaders;
+  content: string;
+  buildRefreshRequest: (id: number) => string;
+}
 
 const API_VERSION = 'v3';
 const CONTENT_TYPE = 'application/json';
@@ -147,10 +147,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const { arr, arr_api_key, arr_host } = args.inputs as {
-      arr: 'radarr' | 'sonarr';
-      arr_api_key: string;
-      arr_host: string;
-    };
+    arr: 'radarr' | 'sonarr';
+    arr_api_key: string;
+    arr_host: string;
+  };
   const arrApp = createArrApp(arr, arr_host, arr_api_key);
 
   args.jobLog('Going to force scan');
