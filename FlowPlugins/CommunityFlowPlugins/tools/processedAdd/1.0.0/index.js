@@ -35,56 +35,51 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Apprise',
-    description: 'Use Apprise to send notifications.',
+    name: 'Add To Processed',
+    description: "\n  Add file to processed list. Can be used with 'Check If Processed' plugin to check if file has already been processed.\n  You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.\n  ",
     style: {
-        borderColor: 'green',
+        borderColor: 'orange',
     },
     tags: '',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.18.01',
-    sidebarPosition: -1,
-    icon: 'faBell',
+    requiresVersion: '2.37.01',
+    sidebarPosition: 3,
+    icon: 'faFile',
     inputs: [
         {
-            label: 'Command',
-            name: 'command',
+            label: 'Check Type',
+            name: 'checkType',
             type: 'string',
-            defaultValue: '-vv -t "Success" -b "File {{{args.inputFileObj._id}}}" "discord://xxx/xxxx"',
+            defaultValue: 'filePath',
             inputUI: {
-                type: 'textarea',
-                style: {
-                    height: '100px',
-                },
+                type: 'dropdown',
+                options: [
+                    'filePath',
+                    'fileName',
+                    'fileHash',
+                ],
             },
-            tooltip: "Visit the following for more information on Apprise: https://github.com/caronc/apprise\n      \\nExample\\n\n     -vv -t \"Success\" -b \"File {{{args.inputFileObj._id}}}\" \"discord://xxx/xxxx\"\n\n\n     \\nExample\\n\n     -vv -t \"Processing\" -b \"File {{{args.inputFileObj._id}}}\" "
-                + "\"discord://{{{args.userVariables.global.discord_webhook}}}\"\n      ",
+            tooltip: 'Specify the type of check to perform.',
         },
         {
-            label: 'Apprise Path',
-            name: 'apprisePath',
+            label: 'File To Add',
+            name: 'fileToAdd',
             type: 'string',
-            defaultValue: 'apprise',
+            defaultValue: 'originalFile',
             inputUI: {
-                type: 'text',
+                type: 'dropdown',
+                options: [
+                    'originalFile',
+                    'workingFile',
+                ],
             },
-            tooltip: 'Specify the path to the Apprise executable.'
-                + 'If the path is not specified, the plugin will use the default path.',
+            tooltip: 'Specify the file to check',
         },
     ],
     outputs: [
@@ -97,34 +92,44 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, command, apprisePath, cliArgs, cli, res;
+    var lib, checkType, fileToAdd, propertyToAdd, fileToAddObj, newData;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                command = String(args.inputs.command);
-                apprisePath = String(args.inputs.apprisePath).trim();
-                cliArgs = __spreadArray([], args.deps.parseArgsStringToArgv(command, '', ''), true);
-                cli = new cliUtils_1.CLI({
-                    cli: apprisePath,
-                    spawnArgs: cliArgs,
-                    spawnOpts: {},
-                    jobLog: args.jobLog,
-                    outputFilePath: '',
-                    inputFileObj: args.inputFileObj,
-                    logFullCliOutput: args.logFullCliOutput,
-                    updateWorker: args.updateWorker,
-                    args: args,
-                });
-                return [4 /*yield*/, cli.runCli()];
-            case 1:
-                res = _a.sent();
-                if (res.cliExitCode !== 0) {
-                    args.jobLog('Running Apprise failed');
-                    throw new Error('Running Apprise failed');
+                checkType = String(args.inputs.checkType);
+                fileToAdd = String(args.inputs.fileToAdd);
+                propertyToAdd = '';
+                fileToAddObj = args.originalLibraryFile;
+                if (fileToAdd === 'workingFile') {
+                    fileToAddObj = args.inputFileObj;
                 }
+                if (!(checkType === 'fileName')) return [3 /*break*/, 1];
+                propertyToAdd = "".concat(fileToAddObj.fileNameWithoutExtension, ".").concat(fileToAddObj.container);
+                return [3 /*break*/, 4];
+            case 1:
+                if (!(checkType === 'filePath')) return [3 /*break*/, 2];
+                propertyToAdd = fileToAddObj._id;
+                return [3 /*break*/, 4];
+            case 2:
+                if (!(checkType === 'fileHash')) return [3 /*break*/, 4];
+                return [4 /*yield*/, (0, fileUtils_1.hashFile)(fileToAddObj._id, 'sha256')];
+            case 3:
+                propertyToAdd = _a.sent();
+                _a.label = 4;
+            case 4: return [4 /*yield*/, args.deps.crudTransDBN('F2FOutputJSONDB', 'removeOne', propertyToAdd, {})];
+            case 5:
+                _a.sent();
+                newData = {
+                    _id: propertyToAdd,
+                    DB: fileToAddObj.DB,
+                };
+                return [4 /*yield*/, args.deps.crudTransDBN('F2FOutputJSONDB', 'insert', propertyToAdd, newData)];
+            case 6:
+                _a.sent();
+                args.jobLog("Added ".concat(propertyToAdd, " to processed list"));
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: 1,
