@@ -25,7 +25,7 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: 'eng',
       inputUI: { type: 'text' },
-      tooltip: 'Specify what language to use in the ISO 639-2 format.\nExample:\neng\nfre',
+      tooltip: 'Specify what language to use in the ISO 639-2 format. If the setFlowVariablesFromRadarrOrSonarr plugin is run before this one you can use the default language variable. \nExample:\neng\nfre\{{{args.variables.user.ArrOriginalLanguageCode}}}',
     },
     {
       label: 'Allow descriptive streams to be default',
