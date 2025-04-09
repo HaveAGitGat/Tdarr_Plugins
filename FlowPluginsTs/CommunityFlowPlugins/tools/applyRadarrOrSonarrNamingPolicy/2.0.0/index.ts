@@ -179,8 +179,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       episodeNumber: Number(args.variables.user.ArrEpisodeNumber ?? -1),
     };
     args.jobLog(`ArrId ${fileInfo.id} read from flow variables`);
-    args.jobLog(`ArrSeasonNumber ${fileInfo.seasonNumber} read from flow variables`);
-    args.jobLog(`ArrEpisodeNumber ${fileInfo.episodeNumber} read from flow variables`);
+    if(fileInfo.seasonNumber !== -1 || fileInfo.episodeNumber !== -1) {
+      args.jobLog(`ArrSeasonNumber ${fileInfo.seasonNumber} read from flow variables`);
+      args.jobLog(`ArrEpisodeNumber ${fileInfo.episodeNumber} read from flow variables`);
+    }
 
     if (fileInfo.id === '-1') {
       args.jobLog('❌ Invalid file ID');

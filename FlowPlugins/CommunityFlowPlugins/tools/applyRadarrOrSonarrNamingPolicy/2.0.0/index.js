@@ -190,8 +190,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     episodeNumber: Number((_f = args.variables.user.ArrEpisodeNumber) !== null && _f !== void 0 ? _f : -1),
                 };
                 args.jobLog("ArrId ".concat(fileInfo.id, " read from flow variables"));
-                args.jobLog("ArrSeasonNumber ".concat(fileInfo.seasonNumber, " read from flow variables"));
-                args.jobLog("ArrEpisodeNumber ".concat(fileInfo.episodeNumber, " read from flow variables"));
+                if (fileInfo.seasonNumber !== -1 || fileInfo.episodeNumber !== -1) {
+                    args.jobLog("ArrSeasonNumber ".concat(fileInfo.seasonNumber, " read from flow variables"));
+                    args.jobLog("ArrEpisodeNumber ".concat(fileInfo.episodeNumber, " read from flow variables"));
+                }
                 if (fileInfo.id === '-1') {
                     args.jobLog('❌ Invalid file ID');
                     return [2 /*return*/, {
