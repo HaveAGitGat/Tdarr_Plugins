@@ -125,12 +125,12 @@ var LANGUAGE_API_BASE_URL = 'https://data.opendatasoft.com/api/explore/v2.1/cata
 var createHeaders = function (apiKey) { return (__assign(__assign({}, API_HEADERS), { 'X-Api-Key': apiKey })); };
 var buildTerm = function (filePath) {
     var tvdbMatch = filePath.match(/tvdb-(\d+)/);
-    var tmdbMatch = filePath.match(/tmdb-(\d+)/);
-    var imdbMatch = filePath.match(/imdb-(tt|nm|co|ev|ch|ni)(\d+)/);
     if (tvdbMatch)
         return "tvdb:".concat(tvdbMatch[1]);
+    var tmdbMatch = filePath.match(/tmdb-(\d+)/);
     if (tmdbMatch)
         return "tmdb:".concat(tmdbMatch[1]);
+    var imdbMatch = filePath.match(/imdb-(tt|nm|co|ev|ch|ni)(\d+)/);
     if (imdbMatch)
         return "imdb:".concat(imdbMatch[1]).concat(imdbMatch[2]);
     return null;
