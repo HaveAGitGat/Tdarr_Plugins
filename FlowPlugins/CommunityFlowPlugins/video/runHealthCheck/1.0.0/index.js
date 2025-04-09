@@ -36,6 +36,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
@@ -77,9 +86,35 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var getDecoder = function (gpuSelect) {
+    var accel = '';
+    if (gpuSelect === 'nvenc') {
+        accel = '-hwaccel nvdec -hwaccel_output_format cuda';
+    }
+    else if (gpuSelect === 'vaapi') {
+        accel = '-hwaccel vaapi -hwaccel_output_format vaapi -hwaccel_device /dev/dri/renderD128';
+    }
+    else if (gpuSelect === 'amf') {
+        // amf only on windows
+        accel = '-hwaccel d3d11va';
+    }
+    else if (gpuSelect === 'qsv') {
+        accel = '-hwaccel qsv';
+    }
+    else if (gpuSelect === 'videotoolbox') {
+        accel = '-hwaccel videotoolbox';
+    }
+    else if (gpuSelect === 'rkmpp') {
+        accel = '-hwaccel rkmpp';
+    }
+    else {
+        accel = '-hwaccel nvdec -hwaccel_output_format cuda';
+    }
+    return accel;
+};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, type, outputFilePath, cliPath, cliArgs, cli, res;
+    var lib, type, outputFilePath, cliPath, cliArgs, accel, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -87,30 +122,56 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 type = String(args.inputs.type);
-                args.jobLog("Running health check of type ".concat(type));
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
                     + ".".concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
-                cliPath = args.handbrakePath;
-                cliArgs = [
-                    '-i',
-                    args.inputFileObj._id,
-                    '-o',
-                    outputFilePath,
-                    '--scan',
-                ];
+                cliPath = '';
+                cliArgs = [];
                 if (type === 'thorough') {
+                    args.jobLog('Running thorough health check');
                     cliPath = args.ffmpegPath;
+                    if (args.workerType.includes('gpu')) {
+                        args.jobLog("Using GPU acceleration, selected: ".concat(args.nodeHardwareType));
+                        args.jobLog('You can change the Node hardware type on the Node options tab on the Tdarr homepage');
+                        accel = getDecoder(args.nodeHardwareType).split(' ');
+                        cliArgs = __spreadArray(__spreadArray([
+                            '-stats',
+                            '-v',
+                            'error'
+                        ], accel, true), [
+                            '-i',
+                            args.inputFileObj._id,
+                            '-f',
+                            'null',
+                            '-max_muxing_queue_size',
+                            '9999',
+                            outputFilePath,
+                        ], false);
+                    }
+                    else {
+                        args.jobLog('Using CPU acceleration');
+                        cliArgs = [
+                            '-stats',
+                            '-v',
+                            'error',
+                            '-i',
+                            args.inputFileObj._id,
+                            '-f',
+                            'null',
+                            '-max_muxing_queue_size',
+                            '9999',
+                            outputFilePath,
+                        ];
+                    }
+                }
+                else {
+                    args.jobLog('Running quick health check');
+                    cliPath = args.handbrakePath;
                     cliArgs = [
-                        '-stats',
-                        '-v',
-                        'error',
                         '-i',
                         args.inputFileObj._id,
-                        '-f',
-                        'null',
-                        '-max_muxing_queue_size',
-                        '9999',
+                        '-o',
                         outputFilePath,
+                        '--scan',
                     ];
                 }
                 cli = new cliUtils_1.CLI({
