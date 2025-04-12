@@ -9,10 +9,10 @@ import { getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 const details = (): IpluginDetails => ({
   name: 'Set Flow Variables From Radarr Or Sonarr',
   description: 'Set Flow Variables From Radarr or Sonarr. The variables set are : '
-        + 'ArrId (internal id for Radarr or Sonarr), '
-        + 'ArrOriginalLanguageCode (code of the orignal language (ISO 639-2) as know by Radarr or Sonarr), '
-        + 'ArrSeasonNumber (the season number of the episode), '
-        + 'ArrEpisodeNumber (the episode number).',
+    + 'ArrId (internal id for Radarr or Sonarr), '
+    + 'ArrOriginalLanguageCode (code of the orignal language (ISO 639-2) as know by Radarr or Sonarr), '
+    + 'ArrSeasonNumber (the season number of the episode), '
+    + 'ArrEpisodeNumber (the episode number).',
   style: {
     borderColor: 'green',
   },
@@ -53,11 +53,11 @@ const details = (): IpluginDetails => ({
         type: 'text',
       },
       tooltip: 'Input your arr host here.'
-                + '\\nExample:\\n'
-                + 'http://192.168.1.1:7878\\n'
-                + 'http://192.168.1.1:8989\\n'
-                + 'https://radarr.domain.com\\n'
-                + 'https://sonarr.domain.com\\n',
+        + '\\nExample:\\n'
+        + 'http://192.168.1.1:7878\\n'
+        + 'http://192.168.1.1:8989\\n'
+        + 'https://radarr.domain.com\\n'
+        + 'https://sonarr.domain.com\\n',
     },
   ],
   outputs: [
@@ -72,25 +72,34 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-interface IBaseResponse {
+interface ISerieResponse {
+  id: number;
+  originalLanguage?: {
     id: number;
-    originalLanguage?: {
-        id: number;
-        name: string;
-    };
+    name: string;
+  };
+  episodes?: [{
+    id: number;
+  }];
+}
+
+interface IEpisodeItemReponse {
+  id: number,
+  episodeNumber: number
 }
 
 interface IFileInfo {
-    id: string;
-    seasonNumber?: number;
-    episodeNumber?: number;
-    languageName?: string;
+  id: string;
+  seasonNumber?: number;
+  episodeNumber?: number;
+  episodeId?: string;
+  languageName?: string;
 }
 
 interface IArrConfig {
-    name: 'radarr' | 'sonarr';
-    host: string;
-    apiKey: string;
+  name: 'radarr' | 'sonarr';
+  host: string;
+  apiKey: string;
 }
 
 const API_HEADERS = {
@@ -126,6 +135,32 @@ const extractSeasonEpisodeInfo = (fileName: string): { seasonNumber: number; epi
   };
 };
 
+const fillEpisodeInfo = async (args: IpluginInputArgs, config: IArrConfig, fileInfo: IFileInfo): Promise<IFileInfo> => {
+  try {
+    const response = await args.deps.axios({
+      method: 'get',
+      url: `${config.host}/api/v3/episode?seriesId=${fileInfo.id}&seasonNumber=${fileInfo.seasonNumber}`,
+      headers: createHeaders(config.apiKey),
+    });
+    const episodesArray: IEpisodeItemReponse[] = response.data;
+    if (!episodesArray || episodesArray.length === 0) {
+      throw new Error(`Episodes for series ${fileInfo.id} and`
+        + `season ${fileInfo.seasonNumber} not retrieved: ${response.body}`);
+    }
+
+    const episodeItem = episodesArray.find((episode) => episode.episodeNumber === fileInfo.episodeNumber);
+    if (!episodeItem) {
+      throw new Error(`Episodes for series ${fileInfo.id} and season ${fileInfo.seasonNumber}`
+        + `retrieved but no episode found with episode number ${fileInfo.episodeNumber} : ${response.body}`);
+    }
+
+    return { ...fileInfo, episodeId: String(episodeItem?.id ?? -1) };
+  } catch (error) {
+    args.jobLog(`Fill episode info failed: ${(error as Error).message}`);
+    return fileInfo;
+  }
+};
+
 const lookupContent = async (args: IpluginInputArgs, config: IArrConfig, fileName: string): Promise<IFileInfo> => {
   const term = buildTerm(fileName);
   if (!term) return { id: '-1' };
@@ -139,7 +174,7 @@ const lookupContent = async (args: IpluginInputArgs, config: IArrConfig, fileNam
       headers: createHeaders(config.apiKey),
     });
 
-    const content: IBaseResponse = response.data[0];
+    const content: ISerieResponse = response.data[0];
     if (!content) return { id: '-1' };
 
     const baseInfo = {
@@ -148,10 +183,14 @@ const lookupContent = async (args: IpluginInputArgs, config: IArrConfig, fileNam
     };
 
     if (config.name === 'sonarr') {
-      return {
-        ...baseInfo,
-        ...extractSeasonEpisodeInfo(fileName),
-      };
+      return await fillEpisodeInfo(
+        args,
+        config,
+        {
+          ...baseInfo,
+          ...extractSeasonEpisodeInfo(fileName),
+        },
+      );
     }
 
     return baseInfo;
@@ -170,7 +209,7 @@ const parseContent = async (args: IpluginInputArgs, config: IArrConfig, fileName
     });
 
     const { data } = response;
-    const content: IBaseResponse = config.name === 'radarr' ? data.movie : data.series;
+    const content: ISerieResponse = config.name === 'radarr' ? data.movie : data.series;
 
     if (!content) return { id: '-1' };
 
@@ -184,6 +223,7 @@ const parseContent = async (args: IpluginInputArgs, config: IArrConfig, fileName
         ...baseInfo,
         seasonNumber: data.parsedEpisodeInfo?.seasonNumber ?? 1,
         episodeNumber: data.parsedEpisodeInfo?.episodeNumbers?.[0] ?? 1,
+        episodeId: String(data.episodes?.at(0)?.id ?? 1),
       };
     }
 
@@ -200,7 +240,7 @@ const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): 
   try {
     const url = `${LANGUAGE_API_BASE_URL}?select=alpha3_b&where=english%20%3D%20%22${languageName}%22&limit=1`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error('Language API request failed');
+    if (!response.ok) throw new Error(`Language API request failed: ${response.body}`);
 
     const data = await response.json();
     return data.results[0]?.alpha3_b ?? '';
@@ -229,6 +269,9 @@ const setVariables = async (args: IpluginInputArgs, fileInfo: IFileInfo, config:
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrEpisodeNumber = String(fileInfo.episodeNumber ?? 0);
     args.jobLog(`Setting variable ArrEpisodeNumber to ${args.variables.user.ArrEpisodeNumber}`);
+    // eslint-disable-next-line no-param-reassign
+    args.variables.user.ArrEpisodeId = fileInfo.episodeId ?? '-1';
+    args.jobLog(`Setting variable ArrEpisodeId to ${args.variables.user.ArrEpisodeId}`);
   }
 };
 

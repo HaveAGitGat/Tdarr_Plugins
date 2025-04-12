@@ -143,8 +143,41 @@ var extractSeasonEpisodeInfo = function (fileName) {
         episodeNumber: Number((_b = seasonEpisodeMatch === null || seasonEpisodeMatch === void 0 ? void 0 : seasonEpisodeMatch[2]) !== null && _b !== void 0 ? _b : -1),
     };
 };
+var fillEpisodeInfo = function (args, config, fileInfo) { return __awaiter(void 0, void 0, void 0, function () {
+    var response, episodesArray, episodeItem, error_1;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(config.host, "/api/v3/episode?seriesId=").concat(fileInfo.id, "&seasonNumber=").concat(fileInfo.seasonNumber),
+                        headers: createHeaders(config.apiKey),
+                    })];
+            case 1:
+                response = _b.sent();
+                episodesArray = response.data;
+                if (!episodesArray || episodesArray.length === 0) {
+                    throw new Error("Episodes for series ".concat(fileInfo.id, " and")
+                        + "season ".concat(fileInfo.seasonNumber, " not retrieved: ").concat(response.body));
+                }
+                episodeItem = episodesArray.find(function (episode) { return episode.episodeNumber === fileInfo.episodeNumber; });
+                if (!episodeItem) {
+                    throw new Error("Episodes for series ".concat(fileInfo.id, " and season ").concat(fileInfo.seasonNumber)
+                        + "retrieved but no episode found with episode number ".concat(fileInfo.episodeNumber, " : ").concat(response.body));
+                }
+                return [2 /*return*/, __assign(__assign({}, fileInfo), { episodeId: String((_a = episodeItem === null || episodeItem === void 0 ? void 0 : episodeItem.id) !== null && _a !== void 0 ? _a : -1) })];
+            case 2:
+                error_1 = _b.sent();
+                args.jobLog("Fill episode info failed: ".concat(error_1.message));
+                return [2 /*return*/, fileInfo];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
 var lookupContent = function (args, config, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var term, contentType, response, content, baseInfo, error_1;
+    var term, contentType, response, content, baseInfo, error_2;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -155,7 +188,7 @@ var lookupContent = function (args, config, fileName) { return __awaiter(void 0,
                 args.jobLog("Found ".concat(term, " in the file path"));
                 _c.label = 1;
             case 1:
-                _c.trys.push([1, 3, , 4]);
+                _c.trys.push([1, 5, , 6]);
                 contentType = config.name === 'radarr' ? 'movie' : 'series';
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
@@ -171,32 +204,32 @@ var lookupContent = function (args, config, fileName) { return __awaiter(void 0,
                     id: String(content.id),
                     languageName: (_b = (_a = content.originalLanguage) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : '',
                 };
-                if (config.name === 'sonarr') {
-                    return [2 /*return*/, __assign(__assign({}, baseInfo), extractSeasonEpisodeInfo(fileName))];
-                }
-                return [2 /*return*/, baseInfo];
-            case 3:
-                error_1 = _c.sent();
-                args.jobLog("Lookup failed: ".concat(error_1.message));
+                if (!(config.name === 'sonarr')) return [3 /*break*/, 4];
+                return [4 /*yield*/, fillEpisodeInfo(args, config, __assign(__assign({}, baseInfo), extractSeasonEpisodeInfo(fileName)))];
+            case 3: return [2 /*return*/, _c.sent()];
+            case 4: return [2 /*return*/, baseInfo];
+            case 5:
+                error_2 = _c.sent();
+                args.jobLog("Lookup failed: ".concat(error_2.message));
                 return [2 /*return*/, { id: '-1' }];
-            case 4: return [2 /*return*/];
+            case 6: return [2 /*return*/];
         }
     });
 }); };
 var parseContent = function (args, config, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var response, data, content, baseInfo, error_2;
-    var _a, _b, _c, _d, _e, _f, _g;
-    return __generator(this, function (_h) {
-        switch (_h.label) {
+    var response, data, content, baseInfo, error_3;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    return __generator(this, function (_l) {
+        switch (_l.label) {
             case 0:
-                _h.trys.push([0, 2, , 3]);
+                _l.trys.push([0, 2, , 3]);
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
                         url: "".concat(config.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
                         headers: createHeaders(config.apiKey),
                     })];
             case 1:
-                response = _h.sent();
+                response = _l.sent();
                 data = response.data;
                 content = config.name === 'radarr' ? data.movie : data.series;
                 if (!content)
@@ -206,19 +239,19 @@ var parseContent = function (args, config, fileName) { return __awaiter(void 0, 
                     languageName: (_b = (_a = content.originalLanguage) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : '',
                 };
                 if (config.name === 'sonarr') {
-                    return [2 /*return*/, __assign(__assign({}, baseInfo), { seasonNumber: (_d = (_c = data.parsedEpisodeInfo) === null || _c === void 0 ? void 0 : _c.seasonNumber) !== null && _d !== void 0 ? _d : 1, episodeNumber: (_g = (_f = (_e = data.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.episodeNumbers) === null || _f === void 0 ? void 0 : _f[0]) !== null && _g !== void 0 ? _g : 1 })];
+                    return [2 /*return*/, __assign(__assign({}, baseInfo), { seasonNumber: (_d = (_c = data.parsedEpisodeInfo) === null || _c === void 0 ? void 0 : _c.seasonNumber) !== null && _d !== void 0 ? _d : 1, episodeNumber: (_g = (_f = (_e = data.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.episodeNumbers) === null || _f === void 0 ? void 0 : _f[0]) !== null && _g !== void 0 ? _g : 1, episodeId: String((_k = (_j = (_h = data.episodes) === null || _h === void 0 ? void 0 : _h.at(0)) === null || _j === void 0 ? void 0 : _j.id) !== null && _k !== void 0 ? _k : 1) })];
                 }
                 return [2 /*return*/, baseInfo];
             case 2:
-                error_2 = _h.sent();
-                args.jobLog("Parse failed: ".concat(error_2.message));
+                error_3 = _l.sent();
+                args.jobLog("Parse failed: ".concat(error_3.message));
                 return [2 /*return*/, { id: '-1' }];
             case 3: return [2 /*return*/];
         }
     });
 }); };
 var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
-    var url, response, data, error_3;
+    var url, response, data, error_4;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -233,14 +266,14 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
             case 2:
                 response = _c.sent();
                 if (!response.ok)
-                    throw new Error('Language API request failed');
+                    throw new Error("Language API request failed: ".concat(response.body));
                 return [4 /*yield*/, response.json()];
             case 3:
                 data = _c.sent();
                 return [2 /*return*/, (_b = (_a = data.results[0]) === null || _a === void 0 ? void 0 : _a.alpha3_b) !== null && _b !== void 0 ? _b : ''];
             case 4:
-                error_3 = _c.sent();
-                args.jobLog("Failed to fetch language data: ".concat(error_3.message));
+                error_4 = _c.sent();
+                args.jobLog("Failed to fetch language data: ".concat(error_4.message));
                 return [2 /*return*/, ''];
             case 5: return [2 /*return*/];
         }
@@ -248,9 +281,9 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
 }); };
 var setVariables = function (args, fileInfo, config) { return __awaiter(void 0, void 0, void 0, function () {
     var _a;
-    var _b, _c, _d;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var _b, _c, _d, _e;
+    return __generator(this, function (_f) {
+        switch (_f.label) {
             case 0:
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user = args.variables.user || {};
@@ -263,7 +296,7 @@ var setVariables = function (args, fileInfo, config) { return __awaiter(void 0, 
                 return [4 /*yield*/, fetchLanguageCode(args, (_b = fileInfo.languageName) !== null && _b !== void 0 ? _b : '')];
             case 1:
                 // eslint-disable-next-line no-param-reassign
-                _a.ArrOriginalLanguageCode = _e.sent();
+                _a.ArrOriginalLanguageCode = _f.sent();
                 args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(args.variables.user.ArrOriginalLanguageCode));
                 // Set Sonarr-specific variables
                 if (config.name === 'sonarr') {
@@ -273,6 +306,9 @@ var setVariables = function (args, fileInfo, config) { return __awaiter(void 0, 
                     // eslint-disable-next-line no-param-reassign
                     args.variables.user.ArrEpisodeNumber = String((_d = fileInfo.episodeNumber) !== null && _d !== void 0 ? _d : 0);
                     args.jobLog("Setting variable ArrEpisodeNumber to ".concat(args.variables.user.ArrEpisodeNumber));
+                    // eslint-disable-next-line no-param-reassign
+                    args.variables.user.ArrEpisodeId = (_e = fileInfo.episodeId) !== null && _e !== void 0 ? _e : '-1';
+                    args.jobLog("Setting variable ArrEpisodeId to ".concat(args.variables.user.ArrEpisodeId));
                 }
                 return [2 /*return*/];
         }
