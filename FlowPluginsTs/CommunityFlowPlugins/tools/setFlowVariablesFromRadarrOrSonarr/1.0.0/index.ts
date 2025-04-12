@@ -72,7 +72,7 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-interface ISerieResponse {
+interface IBaseResponse {
   id: number;
   originalLanguage?: {
     id: number;
@@ -174,7 +174,7 @@ const lookupContent = async (args: IpluginInputArgs, config: IArrConfig, fileNam
       headers: createHeaders(config.apiKey),
     });
 
-    const content: ISerieResponse = response.data[0];
+    const content: IBaseResponse = response.data[0];
     if (!content) return { id: '-1' };
 
     const baseInfo = {
@@ -209,7 +209,7 @@ const parseContent = async (args: IpluginInputArgs, config: IArrConfig, fileName
     });
 
     const { data } = response;
-    const content: ISerieResponse = config.name === 'radarr' ? data.movie : data.series;
+    const content: IBaseResponse = config.name === 'radarr' ? data.movie : data.series;
 
     if (!content) return { id: '-1' };
 
