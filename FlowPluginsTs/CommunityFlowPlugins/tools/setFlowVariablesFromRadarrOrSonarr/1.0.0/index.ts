@@ -115,14 +115,14 @@ const createHeaders = (apiKey: string) => ({
 });
 
 const buildTerm = (filePath: string): string | null => {
-  const tvdbMatch = filePath.match(/tvdb-(\d+)/);
-  if (tvdbMatch) return `tvdb:${tvdbMatch[1]}`;
+  const tvdbMatch = filePath.match(/tvdb(id)?-(\d+)/);
+  if (tvdbMatch) return `tvdb:${tvdbMatch[2]}`;
 
-  const tmdbMatch = filePath.match(/tmdb-(\d+)/);
-  if (tmdbMatch) return `tmdb:${tmdbMatch[1]}`;
+  const tmdbMatch = filePath.match(/tmdb(id)?-(\d+)/);
+  if (tmdbMatch) return `tmdb:${tmdbMatch[2]}`;
 
-  const imdbMatch = filePath.match(/imdb-(tt|nm|co|ev|ch|ni)(\d+)/);
-  if (imdbMatch) return `imdb:${imdbMatch[1]}${imdbMatch[2]}`;
+  const imdbMatch = filePath.match(/imdb(id)?-(tt|nm|co|ev|ch|ni)(\d+)/);
+  if (imdbMatch) return `imdb:${imdbMatch[2]}${imdbMatch[3]}`;
 
   return null;
 };

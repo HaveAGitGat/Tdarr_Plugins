@@ -124,15 +124,15 @@ var API_HEADERS = {
 var LANGUAGE_API_BASE_URL = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/iso-language-codes-639-1-and-639-2@public/records';
 var createHeaders = function (apiKey) { return (__assign(__assign({}, API_HEADERS), { 'X-Api-Key': apiKey })); };
 var buildTerm = function (filePath) {
-    var tvdbMatch = filePath.match(/tvdb-(\d+)/);
+    var tvdbMatch = filePath.match(/tvdb(id)?-(\d+)/);
     if (tvdbMatch)
-        return "tvdb:".concat(tvdbMatch[1]);
-    var tmdbMatch = filePath.match(/tmdb-(\d+)/);
+        return "tvdb:".concat(tvdbMatch[2]);
+    var tmdbMatch = filePath.match(/tmdb(id)?-(\d+)/);
     if (tmdbMatch)
-        return "tmdb:".concat(tmdbMatch[1]);
-    var imdbMatch = filePath.match(/imdb-(tt|nm|co|ev|ch|ni)(\d+)/);
+        return "tmdb:".concat(tmdbMatch[2]);
+    var imdbMatch = filePath.match(/imdb(id)?-(tt|nm|co|ev|ch|ni)(\d+)/);
     if (imdbMatch)
-        return "imdb:".concat(imdbMatch[1]).concat(imdbMatch[2]);
+        return "imdb:".concat(imdbMatch[2]).concat(imdbMatch[3]);
     return null;
 };
 var extractSeasonEpisodeInfo = function (fileName) {
