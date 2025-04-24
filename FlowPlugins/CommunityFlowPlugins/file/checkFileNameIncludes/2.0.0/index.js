@@ -68,7 +68,7 @@ var plugin = function (args) {
     var pattern = String(args.inputs.pattern);
     var includeFileDirectory = args.inputs.includeFileDirectory;
     var fileName = includeFileDirectory
-        ? args.inputFileObj._id
+        ? String(args.originalLibraryFile.meta.Directory).concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat((0, fileUtils_1.getContainer)(args.inputFileObj._id))
         : "".concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
     var searchCriteriasArray = terms.trim().split(',')
         .map(function (term) { return term.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&'); }); // https://github.com/tc39/proposal-regex-escaping
