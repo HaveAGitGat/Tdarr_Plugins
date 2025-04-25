@@ -73,7 +73,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const { includeFileDirectory } = args.inputs;
 
   const fileName = includeFileDirectory
-    ? args.inputFileObj._id
+    ? `${String(args.originalLibraryFile.meta.Directory)}${getFileName(args.inputFileObj._id)}.${getContainer(args.inputFileObj._id)}`
     : `${getFileName(args.inputFileObj._id)}.${getContainer(args.inputFileObj._id)}`;
 
   const searchCriteriasArray = terms.trim().split(',')
