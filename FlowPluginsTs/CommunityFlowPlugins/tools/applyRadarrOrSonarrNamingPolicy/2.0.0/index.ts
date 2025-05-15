@@ -109,7 +109,12 @@ const arrConfigs: Record<'radarr' | 'sonarr', IArrConfig> = {
     // eslint-disable-next-line max-len
     buildPreviewRenameUrl: (fileInfo, host) => `${host}/api/${API_VERSION}/rename?seriesId=${fileInfo.id}&seasonNumber=${fileInfo.seasonNumber}`,
     // eslint-disable-next-line max-len
-    getFileToRename: (response, fileInfo) => response.data?.find((file) => file.episodeNumbers?.at(0) === fileInfo.episodeNumber),
+    getFileToRename: (response, fileInfo) => {
+      const fileToRename = response.data?.find((file) => file.episodeNumbers?.at(0) === fileInfo.episodeNumber);
+      return fileToRename
+        ? { ...fileToRename, newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }
+        : undefined;
+    },
   },
 } as const;
 

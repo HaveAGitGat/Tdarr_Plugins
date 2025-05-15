@@ -124,7 +124,12 @@ var arrConfigs = {
         // eslint-disable-next-line max-len
         buildPreviewRenameUrl: function (fileInfo, host) { return "".concat(host, "/api/").concat(API_VERSION, "/rename?seriesId=").concat(fileInfo.id, "&seasonNumber=").concat(fileInfo.seasonNumber); },
         // eslint-disable-next-line max-len
-        getFileToRename: function (response, fileInfo) { var _a; return (_a = response.data) === null || _a === void 0 ? void 0 : _a.find(function (file) { var _a; return ((_a = file.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fileInfo.episodeNumber; }); },
+        getFileToRename: function (response, fileInfo) {
+            var _a;
+            var fileToRename = (_a = response.data) === null || _a === void 0 ? void 0 : _a.find(function (file) { var _a; return ((_a = file.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fileInfo.episodeNumber; });
+            return fileToRename
+                ? __assign(__assign({}, fileToRename), { newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }) : undefined;
+        },
     },
 };
 var normalizeHost = function (host) {
