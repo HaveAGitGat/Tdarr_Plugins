@@ -45,7 +45,7 @@ const details = (): IpluginDetails => ({
       label: 'Unmonitor Series If No Episodes Remain',
       name: 'unmonitor_series',
       type: 'boolean',
-      defaultValue: "false",
+      defaultValue: 'false',
       inputUI: {
         type: 'switch',
       },
@@ -115,8 +115,8 @@ const getEpisodeInfo = async (
   headers: IHTTPHeaders,
   fileName: string,
 ): Promise<IEpisodeInfo> => {
-  let info: IEpisodeInfo = { seriesId: -1, seasonNumber: -1, episodeNumber: -1 };
-  
+  const info: IEpisodeInfo = { seriesId: -1, seasonNumber: -1, episodeNumber: -1 };
+
   // First try by IMDB ID
   const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
   if (imdbId !== '') {
@@ -130,14 +130,14 @@ const getEpisodeInfo = async (
       if (series) {
         info.seriesId = series.id;
         info.series = series;
-        
+
         // Extract season and episode from filename
         const seasonEpisodeMatch = /\bS(\d{1,3})E(\d{1,4})\b/i.exec(fileName);
         if (seasonEpisodeMatch) {
           info.seasonNumber = parseInt(seasonEpisodeMatch[1], 10);
           info.episodeNumber = parseInt(seasonEpisodeMatch[2], 10);
         }
-        
+
         args.jobLog(`Series '${series.title}' (ID: ${series.id}) found for IMDB '${imdbId}'`);
       }
     } catch (error) {
@@ -153,12 +153,12 @@ const getEpisodeInfo = async (
         url: `${host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
         headers,
       });
-      
+
       if (parseResponse?.data?.series?.id) {
         info.seriesId = parseResponse.data.series.id;
         info.seasonNumber = parseResponse.data.parsedEpisodeInfo?.seasonNumber ?? 1;
         info.episodeNumber = parseResponse.data.parsedEpisodeInfo?.episodeNumbers?.at(0) ?? 1;
-        
+
         // Get series details
         const seriesResponse = await args.deps.axios({
           method: 'get',
@@ -166,8 +166,10 @@ const getEpisodeInfo = async (
           headers,
         });
         info.series = seriesResponse.data;
-        
-        args.jobLog(`Series '${info.series?.title}' found for '${getFileName(fileName)}' - S${info.seasonNumber}E${info.episodeNumber}`);
+
+        const seriesTitle = info.series?.title ?? 'Unknown';
+        const episodeRef = `S${info.seasonNumber}E${info.episodeNumber}`;
+        args.jobLog(`Series '${seriesTitle}' found for '${getFileName(fileName)}' - ${episodeRef}`);
       }
     } catch (error) {
       args.jobLog(`Error parsing filename: ${error}`);
@@ -178,43 +180,43 @@ const getEpisodeInfo = async (
   if (info.seriesId === -1) {
     try {
       args.jobLog('Attempting to find episode by file path...');
-      
+
       // Get all series first
       const allSeriesResponse = await args.deps.axios({
         method: 'get',
         url: `${host}/api/v3/series`,
         headers,
       });
-      
+
       const allSeries: ISeries[] = allSeriesResponse.data || [];
       const fileDir = fileName.substring(0, fileName.lastIndexOf('/'));
-      
+
       // Find series by path
-      const series = allSeries.find((s: ISeries) => 
-        s.path && (fileName.startsWith(s.path) || fileDir.startsWith(s.path))
-      );
-      
+      const series = allSeries.find((s: ISeries) => {
+        if (!s.path) return false;
+        return fileName.startsWith(s.path) || fileDir.startsWith(s.path);
+      });
+
       if (series) {
         info.seriesId = series.id;
         info.series = series;
-        
+
         // Get all episodes for this series
         const episodesResponse = await args.deps.axios({
           method: 'get',
           url: `${host}/api/v3/episode?seriesId=${series.id}`,
           headers,
         });
-        
+
         const episodes: IEpisode[] = episodesResponse.data || [];
-        const episode = episodes.find((e: IEpisode) => 
-          e.hasFile && e.episodeFile?.path === fileName
-        );
-        
+        const episode = episodes.find((e: IEpisode) => e.hasFile && e.episodeFile?.path === fileName);
+
         if (episode) {
           info.episode = episode;
           info.seasonNumber = episode.seasonNumber;
           info.episodeNumber = episode.episodeNumber;
-          args.jobLog(`Episode found: ${series.title} - S${episode.seasonNumber}E${episode.episodeNumber} - ${episode.title}`);
+          const episodeRef = `S${episode.seasonNumber}E${episode.episodeNumber}`;
+          args.jobLog(`Episode found: ${series.title} - ${episodeRef} - ${episode.title}`);
         }
       }
     } catch (error) {
@@ -230,11 +232,9 @@ const getEpisodeInfo = async (
         url: `${host}/api/v3/episode?seriesId=${info.seriesId}&seasonNumber=${info.seasonNumber}`,
         headers,
       });
-      
+
       const episodes: IEpisode[] = episodesResponse.data || [];
-      info.episode = episodes.find((e: IEpisode) => 
-        e.episodeNumber === info.episodeNumber
-      );
+      info.episode = episodes.find((e: IEpisode) => e.episodeNumber === info.episodeNumber);
     } catch (error) {
       args.jobLog(`Error fetching episode details: ${error}`);
     }
@@ -265,7 +265,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   // Get episode info
   let episodeInfo = await getEpisodeInfo(args, sonarrHost, headers, originalFileName);
-  
+
   // Try with current filename if original didn't work
   if (episodeInfo.seriesId === -1 && currentFileName !== originalFileName) {
     episodeInfo = await getEpisodeInfo(args, sonarrHost, headers, currentFileName);
@@ -283,7 +283,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         data: updatedEpisode,
       });
 
-      args.jobLog(`✅ Episode '${episodeInfo.episode.title}' (S${episodeInfo.seasonNumber}E${episodeInfo.episodeNumber}) successfully unmonitored`);
+      const episodeTitle = episodeInfo.episode.title;
+      const episodeRef = `S${episodeInfo.seasonNumber}E${episodeInfo.episodeNumber}`;
+      args.jobLog(`✅ Episode '${episodeTitle}' (${episodeRef}) successfully unmonitored`);
 
       // Check if we should unmonitor the series
       if (unmonitorSeries && episodeInfo.series) {
@@ -294,11 +296,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
             url: `${sonarrHost}/api/v3/episode?seriesId=${episodeInfo.seriesId}`,
             headers,
           });
-          
+
           const allEpisodes: IEpisode[] = allEpisodesResponse.data || [];
-          const remainingMonitored = allEpisodes.filter((e: IEpisode) => 
-            e.id !== episodeInfo.episode!.id && e.monitored && e.hasFile
-          ).length;
+          const currentEpisodeId = episodeInfo.episode?.id;
+          const filteredEpisodes = allEpisodes.filter((e: IEpisode) => {
+            const isDifferentEpisode = e.id !== currentEpisodeId;
+            return isDifferentEpisode && e.monitored && e.hasFile;
+          });
+          const remainingMonitored = filteredEpisodes.length;
 
           if (remainingMonitored === 0 && episodeInfo.series.monitored) {
             // Unmonitor the series
@@ -309,8 +314,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
               headers,
               data: updatedSeries,
             });
-            
-            args.jobLog(`✅ Series '${episodeInfo.series.title}' also unmonitored (no monitored episodes with files remain)`);
+
+            const seriesTitle = episodeInfo.series.title;
+            const message = `✅ Series '${seriesTitle}' also unmonitored (no monitored episodes with files remain)`;
+            args.jobLog(message);
           }
         } catch (error) {
           args.jobLog(`Warning: Could not check/unmonitor series: ${error}`);
@@ -331,7 +338,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       };
     }
   } else if (episodeInfo.episode && !episodeInfo.episode.monitored) {
-    args.jobLog(`Episode is already unmonitored`);
+    args.jobLog('Episode is already unmonitored');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 1,

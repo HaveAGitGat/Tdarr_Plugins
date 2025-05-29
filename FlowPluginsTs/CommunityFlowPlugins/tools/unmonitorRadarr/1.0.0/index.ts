@@ -112,7 +112,7 @@ const getMovieId = async (
         headers,
       });
       id = parseResponse?.data?.movie?.id ?? -1;
-      
+
       if (id !== -1) {
         // Get the full movie object
         const movieResponse = await args.deps.axios({
@@ -122,8 +122,10 @@ const getMovieId = async (
         });
         movie = movieResponse.data;
       }
-      
-      args.jobLog(`Movie ${id !== -1 ? `'${movie?.title}' (ID: ${id}) found` : 'not found'} for '${getFileName(fileName)}'`);
+
+      const movieTitle = movie?.title ?? 'Unknown';
+      const statusMessage = id !== -1 ? `'${movieTitle}' (ID: ${id}) found` : 'not found';
+      args.jobLog(`Movie ${statusMessage} for '${getFileName(fileName)}'`);
     } catch (error) {
       args.jobLog(`Error parsing filename: ${error}`);
     }
@@ -138,16 +140,14 @@ const getMovieId = async (
         url: `${host}/api/v3/movie`,
         headers,
       });
-      
+
       const movies: IMovie[] = allMoviesResponse.data || [];
       const fileDir = fileName.substring(0, fileName.lastIndexOf('/'));
-      
+
       // Find movie by exact file path or by directory
-      movie = movies.find((m: IMovie) => 
-        (m.movieFile?.path === fileName) || 
-        (m.path && (fileName.startsWith(m.path) || fileDir === m.path))
-      );
-      
+      movie = movies.find((m: IMovie) => (m.movieFile?.path === fileName)
+        || (m.path && (fileName.startsWith(m.path) || fileDir === m.path)));
+
       if (movie) {
         id = movie.id;
         args.jobLog(`Movie '${movie.title}' (ID: ${id}) found by file path`);
@@ -181,7 +181,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   // Get movie ID
   let movieData = await getMovieId(args, radarrHost, headers, originalFileName);
-  
+
   // Try with current filename if original didn't work
   if (movieData.id === -1 && currentFileName !== originalFileName) {
     movieData = await getMovieId(args, radarrHost, headers, currentFileName);
