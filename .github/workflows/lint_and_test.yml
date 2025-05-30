@@ -11,7 +11,7 @@ jobs:
         node-version: [18.x]
         os:
           [
-            ["ubuntu-20.04"],
+            ["ubuntu-22.04"],
             ["windows-2022"],
             ["macos-14"],
           ]
@@ -42,7 +42,7 @@ jobs:
     needs: [
       test
       ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the changed files back to the repository.
