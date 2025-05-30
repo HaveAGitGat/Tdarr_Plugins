@@ -37,10 +37,13 @@ var plugin = function (args) {
     if (Array.isArray((_b = (_a = args === null || args === void 0 ? void 0 : args.inputFileObj) === null || _a === void 0 ? void 0 : _a.ffProbeData) === null || _b === void 0 ? void 0 : _b.streams)) {
         for (var i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
             var stream = args.inputFileObj.ffProbeData.streams[i];
-            if (stream.codec_type === 'video'
-                && stream.color_transfer === 'smpte2084'
-                && stream.color_primaries === 'bt2020'
-                && stream.color_range === 'tv') {
+            if ( 
+                (stream.codec_type === 'video' && stream.color_transfer === 'smpte2084' && stream.color_primaries === 'bt2020' && stream.color_range === 'tv')  
+                || (stream.codec_type === 'video' && String(stream.codec_tag_string).includes("dvhe") ) 
+                || (stream.codec_type === 'video' && String(stream.codec_tag_string).includes("dvav") ) 
+                || (stream.codec_type === 'video' && String(stream.codec_tag_string).includes("dav1") ) 
+                || (stream.codec_type === 'video' && String(stream.codec_tag_string).includes("dvh11") ) 
+            ) { 
                 isHdr = true;
             }
         }
