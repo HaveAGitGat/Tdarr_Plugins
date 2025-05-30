@@ -232,9 +232,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           }),
         buildPreviewRenameResquestUrl:
           (fInfo) => `${arrHost}/api/v3/rename?seriesId=${fInfo.id}&seasonNumber=${fInfo.seasonNumber}`,
-        getFileToRenameFromPreviewRenameResponse:
-          (previewRenameResponse, fInfo) => previewRenameResponse.data
-            ?.find((episodeFile) => episodeFile.episodeNumbers?.at(0) === fInfo.episodeNumber),
+        getFileToRenameFromPreviewRenameResponse: (previewRenameResponse, fInfo) => {
+          const fileToRename = previewRenameResponse.data
+            ?.find((episodeFile) => episodeFile.episodeNumbers?.at(0) === fInfo.episodeNumber);
+          return fileToRename
+            ? { ...fileToRename, newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }
+            : undefined;
+        },
       },
     };
 
