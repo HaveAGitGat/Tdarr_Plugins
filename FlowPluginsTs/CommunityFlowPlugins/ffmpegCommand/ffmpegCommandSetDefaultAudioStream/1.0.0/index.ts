@@ -24,11 +24,13 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: 'eng',
       inputUI: { type: 'text' },
-      tooltip: 'Specify what language to use in the ISO 639-2 format. If the setFlowVariablesFromRadarrOrSonarr plugin is run before this one you can use the default language variable. \nExample:\neng\nfre\{{{args.variables.user.ArrOriginalLanguageCode}}}',
+      tooltip: 'Specify what language to use in the ISO 639-2 format. If the setFlowVariablesFromRadarrOrSonarr '
+        + 'plugin is run before this one you can use the default language variable. '
+        + '\nExample:\neng\nfre\n{{{args.variables.user.ArrOriginalLanguageCode}}}',
     },
     {
       label: 'Use the highest number of channels as default',
-      name: 'useHightestNumberOfChannels',
+      name: 'useHighestNumberOfChannels',
       type: 'boolean',
       defaultValue: 'false',
       inputUI: { type: 'switch' },
@@ -140,21 +142,21 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const { streams } = args.variables.ffmpegCommand;
   const {
     allowDescriptive,
-    useHightestNumberOfChannels,
+    useHighestNumberOfChannels,
   } = args.inputs as {
     allowDescriptive: boolean;
-    useHightestNumberOfChannels: boolean;
+    useHighestNumberOfChannels: boolean;
   };
 
   // Sets the language code used to determine the default subtitle stream
   const languageCode = String(args.inputs.language);
 
   // Determine target channel count
-  const targetChannelsCount = useHightestNumberOfChannels
+  const targetChannelsCount = useHighestNumberOfChannels
     ? findHighestChannelCount(streams, languageCode)
     : parseInt(String(args.inputs.channelsCount), 10);
 
-  if (useHightestNumberOfChannels) {
+  if (useHighestNumberOfChannels) {
     args.jobLog(`${targetChannelsCount} channels count determined as being the highest match`);
   }
 

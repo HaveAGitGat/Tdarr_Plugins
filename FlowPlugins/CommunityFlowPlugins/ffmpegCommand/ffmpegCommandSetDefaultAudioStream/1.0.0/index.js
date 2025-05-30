@@ -21,11 +21,13 @@ var details = function () { return ({
             type: 'string',
             defaultValue: 'eng',
             inputUI: { type: 'text' },
-            tooltip: 'Specify what language to use in the ISO 639-2 format. If the setFlowVariablesFromRadarrOrSonarr plugin is run before this one you can use the default language variable. \nExample:\neng\nfre\{{{args.variables.user.ArrOriginalLanguageCode}}}',
+            tooltip: 'Specify what language to use in the ISO 639-2 format. If the setFlowVariablesFromRadarrOrSonarr '
+                + 'plugin is run before this one you can use the default language variable. '
+                + '\nExample:\neng\nfre\n{{{args.variables.user.ArrOriginalLanguageCode}}}',
         },
         {
             label: 'Use the highest number of channels as default',
-            name: 'useHightestNumberOfChannels',
+            name: 'useHighestNumberOfChannels',
             type: 'boolean',
             defaultValue: 'false',
             inputUI: { type: 'switch' },
@@ -101,14 +103,14 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     var shouldProcess = false;
     var streams = args.variables.ffmpegCommand.streams;
-    var _a = args.inputs, allowDescriptive = _a.allowDescriptive, useHightestNumberOfChannels = _a.useHightestNumberOfChannels;
+    var _a = args.inputs, allowDescriptive = _a.allowDescriptive, useHighestNumberOfChannels = _a.useHighestNumberOfChannels;
     // Sets the language code used to determine the default subtitle stream
     var languageCode = String(args.inputs.language);
     // Determine target channel count
-    var targetChannelsCount = useHightestNumberOfChannels
+    var targetChannelsCount = useHighestNumberOfChannels
         ? findHighestChannelCount(streams, languageCode)
         : parseInt(String(args.inputs.channelsCount), 10);
-    if (useHightestNumberOfChannels) {
+    if (useHighestNumberOfChannels) {
         args.jobLog("".concat(targetChannelsCount, " channels count determined as being the highest match"));
     }
     var defaultSet = false;
