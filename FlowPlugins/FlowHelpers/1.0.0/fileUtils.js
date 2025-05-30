@@ -257,6 +257,7 @@ var hashFile = function (filePath, algorithm) {
             stream.on('error', function (error) {
                 reject(new Error("Error reading file for hashing: ".concat(error.message)));
             });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }
         catch (error) {
             reject(new Error("Error setting up file hash: ".concat(error.message)));
