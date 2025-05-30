@@ -166,7 +166,7 @@ export const getScanTypes = (pluginsTextRaw: string[]): IscanTypes => {
   return scanTypes;
 };
 
-export const hashFile = async (filePath: string, algorithm = 'sha256'): Promise<string> => new Promise((resolve, reject) => {
+export const hashFile = (filePath: string, algorithm = 'sha256'): Promise<string> => new Promise((resolve, reject) => {
   try {
     const hash = crypto.createHash(algorithm);
     const stream = fs.createReadStream(filePath);
@@ -183,6 +183,7 @@ export const hashFile = async (filePath: string, algorithm = 'sha256'): Promise<
     stream.on('error', (error) => {
       reject(new Error(`Error reading file for hashing: ${error.message}`));
     });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     reject(new Error(`Error setting up file hash: ${error.message}`));
   }

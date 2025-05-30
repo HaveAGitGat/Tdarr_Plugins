@@ -68,15 +68,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -250,34 +241,26 @@ var getScanTypes = function (pluginsTextRaw) {
     return scanTypes;
 };
 exports.getScanTypes = getScanTypes;
-var hashFile = function (filePath_1) {
-    var args_1 = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        args_1[_i - 1] = arguments[_i];
-    }
-    return __awaiter(void 0, __spreadArray([filePath_1], args_1, true), void 0, function (filePath, algorithm) {
-        if (algorithm === void 0) { algorithm = 'sha256'; }
-        return __generator(this, function (_a) {
-            return [2 /*return*/, new Promise(function (resolve, reject) {
-                    try {
-                        var hash_1 = crypto_1.default.createHash(algorithm);
-                        var stream = fs_1.default.createReadStream(filePath);
-                        stream.on('data', function (data) {
-                            hash_1.update(data);
-                        });
-                        stream.on('end', function () {
-                            var hashStr = hash_1.digest('hex');
-                            resolve(hashStr);
-                        });
-                        stream.on('error', function (error) {
-                            reject(new Error("Error reading file for hashing: ".concat(error.message)));
-                        });
-                    }
-                    catch (error) {
-                        reject(new Error("Error setting up file hash: ".concat(error.message)));
-                    }
-                })];
-        });
+var hashFile = function (filePath, algorithm) {
+    if (algorithm === void 0) { algorithm = 'sha256'; }
+    return new Promise(function (resolve, reject) {
+        try {
+            var hash_1 = crypto_1.default.createHash(algorithm);
+            var stream = fs_1.default.createReadStream(filePath);
+            stream.on('data', function (data) {
+                hash_1.update(data);
+            });
+            stream.on('end', function () {
+                var hashStr = hash_1.digest('hex');
+                resolve(hashStr);
+            });
+            stream.on('error', function (error) {
+                reject(new Error("Error reading file for hashing: ".concat(error.message)));
+            });
+        }
+        catch (error) {
+            reject(new Error("Error setting up file hash: ".concat(error.message)));
+        }
     });
 };
 exports.hashFile = hashFile;
