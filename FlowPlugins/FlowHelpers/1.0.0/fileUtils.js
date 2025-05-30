@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -35,21 +68,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hashFile = exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = exports.fileExists = void 0;
-var fs_1 = require("fs");
+var fs_1 = __importStar(require("fs"));
 var crypto_1 = __importDefault(require("crypto"));
 var fileExists = function (path) { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
     switch (_a.label) {
@@ -217,29 +241,27 @@ var getScanTypes = function (pluginsTextRaw) {
     return scanTypes;
 };
 exports.getScanTypes = getScanTypes;
-var hashFile = function (filePath_1) {
-    var args_1 = [];
-    for (var _i = 1; _i < arguments.length; _i++) {
-        args_1[_i - 1] = arguments[_i];
-    }
-    return __awaiter(void 0, __spreadArray([filePath_1], args_1, true), void 0, function (filePath, algorithm) {
-        var data, hash, error_1;
-        if (algorithm === void 0) { algorithm = 'sha256'; }
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, fs_1.promises.readFile(filePath)];
-                case 1:
-                    data = _a.sent();
-                    hash = crypto_1.default.createHash(algorithm).update(data).digest('hex');
-                    return [2 /*return*/, hash];
-                case 2:
-                    error_1 = _a.sent();
-                    throw new Error("Error hashing file: ".concat(error_1.message));
-                case 3: return [2 /*return*/];
-            }
-        });
+var hashFile = function (filePath, algorithm) {
+    if (algorithm === void 0) { algorithm = 'sha256'; }
+    return new Promise(function (resolve, reject) {
+        try {
+            var hash_1 = crypto_1.default.createHash(algorithm);
+            var stream = fs_1.default.createReadStream(filePath);
+            stream.on('data', function (data) {
+                hash_1.update(data);
+            });
+            stream.on('end', function () {
+                var hashStr = hash_1.digest('hex');
+                resolve(hashStr);
+            });
+            stream.on('error', function (error) {
+                reject(new Error("Error reading file for hashing: ".concat(error.message)));
+            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }
+        catch (error) {
+            reject(new Error("Error setting up file hash: ".concat(error.message)));
+        }
     });
 };
 exports.hashFile = hashFile;
