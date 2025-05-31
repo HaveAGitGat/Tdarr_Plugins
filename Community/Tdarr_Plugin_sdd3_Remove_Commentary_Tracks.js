@@ -12,7 +12,7 @@ const details = () => {
     Inputs:[],
   };
 }
-
+const regex = /\b(c(o|a)?m{1,2}(e|a|o)?(n|m)?(e|a)?(t|at|ta)?(a|e|i)?r{1,2}(y|ey|ry)?)\b/gm;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
     
@@ -57,9 +57,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
         file.ffProbeData.streams[i].disposition.comment == 1 ||
         file.ffProbeData.streams[i].codec_type.toLowerCase() == "audio" &&
-        file.ffProbeData.streams[i].tags.title
-          .toLowerCase()
-          .includes("commentary")
+        regex.test(file.ffProbeData.streams[i].tags.title
+          .toLowerCase())
       ) {
         ffmpegCommandInsert += ` -map -0:a:${audioIdx}`;
         hasCommentaryTrack = true;
