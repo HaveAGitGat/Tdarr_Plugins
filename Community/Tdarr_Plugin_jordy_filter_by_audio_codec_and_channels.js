@@ -26,7 +26,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter a comma separated list of channel counts to be processed (1=mono, 2=stereo, 6=5.1, 8=7.1). Leave blank to ignore channel count.',
+        'Enter a comma separated list of channel counts to be processed '
+        + '(1=mono, 2=stereo, 6=5.1, 8=7.1). Leave blank to ignore channel count.',
     },
     {
       name: 'codecsToNotProcess',
@@ -36,7 +37,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter a comma separated list of audio codecs to not be processed. Leave blank if using codecsToProcess',
+        'Enter a comma separated list of audio codecs to not be processed. '
+        + 'Leave blank if using codecsToProcess',
     },
     {
       name: 'channelsToNotProcess',
@@ -46,7 +48,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Enter a comma separated list of channel counts to not be processed (1=mono, 2=stereo, 6=5.1, 8=7.1). Leave blank to ignore channel count.',
+        'Enter a comma separated list of channel counts to not be processed '
+        + '(1=mono, 2=stereo, 6=5.1, 8=7.1). Leave blank to ignore channel count.',
     },
     {
       name: 'requireAllStreams',
@@ -60,7 +63,8 @@ const details = () => ({
         ],
       },
       tooltip:
-        'If true, all audio streams must match the criteria. If false, at least one stream must match.',
+        'If true, all audio streams must match the criteria. '
+        + 'If false, at least one stream must match.',
     },
   ],
 });
@@ -83,7 +87,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Get all audio streams
-  const audioStreams = file.ffProbeData.streams.filter((stream) => stream.codec_type && stream.codec_type.toLowerCase() === 'audio');
+  const audioStreams = file.ffProbeData.streams.filter((stream) => stream.codec_type
+    && stream.codec_type.toLowerCase() === 'audio');
 
   if (audioStreams.length === 0) {
     response.infoLog += 'No audio streams found. Breaking out of plugin stack.\n';
@@ -91,10 +96,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Parse inputs
-  const codecsToProcess = inputs.codecsToProcess ? inputs.codecsToProcess.toLowerCase().split(',').map((item) => item.trim()) : [];
-  const channelsToProcess = inputs.channelsToProcess ? inputs.channelsToProcess.split(',').map((item) => parseInt(item.trim(), 10)) : [];
-  const codecsToNotProcess = inputs.codecsToNotProcess ? inputs.codecsToNotProcess.toLowerCase().split(',').map((item) => item.trim()) : [];
-  const channelsToNotProcess = inputs.channelsToNotProcess ? inputs.channelsToNotProcess.split(',').map((item) => parseInt(item.trim(), 10)) : [];
+  const codecsToProcess = inputs.codecsToProcess
+    ? inputs.codecsToProcess.toLowerCase().split(',').map((item) => item.trim())
+    : [];
+  const channelsToProcess = inputs.channelsToProcess
+    ? inputs.channelsToProcess.split(',').map((item) => parseInt(item.trim(), 10))
+    : [];
+  const codecsToNotProcess = inputs.codecsToNotProcess
+    ? inputs.codecsToNotProcess.toLowerCase().split(',').map((item) => item.trim())
+    : [];
+  const channelsToNotProcess = inputs.channelsToNotProcess
+    ? inputs.channelsToNotProcess.split(',').map((item) => parseInt(item.trim(), 10))
+    : [];
   const requireAllStreams = inputs.requireAllStreams === 'true' || inputs.requireAllStreams === true;
 
   // Function to check if a stream matches criteria
@@ -147,7 +160,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Log details about why file failed
     audioStreams.forEach((stream, idx) => {
       const matches = streamMatchesCriteria(stream);
-      response.infoLog += `Stream ${idx}: codec=${stream.codec_name}, channels=${stream.channels}, matches=${matches}\n`;
+      response.infoLog += `Stream ${idx}: codec=${stream.codec_name}, `
+        + `channels=${stream.channels}, matches=${matches}\n`;
     });
   }
 
