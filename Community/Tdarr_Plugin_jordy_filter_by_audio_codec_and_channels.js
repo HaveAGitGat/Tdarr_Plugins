@@ -110,6 +110,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     : [];
   const requireAllStreams = inputs.requireAllStreams === 'true' || inputs.requireAllStreams === true;
 
+  // Validate that at least one filter is provided
+  if (codecsToProcess.length === 0 && channelsToProcess.length === 0
+      && codecsToNotProcess.length === 0 && channelsToNotProcess.length === 0) {
+    response.infoLog += 'No filter criteria provided. At least one codec or channel filter must be specified. Breaking out of plugin stack.\n';
+    return response;
+  }
+
+  // Validate channel numbers
+  const invalidChannels = [...channelsToProcess, ...channelsToNotProcess].filter((ch) => isNaN(ch) || ch <= 0);
+  if (invalidChannels.length > 0) {
+    response.infoLog += `Invalid channel numbers detected: ${invalidChannels.join(', ')}. Channel counts must be positive integers. Breaking out of plugin stack.\n`;
+    return response;
+  }
+
   // Function to check if a stream matches criteria
   const streamMatchesCriteria = (stream) => {
     const codecName = stream.codec_name ? stream.codec_name.toLowerCase() : '';
@@ -151,16 +165,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += 'File meets audio codec and channel criteria. Moving to next plugin.\n';
 
     // Log matching streams for information
-    matchingStreams.forEach((stream, idx) => {
-      response.infoLog += `Stream ${idx}: codec=${stream.codec_name}, channels=${stream.channels}\n`;
+    matchingStreams.forEach((stream) => {
+      response.infoLog += `Stream ${stream.index}: codec=${stream.codec_name}, channels=${stream.channels}\n`;
     });
   } else {
     response.infoLog += 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n';
 
     // Log details about why file failed
-    audioStreams.forEach((stream, idx) => {
+    audioStreams.forEach((stream) => {
       const matches = streamMatchesCriteria(stream);
-      response.infoLog += `Stream ${idx}: codec=${stream.codec_name}, `
+      response.infoLog += `Stream ${stream.index}: codec=${stream.codec_name}, `
         + `channels=${stream.channels}, matches=${matches}\n`;
     });
   }

@@ -9,10 +9,8 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         // Ensure one audio stream is AAC stereo
-        if (file.ffProbeData.streams[1].codec_type === 'audio') {
-          file.ffProbeData.streams[1].codec_name = 'aac';
-          file.ffProbeData.streams[1].channels = 2;
-        }
+        file.ffProbeData.streams[1].codec_name = 'aac';
+        file.ffProbeData.streams[1].channels = 2;
         return file;
       })(),
       librarySettings: {},
@@ -28,7 +26,7 @@ const tests = [
     output: {
       processFile: true,
       infoLog: 'File meets audio codec and channel criteria. Moving to next plugin.\n'
-      + 'Stream 0: codec=aac, channels=2\n',
+      + 'Stream 1: codec=aac, channels=2\n',
     },
   },
 
@@ -38,10 +36,8 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         // Set audio stream to non-matching codec
-        if (file.ffProbeData.streams[1].codec_type === 'audio') {
-          file.ffProbeData.streams[1].codec_name = 'ac3';
-          file.ffProbeData.streams[1].channels = 2;
-        }
+        file.ffProbeData.streams[1].codec_name = 'ac3';
+        file.ffProbeData.streams[1].channels = 2;
         return file;
       })(),
       librarySettings: {},
@@ -57,7 +53,7 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
-      + 'Stream 0: codec=ac3, channels=2, matches=false\n',
+      + 'Stream 1: codec=ac3, channels=2, matches=false\n',
     },
   },
 
@@ -67,10 +63,8 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         // Set audio stream to matching codec but wrong channels
-        if (file.ffProbeData.streams[1].codec_type === 'audio') {
-          file.ffProbeData.streams[1].codec_name = 'aac';
-          file.ffProbeData.streams[1].channels = 6;
-        }
+        file.ffProbeData.streams[1].codec_name = 'aac';
+        file.ffProbeData.streams[1].channels = 6;
         return file;
       })(),
       librarySettings: {},
@@ -86,7 +80,7 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
-      + 'Stream 0: codec=aac, channels=6, matches=false\n',
+      + 'Stream 1: codec=aac, channels=6, matches=false\n',
     },
   },
 
@@ -116,9 +110,9 @@ const tests = [
     output: {
       processFile: true,
       infoLog: 'File meets audio codec and channel criteria. Moving to next plugin.\n'
-      + 'Stream 0: codec=aac, channels=2\n'
       + 'Stream 1: codec=aac, channels=2\n'
-      + 'Stream 2: codec=aac, channels=2\n',
+      + 'Stream 4: codec=aac, channels=2\n'
+      + 'Stream 5: codec=aac, channels=2\n',
     },
   },
 
@@ -148,11 +142,11 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
-      + 'Stream 0: codec=aac, channels=2, matches=true\n'
-      + 'Stream 1: codec=ac3, channels=6, matches=false\n'
-      + 'Stream 2: codec=eac3, channels=2, matches=false\n'
-      + 'Stream 3: codec=aac, channels=2, matches=true\n'
-      + 'Stream 4: codec=aac, channels=2, matches=true\n',
+      + 'Stream 1: codec=aac, channels=2, matches=true\n'
+      + 'Stream 2: codec=ac3, channels=6, matches=false\n'
+      + 'Stream 3: codec=eac3, channels=2, matches=false\n'
+      + 'Stream 4: codec=aac, channels=2, matches=true\n'
+      + 'Stream 5: codec=aac, channels=2, matches=true\n',
     },
   },
 
@@ -162,10 +156,8 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         // Set audio stream to a codec that should be excluded
-        if (file.ffProbeData.streams[1].codec_type === 'audio') {
-          file.ffProbeData.streams[1].codec_name = 'aac';
-          file.ffProbeData.streams[1].channels = 2;
-        }
+        file.ffProbeData.streams[1].codec_name = 'aac';
+        file.ffProbeData.streams[1].channels = 2;
         return file;
       })(),
       librarySettings: {},
@@ -181,7 +173,7 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
-      + 'Stream 0: codec=aac, channels=2, matches=false\n',
+      + 'Stream 1: codec=aac, channels=2, matches=false\n',
     },
   },
 
@@ -191,10 +183,8 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         // Set audio stream to a specific channel count
-        if (file.ffProbeData.streams[1].codec_type === 'audio') {
-          file.ffProbeData.streams[1].codec_name = 'aac';
-          file.ffProbeData.streams[1].channels = 6;
-        }
+        file.ffProbeData.streams[1].codec_name = 'aac';
+        file.ffProbeData.streams[1].channels = 6;
         return file;
       })(),
       librarySettings: {},
@@ -210,7 +200,7 @@ const tests = [
     output: {
       processFile: true,
       infoLog: 'File meets audio codec and channel criteria. Moving to next plugin.\n'
-      + 'Stream 0: codec=aac, channels=6\n',
+      + 'Stream 1: codec=aac, channels=6\n',
     },
   },
 
@@ -238,6 +228,46 @@ const tests = [
     output: {
       processFile: false,
       infoLog: 'No audio streams found. Breaking out of plugin stack.\n',
+    },
+  },
+
+  // Test 9: No filter criteria provided
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: '',
+        channelsToProcess: '',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: 'No filter criteria provided. At least one codec or channel filter must be specified. Breaking out of plugin stack.\n',
+    },
+  },
+
+  // Test 10: Invalid channel numbers
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        codecsToProcess: '',
+        channelsToProcess: 'invalid,0,-1',
+        codecsToNotProcess: '',
+        channelsToNotProcess: '',
+        requireAllStreams: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      infoLog: 'Invalid channel numbers detected: NaN, 0, -1. Channel counts must be positive integers. Breaking out of plugin stack.\n',
     },
   },
 ];
