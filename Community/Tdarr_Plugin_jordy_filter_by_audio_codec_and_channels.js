@@ -113,14 +113,17 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Validate that at least one filter is provided
   if (codecsToProcess.length === 0 && channelsToProcess.length === 0
       && codecsToNotProcess.length === 0 && channelsToNotProcess.length === 0) {
-    response.infoLog += 'No filter criteria provided. At least one codec or channel filter must be specified. Breaking out of plugin stack.\n';
+    response.infoLog += 'No filter criteria provided. At least one codec or channel filter must be specified. '
+      + 'Breaking out of plugin stack.\n';
     return response;
   }
 
   // Validate channel numbers
-  const invalidChannels = [...channelsToProcess, ...channelsToNotProcess].filter((ch) => isNaN(ch) || ch <= 0);
+  const invalidChannels = [...channelsToProcess, ...channelsToNotProcess]
+    .filter((ch) => Number.isNaN(ch) || ch <= 0);
   if (invalidChannels.length > 0) {
-    response.infoLog += `Invalid channel numbers detected: ${invalidChannels.join(', ')}. Channel counts must be positive integers. Breaking out of plugin stack.\n`;
+    response.infoLog += `Invalid channel numbers detected: ${invalidChannels.join(', ')}. `
+      + 'Channel counts must be positive integers. Breaking out of plugin stack.\n';
     return response;
   }
 
