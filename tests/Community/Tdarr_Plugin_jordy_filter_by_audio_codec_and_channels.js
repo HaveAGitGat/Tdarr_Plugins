@@ -21,16 +21,17 @@ const tests = [
         channelsToProcess: '2',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: true,
-      infoLog: expect.stringContaining('meets audio codec and channel criteria'),
+      infoLog: 'File meets audio codec and channel criteria. Moving to next plugin.\n'
+      + 'Stream 0: codec=aac, channels=2\n',
     },
   },
-  
+
   // Test 2: File doesn't have matching codec
   {
     input: {
@@ -49,16 +50,17 @@ const tests = [
         channelsToProcess: '2',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: false,
-      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+      infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
+      + 'Stream 0: codec=ac3, channels=2, matches=false\n',
     },
   },
-  
+
   // Test 3: File has matching codec but wrong channel count
   {
     input: {
@@ -77,16 +79,17 @@ const tests = [
         channelsToProcess: '2',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: false,
-      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+      infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
+      + 'Stream 0: codec=aac, channels=6, matches=false\n',
     },
   },
-  
+
   // Test 4: Multiple audio streams with only one matching (should pass with requireAllStreams=false)
   {
     input: {
@@ -106,16 +109,19 @@ const tests = [
         channelsToProcess: '2',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: true,
-      infoLog: expect.stringContaining('meets audio codec and channel criteria'),
+      infoLog: 'File meets audio codec and channel criteria. Moving to next plugin.\n'
+      + 'Stream 0: codec=aac, channels=2\n'
+      + 'Stream 1: codec=aac, channels=2\n'
+      + 'Stream 2: codec=aac, channels=2\n',
     },
   },
-  
+
   // Test 5: Multiple audio streams with only one matching (should fail with requireAllStreams=true)
   {
     input: {
@@ -135,16 +141,21 @@ const tests = [
         channelsToProcess: '2',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'true'
+        requireAllStreams: 'true',
       },
       otherArguments: {},
     },
     output: {
       processFile: false,
-      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+      infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
+      + 'Stream 0: codec=aac, channels=2, matches=true\n'
+      + 'Stream 1: codec=ac3, channels=6, matches=false\n'
+      + 'Stream 2: codec=eac3, channels=2, matches=false\n'
+      + 'Stream 3: codec=aac, channels=2, matches=true\n'
+      + 'Stream 4: codec=aac, channels=2, matches=true\n',
     },
   },
-  
+
   // Test 6: Using codecsToNotProcess and channelsToNotProcess
   {
     input: {
@@ -163,16 +174,17 @@ const tests = [
         channelsToProcess: '',
         codecsToNotProcess: 'aac',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: false,
-      infoLog: expect.stringContaining('does not meet audio codec and channel criteria'),
+      infoLog: 'File does not meet audio codec and channel criteria. Breaking out of plugin stack.\n'
+      + 'Stream 0: codec=aac, channels=2, matches=false\n',
     },
   },
-  
+
   // Test 7: Only filtering by channel count
   {
     input: {
@@ -191,16 +203,17 @@ const tests = [
         channelsToProcess: '6',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: true,
-      infoLog: expect.stringContaining('meets audio codec and channel criteria'),
+      infoLog: 'File meets audio codec and channel criteria. Moving to next plugin.\n'
+      + 'Stream 0: codec=aac, channels=6\n',
     },
   },
-  
+
   // Test 8: No audio streams
   {
     input: {
@@ -208,7 +221,7 @@ const tests = [
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
         // Remove audio streams
         file.ffProbeData.streams = file.ffProbeData.streams.filter(
-          stream => stream.codec_type !== 'audio'
+          (stream) => stream.codec_type !== 'audio',
         );
         return file;
       })(),
@@ -218,13 +231,13 @@ const tests = [
         channelsToProcess: '2',
         codecsToNotProcess: '',
         channelsToNotProcess: '',
-        requireAllStreams: 'false'
+        requireAllStreams: 'false',
       },
       otherArguments: {},
     },
     output: {
       processFile: false,
-      infoLog: expect.stringContaining('No audio streams found'),
+      infoLog: 'No audio streams found. Breaking out of plugin stack.\n',
     },
   },
 ];
