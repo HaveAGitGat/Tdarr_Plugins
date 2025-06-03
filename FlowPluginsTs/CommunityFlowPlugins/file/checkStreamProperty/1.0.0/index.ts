@@ -7,16 +7,17 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Check Stream Property',
-  description: 'Check if file has specified stream property',
+  description: 'Check your media files for specific audio/video characteristics (like audio codec, language, '
+    + 'quality, etc.) and route them accordingly. This plugin checks the FFprobe stream data collected by Tdarr.',
   style: {
-    borderColor: '#6efefc',
+    borderColor: 'orange',
   },
-  tags: 'video',
+  tags: '',
   isStartPlugin: false,
   pType: '',
   requiresVersion: '2.11.01',
   sidebarPosition: -1,
-  icon: 'faFilter',
+  icon: 'faQuestion',
   inputs: [
     {
       label: 'Property To Check',
@@ -28,13 +29,19 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter one stream property to check.
+        What characteristic of your media file do you want to check?
         
-        \\nExample:\\n
-        codec_name
-
-        \\nExample:\\n
-        tags.language
+        Common examples:
+        • codec_name - What audio/video format is used (like aac, mp3, h264, etc.)
+        • width - Video width in pixels
+        • height - Video height in pixels  
+        • channels - Number of audio channels (2 for stereo, 6 for 5.1 surround, etc.)
+        • sample_rate - Audio quality (like 44100, 48000)
+        • bit_rate - Quality/file size (higher = better quality, larger file)
+        • tags.language - Audio/subtitle language (like eng, spa, fre)
+        • codec_type - Whether it's "video", "audio", or "subtitle"
+        
+        Enter the exact property name you want to check.
         `,
     },
     {
@@ -47,10 +54,17 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter values of the property above to match. For example, if checking codec_name, could enter ac3,aac:
+        What values are you looking for? Separate multiple values with commas.
         
-        \\nExample:\\n
-        ac3,aac
+        Examples based on what you're checking:
+        • For audio formats: aac,mp3,ac3
+        • For video formats: h264,h265,hevc
+        • For languages: eng,spa,fre
+        • For video sizes: 1920 (for width) or 1080 (for height)
+        • For audio channels: 2,6,8
+        • For stream types: audio,video,subtitle
+        
+        The plugin will look for files that have any of these values.
         `,
     },
     {
@@ -68,11 +82,21 @@ const details = (): IpluginDetails => ({
         ],
       },
       tooltip: `
-      Specify the matching condition:
-      - includes: property value includes any of the specified values (returns true if ANY stream matches)
-      - not_includes: property value does not include any of the specified values (returns true only if NO streams contain the values)
-      - equals: property value exactly equals one of the specified values (returns true if ANY stream matches)
-      - not_equals: property value does not equal any of the specified values (returns true only if NO streams equal the values)
+      How should the plugin match your values?
+      
+      • "includes" - Find files that HAVE any of your values
+        Example: If checking for "aac,mp3" audio, files with aac OR mp3 will match
+        
+      • "not_includes" - Find files that DON'T have any of your values  
+        Example: If checking for "aac,mp3" audio, only files with neither aac nor mp3 will match
+        
+      • "equals" - Find files where the property exactly matches your values
+        Example: If checking width for "1920", only files that are exactly 1920 pixels wide will match
+        
+      • "not_equals" - Find files where the property doesn't exactly match any of your values
+        Example: If checking width for "1920", files that are NOT exactly 1920 pixels wide will match
+        
+      Most users want "includes" to find files that have what they're looking for.
       `,
     },
   ],
@@ -136,51 +160,51 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   };
 
   // Helper function to check if a stream property matches the condition
-  const checkStreamProperty = (stream: any, index: number): boolean => {
+  const checkStreamProperty = (stream: Record<string, unknown>, index: number): boolean => {
     const target = getNestedProperty(stream, propertyToCheck);
-    
+
     if (target === undefined || target === null) {
       return false;
     }
 
     const prop = String(target).toLowerCase();
-    const matches = valuesToMatch.map(val => val.toLowerCase());
+    const matches = valuesToMatch.map((val) => val.toLowerCase());
 
     switch (condition) {
       case 'includes':
-        return matches.some(val => {
+        return matches.some((val) => {
           const match = prop.includes(val);
           if (match) {
             args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${val}"\n`);
           }
           return match;
         });
-      
+
       case 'not_includes':
-        const hasIncludes = matches.some(val => prop.includes(val));
+        const hasIncludes = matches.some((val) => prop.includes(val));
         if (hasIncludes) {
-          const matchedVal = matches.find(val => prop.includes(val));
+          const matchedVal = matches.find((val) => prop.includes(val));
           args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${matchedVal}" - condition fails\n`);
         }
         return !hasIncludes;
-      
+
       case 'equals':
-        return matches.some(val => {
+        return matches.some((val) => {
           const match = prop === val;
           if (match) {
             args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${val}"\n`);
           }
           return match;
         });
-      
+
       case 'not_equals':
-        const hasEquals = matches.some(val => prop === val);
+        const hasEquals = matches.some((val) => prop === val);
         if (hasEquals) {
-          const matchedVal = matches.find(val => prop === val);
+          const matchedVal = matches.find((val) => prop === val);
           args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${matchedVal}" - condition fails\n`);
         }
         return !hasEquals;
-      
+
       default:
         return false;
     }
@@ -191,10 +215,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // Check all streams in the file
   if (args.inputFileObj.ffProbeData?.streams) {
     const { streams } = args.inputFileObj.ffProbeData;
-    
+
     // For negative conditions, ALL streams must pass; for positive conditions, ANY stream can pass
     const isNegativeCondition = condition === 'not_includes' || condition === 'not_equals';
-    
+
     if (isNegativeCondition) {
       hasMatchingProperty = streams.every((stream, index) => checkStreamProperty(stream, stream.index || index));
     } else {
