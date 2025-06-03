@@ -69,10 +69,10 @@ const details = (): IpluginDetails => ({
       },
       tooltip: `
       Specify the matching condition:
-      - includes: property value includes any of the specified values
-      - not_includes: property value does not include any of the specified values  
-      - equals: property value exactly equals one of the specified values
-      - not_equals: property value does not equal any of the specified values
+      - includes: property value includes any of the specified values (returns true if ANY stream matches)
+      - not_includes: property value does not include any of the specified values (returns true only if NO streams contain the values)
+      - equals: property value exactly equals one of the specified values (returns true if ANY stream matches)
+      - not_equals: property value does not equal any of the specified values (returns true only if NO streams equal the values)
       `,
     },
   ],
@@ -141,70 +141,85 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   if (args.inputFileObj.ffProbeData && args.inputFileObj.ffProbeData.streams) {
     const { streams } = args.inputFileObj.ffProbeData;
 
-    for (let streamIdx = 0; streamIdx < streams.length && !hasMatchingProperty; streamIdx += 1) {
-      const stream = streams[streamIdx];
+    // For negative conditions, we need to check ALL streams
+    const isNegativeCondition = condition === 'not_includes' || condition === 'not_equals';
+    
+    if (isNegativeCondition) {
+      // For negative conditions, assume true until proven false
+      hasMatchingProperty = true;
+      
+      for (let streamIdx = 0; streamIdx < streams.length && hasMatchingProperty; streamIdx += 1) {
+        const stream = streams[streamIdx];
+        const target = getNestedProperty(stream, propertyToCheck);
 
-      // Get property value using improved nested property handling
-      const target = getNestedProperty(stream, propertyToCheck);
+        if (target !== undefined && target !== null) {
+          const prop = String(target).toLowerCase();
 
-      if (target !== undefined && target !== null) {
-        const prop = String(target).toLowerCase();
+          switch (condition) {
+            case 'not_includes':
+              for (let i = 0; i < valuesToMatch.length; i += 1) {
+                const val = valuesToMatch[i].toLowerCase();
+                if (prop.includes(val)) {
+                  hasMatchingProperty = false;
+                  args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" includes "${val}" - condition fails\n`);
+                  break;
+                }
+              }
+              if (hasMatchingProperty) {
+                args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" does not include any of the specified values\n`);
+              }
+              break;
+            case 'not_equals':
+              for (let i = 0; i < valuesToMatch.length; i += 1) {
+                const val = valuesToMatch[i].toLowerCase();
+                if (prop === val) {
+                  hasMatchingProperty = false;
+                  args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" equals "${val}" - condition fails\n`);
+                  break;
+                }
+              }
+              if (hasMatchingProperty) {
+                args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" does not equal any of the specified values\n`);
+              }
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    } else {
+      // For positive conditions, stop as soon as we find a match
+      for (let streamIdx = 0; streamIdx < streams.length && !hasMatchingProperty; streamIdx += 1) {
+        const stream = streams[streamIdx];
+        const target = getNestedProperty(stream, propertyToCheck);
 
-        switch (condition) {
-          case 'includes':
-            for (let i = 0; i < valuesToMatch.length; i += 1) {
-              const val = valuesToMatch[i].toLowerCase();
-              if (prop.includes(val)) {
-                hasMatchingProperty = true;
-                args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" includes "${val}"\n`);
-                break;
+        if (target !== undefined && target !== null) {
+          const prop = String(target).toLowerCase();
+
+          switch (condition) {
+            case 'includes':
+              for (let i = 0; i < valuesToMatch.length; i += 1) {
+                const val = valuesToMatch[i].toLowerCase();
+                if (prop.includes(val)) {
+                  hasMatchingProperty = true;
+                  args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" includes "${val}"\n`);
+                  break;
+                }
               }
-            }
-            break;
-          case 'not_includes':
-            let includesAny = false;
-            for (let i = 0; i < valuesToMatch.length; i += 1) {
-              const val = valuesToMatch[i].toLowerCase();
-              if (prop.includes(val)) {
-                includesAny = true;
-                break;
+              break;
+            case 'equals':
+              for (let i = 0; i < valuesToMatch.length; i += 1) {
+                const val = valuesToMatch[i].toLowerCase();
+                if (prop === val) {
+                  hasMatchingProperty = true;
+                  args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" equals "${val}"\n`);
+                  break;
+                }
               }
-            }
-            if (!includesAny) {
-              hasMatchingProperty = true;
-              args.jobLog(
-                `Stream ${stream.index}: ${propertyToCheck} "${prop}" does not include any of the specified values\n`,
-              );
-            }
-            break;
-          case 'equals':
-            for (let i = 0; i < valuesToMatch.length; i += 1) {
-              const val = valuesToMatch[i].toLowerCase();
-              if (prop === val) {
-                hasMatchingProperty = true;
-                args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" equals "${val}"\n`);
-                break;
-              }
-            }
-            break;
-          case 'not_equals':
-            let equalsAny = false;
-            for (let i = 0; i < valuesToMatch.length; i += 1) {
-              const val = valuesToMatch[i].toLowerCase();
-              if (prop === val) {
-                equalsAny = true;
-                break;
-              }
-            }
-            if (!equalsAny) {
-              hasMatchingProperty = true;
-              args.jobLog(
-                `Stream ${stream.index}: ${propertyToCheck} "${prop}" does not equal any of the specified values\n`,
-              );
-            }
-            break;
-          default:
-            break;
+              break;
+            default:
+              break;
+          }
         }
       }
     }
