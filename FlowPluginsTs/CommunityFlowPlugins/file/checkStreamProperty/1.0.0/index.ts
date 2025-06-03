@@ -121,13 +121,14 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   let hasMatchingProperty = false;
 
   // Helper function to get nested property value
-  const getNestedProperty = (obj: any, path: string): any => {
+  const getNestedProperty = (obj: Record<string, unknown>, path: string): unknown => {
     const parts = path.split('.');
-    let current = obj;
+    let current: unknown = obj;
 
-    for (const part of parts) {
-      if (current && typeof current === 'object' && part in current) {
-        current = current[part];
+    for (let i = 0; i < parts.length; i += 1) {
+      const part = parts[i];
+      if (current && typeof current === 'object' && part in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>)[part];
       } else {
         return undefined;
       }
@@ -140,7 +141,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   if (args.inputFileObj.ffProbeData && args.inputFileObj.ffProbeData.streams) {
     const { streams } = args.inputFileObj.ffProbeData;
 
-    streamLoop: for (let streamIdx = 0; streamIdx < streams.length; streamIdx += 1) {
+    for (let streamIdx = 0; streamIdx < streams.length && !hasMatchingProperty; streamIdx += 1) {
       const stream = streams[streamIdx];
 
       // Get property value using improved nested property handling
@@ -156,7 +157,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
               if (prop.includes(val)) {
                 hasMatchingProperty = true;
                 args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" includes "${val}"\n`);
-                break streamLoop;
+                break;
               }
             }
             break;
@@ -171,8 +172,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
             }
             if (!includesAny) {
               hasMatchingProperty = true;
-              args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" does not include any of the specified values\n`);
-              break streamLoop;
+              args.jobLog(
+                `Stream ${stream.index}: ${propertyToCheck} "${prop}" does not include any of the specified values\n`,
+              );
             }
             break;
           case 'equals':
@@ -181,7 +183,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
               if (prop === val) {
                 hasMatchingProperty = true;
                 args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" equals "${val}"\n`);
-                break streamLoop;
+                break;
               }
             }
             break;
@@ -196,8 +198,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
             }
             if (!equalsAny) {
               hasMatchingProperty = true;
-              args.jobLog(`Stream ${stream.index}: ${propertyToCheck} "${prop}" does not equal any of the specified values\n`);
-              break streamLoop;
+              args.jobLog(
+                `Stream ${stream.index}: ${propertyToCheck} "${prop}" does not equal any of the specified values\n`,
+              );
             }
             break;
           default:
@@ -209,7 +212,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const outputNumber = hasMatchingProperty ? 1 : 2;
 
-  args.jobLog(`File routed to output ${outputNumber} - ${hasMatchingProperty ? 'has' : 'does not have'} matching stream property\n`);
+  args.jobLog(
+    `File routed to output ${outputNumber} - ${hasMatchingProperty ? 'has' : 'does not have'} `
+    + 'matching stream property\n',
+  );
 
   return {
     outputFileObj: args.inputFileObj,
