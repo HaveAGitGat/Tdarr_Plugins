@@ -4,16 +4,17 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check Stream Property',
-    description: 'Check if file has specified stream property',
+    description: 'Check your media files for specific audio/video characteristics (like audio codec, language, '
+        + 'quality, etc.) and route them accordingly. This plugin checks the FFprobe stream data collected by Tdarr.',
     style: {
-        borderColor: '#6efefc',
+        borderColor: 'orange',
     },
-    tags: 'video',
+    tags: '',
     isStartPlugin: false,
     pType: '',
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
-    icon: 'faFilter',
+    icon: 'faQuestion',
     inputs: [
         {
             label: 'Property To Check',
@@ -23,7 +24,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "\n        Enter one stream property to check.\n        \n        \\nExample:\\n\n        codec_name\n\n        \\nExample:\\n\n        tags.language\n        ",
+            tooltip: "\n        What characteristic of your media file do you want to check?\n        \n        Common examples:\n        \u2022 codec_name - What audio/video format is used (like aac, mp3, h264, etc.)\n        \u2022 width - Video width in pixels\n        \u2022 height - Video height in pixels  \n        \u2022 channels - Number of audio channels (2 for stereo, 6 for 5.1 surround, etc.)\n        \u2022 sample_rate - Audio quality (like 44100, 48000)\n        \u2022 bit_rate - Quality/file size (higher = better quality, larger file)\n        \u2022 tags.language - Audio/subtitle language (like eng, spa, fre)\n        \u2022 codec_type - Whether it's \"video\", \"audio\", or \"subtitle\"\n        \n        Enter the exact property name you want to check.\n        ",
         },
         {
             label: 'Values To Match',
@@ -33,7 +34,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "\n        Enter values of the property above to match. For example, if checking codec_name, could enter ac3,aac:\n        \n        \\nExample:\\n\n        ac3,aac\n        ",
+            tooltip: "\n        What values are you looking for? Separate multiple values with commas.\n        \n        Examples based on what you're checking:\n        \u2022 For audio formats: aac,mp3,ac3\n        \u2022 For video formats: h264,h265,hevc\n        \u2022 For languages: eng,spa,fre\n        \u2022 For video sizes: 1920 (for width) or 1080 (for height)\n        \u2022 For audio channels: 2,6,8\n        \u2022 For stream types: audio,video,subtitle\n        \n        The plugin will look for files that have any of these values.\n        ",
         },
         {
             label: 'Condition',
@@ -49,7 +50,7 @@ var details = function () { return ({
                     'not_equals',
                 ],
             },
-            tooltip: "\n      Specify the matching condition:\n      - includes: property value includes any of the specified values\n      - not_includes: property value does not include any of the specified values  \n      - equals: property value exactly equals one of the specified values\n      - not_equals: property value does not equal any of the specified values\n      ",
+            tooltip: "\n      How should the plugin match your values?\n      \n      \u2022 \"includes\" - Find files that HAVE any of your values\n        Example: If checking for \"aac,mp3\" audio, files with aac OR mp3 will match\n        \n      \u2022 \"not_includes\" - Find files that DON'T have any of your values  \n        Example: If checking for \"aac,mp3\" audio, only files with neither aac nor mp3 will match\n        \n      \u2022 \"equals\" - Find files where the property exactly matches your values\n        Example: If checking width for \"1920\", only files that are exactly 1920 pixels wide will match\n        \n      \u2022 \"not_equals\" - Find files where the property doesn't exactly match any of your values\n        Example: If checking width for \"1920\", files that are NOT exactly 1920 pixels wide will match\n        \n      Most users want \"includes\" to find files that have what they're looking for.\n      ",
         },
     ],
     outputs: [
@@ -66,6 +67,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
+    var _a;
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
@@ -90,7 +92,6 @@ var plugin = function (args) {
             variables: args.variables,
         };
     }
-    var hasMatchingProperty = false;
     // Helper function to get nested property value
     var getNestedProperty = function (obj, path) {
         var parts = path.split('.');
@@ -106,68 +107,60 @@ var plugin = function (args) {
         }
         return current;
     };
-    // Check all streams in the file
-    if (args.inputFileObj.ffProbeData && args.inputFileObj.ffProbeData.streams) {
-        var streams = args.inputFileObj.ffProbeData.streams;
-        for (var streamIdx = 0; streamIdx < streams.length && !hasMatchingProperty; streamIdx += 1) {
-            var stream = streams[streamIdx];
-            // Get property value using improved nested property handling
-            var target = getNestedProperty(stream, propertyToCheck);
-            if (target !== undefined && target !== null) {
-                var prop = String(target).toLowerCase();
-                switch (condition) {
-                    case 'includes':
-                        for (var i = 0; i < valuesToMatch.length; i += 1) {
-                            var val = valuesToMatch[i].toLowerCase();
-                            if (prop.includes(val)) {
-                                hasMatchingProperty = true;
-                                args.jobLog("Stream ".concat(stream.index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(val, "\"\n"));
-                                break;
-                            }
-                        }
-                        break;
-                    case 'not_includes':
-                        var includesAny = false;
-                        for (var i = 0; i < valuesToMatch.length; i += 1) {
-                            var val = valuesToMatch[i].toLowerCase();
-                            if (prop.includes(val)) {
-                                includesAny = true;
-                                break;
-                            }
-                        }
-                        if (!includesAny) {
-                            hasMatchingProperty = true;
-                            args.jobLog("Stream ".concat(stream.index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" does not include any of the specified values\n"));
-                        }
-                        break;
-                    case 'equals':
-                        for (var i = 0; i < valuesToMatch.length; i += 1) {
-                            var val = valuesToMatch[i].toLowerCase();
-                            if (prop === val) {
-                                hasMatchingProperty = true;
-                                args.jobLog("Stream ".concat(stream.index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(val, "\"\n"));
-                                break;
-                            }
-                        }
-                        break;
-                    case 'not_equals':
-                        var equalsAny = false;
-                        for (var i = 0; i < valuesToMatch.length; i += 1) {
-                            var val = valuesToMatch[i].toLowerCase();
-                            if (prop === val) {
-                                equalsAny = true;
-                                break;
-                            }
-                        }
-                        if (!equalsAny) {
-                            hasMatchingProperty = true;
-                            args.jobLog("Stream ".concat(stream.index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" does not equal any of the specified values\n"));
-                        }
-                        break;
-                    default:
-                        break;
+    // Helper function to check if a stream property matches the condition
+    var checkStreamProperty = function (stream, index) {
+        var target = getNestedProperty(stream, propertyToCheck);
+        if (target === undefined || target === null) {
+            return false;
+        }
+        var prop = String(target).toLowerCase();
+        var matches = valuesToMatch.map(function (val) { return val.toLowerCase(); });
+        switch (condition) {
+            case 'includes':
+                return matches.some(function (val) {
+                    var match = prop.includes(val);
+                    if (match) {
+                        args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(val, "\"\n"));
+                    }
+                    return match;
+                });
+            case 'not_includes':
+                var hasIncludes = matches.some(function (val) { return prop.includes(val); });
+                if (hasIncludes) {
+                    var matchedVal = matches.find(function (val) { return prop.includes(val); });
+                    args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(matchedVal, "\" - condition fails\n"));
                 }
-            }
+                return !hasIncludes;
+            case 'equals':
+                return matches.some(function (val) {
+                    var match = prop === val;
+                    if (match) {
+                        args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(val, "\"\n"));
+                    }
+                    return match;
+                });
+            case 'not_equals':
+                var hasEquals = matches.some(function (val) { return prop === val; });
+                if (hasEquals) {
+                    var matchedVal = matches.find(function (val) { return prop === val; });
+                    args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(matchedVal, "\" - condition fails\n"));
+                }
+                return !hasEquals;
+            default:
+                return false;
+        }
+    };
+    var hasMatchingProperty = false;
+    // Check all streams in the file
+    if ((_a = args.inputFileObj.ffProbeData) === null || _a === void 0 ? void 0 : _a.streams) {
+        var streams = args.inputFileObj.ffProbeData.streams;
+        // For negative conditions, ALL streams must pass; for positive conditions, ANY stream can pass
+        var isNegativeCondition = condition === 'not_includes' || condition === 'not_equals';
+        if (isNegativeCondition) {
+            hasMatchingProperty = streams.every(function (stream, index) { return checkStreamProperty(stream, stream.index || index); });
+        }
+        else {
+            hasMatchingProperty = streams.some(function (stream, index) { return checkStreamProperty(stream, stream.index || index); });
         }
     }
     var outputNumber = hasMatchingProperty ? 1 : 2;
