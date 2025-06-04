@@ -98,13 +98,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Set up required variables.
   let audioIdxCounter = 0;
 
-  const audioStreamsByLang = file.ffProbeData.streams.reduce((acc, stream) => {
+  const audioStreamsByLang = file.ffProbeData.streams.reduce((acc, stream, i) => {
     // Go through each stream in the file.
     // Check if stream is audio.
     if (stream.codec_type?.toLowerCase() === 'audio') {
       const lang = stream.tags?.language?.toLowerCase() || 'und';
       acc[lang] = acc[lang] || [];
-      acc[lang].push({ audioIdx: audioIdxCounter, stream });
+      acc[lang].push({ audioIdx: audioIdxCounter, streamIndex: i, stream });
       audioIdxCounter += 1;
     }
     return acc;
@@ -137,7 +137,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     // Go through each stream per language.
     for (let i = 0; i < audioStreamsByLang[lang].length; i++) {
-      const { audioIdx } = audioStreamsByLang[lang][i];
+      const { audioIdx, streamIndex } = audioStreamsByLang[lang][i];
       // Check if stream is audio.
       if (audioStreamsByLang[lang][i].stream.codec_type.toLowerCase() === 'audio') {
         // Catch error here incase user left inputs.downmix empty.
@@ -152,7 +152,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
                 || (inputs.downmix_single_track === true && is6channelAdded === false))
 
             ) {
-              ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
+              ffmpegCommandInsert += `-map 0:${streamIndex} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
               response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. '
               + 'Creating 6 channel from 8 channel. \n';
               convert = true;
@@ -165,7 +165,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               && (inputs.downmix_single_track === false
                 || (inputs.downmix_single_track === true && is2channelAdded === false))
             ) {
-              ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
+              ffmpegCommandInsert += `-map 0:${streamIndex} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
               response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. '
               + 'Creating 2 channel from 6 channel. \n';
               convert = true;
