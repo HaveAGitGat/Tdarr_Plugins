@@ -20,6 +20,34 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Stream Type',
+      name: 'streamType',
+      type: 'string',
+      defaultValue: 'all',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'all',
+          'video',
+          'audio',
+          'subtitle',
+          'data',
+        ],
+      },
+      tooltip:
+        `
+        Select which type of streams to check.
+        
+        • "all" - Check all streams in the file
+        • "video" - Check only video streams
+        • "audio" - Check only audio streams  
+        • "subtitle" - Check only subtitle streams
+        • "data" - Check only data streams (metadata, timecode, etc.)
+        
+        This helps you target specific stream types without having to check codec_type manually.
+        `,
+    },
+    {
       label: 'Property To Check',
       name: 'propertyToCheck',
       type: 'string',
@@ -118,6 +146,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  const streamType = String(args.inputs.streamType);
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
   const valuesToMatch = String(args.inputs.valuesToMatch).trim().split(',').map((item) => item.trim())
     .filter((row) => row.length > 0);
@@ -125,7 +154,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   // Validation
   if (!propertyToCheck) {
-    args.jobLog('Error: Property to check cannot be empty\n');
+    args.jobLog('Error: Property to check cannot be empty');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
@@ -134,7 +163,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   if (valuesToMatch.length === 0) {
-    args.jobLog('Error: Values to match cannot be empty\n');
+    args.jobLog('Error: Values to match cannot be empty');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
@@ -175,7 +204,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         return matches.some((val) => {
           const match = prop.includes(val);
           if (match) {
-            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${val}"\n`);
+            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${val}"`);
           }
           return match;
         });
@@ -184,7 +213,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         const hasIncludes = matches.some((val) => prop.includes(val));
         if (hasIncludes) {
           const matchedVal = matches.find((val) => prop.includes(val));
-          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${matchedVal}" - condition fails\n`);
+          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${matchedVal}" - condition fails`);
         }
         return !hasIncludes;
 
@@ -192,7 +221,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         return matches.some((val) => {
           const match = prop === val;
           if (match) {
-            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${val}"\n`);
+            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${val}"`);
           }
           return match;
         });
@@ -201,7 +230,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         const hasEquals = matches.some((val) => prop === val);
         if (hasEquals) {
           const matchedVal = matches.find((val) => prop === val);
-          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${matchedVal}" - condition fails\n`);
+          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${matchedVal}" - condition fails`);
         }
         return !hasEquals;
 
@@ -214,7 +243,21 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   // Check all streams in the file
   if (args.inputFileObj.ffProbeData?.streams) {
-    const { streams } = args.inputFileObj.ffProbeData;
+    let { streams } = args.inputFileObj.ffProbeData;
+
+    // Filter streams by type if specified
+    if (streamType !== 'all') {
+      streams = streams.filter((stream) => stream.codec_type === streamType);
+
+      if (streams.length === 0) {
+        args.jobLog(`No ${streamType} streams found in file`);
+        return {
+          outputFileObj: args.inputFileObj,
+          outputNumber: 2,
+          variables: args.variables,
+        };
+      }
+    }
 
     // For negative conditions, ALL streams must pass; for positive conditions, ANY stream can pass
     const isNegativeCondition = condition === 'not_includes' || condition === 'not_equals';
@@ -230,7 +273,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   args.jobLog(
     `File routed to output ${outputNumber} - ${hasMatchingProperty ? 'has' : 'does not have'} `
-    + 'matching stream property\n',
+    + 'matching stream property',
   );
 
   return {

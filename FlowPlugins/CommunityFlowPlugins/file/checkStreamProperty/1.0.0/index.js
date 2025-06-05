@@ -17,6 +17,23 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'Stream Type',
+            name: 'streamType',
+            type: 'string',
+            defaultValue: 'all',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'all',
+                    'video',
+                    'audio',
+                    'subtitle',
+                    'data',
+                ],
+            },
+            tooltip: "\n        Select which type of streams to check.\n        \n        \u2022 \"all\" - Check all streams in the file\n        \u2022 \"video\" - Check only video streams\n        \u2022 \"audio\" - Check only audio streams  \n        \u2022 \"subtitle\" - Check only subtitle streams\n        \u2022 \"data\" - Check only data streams (metadata, timecode, etc.)\n        \n        This helps you target specific stream types without having to check codec_type manually.\n        ",
+        },
+        {
             label: 'Property To Check',
             name: 'propertyToCheck',
             type: 'string',
@@ -71,13 +88,14 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
+    var streamType = String(args.inputs.streamType);
     var propertyToCheck = String(args.inputs.propertyToCheck).trim();
     var valuesToMatch = String(args.inputs.valuesToMatch).trim().split(',').map(function (item) { return item.trim(); })
         .filter(function (row) { return row.length > 0; });
     var condition = String(args.inputs.condition);
     // Validation
     if (!propertyToCheck) {
-        args.jobLog('Error: Property to check cannot be empty\n');
+        args.jobLog('Error: Property to check cannot be empty');
         return {
             outputFileObj: args.inputFileObj,
             outputNumber: 2,
@@ -85,7 +103,7 @@ var plugin = function (args) {
         };
     }
     if (valuesToMatch.length === 0) {
-        args.jobLog('Error: Values to match cannot be empty\n');
+        args.jobLog('Error: Values to match cannot be empty');
         return {
             outputFileObj: args.inputFileObj,
             outputNumber: 2,
@@ -120,7 +138,7 @@ var plugin = function (args) {
                 return matches.some(function (val) {
                     var match = prop.includes(val);
                     if (match) {
-                        args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(val, "\"\n"));
+                        args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(val, "\""));
                     }
                     return match;
                 });
@@ -128,14 +146,14 @@ var plugin = function (args) {
                 var hasIncludes = matches.some(function (val) { return prop.includes(val); });
                 if (hasIncludes) {
                     var matchedVal = matches.find(function (val) { return prop.includes(val); });
-                    args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(matchedVal, "\" - condition fails\n"));
+                    args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" includes \"").concat(matchedVal, "\" - condition fails"));
                 }
                 return !hasIncludes;
             case 'equals':
                 return matches.some(function (val) {
                     var match = prop === val;
                     if (match) {
-                        args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(val, "\"\n"));
+                        args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(val, "\""));
                     }
                     return match;
                 });
@@ -143,7 +161,7 @@ var plugin = function (args) {
                 var hasEquals = matches.some(function (val) { return prop === val; });
                 if (hasEquals) {
                     var matchedVal = matches.find(function (val) { return prop === val; });
-                    args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(matchedVal, "\" - condition fails\n"));
+                    args.jobLog("Stream ".concat(index, ": ").concat(propertyToCheck, " \"").concat(prop, "\" equals \"").concat(matchedVal, "\" - condition fails"));
                 }
                 return !hasEquals;
             default:
@@ -154,6 +172,18 @@ var plugin = function (args) {
     // Check all streams in the file
     if ((_a = args.inputFileObj.ffProbeData) === null || _a === void 0 ? void 0 : _a.streams) {
         var streams = args.inputFileObj.ffProbeData.streams;
+        // Filter streams by type if specified
+        if (streamType !== 'all') {
+            streams = streams.filter(function (stream) { return stream.codec_type === streamType; });
+            if (streams.length === 0) {
+                args.jobLog("No ".concat(streamType, " streams found in file"));
+                return {
+                    outputFileObj: args.inputFileObj,
+                    outputNumber: 2,
+                    variables: args.variables,
+                };
+            }
+        }
         // For negative conditions, ALL streams must pass; for positive conditions, ANY stream can pass
         var isNegativeCondition = condition === 'not_includes' || condition === 'not_equals';
         if (isNegativeCondition) {
@@ -165,7 +195,7 @@ var plugin = function (args) {
     }
     var outputNumber = hasMatchingProperty ? 1 : 2;
     args.jobLog("File routed to output ".concat(outputNumber, " - ").concat(hasMatchingProperty ? 'has' : 'does not have', " ")
-        + 'matching stream property\n');
+        + 'matching stream property');
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: outputNumber,
