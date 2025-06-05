@@ -154,7 +154,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   // Validation
   if (!propertyToCheck) {
-    args.jobLog('Error: Property to check cannot be empty\n');
+    args.jobLog('Error: Property to check cannot be empty');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
@@ -163,7 +163,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   if (valuesToMatch.length === 0) {
-    args.jobLog('Error: Values to match cannot be empty\n');
+    args.jobLog('Error: Values to match cannot be empty');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
@@ -204,7 +204,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         return matches.some((val) => {
           const match = prop.includes(val);
           if (match) {
-            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${val}"\n`);
+            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${val}"`);
           }
           return match;
         });
@@ -213,7 +213,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         const hasIncludes = matches.some((val) => prop.includes(val));
         if (hasIncludes) {
           const matchedVal = matches.find((val) => prop.includes(val));
-          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${matchedVal}" - condition fails\n`);
+          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" includes "${matchedVal}" - condition fails`);
         }
         return !hasIncludes;
 
@@ -221,7 +221,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         return matches.some((val) => {
           const match = prop === val;
           if (match) {
-            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${val}"\n`);
+            args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${val}"`);
           }
           return match;
         });
@@ -230,7 +230,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         const hasEquals = matches.some((val) => prop === val);
         if (hasEquals) {
           const matchedVal = matches.find((val) => prop === val);
-          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${matchedVal}" - condition fails\n`);
+          args.jobLog(`Stream ${index}: ${propertyToCheck} "${prop}" equals "${matchedVal}" - condition fails`);
         }
         return !hasEquals;
 
@@ -248,9 +248,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     // Filter streams by type if specified
     if (streamType !== 'all') {
       streams = streams.filter((stream) => stream.codec_type === streamType);
-      
+
       if (streams.length === 0) {
-        args.jobLog(`No ${streamType} streams found in file\n`);
+        args.jobLog(`No ${streamType} streams found in file`);
         return {
           outputFileObj: args.inputFileObj,
           outputNumber: 2,
@@ -273,7 +273,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   args.jobLog(
     `File routed to output ${outputNumber} - ${hasMatchingProperty ? 'has' : 'does not have'} `
-    + 'matching stream property\n',
+    + 'matching stream property',
   );
 
   return {
