@@ -20,6 +20,34 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'Stream Type',
+      name: 'streamType',
+      type: 'string',
+      defaultValue: 'all',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'all',
+          'video',
+          'audio',
+          'subtitle',
+          'data',
+        ],
+      },
+      tooltip:
+        `
+        Select which type of streams to check.
+        
+        • "all" - Check all streams in the file
+        • "video" - Check only video streams
+        • "audio" - Check only audio streams  
+        • "subtitle" - Check only subtitle streams
+        • "data" - Check only data streams (metadata, timecode, etc.)
+        
+        This helps you target specific stream types without having to check codec_type manually.
+        `,
+    },
+    {
       label: 'Property To Check',
       name: 'propertyToCheck',
       type: 'string',
@@ -118,6 +146,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  const streamType = String(args.inputs.streamType);
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
   const valuesToMatch = String(args.inputs.valuesToMatch).trim().split(',').map((item) => item.trim())
     .filter((row) => row.length > 0);
@@ -214,7 +243,21 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   // Check all streams in the file
   if (args.inputFileObj.ffProbeData?.streams) {
-    const { streams } = args.inputFileObj.ffProbeData;
+    let { streams } = args.inputFileObj.ffProbeData;
+
+    // Filter streams by type if specified
+    if (streamType !== 'all') {
+      streams = streams.filter((stream) => stream.codec_type === streamType);
+      
+      if (streams.length === 0) {
+        args.jobLog(`No ${streamType} streams found in file\n`);
+        return {
+          outputFileObj: args.inputFileObj,
+          outputNumber: 2,
+          variables: args.variables,
+        };
+      }
+    }
 
     // For negative conditions, ALL streams must pass; for positive conditions, ANY stream can pass
     const isNegativeCondition = condition === 'not_includes' || condition === 'not_equals';
