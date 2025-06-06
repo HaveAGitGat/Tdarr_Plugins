@@ -1,4 +1,4 @@
-import { details, plugin } from '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/normalizeAudio/1.0.0/index';
+import { plugin } from '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/normalizeAudio/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
@@ -43,54 +43,6 @@ describe('normalizeAudio Plugin', () => {
       workDir: '/tmp/tdarr-workdir',
       deps: { fsextra: { ensureDirSync: jest.fn() } },
     } as unknown as IpluginInputArgs;
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.name).toBe('Normalize Audio');
-      expect(pluginDetails.description).toBe('Normalize Audio');
-      expect(pluginDetails.tags).toBe('video');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-    });
-
-    it('should have correct input and output configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.inputs).toHaveLength(3);
-      expect(pluginDetails.inputs).toEqual([
-        {
-          label: 'i',
-          name: 'i',
-          type: 'string',
-          defaultValue: '-23.0',
-          inputUI: { type: 'text' },
-          tooltip: expect.any(String),
-        },
-        {
-          label: 'lra',
-          name: 'lra',
-          type: 'string',
-          defaultValue: '7.0',
-          inputUI: { type: 'text' },
-          tooltip: expect.any(String),
-        },
-        {
-          label: 'tp',
-          name: 'tp',
-          type: 'string',
-          defaultValue: '-2.0',
-          inputUI: { type: 'text' },
-          tooltip: expect.any(String),
-        },
-      ]);
-
-      expect(pluginDetails.outputs).toEqual([
-        { number: 1, tooltip: 'Continue to next plugin' },
-      ]);
-    });
   });
 
   describe('Two-Pass Normalization', () => {

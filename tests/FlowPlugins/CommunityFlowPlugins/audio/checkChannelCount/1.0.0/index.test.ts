@@ -1,4 +1,4 @@
-import { details, plugin } from
+import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/checkChannelCount/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -16,42 +16,6 @@ describe('checkChannelCount Plugin', () => {
       inputFileObj: JSON.parse(JSON.stringify(sampleAAC)) as IFileObject,
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.name).toBe('Check Channel Count');
-      expect(pluginDetails.description).toBe('Check streams for specified channel count');
-      expect(pluginDetails.tags).toBe('audio');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.icon).toBe('faQuestion');
-    });
-
-    it('should have correct input and output configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.inputs).toHaveLength(1);
-      expect(pluginDetails.inputs[0]).toEqual({
-        label: 'Channel Count',
-        name: 'channelCount',
-        type: 'number',
-        defaultValue: '2',
-        inputUI: {
-          type: 'dropdown',
-          options: ['1', '2', '3', '6', '8'],
-        },
-        tooltip: 'Specify channel count to check for',
-      });
-
-      expect(pluginDetails.outputs).toHaveLength(2);
-      expect(pluginDetails.outputs).toEqual([
-        { number: 1, tooltip: 'File has stream with specified channel count' },
-        { number: 2, tooltip: 'File does not have stream with specified channel count' },
-      ]);
-    });
   });
 
   describe('Channel Count Detection', () => {

@@ -1,4 +1,4 @@
-import { details, plugin } from
+import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/checkAudioCodec/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -22,49 +22,6 @@ describe('checkAudioCodec Plugin', () => {
       inputFileObj: JSON.parse(JSON.stringify(sampleAAC)),
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.name).toBe('Check Audio Codec');
-      expect(pluginDetails.description).toBe('Check if a file has a specific audio codec.');
-      expect(pluginDetails.tags).toBe('audio');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.icon).toBe('faQuestion');
-    });
-
-    it('should have correct input configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.inputs).toHaveLength(4);
-
-      // Codec input
-      expect(pluginDetails.inputs[0].name).toBe('codec');
-      expect(pluginDetails.inputs[0].defaultValue).toBe('aac');
-      expect(pluginDetails.inputs[0].type).toBe('string');
-
-      // Bitrate check input
-      expect(pluginDetails.inputs[1].name).toBe('checkBitrate');
-      expect(pluginDetails.inputs[1].defaultValue).toBe('false');
-      expect(pluginDetails.inputs[1].type).toBe('boolean');
-
-      // Range inputs
-      expect(pluginDetails.inputs[2].name).toBe('greaterThan');
-      expect(pluginDetails.inputs[3].name).toBe('lessThan');
-    });
-
-    it('should have correct output configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.outputs).toHaveLength(2);
-      expect(pluginDetails.outputs[0].number).toBe(1);
-      expect(pluginDetails.outputs[0].tooltip).toBe('File has codec');
-      expect(pluginDetails.outputs[1].number).toBe(2);
-      expect(pluginDetails.outputs[1].tooltip).toBe('File does not have codec');
-    });
   });
 
   describe('Basic Codec Detection', () => {

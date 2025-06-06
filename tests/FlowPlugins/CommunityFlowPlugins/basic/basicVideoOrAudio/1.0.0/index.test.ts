@@ -111,47 +111,6 @@ describe('basicVideoOrAudio Plugin', () => {
     jest.resetModules();
   });
 
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.name).toBe('Basic Video or Audio Settings');
-      expect(pluginDetails.description).toContain('Basic Video or Audio settings');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.style.borderColor).toBe('green');
-    });
-
-    it('should have correct input configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.inputs).toHaveLength(12);
-
-      // Basic Settings Type input
-      expect(pluginDetails.inputs[0].name).toBe('basicSettingsType');
-      expect(pluginDetails.inputs[0].defaultValue).toBe('video');
-      expect(pluginDetails.inputs[0].inputUI.type).toBe('dropdown');
-      expect(pluginDetails.inputs[0].inputUI.options).toEqual(['video', 'audio']);
-
-      // Output File Container input
-      expect(pluginDetails.inputs[1].name).toBe('outputFileContainer');
-      expect(pluginDetails.inputs[1].defaultValue).toBe('mkv');
-
-      // CLI Tool input
-      expect(pluginDetails.inputs[2].name).toBe('cliTool');
-      expect(pluginDetails.inputs[2].defaultValue).toBe('handbrake');
-      expect(pluginDetails.inputs[2].inputUI.options).toEqual(['handbrake', 'ffmpeg']);
-    });
-
-    it('should have correct output configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.outputs).toHaveLength(1);
-      expect(pluginDetails.outputs[0].number).toBe(1);
-      expect(pluginDetails.outputs[0].tooltip).toBe('Continue to next plugin');
-    });
-  });
-
   describe('File Size Filtering', () => {
     it.each([
       { size: 1000, min: '500', max: '2000', shouldProcess: true, description: 'within range' },

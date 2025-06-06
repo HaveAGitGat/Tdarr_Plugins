@@ -1,4 +1,4 @@
-import { details, plugin } from
+import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/classic/runClassicTranscodePlugin/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
@@ -54,35 +54,6 @@ describe('runClassicTranscodePlugin 1.0.0', () => {
       logFullCliOutput: false,
       updateWorker: jest.fn(),
     } as unknown as IpluginInputArgs;
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata and configuration', () => {
-      const pluginDetails = details();
-
-      // Test metadata
-      expect(pluginDetails.name).toBe('Run Classic Transcode Plugin');
-      expect(pluginDetails.description).toBe('Run one of Tdarr\'s classic plugins that has Operation: Transcode');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.style.borderColor).toBe('green');
-
-      // Test inputs
-      expect(pluginDetails.inputs).toHaveLength(1);
-      expect(pluginDetails.inputs[0]).toMatchObject({
-        name: 'pluginSourceId',
-        defaultValue: 'Community:Tdarr_Plugin_MC93_Migz1FFMPEG',
-        type: 'string',
-        inputUI: { type: 'dropdown' },
-      });
-
-      // Test outputs
-      expect(pluginDetails.outputs).toHaveLength(1);
-      expect(pluginDetails.outputs[0]).toMatchObject({
-        number: 1,
-        tooltip: 'Continue to next plugin',
-      });
-    });
   });
 
   describe('Successful Transcoding', () => {

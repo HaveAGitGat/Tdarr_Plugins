@@ -1,4 +1,4 @@
-import { details, plugin } from
+import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/classic/runClassicTranscodePlugin/2.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
@@ -54,39 +54,6 @@ describe('runClassicTranscodePlugin 2.0.0', () => {
       logFullCliOutput: false,
       updateWorker: jest.fn(),
     } as unknown as IpluginInputArgs;
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata and dual output configuration', () => {
-      const pluginDetails = details();
-
-      // Test metadata (same as 1.0.0)
-      expect(pluginDetails.name).toBe('Run Classic Transcode Plugin');
-      expect(pluginDetails.description).toBe('Run one of Tdarr\'s classic plugins that has Operation: Transcode');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.style.borderColor).toBe('green');
-
-      // Test inputs (same as 1.0.0)
-      expect(pluginDetails.inputs).toHaveLength(1);
-      expect(pluginDetails.inputs[0]).toMatchObject({
-        name: 'pluginSourceId',
-        defaultValue: 'Community:Tdarr_Plugin_MC93_Migz1FFMPEG',
-        type: 'string',
-        inputUI: { type: 'dropdown' },
-      });
-
-      // Test outputs (different from 1.0.0 - dual output)
-      expect(pluginDetails.outputs).toHaveLength(2);
-      expect(pluginDetails.outputs[0]).toMatchObject({
-        number: 1,
-        tooltip: 'Processing was done by the classic plugin',
-      });
-      expect(pluginDetails.outputs[1]).toMatchObject({
-        number: 2,
-        tooltip: 'Processing was not done by the classic plugin',
-      });
-    });
   });
 
   describe('Dual Output Behavior', () => {

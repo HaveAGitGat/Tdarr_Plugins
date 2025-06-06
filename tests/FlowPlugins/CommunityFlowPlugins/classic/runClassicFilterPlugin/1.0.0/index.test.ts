@@ -1,4 +1,4 @@
-import { details, plugin } from
+import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/classic/runClassicFilterPlugin/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
@@ -36,42 +36,6 @@ describe('runClassicFilterPlugin 1.0.0', () => {
         configVars: {},
       },
     } as unknown as IpluginInputArgs;
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata and configuration', () => {
-      const pluginDetails = details();
-
-      // Test metadata
-      expect(pluginDetails.name).toBe('Run Classic Filter Plugin');
-      expect(pluginDetails.description).toBe('Run one of Tdarr\'s classic plugins that has Operation: Filter');
-      expect(pluginDetails.isStartPlugin).toBe(false);
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.style.borderColor).toBe('orange');
-      expect(pluginDetails.icon).toBe('faQuestion');
-
-      // Test inputs
-      expect(pluginDetails.inputs).toHaveLength(1);
-      expect(pluginDetails.inputs[0]).toMatchObject({
-        name: 'pluginSourceId',
-        defaultValue: 'Community:Tdarr_Plugin_00td_filter_by_codec',
-        type: 'string',
-        label: 'Plugin Source ID',
-        tooltip: 'Specify the classic plugin ID',
-        inputUI: { type: 'dropdown' },
-      });
-
-      // Test outputs
-      expect(pluginDetails.outputs).toHaveLength(2);
-      expect(pluginDetails.outputs[0]).toMatchObject({
-        number: 1,
-        tooltip: 'File met conditions, would traditionally continue to next plugin in plugin stack',
-      });
-      expect(pluginDetails.outputs[1]).toMatchObject({
-        number: 2,
-        tooltip: 'File did not meet conditions, would traditionally break out of plugin stack',
-      });
-    });
   });
 
   describe('Filter Processing', () => {

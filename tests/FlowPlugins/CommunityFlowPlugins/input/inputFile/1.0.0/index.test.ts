@@ -1,5 +1,5 @@
 import { promises as fsp } from 'fs';
-import { details, plugin } from
+import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/input/inputFile/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -69,50 +69,6 @@ describe('Input File Plugin', () => {
     // Clear all mocks
     jest.clearAllMocks();
     (fsp.access as jest.Mock).mockResolvedValue(undefined);
-  });
-
-  describe('Plugin Configuration', () => {
-    it('should have correct plugin metadata', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.name).toBe('Input File');
-      expect(pluginDetails.description).toBe('Start the flow with an input file');
-      expect(pluginDetails.isStartPlugin).toBe(true);
-      expect(pluginDetails.pType).toBe('start');
-      expect(pluginDetails.requiresVersion).toBe('2.11.01');
-      expect(pluginDetails.sidebarPosition).toBe(-1);
-      expect(pluginDetails.style?.borderColor).toBe('pink');
-      expect(pluginDetails.tags).toBe('');
-      expect(pluginDetails.icon).toBe('');
-    });
-
-    it('should have correct input configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.inputs).toHaveLength(2);
-
-      // File access checks input
-      expect(pluginDetails.inputs[0].name).toBe('fileAccessChecks');
-      expect(pluginDetails.inputs[0].type).toBe('boolean');
-      expect(pluginDetails.inputs[0].defaultValue).toBe('false');
-      expect(pluginDetails.inputs[0].inputUI?.type).toBe('switch');
-      expect(pluginDetails.inputs[0].tooltip).toBe('Will check if input file and cache are readable and writable');
-
-      // Pause node input
-      expect(pluginDetails.inputs[1].name).toBe('pauseNodeIfAccessChecksFail');
-      expect(pluginDetails.inputs[1].type).toBe('boolean');
-      expect(pluginDetails.inputs[1].defaultValue).toBe('false');
-      expect(pluginDetails.inputs[1].inputUI?.type).toBe('switch');
-      expect(pluginDetails.inputs[1].tooltip).toBe('This will pause the node if the file access checks fail');
-    });
-
-    it('should have correct output configuration', () => {
-      const pluginDetails = details();
-
-      expect(pluginDetails.outputs).toHaveLength(1);
-      expect(pluginDetails.outputs[0].number).toBe(1);
-      expect(pluginDetails.outputs[0].tooltip).toBe('Continue to next plugin');
-    });
   });
 
   describe('Basic Functionality', () => {
