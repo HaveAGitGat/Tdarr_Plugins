@@ -87,13 +87,13 @@ const tests = [
       },
     },
     output: {
-      processFile: false,
-      preset: '',
-      container: '',
+      processFile: true,
+      preset: ', -map 0 -map -0:2 -c copy',
+      container: '.mp4',
       handBrakeMode: false,
-      FFmpegMode: false,
+      FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: 'No subs in file to extract!',
+      infoLog: 'Found sub to extract!',
     },
   },
   {
@@ -137,4 +137,4 @@ const tests = [
   },
 ];
 
-void run(require('path').join(__dirname, '../..', 'Community', 'Tdarr_Plugin_078d_Output_embedded_subs_to_SRT_and_remove.js'), tests);
+void run(tests);
