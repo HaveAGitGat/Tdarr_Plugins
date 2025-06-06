@@ -1,5 +1,7 @@
-import { details, plugin } from '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/checkChannelCount/1.0.0/index';
+import { details, plugin } from
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/checkChannelCount/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleAAC = require('../../../../../sampleData/media/sampleAAC_1.json');
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
@@ -10,10 +12,10 @@ describe('checkChannelCount Plugin', () => {
   beforeEach(() => {
     baseArgs = {
       inputs: { channelCount: '2' },
-      variables: {} as any,
-      inputFileObj: JSON.parse(JSON.stringify(sampleAAC)) as any,
+      variables: {} as IpluginInputArgs['variables'],
+      inputFileObj: JSON.parse(JSON.stringify(sampleAAC)) as IFileObject,
       jobLog: jest.fn(),
-    } as any;
+    } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });
 
   describe('Plugin Configuration', () => {
@@ -54,16 +56,24 @@ describe('checkChannelCount Plugin', () => {
 
   describe('Channel Count Detection', () => {
     it.each([
-      { channels: 1, description: 'mono', sample: sampleAAC, modify: true },
-      { channels: 2, description: 'stereo', sample: sampleAAC, modify: false },
-      { channels: 6, description: '5.1 surround', sample: sampleH264, modify: false },
+      {
+        channels: 1, description: 'mono', sample: sampleAAC, modify: true,
+      },
+      {
+        channels: 2, description: 'stereo', sample: sampleAAC, modify: false,
+      },
+      {
+        channels: 6, description: '5.1 surround', sample: sampleH264, modify: false,
+      },
     ])('should detect $description ($channels channel) audio', ({ channels, sample, modify }) => {
-      baseArgs.inputFileObj = JSON.parse(JSON.stringify(sample)) as any;
-      
+      baseArgs.inputFileObj = JSON.parse(JSON.stringify(sample)) as IFileObject;
+
       if (modify) {
-        baseArgs.inputFileObj.ffProbeData.streams![1].channels = channels;
+        if (baseArgs.inputFileObj.ffProbeData.streams?.[1]) {
+          baseArgs.inputFileObj.ffProbeData.streams[1].channels = channels;
+        }
       }
-      
+
       baseArgs.inputs.channelCount = channels.toString();
 
       const result = plugin(baseArgs);
@@ -83,7 +93,7 @@ describe('checkChannelCount Plugin', () => {
     });
 
     it('should check all streams and log channel counts', () => {
-      baseArgs.inputFileObj = JSON.parse(JSON.stringify(sampleH264)) as any;
+      baseArgs.inputFileObj = JSON.parse(JSON.stringify(sampleH264)) as IFileObject;
       baseArgs.inputs.channelCount = '6';
 
       const result = plugin(baseArgs);
@@ -112,9 +122,10 @@ describe('checkChannelCount Plugin', () => {
     it('should handle streams with undefined channel count', () => {
       baseArgs.inputFileObj.ffProbeData.streams = [{
         index: 0,
+        codec_name: 'h264',
         codec_type: 'video',
         channels: undefined,
-      } as any];
+      }];
 
       const result = plugin(baseArgs);
 

@@ -11,7 +11,7 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils', () => ({
 
 describe('normalizeAudio Plugin', () => {
   let baseArgs: IpluginInputArgs;
-  let mockCLI: any;
+  let mockCLI: { runCli: jest.Mock };
 
   const createMockResponse = (loudnormValues: Record<string, string>, exitCode = 0) => ({
     cliExitCode: exitCode,
@@ -24,14 +24,14 @@ describe('normalizeAudio Plugin', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
     mockCLI = { runCli: jest.fn() };
     CLI.mockImplementation(() => mockCLI);
 
     baseArgs = {
       inputs: { i: '-23.0', lra: '7.0', tp: '-2.0' },
-      variables: {} as any,
+      variables: {} as IpluginInputArgs['variables'],
       inputFileObj: {
         ...JSON.parse(JSON.stringify(sampleH264)),
         _id: '/path/to/input/file.mkv',
@@ -42,7 +42,7 @@ describe('normalizeAudio Plugin', () => {
       updateWorker: jest.fn(),
       workDir: '/tmp/tdarr-workdir',
       deps: { fsextra: { ensureDirSync: jest.fn() } },
-    } as any;
+    } as unknown as IpluginInputArgs;
   });
 
   describe('Plugin Configuration', () => {
@@ -61,9 +61,30 @@ describe('normalizeAudio Plugin', () => {
 
       expect(pluginDetails.inputs).toHaveLength(3);
       expect(pluginDetails.inputs).toEqual([
-        { label: 'i', name: 'i', type: 'string', defaultValue: '-23.0', inputUI: { type: 'text' }, tooltip: expect.any(String) },
-        { label: 'lra', name: 'lra', type: 'string', defaultValue: '7.0', inputUI: { type: 'text' }, tooltip: expect.any(String) },
-        { label: 'tp', name: 'tp', type: 'string', defaultValue: '-2.0', inputUI: { type: 'text' }, tooltip: expect.any(String) },
+        {
+          label: 'i',
+          name: 'i',
+          type: 'string',
+          defaultValue: '-23.0',
+          inputUI: { type: 'text' },
+          tooltip: expect.any(String),
+        },
+        {
+          label: 'lra',
+          name: 'lra',
+          type: 'string',
+          defaultValue: '7.0',
+          inputUI: { type: 'text' },
+          tooltip: expect.any(String),
+        },
+        {
+          label: 'tp',
+          name: 'tp',
+          type: 'string',
+          defaultValue: '-2.0',
+          inputUI: { type: 'text' },
+          tooltip: expect.any(String),
+        },
       ]);
 
       expect(pluginDetails.outputs).toEqual([
@@ -111,7 +132,13 @@ describe('normalizeAudio Plugin', () => {
       baseArgs.inputs = { i: '-16.0', lra: '11.0', tp: '-1.5' };
 
       mockCLI.runCli
-        .mockResolvedValueOnce(createMockResponse({ input_i: '-18.42', input_tp: '-2.23', input_lra: '9.32', input_thresh: '-28.83', target_offset: '1.59' }))
+        .mockResolvedValueOnce(createMockResponse({
+          input_i: '-18.42',
+          input_tp: '-2.23',
+          input_lra: '9.32',
+          input_thresh: '-28.83',
+          target_offset: '1.59',
+        }))
         .mockResolvedValueOnce(createMockResponse({}, 0));
 
       await plugin(baseArgs);
@@ -124,12 +151,17 @@ describe('normalizeAudio Plugin', () => {
 
   describe('Error Handling', () => {
     it.each([
-      { description: 'first pass fails', mockSetup: () => mockCLI.runCli.mockResolvedValueOnce(createMockResponse({}, 1)) },
-      { 
-        description: 'second pass fails', 
+      {
+        description: 'first pass fails',
+        mockSetup: () => mockCLI.runCli.mockResolvedValueOnce(createMockResponse({}, 1)),
+      },
+      {
+        description: 'second pass fails',
         mockSetup: () => mockCLI.runCli
-          .mockResolvedValueOnce(createMockResponse({ input_i: '-16.42', input_tp: '-0.23', input_lra: '11.32', input_thresh: '-26.83', target_offset: '0.59' }))
-          .mockResolvedValueOnce(createMockResponse({}, 1))
+          .mockResolvedValueOnce(createMockResponse({
+            input_i: '-16.42', input_tp: '-0.23', input_lra: '11.32', input_thresh: '-26.83', target_offset: '0.59',
+          }))
+          .mockResolvedValueOnce(createMockResponse({}, 1)),
       },
     ])('should throw error when $description', async ({ mockSetup }) => {
       mockSetup();
