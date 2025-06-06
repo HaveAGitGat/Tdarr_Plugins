@@ -1,41 +1,50 @@
 /* eslint max-len: 0 */
+const _ = require('lodash');
 const run = require('../helpers/run');
 
 const tests = [
   {
     input: {
-      file: {
-        file: '/test/video.mp4',
-        container: 'mp4',
-        ffProbeData: {
-          streams: [
-            {
-              index: 0,
-              codec_name: 'h264',
-              codec_type: 'video',
-            },
-            {
-              index: 1,
-              codec_name: 'aac',
-              codec_type: 'audio',
-            },
-            {
-              index: 2,
-              codec_name: 'subrip',
-              codec_type: 'subtitle',
-              tags: {
-                language: 'eng',
-              },
-            },
-          ],
-        },
-      },
+      file: require('../sampleData/media/sampleH264_2.json'),
       librarySettings: {},
       inputs: {},
       otherArguments: {
         ffmpegPath: '/usr/bin/ffmpeg',
         originalLibraryFile: {
-          file: '/test/video.mp4',
+          file: require('../sampleData/media/sampleH264_2.json').file,
+        },
+      },
+    },
+    output: {
+      processFile: true,
+      preset: ', -map 0 -map -0:6 -c copy',
+      container: '.mkv',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Found sub to extract!',
+    },
+  },
+  {
+    input: {
+      file: (() => {
+        const sample = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        sample.ffProbeData.streams.push({
+          index: 2,
+          codec_name: 'mov_text',
+          codec_type: 'subtitle',
+          tags: {
+            language: 'eng',
+          },
+        });
+        return sample;
+      })(),
+      librarySettings: {},
+      inputs: {},
+      otherArguments: {
+        ffmpegPath: '/usr/bin/ffmpeg',
+        originalLibraryFile: {
+          file: require('../sampleData/media/sampleH264_1.json').file,
         },
       },
     },
@@ -51,77 +60,13 @@ const tests = [
   },
   {
     input: {
-      file: {
-        file: '/test/video.mp4',
-        container: 'mp4',
-        ffProbeData: {
-          streams: [
-            {
-              index: 0,
-              codec_name: 'h264',
-              codec_type: 'video',
-            },
-            {
-              index: 1,
-              codec_name: 'aac',
-              codec_type: 'audio',
-            },
-            {
-              index: 2,
-              codec_name: 'mov_text',
-              codec_type: 'subtitle',
-              tags: {
-                language: 'eng',
-              },
-            },
-          ],
-        },
-      },
+      file: require('../sampleData/media/sampleH264_1.json'),
       librarySettings: {},
       inputs: {},
       otherArguments: {
         ffmpegPath: '/usr/bin/ffmpeg',
         originalLibraryFile: {
-          file: '/test/video.mp4',
-        },
-      },
-    },
-    output: {
-      processFile: true,
-      preset: ', -map 0 -map -0:2 -c copy',
-      container: '.mp4',
-      handBrakeMode: false,
-      FFmpegMode: true,
-      reQueueAfter: true,
-      infoLog: 'Found sub to extract!',
-    },
-  },
-  {
-    input: {
-      file: {
-        file: '/test/video.mp4',
-        container: 'mp4',
-        ffProbeData: {
-          streams: [
-            {
-              index: 0,
-              codec_name: 'h264',
-              codec_type: 'video',
-            },
-            {
-              index: 1,
-              codec_name: 'aac',
-              codec_type: 'audio',
-            },
-          ],
-        },
-      },
-      librarySettings: {},
-      inputs: {},
-      otherArguments: {
-        ffmpegPath: '/usr/bin/ffmpeg',
-        originalLibraryFile: {
-          file: '/test/video.mp4',
+          file: require('../sampleData/media/sampleH264_1.json').file,
         },
       },
     },
