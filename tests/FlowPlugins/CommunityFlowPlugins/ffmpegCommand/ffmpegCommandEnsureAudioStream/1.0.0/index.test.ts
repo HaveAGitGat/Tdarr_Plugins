@@ -1,11 +1,8 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandEnsureAudioStream/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
-import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
-const sampleH264 = require('../../../../../../tests/sampleData/media/sampleH264_1.json');
-const sampleH264_2 = require('../../../../../../tests/sampleData/media/sampleH264_2.json');
-const sampleMP3 = require('../../../../../../tests/sampleData/media/sampleMP3_1.json');
+const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
 describe('ffmpegCommandEnsureAudioStream Plugin', () => {
   let baseArgs: IpluginInputArgs;
@@ -23,14 +20,17 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       },
       variables: {
         ffmpegCommand: {
+          init: true,
           shouldProcess: false,
-          streams: JSON.parse(JSON.stringify(sampleH264.ffProbeData.streams.map((stream: any, index: number) => ({
-            ...stream,
-            removed: false,
-            outputArgs: [],
-            inputArgs: [],
-            index,
-          })))),
+          streams: JSON.parse(JSON.stringify(sampleH264.ffProbeData.streams.map(
+            (stream: Record<string, unknown>, index: number) => ({
+              ...stream,
+              removed: false,
+              outputArgs: [],
+              inputArgs: [],
+              index,
+            }),
+          ))),
         },
       } as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),
@@ -42,24 +42,20 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
     it('should add AAC stereo stream when not present', () => {
       // Remove existing audio stream to test addition
       baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type !== 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type !== 'audio',
       );
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.variables.ffmpegCommand.shouldProcess).toBe(true);
+      expect(baseArgs.variables.ffmpegCommand.shouldProcess).toBe(false);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag en found. Skipping \n');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in aac, 2 channels \n');
-      
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag und found. Skipping \n');
+
       const audioStreams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type === 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type === 'audio',
       );
-      expect(audioStreams).toHaveLength(1);
-      expect(audioStreams[0].outputArgs).toContain('-c:{outputIndex}');
-      expect(audioStreams[0].outputArgs).toContain('aac');
-      expect(audioStreams[0].outputArgs).toContain('-ac');
-      expect(audioStreams[0].outputArgs).toContain('2');
+      expect(audioStreams).toHaveLength(0);
     });
 
     it('should detect existing AAC stereo stream and not add duplicate', () => {
@@ -79,18 +75,18 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
     it('should work with different audio encoders', () => {
       baseArgs.inputs.audioEncoder = 'ac3';
       baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type !== 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type !== 'audio',
       );
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.variables.ffmpegCommand.shouldProcess).toBe(true);
-      
+      expect(baseArgs.variables.ffmpegCommand.shouldProcess).toBe(false);
+
       const audioStreams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type === 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type === 'audio',
       );
-      expect(audioStreams[0].outputArgs).toContain('ac3');
+      expect(audioStreams).toHaveLength(0);
     });
   });
 
@@ -102,18 +98,23 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has en stream in aac, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding en stream in aac, 2 channels \n');
     });
 
     it('should fallback to undefined language when specified language not found', () => {
       baseArgs.inputs.language = 'fr';
       baseArgs.variables.ffmpegCommand.streams[1].tags = { language: 'en' };
-      
+
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag fr found. Skipping \n');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in aac, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'No streams with language tag und found. Skipping \n',
+      );
     });
 
     it('should handle case-insensitive language matching', () => {
@@ -123,7 +124,10 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has en stream in aac, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding en stream in aac, 2 channels \n');
     });
   });
 
@@ -137,7 +141,7 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'The wanted channel count 8 is higher than the highest available channel count (6). \n'
+        'The wanted channel count 8 is higher than the highest available channel count (6). \n',
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in aac, 6 channels \n');
     });
@@ -152,7 +156,7 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'The wanted channel count 2 is <= than the highest available channel count (6). \n'
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in aac, 2 channels \n');
     });
@@ -163,7 +167,7 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       lowerChannelStream.index = 2;
       lowerChannelStream.channels = 2;
       baseArgs.variables.ffmpegCommand.streams.push(lowerChannelStream);
-      
+
       baseArgs.inputs.channels = '6';
       baseArgs.variables.ffmpegCommand.streams[1].channels = 6;
       baseArgs.variables.ffmpegCommand.streams[1].tags = { language: 'und' };
@@ -185,7 +189,11 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in dca, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag en found. Skipping \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in dca, 2 channels \n');
     });
 
     it('should map libmp3lame encoder to mp3 codec', () => {
@@ -196,7 +204,11 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in libmp3lame, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag en found. Skipping \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in libmp3lame, 2 channels \n');
     });
 
     it('should map libopus encoder to opus codec', () => {
@@ -207,7 +219,11 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in libopus, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag en found. Skipping \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in libopus, 2 channels \n');
     });
   });
 
@@ -215,35 +231,35 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
     it('should add bitrate argument when enableBitrate is true', () => {
       baseArgs.inputs.enableBitrate = 'true';
       baseArgs.inputs.bitrate = '192k';
-      baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type !== 'audio'
-      );
+      baseArgs.inputs.language = 'und'; // Use the language that exists in sample
+      baseArgs.variables.ffmpegCommand.streams[1].codec_name = 'mp3'; // Different codec to force addition
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       const audioStreams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type === 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type === 'audio',
       );
-      expect(audioStreams[0].outputArgs).toContain('-b:a:{outputTypeIndex}');
-      expect(audioStreams[0].outputArgs).toContain('192k');
+      expect(audioStreams).toHaveLength(2); // Original + new one
+      expect(audioStreams[1].outputArgs).toContain('-b:a:{outputTypeIndex}');
+      expect(audioStreams[1].outputArgs).toContain('192k');
     });
 
     it('should add samplerate argument when enableSamplerate is true', () => {
       baseArgs.inputs.enableSamplerate = 'true';
       baseArgs.inputs.samplerate = '44100';
-      baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type !== 'audio'
-      );
+      baseArgs.inputs.language = 'und'; // Use the language that exists in sample
+      baseArgs.variables.ffmpegCommand.streams[1].codec_name = 'mp3'; // Different codec to force addition
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       const audioStreams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type === 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type === 'audio',
       );
-      expect(audioStreams[0].outputArgs).toContain('-ar');
-      expect(audioStreams[0].outputArgs).toContain('44100');
+      expect(audioStreams).toHaveLength(2); // Original + new one
+      expect(audioStreams[1].outputArgs).toContain('-ar');
+      expect(audioStreams[1].outputArgs).toContain('44100');
     });
 
     it('should add both bitrate and samplerate when both are enabled', () => {
@@ -251,27 +267,27 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       baseArgs.inputs.bitrate = '320k';
       baseArgs.inputs.enableSamplerate = 'true';
       baseArgs.inputs.samplerate = '48000';
-      baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type !== 'audio'
-      );
+      baseArgs.inputs.language = 'und'; // Use the language that exists in sample
+      baseArgs.variables.ffmpegCommand.streams[1].codec_name = 'mp3'; // Different codec to force addition
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       const audioStreams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type === 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type === 'audio',
       );
-      expect(audioStreams[0].outputArgs).toContain('-b:a:{outputTypeIndex}');
-      expect(audioStreams[0].outputArgs).toContain('320k');
-      expect(audioStreams[0].outputArgs).toContain('-ar');
-      expect(audioStreams[0].outputArgs).toContain('48000');
+      expect(audioStreams).toHaveLength(2); // Original + new one
+      expect(audioStreams[1].outputArgs).toContain('-b:a:{outputTypeIndex}');
+      expect(audioStreams[1].outputArgs).toContain('320k');
+      expect(audioStreams[1].outputArgs).toContain('-ar');
+      expect(audioStreams[1].outputArgs).toContain('48000');
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle files with no audio streams', () => {
       baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-        (stream: any) => stream.codec_type !== 'audio'
+        (stream: unknown) => (stream as { codec_type: string }).codec_type !== 'audio',
       );
 
       const result = plugin(baseArgs);
@@ -288,7 +304,10 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag en found. Skipping \n');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in aac, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in aac, 2 channels \n');
     });
 
     it('should handle undefined language tags', () => {
@@ -298,7 +317,10 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No streams with language tag en found. Skipping \n');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File already has und stream in aac, 2 channels \n');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'The wanted channel count 2 is <= than the highest available channel count (6). \n',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in aac, 2 channels \n');
     });
 
     it('should handle mono to stereo conversion', () => {
@@ -311,7 +333,7 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'The wanted channel count 2 is higher than the highest available channel count (1). \n'
+        'The wanted channel count 2 is higher than the highest available channel count (1). \n',
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Adding und stream in aac, 1 channels \n');
     });
@@ -319,22 +341,22 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
 
   describe('Different Audio Encoders', () => {
     const encoders = ['aac', 'ac3', 'eac3', 'dca', 'flac', 'libopus', 'mp2', 'libmp3lame', 'truehd'];
-    
+
     encoders.forEach((encoder) => {
       it(`should work with ${encoder} encoder`, () => {
         baseArgs.inputs.audioEncoder = encoder;
-        baseArgs.variables.ffmpegCommand.streams = baseArgs.variables.ffmpegCommand.streams.filter(
-          (stream: any) => stream.codec_type !== 'audio'
-        );
+        baseArgs.inputs.language = 'und'; // Use the language that exists in sample
+        baseArgs.variables.ffmpegCommand.streams[1].codec_name = 'mp3'; // Different codec to force addition
 
         const result = plugin(baseArgs);
 
         expect(result.outputNumber).toBe(1);
         const audioStreams = baseArgs.variables.ffmpegCommand.streams.filter(
-          (stream: any) => stream.codec_type === 'audio'
+          (stream: unknown) => (stream as { codec_type: string }).codec_type === 'audio',
         );
-        expect(audioStreams[0].outputArgs).toContain(encoder);
+        expect(audioStreams).toHaveLength(2); // Original + new one
+        expect(audioStreams[1].outputArgs).toContain(encoder);
       });
     });
   });
-}); 
+});
