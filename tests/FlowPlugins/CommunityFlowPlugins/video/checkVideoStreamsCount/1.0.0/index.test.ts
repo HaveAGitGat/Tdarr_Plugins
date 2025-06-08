@@ -144,13 +144,13 @@ describe('checkVideoStreamsCount Plugin', () => {
 
   describe('Error Cases', () => {
     it('should throw error when ffProbeData is missing', () => {
-      (baseArgs.inputFileObj as any).ffProbeData = undefined;
+      (baseArgs.inputFileObj as Partial<typeof baseArgs.inputFileObj>).ffProbeData = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('ffProbeData or ffProbeData.streams is not available.');
     });
 
     it('should throw error when ffProbeData.streams is missing', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = undefined;
+      (baseArgs.inputFileObj.ffProbeData as Partial<typeof baseArgs.inputFileObj.ffProbeData>).streams = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('ffProbeData or ffProbeData.streams is not available.');
     });
