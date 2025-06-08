@@ -18,9 +18,14 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => (
 
 const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
 
+// Define interface for mock CLI
+interface MockCLI {
+  runCli: jest.MockedFunction<() => Promise<{ cliExitCode: number }>>;
+}
+
 describe('runHealthCheck Plugin', () => {
   let baseArgs: IpluginInputArgs;
-  let mockCLI: any;
+  let mockCLI: MockCLI;
 
   beforeEach(() => {
     baseArgs = {
@@ -34,7 +39,7 @@ describe('runHealthCheck Plugin', () => {
       ffmpegPath: '/usr/bin/ffmpeg',
       logFullCliOutput: false,
       updateWorker: jest.fn(),
-      originalLibraryFile: { DB: 'test-db' } as any,
+      originalLibraryFile: { DB: 'test-db' } as unknown as IpluginInputArgs['originalLibraryFile'],
       updateStat: jest.fn(),
       logOutcome: jest.fn(),
       workDir: '/tmp/work',
@@ -46,7 +51,7 @@ describe('runHealthCheck Plugin', () => {
           removeSync: jest.fn(),
         },
       },
-    } as any;
+    } as unknown as IpluginInputArgs;
 
     // Mock CLI instance
     mockCLI = {
@@ -147,7 +152,7 @@ describe('runHealthCheck Plugin', () => {
     });
 
     it('should not fail when updateStat is undefined', async () => {
-      delete (baseArgs as any).updateStat;
+      delete (baseArgs as Partial<IpluginInputArgs>).updateStat;
 
       const result = await plugin(baseArgs);
 
@@ -253,7 +258,7 @@ describe('runHealthCheck Plugin', () => {
 
   describe('Edge Cases', () => {
     it('should handle missing handbrakePath for quick check', async () => {
-      delete (baseArgs as any).handbrakePath;
+      delete (baseArgs as Partial<IpluginInputArgs>).handbrakePath;
       baseArgs.inputs.type = 'quick';
 
       await plugin(baseArgs);
@@ -266,7 +271,7 @@ describe('runHealthCheck Plugin', () => {
     });
 
     it('should handle missing ffmpegPath for thorough check', async () => {
-      delete (baseArgs as any).ffmpegPath;
+      delete (baseArgs as Partial<IpluginInputArgs>).ffmpegPath;
       baseArgs.inputs.type = 'thorough';
 
       await plugin(baseArgs);
