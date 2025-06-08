@@ -91,7 +91,8 @@ describe('checkVideoBitrate Plugin', () => {
     it('should throw error when no video bitrate found', () => {
       // Remove video track from mediaInfo
       if (baseArgs.inputFileObj.mediaInfo?.track) {
-        (baseArgs.inputFileObj.mediaInfo as any).track = baseArgs.inputFileObj.mediaInfo.track.filter(
+        const mediaInfo = baseArgs.inputFileObj.mediaInfo as Record<string, unknown>;
+        mediaInfo.track = baseArgs.inputFileObj.mediaInfo.track.filter(
           (track) => track['@type'].toLowerCase() !== 'video',
         );
       }
@@ -119,7 +120,7 @@ describe('checkVideoBitrate Plugin', () => {
           (track) => track['@type'].toLowerCase() === 'video',
         );
         if (videoTrack) {
-          (videoTrack as any).BitRate = undefined;
+          delete (videoTrack as Record<string, unknown>).BitRate;
         }
       }
 
@@ -129,13 +130,13 @@ describe('checkVideoBitrate Plugin', () => {
     it('should handle multiple video tracks and use first one with bitrate', () => {
       if (baseArgs.inputFileObj.mediaInfo?.track) {
         // Add another video track
-        (baseArgs.inputFileObj.mediaInfo.track as any).push({
+        const tracks = baseArgs.inputFileObj.mediaInfo.track as Array<Record<string, unknown>>;
+        tracks.push({
           '@type': 'Video',
           BitRate: 500000,
           StreamOrder: '1',
           Format: 'HEVC',
-          Width: '1920',
-          Height: '1080',
+          UniqueID: '2',
         });
       }
 
