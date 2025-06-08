@@ -21,7 +21,6 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => (
 }));
 
 const fs = require('fs');
-const path = require('path');
 
 describe('transcodeVideo Plugin', () => {
   const { plugin } = require('../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/transcodeVideo/1.0.0/index');
@@ -46,7 +45,7 @@ describe('transcodeVideo Plugin', () => {
       variables: {},
       jobLog: jest.fn(),
       logOutcome: jest.fn(),
-    } as any;
+    } as unknown as IpluginInputArgs;
 
     // Reset mocks
     jest.clearAllMocks();
