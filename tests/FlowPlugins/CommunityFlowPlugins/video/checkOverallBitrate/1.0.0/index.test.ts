@@ -177,7 +177,7 @@ describe('checkOverallBitrate Plugin', () => {
 
   describe('Edge Cases with File Properties', () => {
     it('should handle missing bit_rate property', () => {
-      (baseArgs.inputFileObj as any).bit_rate = undefined;
+      (baseArgs.inputFileObj as {bit_rate?: number | undefined}).bit_rate = undefined;
 
       const result = plugin(baseArgs);
 
@@ -186,7 +186,7 @@ describe('checkOverallBitrate Plugin', () => {
     });
 
     it('should handle null bit_rate property', () => {
-      (baseArgs.inputFileObj as any).bit_rate = null;
+      (baseArgs.inputFileObj as {bit_rate?: number | null}).bit_rate = null;
 
       const result = plugin(baseArgs);
 
@@ -195,7 +195,7 @@ describe('checkOverallBitrate Plugin', () => {
     });
 
     it('should handle undefined bit_rate property', () => {
-      (baseArgs.inputFileObj as any).bit_rate = undefined;
+      (baseArgs.inputFileObj as {bit_rate?: number | undefined}).bit_rate = undefined;
 
       const result = plugin(baseArgs);
 
@@ -215,7 +215,7 @@ describe('checkOverallBitrate Plugin', () => {
     });
 
     it('should handle string bit_rate value', () => {
-      (baseArgs.inputFileObj as any).bit_rate = '1591143';
+      (baseArgs.inputFileObj as {bit_rate?: string | number}).bit_rate = '1591143';
       baseArgs.inputs.unit = 'bps';
       baseArgs.inputs.greaterThan = '1500000';
       baseArgs.inputs.lessThan = '1700000';

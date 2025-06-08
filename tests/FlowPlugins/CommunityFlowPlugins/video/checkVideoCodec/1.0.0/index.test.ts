@@ -135,7 +135,7 @@ describe('checkVideoCodec Plugin', () => {
 
     it('should handle streams with missing codec_type', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        (baseArgs.inputFileObj.ffProbeData.streams[0] as any).codec_type = undefined;
+        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as Record<string, unknown>).codec_type;
       }
 
       const result = plugin(baseArgs);
@@ -145,7 +145,7 @@ describe('checkVideoCodec Plugin', () => {
 
     it('should handle streams with missing codec_name', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        (baseArgs.inputFileObj.ffProbeData.streams[0] as any).codec_name = undefined;
+        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as Record<string, unknown>).codec_name;
       }
 
       const result = plugin(baseArgs);
