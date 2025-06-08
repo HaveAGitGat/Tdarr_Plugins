@@ -1,6 +1,7 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/checkVideoStreamsCount/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import { Istreams } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleH265 = require('../../../../../sampleData/media/sampleH265_1.json');
@@ -156,13 +157,13 @@ describe('checkVideoStreamsCount Plugin', () => {
     });
 
     it('should throw error when ffProbeData is null', () => {
-      (baseArgs.inputFileObj as any).ffProbeData = null;
+      Object.assign(baseArgs.inputFileObj, { ffProbeData: null });
 
       expect(() => plugin(baseArgs)).toThrow('ffProbeData or ffProbeData.streams is not available.');
     });
 
     it('should throw error when ffProbeData.streams is null', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = null;
+      Object.assign(baseArgs.inputFileObj.ffProbeData, { streams: null });
 
       expect(() => plugin(baseArgs)).toThrow('ffProbeData or ffProbeData.streams is not available.');
     });
@@ -182,7 +183,7 @@ describe('checkVideoStreamsCount Plugin', () => {
           codec_name: 'h264',
           width: 1280,
           height: 720,
-        } as any,
+        } as Partial<Istreams> as Istreams,
         {
           index: 1,
           codec_name: 'h264',
@@ -206,7 +207,7 @@ describe('checkVideoStreamsCount Plugin', () => {
           codec_type: undefined,
           width: 1280,
           height: 720,
-        } as any,
+        } as Partial<Istreams> as Istreams,
         {
           index: 1,
           codec_name: 'h264',
