@@ -180,25 +180,25 @@ describe('check10Bit Plugin', () => {
 
   describe('Error Cases', () => {
     it('should throw error when ffProbeData is missing', () => {
-      (baseArgs.inputFileObj as any).ffProbeData = undefined;
+      (baseArgs.inputFileObj as unknown as { ffProbeData: undefined }).ffProbeData = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
 
     it('should throw error when ffProbeData.streams is missing', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = undefined;
+      (baseArgs.inputFileObj.ffProbeData as unknown as { streams: undefined }).streams = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
 
     it('should throw error when ffProbeData.streams is null', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = null;
+      (baseArgs.inputFileObj.ffProbeData as unknown as { streams: null }).streams = null;
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
 
     it('should throw error when ffProbeData.streams is not an array', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = 'not an array';
+      (baseArgs.inputFileObj.ffProbeData as unknown as { streams: string }).streams = 'not an array';
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
@@ -214,7 +214,7 @@ describe('check10Bit Plugin', () => {
   describe('Edge Cases', () => {
     it('should handle streams with missing bits_per_raw_sample', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).bits_per_raw_sample;
+        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as unknown as Record<string, unknown>).bits_per_raw_sample;
         baseArgs.inputFileObj.ffProbeData.streams[0].pix_fmt = 'yuv420p';
       }
 
@@ -226,7 +226,7 @@ describe('check10Bit Plugin', () => {
     it('should handle streams with missing pix_fmt', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
         baseArgs.inputFileObj.ffProbeData.streams[0].bits_per_raw_sample = 8;
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).pix_fmt;
+        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as unknown as Record<string, unknown>).pix_fmt;
       }
 
       const result = plugin(baseArgs);
@@ -236,8 +236,8 @@ describe('check10Bit Plugin', () => {
 
     it('should handle streams with both properties missing', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).bits_per_raw_sample;
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).pix_fmt;
+        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as unknown as Record<string, unknown>).bits_per_raw_sample;
+        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as unknown as Record<string, unknown>).pix_fmt;
       }
 
       const result = plugin(baseArgs);
@@ -247,7 +247,7 @@ describe('check10Bit Plugin', () => {
 
     it('should handle streams with undefined codec_type', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        (baseArgs.inputFileObj.ffProbeData.streams[0] as any).codec_type = undefined;
+        (baseArgs.inputFileObj.ffProbeData.streams[0] as unknown as { codec_type: undefined }).codec_type = undefined;
         baseArgs.inputFileObj.ffProbeData.streams[0].bits_per_raw_sample = 10;
       }
 
@@ -289,7 +289,8 @@ describe('check10Bit Plugin', () => {
     it('should handle string values for bits_per_raw_sample', () => {
       const testArgs = { ...baseArgs };
       if (testArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        testArgs.inputFileObj.ffProbeData.streams[0].bits_per_raw_sample = '10' as any;
+        const stream = testArgs.inputFileObj.ffProbeData.streams[0] as unknown as { bits_per_raw_sample: string };
+        stream.bits_per_raw_sample = '10';
       }
 
       const result = plugin(testArgs);
@@ -299,8 +300,12 @@ describe('check10Bit Plugin', () => {
 
     it('should handle null values', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        (baseArgs.inputFileObj.ffProbeData.streams[0] as any).bits_per_raw_sample = null;
-        (baseArgs.inputFileObj.ffProbeData.streams[0] as any).pix_fmt = null;
+        const stream = baseArgs.inputFileObj.ffProbeData.streams[0] as unknown as {
+          bits_per_raw_sample: null;
+          pix_fmt: null
+        };
+        stream.bits_per_raw_sample = null;
+        stream.pix_fmt = null;
       }
 
       const result = plugin(baseArgs);
