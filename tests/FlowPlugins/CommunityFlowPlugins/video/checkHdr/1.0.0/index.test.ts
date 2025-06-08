@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/checkHdr/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
@@ -184,25 +185,28 @@ describe('checkHdr Plugin', () => {
 
   describe('Error Cases', () => {
     it('should throw error when ffProbeData is missing', () => {
-      (baseArgs.inputFileObj as any).ffProbeData = undefined;
+      // @ts-expect-error - Testing error condition
+      baseArgs.inputFileObj.ffProbeData = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
 
     it('should throw error when ffProbeData.streams is missing', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = undefined;
+      baseArgs.inputFileObj.ffProbeData.streams = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
 
     it('should throw error when ffProbeData.streams is null', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = null;
+      // @ts-expect-error - Testing error condition
+      baseArgs.inputFileObj.ffProbeData.streams = null;
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
 
     it('should throw error when ffProbeData.streams is not an array', () => {
-      (baseArgs.inputFileObj.ffProbeData as any).streams = 'not an array';
+      // @ts-expect-error - Testing error condition
+      baseArgs.inputFileObj.ffProbeData.streams = 'not an array';
 
       expect(() => plugin(baseArgs)).toThrow('File has not stream data');
     });
@@ -218,9 +222,9 @@ describe('checkHdr Plugin', () => {
   describe('Edge Cases', () => {
     it('should handle streams with missing color properties', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).color_transfer;
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).color_primaries;
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).color_range;
+        delete baseArgs.inputFileObj.ffProbeData.streams[0].color_transfer;
+        delete baseArgs.inputFileObj.ffProbeData.streams[0].color_primaries;
+        delete baseArgs.inputFileObj.ffProbeData.streams[0].color_range;
       }
 
       const result = plugin(baseArgs);
@@ -230,7 +234,7 @@ describe('checkHdr Plugin', () => {
 
     it('should handle streams with missing codec_tag_string', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        delete (baseArgs.inputFileObj.ffProbeData.streams[0] as any).codec_tag_string;
+        delete baseArgs.inputFileObj.ffProbeData.streams[0].codec_tag_string;
       }
 
       const result = plugin(baseArgs);
@@ -240,7 +244,8 @@ describe('checkHdr Plugin', () => {
 
     it('should handle streams with undefined codec_type', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
-        (baseArgs.inputFileObj.ffProbeData.streams[0] as any).codec_type = undefined;
+        // @ts-expect-error - Testing edge case
+        baseArgs.inputFileObj.ffProbeData.streams[0].codec_type = undefined;
       }
 
       const result = plugin(baseArgs);
