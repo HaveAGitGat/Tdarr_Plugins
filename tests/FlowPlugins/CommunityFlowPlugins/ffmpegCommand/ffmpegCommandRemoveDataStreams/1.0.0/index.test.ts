@@ -1,7 +1,6 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandRemoveDataStreams/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
-import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -172,7 +171,7 @@ describe('ffmpegCommandRemoveDataStreams Plugin', () => {
     });
 
     it('should throw error when ffmpegCommand is undefined', () => {
-      (baseArgs.variables as any).ffmpegCommand = undefined;
+      (baseArgs.variables as Partial<IpluginInputArgs['variables']>).ffmpegCommand = undefined;
 
       expect(() => plugin(baseArgs)).toThrow(
         'FFmpeg command plugins not used correctly',
@@ -205,7 +204,7 @@ describe('ffmpegCommandRemoveDataStreams Plugin', () => {
       baseArgs.variables.ffmpegCommand.streams.push({
         index: 3,
         codec_name: 'metadata',
-        codec_type: 'DATA' as any,
+        codec_type: 'DATA' as 'data',
         removed: false,
         forceEncoding: false,
         mapArgs: ['-map', '0:3'],
