@@ -1,6 +1,7 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/CheckVideoFramerate/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleH265 = require('../../../../../sampleData/media/sampleH265_1.json');
@@ -154,21 +155,23 @@ describe('CheckVideoFramerate Plugin', () => {
   describe('Error Cases', () => {
     it('should throw error when VideoFrameRate is missing', () => {
       if (baseArgs.inputFileObj.meta) {
-        (baseArgs.inputFileObj.meta as any).VideoFrameRate = undefined;
+        const meta = baseArgs.inputFileObj.meta as Partial<typeof baseArgs.inputFileObj.meta>;
+        delete meta.VideoFrameRate;
       }
 
       expect(() => plugin(baseArgs)).toThrow('Video framerate not found');
     });
 
     it('should throw error when meta is missing', () => {
-      (baseArgs.inputFileObj as any).meta = undefined;
+      (baseArgs.inputFileObj as Partial<IFileObject>).meta = undefined;
 
       expect(() => plugin(baseArgs)).toThrow('Video framerate not found');
     });
 
     it('should throw error when VideoFrameRate is null', () => {
       if (baseArgs.inputFileObj.meta) {
-        (baseArgs.inputFileObj.meta as any).VideoFrameRate = null;
+        const meta = baseArgs.inputFileObj.meta as Partial<typeof baseArgs.inputFileObj.meta>;
+        meta.VideoFrameRate = null as unknown as number;
       }
 
       expect(() => plugin(baseArgs)).toThrow('Video framerate not found');
@@ -176,7 +179,8 @@ describe('CheckVideoFramerate Plugin', () => {
 
     it('should throw error when VideoFrameRate is undefined', () => {
       if (baseArgs.inputFileObj.meta) {
-        (baseArgs.inputFileObj.meta as any).VideoFrameRate = undefined;
+        const meta = baseArgs.inputFileObj.meta as Partial<typeof baseArgs.inputFileObj.meta>;
+        meta.VideoFrameRate = undefined;
       }
 
       expect(() => plugin(baseArgs)).toThrow('Video framerate not found');
@@ -251,7 +255,8 @@ describe('CheckVideoFramerate Plugin', () => {
 
     it('should handle string framerate value', () => {
       if (baseArgs.inputFileObj.meta) {
-        (baseArgs.inputFileObj.meta as any).VideoFrameRate = '25';
+        const meta = baseArgs.inputFileObj.meta as Partial<typeof baseArgs.inputFileObj.meta>;
+        meta.VideoFrameRate = '25' as unknown as number;
       }
       baseArgs.inputs.greaterThan = '20';
       baseArgs.inputs.lessThan = '30';
