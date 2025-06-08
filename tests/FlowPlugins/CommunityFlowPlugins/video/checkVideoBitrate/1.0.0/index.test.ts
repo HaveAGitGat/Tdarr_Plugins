@@ -1,7 +1,6 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/checkVideoBitrate/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
-import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleH265 = require('../../../../../sampleData/media/sampleH265_1.json');
@@ -108,7 +107,7 @@ describe('checkVideoBitrate Plugin', () => {
 
     it('should throw error when mediaInfo.track is missing', () => {
       if (baseArgs.inputFileObj.mediaInfo) {
-        (baseArgs.inputFileObj.mediaInfo as any).track = undefined;
+        delete baseArgs.inputFileObj.mediaInfo.track;
       }
 
       expect(() => plugin(baseArgs)).toThrow('Video bitrate not found');
