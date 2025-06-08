@@ -102,7 +102,7 @@ describe('checkVideoResolution Plugin', () => {
     });
 
     it('should return Other for missing resolution', () => {
-      (baseArgs.inputFileObj as any).video_resolution = undefined;
+      (baseArgs.inputFileObj as Record<string, unknown>).video_resolution = undefined;
 
       const result = plugin(baseArgs);
 
@@ -110,7 +110,7 @@ describe('checkVideoResolution Plugin', () => {
     });
 
     it('should return Other for null resolution', () => {
-      (baseArgs.inputFileObj as any).video_resolution = null;
+      (baseArgs.inputFileObj as Record<string, unknown>).video_resolution = null;
 
       const result = plugin(baseArgs);
 
@@ -118,7 +118,7 @@ describe('checkVideoResolution Plugin', () => {
     });
 
     it('should return Other for undefined resolution', () => {
-      (baseArgs.inputFileObj as any).video_resolution = undefined;
+      (baseArgs.inputFileObj as Record<string, unknown>).video_resolution = undefined;
 
       const result = plugin(baseArgs);
 
@@ -186,7 +186,7 @@ describe('checkVideoResolution Plugin', () => {
 
   describe('Edge Cases with Different Data Types', () => {
     it('should handle numeric resolution values', () => {
-      (baseArgs.inputFileObj as any).video_resolution = 720;
+      (baseArgs.inputFileObj as Record<string, unknown>).video_resolution = 720;
 
       const result = plugin(baseArgs);
 
@@ -194,7 +194,7 @@ describe('checkVideoResolution Plugin', () => {
     });
 
     it('should handle boolean resolution values', () => {
-      (baseArgs.inputFileObj as any).video_resolution = true;
+      (baseArgs.inputFileObj as Record<string, unknown>).video_resolution = true;
 
       const result = plugin(baseArgs);
 
@@ -202,7 +202,7 @@ describe('checkVideoResolution Plugin', () => {
     });
 
     it('should handle object resolution values', () => {
-      (baseArgs.inputFileObj as any).video_resolution = { width: 1280, height: 720 };
+      (baseArgs.inputFileObj as Record<string, unknown>).video_resolution = { width: 1280, height: 720 };
 
       const result = plugin(baseArgs);
 
