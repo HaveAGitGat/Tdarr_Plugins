@@ -278,7 +278,7 @@ describe('tagsWorkerType Plugin', () => {
     it('should handle undefined nodeTags', () => {
       baseArgs.inputs.requiredWorkerType = 'CPUorGPU';
       baseArgs.workerType = 'transcodecpu';
-      baseArgs.nodeTags = undefined as any;
+      baseArgs.nodeTags = undefined as unknown as string;
 
       const result = plugin(baseArgs);
 
@@ -289,7 +289,7 @@ describe('tagsWorkerType Plugin', () => {
     it('should handle undefined nodeHardwareType', () => {
       baseArgs.inputs.requiredWorkerType = 'GPU';
       baseArgs.workerType = 'transcodegpu';
-      baseArgs.nodeHardwareType = undefined as any;
+      baseArgs.nodeHardwareType = undefined as unknown as string;
 
       const result = plugin(baseArgs);
 
