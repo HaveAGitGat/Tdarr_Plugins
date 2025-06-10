@@ -40,4 +40,4 @@ Run tests:
 
 Note, `pluginsDir` directories that contain a `.git` folder (such as when cloning this repo) will cause Tdarr to skip plugin updates to prevent overwriting development changes.
 
-
+x
