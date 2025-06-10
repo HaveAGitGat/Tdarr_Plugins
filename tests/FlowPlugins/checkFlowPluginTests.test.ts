@@ -16,6 +16,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+   * Normalize path separators for cross-platform compatibility
+   */
+const normalizePath = (filePath: string): string => filePath.replace(/\\/g, '/');
+
 describe('Flow Plugin Test Coverage', () => {
   const PLUGINS_DIR = './FlowPluginsTs/CommunityFlowPlugins';
   const TESTS_DIR = './tests/FlowPlugins/CommunityFlowPlugins';
@@ -30,7 +35,7 @@ describe('Flow Plugin Test Coverage', () => {
     return fs.readdirSync(dir, { withFileTypes: true })
       .flatMap((entry) => {
         const fullPath = path.join(dir, entry.name);
-        const relativePath = path.join(basePath, entry.name);
+        const relativePath = normalizePath(path.join(basePath, entry.name));
 
         if (entry.isDirectory()) {
           return findFiles(fullPath, filename, relativePath);
@@ -93,11 +98,6 @@ describe('Flow Plugin Test Coverage', () => {
       return false;
     }
   };
-
-  /**
-   * Normalize path separators for cross-platform compatibility
-   */
-  const normalizePath = (filePath: string): string => filePath.replace(/\\/g, '/');
 
   it('should have test files for all plugins (strict check)', () => {
     if (!fs.existsSync(PLUGINS_DIR)) {
