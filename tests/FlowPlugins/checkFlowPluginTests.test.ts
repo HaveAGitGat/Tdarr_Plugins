@@ -35,7 +35,7 @@ describe('Flow Plugin Test Coverage', () => {
     return fs.readdirSync(dir, { withFileTypes: true })
       .flatMap((entry) => {
         const fullPath = path.join(dir, entry.name);
-        const relativePath = normalizePath(path.join(basePath, entry.name));
+        const relativePath = path.join(basePath, entry.name);
 
         if (entry.isDirectory()) {
           return findFiles(fullPath, filename, relativePath);
