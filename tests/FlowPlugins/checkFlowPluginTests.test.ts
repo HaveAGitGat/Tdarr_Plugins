@@ -86,8 +86,6 @@ describe('Flow Plugin Test Coverage', () => {
       const importPatterns = [
         `'${expectedImportPath}'`,
         `"${expectedImportPath}"`,
-        `'${expectedImportPath}';`,
-        `"${expectedImportPath}";`,
       ];
 
       return importPatterns.some((pattern) => normalizedContent.includes(pattern));
