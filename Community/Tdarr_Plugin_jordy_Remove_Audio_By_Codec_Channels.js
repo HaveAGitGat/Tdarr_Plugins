@@ -92,7 +92,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  response.infoLog += '';
   // Parse inputs - make sure to handle all potential input formats
   const codecsToRemove = ((inputs.codecs || '').toLowerCase().split(',')
     .map((codec) => codec.trim())
@@ -150,12 +149,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
       // Get language
       let currentLanguage = '';
-      try {
-        if (stream.tags && stream.tags.language) {
-          currentLanguage = stream.tags.language.toLowerCase();
-        }
-      } catch (err) {
-        // Language tag doesn't exist
+      if (stream.tags && stream.tags.language) {
+        currentLanguage = stream.tags.language.toLowerCase();
       }
 
       // Debug info
