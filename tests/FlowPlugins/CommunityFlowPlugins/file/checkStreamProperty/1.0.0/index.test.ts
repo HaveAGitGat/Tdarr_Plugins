@@ -1,11 +1,10 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/file/checkStreamProperty/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
-import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import { IFileObject, Istreams } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleH264_1 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleMP3_1 = require('../../../../../sampleData/media/sampleMP3_1.json');
-const sampleAAC_1 = require('../../../../../sampleData/media/sampleAAC_1.json');
 
 describe('checkStreamProperty Plugin', () => {
   let baseArgs: IpluginInputArgs;
@@ -227,7 +226,7 @@ describe('checkStreamProperty Plugin', () => {
     });
 
     it('should handle missing ffProbeData', () => {
-      (baseArgs.inputFileObj as any).ffProbeData = undefined;
+      (baseArgs.inputFileObj as Partial<IFileObject>).ffProbeData = undefined;
 
       const result = plugin(baseArgs);
 
@@ -272,7 +271,7 @@ describe('checkStreamProperty Plugin', () => {
         channels: 2,
         sample_rate: '48000',
       };
-      
+
       if (baseArgs.inputFileObj.ffProbeData.streams) {
         baseArgs.inputFileObj.ffProbeData.streams.push(extraStream);
       }
@@ -308,10 +307,10 @@ describe('checkStreamProperty Plugin', () => {
       // Remove audio stream
       if (baseArgs.inputFileObj.ffProbeData?.streams) {
         baseArgs.inputFileObj.ffProbeData.streams = baseArgs.inputFileObj.ffProbeData.streams.filter(
-          (stream: any) => stream.codec_type === 'video'
+          (stream: Istreams) => stream.codec_type === 'video',
         );
       }
-      
+
       baseArgs.inputs.streamType = 'audio';
 
       const result = plugin(baseArgs);
@@ -320,4 +319,4 @@ describe('checkStreamProperty Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No audio streams found in file');
     });
   });
-}); 
+});
