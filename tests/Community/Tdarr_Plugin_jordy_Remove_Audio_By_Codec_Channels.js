@@ -69,8 +69,8 @@ const tests = [
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
         // Modify a stream to have Japanese language
-        if (file.ffProbeData.streams[3].tags) {
-          file.ffProbeData.streams[3].tags.language = 'jpn';
+        if (file.ffProbeData.streams[4].tags) {
+          file.ffProbeData.streams[4].tags.language = 'jpn';
         }
         return file;
       })(),
@@ -83,8 +83,8 @@ const tests = [
       otherArguments: {},
     },
     output: {
-      processFile: false,
-      preset: '',
+      processFile: true,
+      preset: ', -map 0 -map -0:a:3  -c copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -95,10 +95,11 @@ const tests = [
           + '🔵 Found 5 audio streams in file\n'
           + '🔵 Audio track 0: codec=flac, channels=2, language=eng\n'
           + '🔵 Audio track 1: codec=ac3, channels=2, language=eng\n'
-          + '🔵 Audio track 2: codec=eac3, channels=2, language=jpn\n'
-          + '🔵 Audio track 3: codec=aac, channels=2, language=fre\n'
+          + '🔵 Audio track 2: codec=eac3, channels=2, language=eng\n'
+          + '🔵 Audio track 3: codec=aac, channels=2, language=jpn\n'
+          + '☒ Marking for removal: audio track 3\n'
           + '🔵 Audio track 4: codec=aac, channels=2, language=eng\n'
-          + '✅ No matching audio tracks to remove\n',
+          + '✅ Will remove 1 audio track(s)\n',
     },
   },
 
