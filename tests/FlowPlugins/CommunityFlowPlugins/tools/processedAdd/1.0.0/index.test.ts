@@ -51,7 +51,7 @@ describe('processedAdd Plugin', () => {
   });
 
   describe('File Path Check Type', () => {
-    it('should add original file path to processed list', async () => {
+    it('should add original file path to skiplist', async () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
@@ -69,14 +69,16 @@ describe('processedAdd Plugin', () => {
         {
           _id: baseArgs.originalLibraryFile._id,
           DB: baseArgs.originalLibraryFile.DB,
+          file: baseArgs.originalLibraryFile.file,
+          date: expect.any(Number),
         },
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        `Added ${baseArgs.originalLibraryFile._id} to processed list`,
+        `Added ${baseArgs.originalLibraryFile._id} to skiplist`,
       );
     });
 
-    it('should add working file path to processed list when fileToAdd is workingFile', async () => {
+    it('should add working file path to skiplist when fileToAdd is workingFile', async () => {
       baseArgs.inputs.fileToAdd = 'workingFile';
 
       const result = await plugin(baseArgs);
@@ -95,16 +97,18 @@ describe('processedAdd Plugin', () => {
         {
           _id: baseArgs.inputFileObj._id,
           DB: baseArgs.inputFileObj.DB,
+          file: baseArgs.inputFileObj.file,
+          date: expect.any(Number),
         },
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        `Added ${baseArgs.inputFileObj._id} to processed list`,
+        `Added ${baseArgs.inputFileObj._id} to skiplist`,
       );
     });
   });
 
   describe('File Name Check Type', () => {
-    it('should add original file name to processed list', async () => {
+    it('should add original file name to skiplist', async () => {
       baseArgs.inputs.checkType = 'fileName';
       const expectedFileName = `${baseArgs.originalLibraryFile.fileNameWithoutExtension}.${
         baseArgs.originalLibraryFile.container
@@ -126,14 +130,16 @@ describe('processedAdd Plugin', () => {
         {
           _id: expectedFileName,
           DB: baseArgs.originalLibraryFile.DB,
+          file: baseArgs.originalLibraryFile.file,
+          date: expect.any(Number),
         },
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        `Added ${expectedFileName} to processed list`,
+        `Added ${expectedFileName} to skiplist`,
       );
     });
 
-    it('should add working file name to processed list when fileToAdd is workingFile', async () => {
+    it('should add working file name to skiplist when fileToAdd is workingFile', async () => {
       baseArgs.inputs.checkType = 'fileName';
       baseArgs.inputs.fileToAdd = 'workingFile';
       const expectedFileName = `${baseArgs.inputFileObj.fileNameWithoutExtension}.${
@@ -156,16 +162,18 @@ describe('processedAdd Plugin', () => {
         {
           _id: expectedFileName,
           DB: baseArgs.inputFileObj.DB,
+          file: baseArgs.inputFileObj.file,
+          date: expect.any(Number),
         },
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        `Added ${expectedFileName} to processed list`,
+        `Added ${expectedFileName} to skiplist`,
       );
     });
   });
 
   describe('File Hash Check Type', () => {
-    it('should add original file hash to processed list', async () => {
+    it('should add original file hash to skiplist', async () => {
       const { hashFile } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
       baseArgs.inputs.checkType = 'fileHash';
       const mockHash = 'mock-hash-value-123';
@@ -192,14 +200,16 @@ describe('processedAdd Plugin', () => {
         {
           _id: mockHash,
           DB: baseArgs.originalLibraryFile.DB,
+          file: baseArgs.originalLibraryFile.file,
+          date: expect.any(Number),
         },
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        `Added ${mockHash} to processed list`,
+        `Added ${mockHash} to skiplist`,
       );
     });
 
-    it('should add working file hash to processed list when fileToAdd is workingFile', async () => {
+    it('should add working file hash to skiplist when fileToAdd is workingFile', async () => {
       const { hashFile } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
       baseArgs.inputs.checkType = 'fileHash';
       baseArgs.inputs.fileToAdd = 'workingFile';
@@ -224,10 +234,12 @@ describe('processedAdd Plugin', () => {
         {
           _id: mockHash,
           DB: baseArgs.inputFileObj.DB,
+          file: baseArgs.inputFileObj.file,
+          date: expect.any(Number),
         },
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        `Added ${mockHash} to processed list`,
+        `Added ${mockHash} to skiplist`,
       );
     });
   });
@@ -254,6 +266,8 @@ describe('processedAdd Plugin', () => {
         {
           _id: baseArgs.originalLibraryFile._id,
           DB: baseArgs.originalLibraryFile.DB,
+          file: baseArgs.originalLibraryFile.file,
+          date: expect.any(Number),
         },
       );
     });
@@ -292,6 +306,8 @@ describe('processedAdd Plugin', () => {
         {
           _id: baseArgs.originalLibraryFile._id,
           DB: baseArgs.originalLibraryFile.DB,
+          file: baseArgs.originalLibraryFile.file,
+          date: expect.any(Number),
         },
       );
     });
