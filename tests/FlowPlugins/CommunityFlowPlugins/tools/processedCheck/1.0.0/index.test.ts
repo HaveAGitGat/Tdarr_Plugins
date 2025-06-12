@@ -84,7 +84,7 @@ describe('processedCheck Plugin', () => {
   });
 
   describe('Check Type: filePath', () => {
-    it('should return output 1 when file is not on skiplist', async () => {
+    it('should return output 1 when file is not on library skiplist', async () => {
       baseArgs.inputs.checkType = 'filePath';
       mockCrudTransDBN.mockResolvedValue(undefined);
 
@@ -95,7 +95,7 @@ describe('processedCheck Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         `Checking if file is on skiplist: ${baseArgs.inputFileObj._id}`,
       );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on library skiplist');
       expect(mockCrudTransDBN).toHaveBeenCalledWith('F2FOutputJSONDB', 'getById', baseArgs.inputFileObj._id, {});
     });
 
@@ -113,10 +113,10 @@ describe('processedCheck Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         `Checking if file is on skiplist: ${baseArgs.inputFileObj._id}`,
       );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is on library skiplist');
     });
 
-    it('should return output 1 when file is not on skiplist', async () => {
+    it('should return output 1 when file is not on library skiplist', async () => {
       baseArgs.inputs.checkType = 'filePath';
       mockCrudTransDBN.mockResolvedValue({
         _id: baseArgs.inputFileObj._id,
@@ -126,12 +126,12 @@ describe('processedCheck Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on library skiplist');
     });
   });
 
   describe('Check Type: fileName', () => {
-    it('should return output 1 when file is not on skiplist', async () => {
+    it('should return output 1 when file is not on library skiplist', async () => {
       baseArgs.inputs.checkType = 'fileName';
       mockCrudTransDBN.mockResolvedValue(undefined);
 
@@ -144,7 +144,7 @@ describe('processedCheck Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         `Checking if file is on skiplist: ${expectedProperty}`,
       );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on library skiplist');
       expect(mockCrudTransDBN).toHaveBeenCalledWith('F2FOutputJSONDB', 'getById', expectedProperty, {});
     });
 
@@ -159,7 +159,7 @@ describe('processedCheck Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is on library skiplist');
     });
   });
 
@@ -182,7 +182,7 @@ describe('processedCheck Plugin', () => {
       jest.clearAllMocks();
     });
 
-    it('should return output 1 when file is not on skiplist', async () => {
+    it('should return output 1 when file is not on library skiplist', async () => {
       baseArgs.inputs.checkType = 'fileHash';
       const mockHash = 'abc123def456';
       const fileUtils = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
@@ -196,7 +196,7 @@ describe('processedCheck Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         `Checking if file is on skiplist: ${mockHash}`,
       );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on library skiplist');
       expect(mockCrudTransDBN).toHaveBeenCalledWith('F2FOutputJSONDB', 'getById', mockHash, {});
     });
 
@@ -213,7 +213,7 @@ describe('processedCheck Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is on library skiplist');
     });
   });
 
@@ -242,7 +242,7 @@ describe('processedCheck Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on library skiplist');
     });
 
     it('should handle undefined DB comparison', async () => {
@@ -255,7 +255,7 @@ describe('processedCheck Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on skiplist');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File is not on library skiplist');
     });
 
     it('should handle empty string checkType (defaults to filePath)', async () => {
