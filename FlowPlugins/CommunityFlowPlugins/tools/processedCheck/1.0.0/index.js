@@ -71,11 +71,11 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'File is not on skiplist',
+            tooltip: 'File is not on library skiplist',
         },
         {
             number: 2,
-            tooltip: 'File is on skiplist',
+            tooltip: 'File is on library skiplist',
         },
     ],
 }); };
@@ -111,11 +111,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 outputHist = _a.sent();
                 outputNumber = 1;
                 if (outputHist !== undefined && outputHist.DB === args.inputFileObj.DB) {
-                    args.jobLog('File is on skiplist');
+                    args.jobLog('File is on library skiplist');
                     outputNumber = 2;
                 }
                 else {
-                    args.jobLog('File is not on skiplist');
+                    args.jobLog('File is not on library skiplist');
                 }
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
