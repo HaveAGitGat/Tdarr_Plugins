@@ -6,6 +6,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "import-fresh": "^3.3.0",
+    "iso-639-2": "^3.0.2",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
