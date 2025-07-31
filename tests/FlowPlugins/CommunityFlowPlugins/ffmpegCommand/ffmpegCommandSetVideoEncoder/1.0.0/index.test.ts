@@ -358,6 +358,27 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream2.outputArgs.length).toBeGreaterThan(0);
     });
 
+    it('should not handle video stream with mjpeg codec_name', async () => {
+      baseArgs.variables.ffmpegCommand.streams.push({
+        index: 2,
+        codec_name: 'mjpeg',
+        codec_type: 'video',
+        removed: false,
+        forceEncoding: false,
+        inputArgs: [],
+        outputArgs: [],
+        mapArgs: ['-map', '0:2'],
+      });
+
+      const result = await plugin(baseArgs);
+
+      // Only the first stream should be processed
+      const videoStream1 = result.variables.ffmpegCommand.streams[0];
+      const videoStream2 = result.variables.ffmpegCommand.streams[2];
+      expect(videoStream1.outputArgs.length).toBeGreaterThan(0);
+      expect(videoStream2.outputArgs.length).toBe(0);
+    });
+
     it('should handle files with only audio streams', async () => {
       // Remove video stream, keep only audio
       baseArgs.variables.ffmpegCommand.streams = [
