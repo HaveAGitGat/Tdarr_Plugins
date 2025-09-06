@@ -345,9 +345,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vc1_cuvid';
   } else if (file.video_codec_name === 'vp8') {
     response.preset = '-c:v vp8_cuvid';
+  } else if (file.video_codec_name === 'msmpeg4v3') {
+    response.preset = '-c:v msmpeg4v3'
   }
 
-  response.preset += `${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
+  response.preset += ` ${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
   + `-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
