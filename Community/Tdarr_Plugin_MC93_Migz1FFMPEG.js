@@ -346,7 +346,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   } else if (file.video_codec_name === 'vp8') {
     response.preset = '-c:v vp8_cuvid';
   } else if (file.video_codec_name === 'msmpeg4v3') {
-    response.preset = '-c:v msmpeg4v3'
+    response.preset = '-c:v msmpeg4v3';
   }
 
   response.preset += ` ${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
