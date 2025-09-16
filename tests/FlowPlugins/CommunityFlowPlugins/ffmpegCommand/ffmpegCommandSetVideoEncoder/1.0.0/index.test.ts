@@ -358,7 +358,7 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream2.outputArgs.length).toBeGreaterThan(0);
     });
 
-    it('should not handle video stream with mjpeg codec_name', async () => {
+    it('should not handle video stream with mjpeg codec_name in', async () => {
       baseArgs.variables.ffmpegCommand.streams.push({
         index: 2,
         codec_name: 'mjpeg',
