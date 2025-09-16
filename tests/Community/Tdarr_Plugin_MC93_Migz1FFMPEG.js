@@ -12,7 +12,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid , -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
+      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -56,7 +56,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid , -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -106,7 +106,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid , -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -134,7 +134,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid , -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -pix_fmt p010le ',
+      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -pix_fmt p010le ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
