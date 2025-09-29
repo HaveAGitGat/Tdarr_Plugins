@@ -86,6 +86,12 @@ export interface IffmpegCommandStream extends Istreams {
     outputArgs: string[],
 }
 
+export interface IffmpegCommandPluginInputs {
+    [pluginName: string]: {
+        [inputName: string]: any;
+    };
+}
+
 export interface IffmpegCommand {
     init: boolean,
     inputFiles: string[],
@@ -95,6 +101,9 @@ export interface IffmpegCommand {
     shouldProcess: boolean,
     overallInputArguments: string[],
     overallOuputArguments: string[],
+    // v2.0.0 additions
+    version?: string,
+    pluginInputs?: IffmpegCommandPluginInputs,
 }
 
 export interface IliveSizeCompare {
