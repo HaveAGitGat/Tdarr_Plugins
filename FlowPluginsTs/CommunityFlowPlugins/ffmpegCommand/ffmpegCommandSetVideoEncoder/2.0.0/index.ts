@@ -185,6 +185,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   checkFfmpegCommandV2Init(args);
 
   // Store inputs for processing by Execute plugin
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion,no-param-reassign
   args.variables.ffmpegCommand.pluginInputs!.ffmpegCommandSetVideoEncoder = {
     outputCodec: String(args.inputs.outputCodec),
     ffmpegPresetEnabled: args.inputs.ffmpegPresetEnabled === true,

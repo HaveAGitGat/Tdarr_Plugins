@@ -9,7 +9,6 @@ import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
 import { getFileName, getPluginWorkDir, getFfType } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import { checkFfmpegCommandV2Init } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import { getEncoder } from '../../../../FlowHelpers/1.0.0/hardwareUtils';
-import { Istreams } from '../../../../FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -83,7 +82,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   cliArgs.push(args.inputFileObj._id);
 
   // Use the streams from the initialized ffmpegCommand structure
-  let { shouldProcess, streams } = args.variables.ffmpegCommand;
+  let { shouldProcess } = args.variables.ffmpegCommand;
+  const { streams } = args.variables.ffmpegCommand;
   const ffmpegStreams: IffmpegCommandStream[] = [...streams];
 
   let hardwareDecoding = false;
@@ -198,7 +198,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
             args.jobLog(`Setting video bitrate as ${targetBitrate}k`);
             stream.outputArgs.push(`-b:${ffType}:{outputTypeIndex}`, `${targetBitrate}k`);
           } else {
-            args.jobLog(`Unable to find input bitrate, setting fallback bitrate as ${bitrateSettings.fallbackBitrate}k`);
+            args.jobLog('Unable to find input bitrate, setting fallback bitrate as '
+              + `${bitrateSettings.fallbackBitrate}k`);
             stream.outputArgs.push(`-b:${ffType}:{outputTypeIndex}`, `${bitrateSettings.fallbackBitrate}k`);
           }
         } else {
@@ -365,6 +366,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   if (pluginInputs.ffmpegCommandRemoveSubtitles?.enabled) {
     ffmpegStreams.forEach((stream) => {
       if (stream.codec_type === 'subtitle') {
+        // eslint-disable-next-line no-param-reassign
         stream.removed = true;
         shouldProcess = true;
       }
@@ -391,10 +393,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
           if (condition === 'includes' && prop.includes(val)) {
             args.jobLog(`${prefix} includes ${val}\n`);
+            // eslint-disable-next-line no-param-reassign
             stream.removed = true;
             shouldProcess = true;
           } else if (condition === 'not_includes' && !prop.includes(val)) {
             args.jobLog(`${prefix} not_includes ${val}\n`);
+            // eslint-disable-next-line no-param-reassign
             stream.removed = true;
             shouldProcess = true;
           }
@@ -422,14 +426,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       audioCodec = 'opus';
     }
 
-    const getHighest = (first: any, second: any) => {
-      if (first?.channels > second?.channels) {
+    const getHighest = (first: IffmpegCommandStream, second: IffmpegCommandStream) => {
+      if ((first?.channels || 0) > (second?.channels || 0)) {
         return first;
       }
       return second;
     };
 
-    const langMatch = (stream: any) => (
+    const langMatch = (stream: IffmpegCommandStream) => (
       (langTag === 'und'
         && (stream.tags === undefined || stream.tags.language === undefined))
         || (stream?.tags?.language && stream.tags.language.toLowerCase().includes(langTag)
@@ -455,10 +459,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       let targetChannels = 0;
       if (wantedChannelCount <= highestChannelCount) {
         targetChannels = wantedChannelCount;
-        args.jobLog(`The wanted channel count ${wantedChannelCount} is <= than the highest available channel count (${streamWithHighestChannel.channels}). \n`);
+        args.jobLog(`The wanted channel count ${wantedChannelCount} is <= than the highest `
+          + `available channel count (${streamWithHighestChannel.channels}). \n`);
       } else {
         targetChannels = highestChannelCount;
-        args.jobLog(`The wanted channel count ${wantedChannelCount} is higher than the highest available channel count (${streamWithHighestChannel.channels}). \n`);
+        args.jobLog(`The wanted channel count ${wantedChannelCount} is higher than the highest `
+          + `available channel count (${streamWithHighestChannel.channels}). \n`);
       }
 
       const hasStreamAlready = ffmpegStreams.filter((stream) => {
@@ -509,48 +515,52 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // Process stream reordering
   if (pluginInputs.ffmpegCommandRorderStreams) {
     const reorderSettings = pluginInputs.ffmpegCommandRorderStreams;
-    let streams = JSON.parse(JSON.stringify(ffmpegStreams));
+    let reorderedStreams = JSON.parse(JSON.stringify(ffmpegStreams));
 
-    streams.forEach((stream: any, index: number) => {
-      stream.typeIndex = index;
+    reorderedStreams.forEach((stream: IffmpegCommandStream, index: number) => {
+      // eslint-disable-next-line no-param-reassign
+      (stream as IffmpegCommandStream & { typeIndex: number }).typeIndex = index;
     });
 
-    const originalStreams = JSON.stringify(streams);
+    const originalStreams = JSON.stringify(reorderedStreams);
 
     const sortStreams = (sortType: {
       inputs: string,
-      getValue: (stream: any) => string,
+      getValue: (stream: IffmpegCommandStream) => string,
     }) => {
       const items = sortType.inputs.split(',');
       items.reverse();
       for (let i = 0; i < items.length; i += 1) {
         const matchedStreams = [];
-        for (let j = 0; j < streams.length; j += 1) {
-          if (String(sortType.getValue(streams[j])) === String(items[i])) {
+        for (let j = 0; j < reorderedStreams.length; j += 1) {
+          if (String(sortType.getValue(reorderedStreams[j])) === String(items[i])) {
             if (
-              streams[j].codec_long_name
+              reorderedStreams[j].codec_long_name
               && (
-                streams[j].codec_long_name.includes('image')
-                || streams[j].codec_name.includes('png')
+                reorderedStreams[j].codec_long_name.includes('image')
+                || reorderedStreams[j].codec_name.includes('png')
               )
             ) {
               // do nothing, ffmpeg bug, doesn't move image streams
             } else {
-              matchedStreams.push(streams[j]);
-              streams.splice(j, 1);
+              matchedStreams.push(reorderedStreams[j]);
+              reorderedStreams.splice(j, 1);
               j -= 1;
             }
           }
         }
-        streams = matchedStreams.concat(streams);
+        reorderedStreams = matchedStreams.concat(reorderedStreams);
       }
     };
 
     const sortTypes: {
-      [key: string]: any,
+      [key: string]: {
+        getValue: (stream: IffmpegCommandStream) => string;
+        inputs: string;
+      };
     } = {
       languages: {
-        getValue: (stream: any) => {
+        getValue: (stream: IffmpegCommandStream) => {
           if (stream?.tags?.language) {
             return stream.tags.language;
           }
@@ -559,7 +569,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         inputs: reorderSettings.languages,
       },
       codecs: {
-        getValue: (stream: any) => {
+        getValue: (stream: IffmpegCommandStream) => {
           try {
             return stream.codec_name;
           } catch (err) {
@@ -570,7 +580,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         inputs: reorderSettings.codecs,
       },
       channels: {
-        getValue: (stream: any) => {
+        getValue: (stream: IffmpegCommandStream) => {
           const chanMap: {
             [key: number]: string
           } = {
@@ -588,7 +598,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         inputs: reorderSettings.channels,
       },
       streamTypes: {
-        getValue: (stream: any) => {
+        getValue: (stream: IffmpegCommandStream) => {
           if (stream.codec_type) {
             return stream.codec_type;
           }
@@ -606,11 +616,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       }
     }
 
-    if (JSON.stringify(streams) !== originalStreams) {
+    if (JSON.stringify(reorderedStreams) !== originalStreams) {
       shouldProcess = true;
       // Replace the ffmpegStreams with reordered streams
       ffmpegStreams.length = 0;
-      ffmpegStreams.push(...streams);
+      ffmpegStreams.push(...reorderedStreams);
     }
   }
 
@@ -618,6 +628,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   if (pluginInputs.ffmpegCommandRemoveDataStreams?.enabled) {
     ffmpegStreams.forEach((stream) => {
       if (stream.codec_type === 'data') {
+        // eslint-disable-next-line no-param-reassign
         stream.removed = true;
         shouldProcess = true;
       }

@@ -88,6 +88,7 @@ export interface IffmpegCommandStream extends Istreams {
 
 export interface IffmpegCommandPluginInputs {
     [pluginName: string]: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [inputName: string]: any;
     };
 }

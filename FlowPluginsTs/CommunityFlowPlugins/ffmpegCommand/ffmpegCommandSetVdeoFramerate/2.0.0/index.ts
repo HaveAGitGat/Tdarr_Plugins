@@ -8,7 +8,8 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Set Video Framerate',
-  description: 'Set Video Framerate. If the original framerate is lower than the specified framerate, the original framerate will be used.',
+  description: 'Set Video Framerate. If the original framerate is lower than the specified framerate, '
+    + 'the original framerate will be used.',
   style: {
     borderColor: '#6efefc',
   },
@@ -47,6 +48,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   checkFfmpegCommandV2Init(args);
 
   // Store inputs for processing by Execute plugin
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion,no-param-reassign
   args.variables.ffmpegCommand.pluginInputs!.ffmpegCommandSetVdeoFramerate = {
     framerate: Number(args.inputs.framerate),
   };
