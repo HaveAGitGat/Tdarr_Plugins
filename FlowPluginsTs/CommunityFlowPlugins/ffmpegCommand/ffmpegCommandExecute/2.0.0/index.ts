@@ -113,7 +113,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
       if (stream.codec_type === 'video' && stream.codec_name !== 'mjpeg') {
         const targetCodec = encoderSettings.outputCodec;
-        
+
         if (
           encoderSettings.forceEncoding
           || stream.codec_name !== targetCodec
@@ -214,7 +214,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   if (pluginInputs.ffmpegCommandSetContainer) {
     const containerSettings = pluginInputs.ffmpegCommandSetContainer;
     const currentContainer = args.inputFileObj.container.toLowerCase();
-    
+
     if (currentContainer !== containerSettings.container) {
       shouldProcess = true;
 
@@ -276,7 +276,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // Process video resolution settings
   if (pluginInputs.ffmpegCommandSetVdeoResolution) {
     const { targetResolution } = pluginInputs.ffmpegCommandSetVdeoResolution;
-    
+
     const getVfScale = (resolution: string): string[] => {
       switch (resolution) {
         case '480p':
@@ -407,7 +407,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   if (pluginInputs.ffmpegCommandEnsureAudioStream) {
     const ensureSettings = pluginInputs.ffmpegCommandEnsureAudioStream;
     const { audioEncoder, language: langTag, channels: wantedChannelCount } = ensureSettings;
-    const { enableBitrate, bitrate, enableSamplerate, samplerate } = ensureSettings;
+    const {
+      enableBitrate, bitrate, enableSamplerate, samplerate,
+    } = ensureSettings;
 
     let audioCodec = audioEncoder;
     if (audioEncoder === 'dca') {

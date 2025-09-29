@@ -104,4 +104,4 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 export {
   details,
   plugin,
-}; 
+};
