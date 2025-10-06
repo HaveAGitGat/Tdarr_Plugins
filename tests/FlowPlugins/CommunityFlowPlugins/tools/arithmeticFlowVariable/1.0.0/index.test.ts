@@ -342,6 +342,36 @@ describe('arithmeticFlowVariable Plugin', () => {
 
       expect(() => plugin(baseArgs)).toThrow('The operation % is invalid');
     });
+
+    it('should throw error for empty operation string', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '';
+      baseArgs.inputs.quantity = '5';
+
+      baseArgs.variables.user.testVar = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.testVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '';
+      baseArgs.thisPlugin.inputsDB.quantity = '5';
+
+      expect(() => plugin(baseArgs)).toThrow('The operation  is invalid');
+    });
+
+    it('should throw error when nested path does not exist', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '5';
+
+      // Create only variables.user, but not the nested path
+      baseArgs.variables.user = {};
+
+      // Template references a non-existent nested path
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.nested.deep.value}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '5';
+
+      expect(() => plugin(baseArgs)).toThrow();
+    });
   });
 
   describe('Different Variable Paths', () => {
