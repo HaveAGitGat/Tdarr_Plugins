@@ -370,7 +370,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       baseArgs.thisPlugin.inputsDB.operation = '+';
       baseArgs.thisPlugin.inputsDB.quantity = '5';
 
-      expect(() => plugin(baseArgs)).toThrow();
+      expect(() => plugin(baseArgs)).toThrow('Path "variables.user.nested" does not exist in args object');
     });
   });
 

@@ -129,6 +129,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     let current = obj;
     for (let i = 0; i < path.length - 1; i++) {
       // @ts-expect-error dynamic path
+      if (current[path[i]] === undefined || current[path[i]] === null) {
+        throw new Error(`Path "${path.slice(0, i + 1).join('.')}" does not exist in args object`);
+      }
+      // @ts-expect-error dynamic path
       current = current[path[i]];
     }
 

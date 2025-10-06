@@ -92,6 +92,10 @@ var plugin = function (args) {
         var current = obj;
         for (var i = 0; i < path.length - 1; i++) {
             // @ts-expect-error dynamic path
+            if (current[path[i]] === undefined || current[path[i]] === null) {
+                throw new Error("Path \"".concat(path.slice(0, i + 1).join('.'), "\" does not exist in args object"));
+            }
+            // @ts-expect-error dynamic path
             current = current[path[i]];
         }
         // @ts-expect-error dynamic path
