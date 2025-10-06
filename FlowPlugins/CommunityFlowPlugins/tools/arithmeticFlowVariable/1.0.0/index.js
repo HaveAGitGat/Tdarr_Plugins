@@ -62,8 +62,23 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var variable = String(args.inputs.variable).trim();
     var operation = String(args.inputs.operation).trim();
-    var quantity = parseInt(String(args.inputs.quantity).trim(), 10);
-    var value = parseInt(args.variables.user[variable], 10);
+    var quantity = parseFloat(String(args.inputs.quantity).trim());
+    // Validate variable exists
+    if (args.variables.user[variable] === undefined) {
+        throw new Error("Variable \"".concat(variable, "\" does not exist"));
+    }
+    var value = parseFloat(args.variables.user[variable]);
+    // Validate numeric values
+    if (Number.isNaN(quantity)) {
+        throw new Error("Quantity \"".concat(args.inputs.quantity, "\" is not a valid number"));
+    }
+    if (Number.isNaN(value)) {
+        throw new Error("Variable \"".concat(variable, "\" with value \"").concat(args.variables.user[variable], "\" is not a valid number"));
+    }
+    // Check for division by zero
+    if (operation === '/' && quantity === 0) {
+        throw new Error('Division by zero is not allowed');
+    }
     args.jobLog("Applying the operation ".concat(operation, " ").concat(quantity, " to ").concat(variable, " of value ").concat(value));
     switch (operation) {
         case '+':

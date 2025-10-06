@@ -12,7 +12,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       inputs: {
         variable: '',
         operation: '',
-        quality: '',
+        quantity: '',
       },
       variables: { user: {} } as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
@@ -89,6 +89,84 @@ describe('arithmeticFlowVariable Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         'Applying the operation / 2 to existingVar of value 4',
       );
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should throw error when variable does not exist', () => {
+      baseArgs.inputs.variable = 'nonExistentVar';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '1';
+
+      expect(() => plugin(baseArgs)).toThrow('Variable "nonExistentVar" does not exist');
+    });
+
+    it('should throw error when quantity is not a valid number', () => {
+      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = 'abc';
+
+      baseArgs.variables.user.existingVar = '1';
+
+      expect(() => plugin(baseArgs)).toThrow('Quantity "abc" is not a valid number');
+    });
+
+    it('should throw error when variable value is not a valid number', () => {
+      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '1';
+
+      baseArgs.variables.user.existingVar = 'notANumber';
+
+      expect(() => plugin(baseArgs)).toThrow('Variable "existingVar" with value "notANumber" is not a valid number');
+    });
+
+    it('should throw error when dividing by zero', () => {
+      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.operation = '/';
+      baseArgs.inputs.quantity = '0';
+
+      baseArgs.variables.user.existingVar = '10';
+
+      expect(() => plugin(baseArgs)).toThrow('Division by zero is not allowed');
+    });
+
+    it('should throw error for invalid operation', () => {
+      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.operation = '%';
+      baseArgs.inputs.quantity = '2';
+
+      baseArgs.variables.user.existingVar = '10';
+
+      expect(() => plugin(baseArgs)).toThrow('The operation % is invalid');
+    });
+  });
+
+  describe('Decimal Support', () => {
+    it('should handle decimal addition correctly', () => {
+      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '1.5';
+
+      baseArgs.variables.user.existingVar = '2.5';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.existingVar).toBe('4');
+    });
+
+    it('should handle decimal multiplication correctly', () => {
+      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.operation = '*';
+      baseArgs.inputs.quantity = '1.5';
+
+      baseArgs.variables.user.existingVar = '2';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.existingVar).toBe('3');
     });
   });
 });

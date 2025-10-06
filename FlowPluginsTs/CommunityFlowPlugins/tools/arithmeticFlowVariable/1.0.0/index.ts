@@ -74,8 +74,28 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const variable = String(args.inputs.variable).trim();
   const operation = String(args.inputs.operation).trim();
-  const quantity = parseInt(String(args.inputs.quantity).trim(), 10);
-  const value = parseInt(args.variables.user[variable], 10);
+  const quantity = parseFloat(String(args.inputs.quantity).trim());
+
+  // Validate variable exists
+  if (args.variables.user[variable] === undefined) {
+    throw new Error(`Variable "${variable}" does not exist`);
+  }
+
+  const value = parseFloat(args.variables.user[variable]);
+
+  // Validate numeric values
+  if (Number.isNaN(quantity)) {
+    throw new Error(`Quantity "${args.inputs.quantity}" is not a valid number`);
+  }
+
+  if (Number.isNaN(value)) {
+    throw new Error(`Variable "${variable}" with value "${args.variables.user[variable]}" is not a valid number`);
+  }
+
+  // Check for division by zero
+  if (operation === '/' && quantity === 0) {
+    throw new Error('Division by zero is not allowed');
+  }
 
   args.jobLog(
     `Applying the operation ${operation} ${quantity} to ${variable} of value ${value}`,
