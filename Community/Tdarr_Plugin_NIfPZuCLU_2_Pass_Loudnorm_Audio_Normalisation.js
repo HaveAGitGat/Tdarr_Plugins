@@ -232,7 +232,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += `Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`;
 
     // use parsed values in second pass
-    response.preset = `-y<io>-af loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
+    response.preset = `-y<io>-map 0 -af loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
       + `measured_i=${loudNormValues.input_i}:`
       + `measured_lra=${loudNormValues.input_lra}:`
       + `measured_tp=${loudNormValues.input_tp}:`
