@@ -7,10 +7,10 @@ import {
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
-  name: 'Add To Processed',
+  name: 'Add To Skiplist',
   description: `
-  Add file to processed list. Can be used with 'Check If Processed' plugin to check if file has already been processed.
-  You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.
+  Add file to skiplist. Can be used with 'Check Skiplist' plugin to check if file has already been processed.
+  You can view and clear the skiplist by going to Library -> Skiplist.
   `,
   style: {
     borderColor: 'orange',
@@ -88,11 +88,13 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   const newData = {
     _id: propertyToAdd,
     DB: fileToAddObj.DB,
+    file: fileToAddObj.file,
+    date: (new Date()).getTime(),
   };
 
   await args.deps.crudTransDBN('F2FOutputJSONDB', 'insert', propertyToAdd, newData);
 
-  args.jobLog(`Added ${propertyToAdd} to processed list`);
+  args.jobLog(`Added ${propertyToAdd} to skiplist`);
 
   return {
     outputFileObj: args.inputFileObj,

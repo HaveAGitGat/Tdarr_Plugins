@@ -228,7 +228,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 if (!(i < args.variables.ffmpegCommand.streams.length)) return [3 /*break*/, 4];
                 stream = args.variables.ffmpegCommand.streams[i];
-                if (!(stream.codec_type === 'video')) return [3 /*break*/, 3];
+                if (!(stream.codec_type === 'video' && stream.codec_name !== 'mjpeg')) return [3 /*break*/, 3];
                 targetCodec = String(args.inputs.outputCodec);
                 _a = args.inputs, ffmpegPresetEnabled = _a.ffmpegPresetEnabled, ffmpegQualityEnabled = _a.ffmpegQualityEnabled;
                 ffmpegPreset = String(args.inputs.ffmpegPreset);

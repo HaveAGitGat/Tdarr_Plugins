@@ -40,8 +40,8 @@ exports.plugin = exports.details = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Add To Processed',
-    description: "\n  Add file to processed list. Can be used with 'Check If Processed' plugin to check if file has already been processed.\n  You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.\n  ",
+    name: 'Add To Skiplist',
+    description: "\n  Add file to skiplist. Can be used with 'Check Skiplist' plugin to check if file has already been processed.\n  You can view and clear the skiplist by going to Library -> Skiplist.\n  ",
     style: {
         borderColor: 'orange',
     },
@@ -125,11 +125,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 newData = {
                     _id: propertyToAdd,
                     DB: fileToAddObj.DB,
+                    file: fileToAddObj.file,
+                    date: (new Date()).getTime(),
                 };
                 return [4 /*yield*/, args.deps.crudTransDBN('F2FOutputJSONDB', 'insert', propertyToAdd, newData)];
             case 6:
                 _a.sent();
-                args.jobLog("Added ".concat(propertyToAdd, " to processed list"));
+                args.jobLog("Added ".concat(propertyToAdd, " to skiplist"));
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: 1,
