@@ -2,29 +2,29 @@ import {
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
-} from "../../../../FlowHelpers/1.0.0/interfaces/interfaces";
+} from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
-  name: "Arithmetic Flow Variable",
-  description: "Apply an arithmetic calculation on a Flow Variable.",
+  name: 'Arithmetic Flow Variable',
+  description: 'Apply an arithmetic calculation on a Flow Variable.',
   style: {
-    borderColor: "green",
+    borderColor: 'green',
   },
-  tags: "",
+  tags: '',
   isStartPlugin: false,
-  pType: "",
-  requiresVersion: "2.11.01",
+  pType: '',
+  requiresVersion: '2.11.01',
   sidebarPosition: 1,
-  icon: "",
+  icon: '',
   inputs: [
     {
-      label: "Variable",
-      name: "variable",
-      type: "string",
-      defaultValue: "",
+      label: 'Variable',
+      name: 'variable',
+      type: 'string',
+      defaultValue: '',
       inputUI: {
-        type: "text",
+        type: 'text',
       },
       tooltip: `Variable to set.
       
@@ -33,23 +33,23 @@ const details = (): IpluginDetails => ({
       `,
     },
     {
-      label: "Operation",
-      name: "operation",
-      type: "string",
-      defaultValue: "",
+      label: 'Operation',
+      name: 'operation',
+      type: 'string',
+      defaultValue: '',
       inputUI: {
-        type: "dropdown",
-        options: ["+", "-", "*", "/"],
+        type: 'dropdown',
+        options: ['+', '-', '*', '/'],
       },
-      tooltip: `Operation to perform on the variable`,
+      tooltip: 'Operation to perform on the variable',
     },
     {
-      label: "Quantity",
-      name: "quantity",
-      type: "string",
-      defaultValue: "",
+      label: 'Quantity',
+      name: 'quantity',
+      type: 'string',
+      defaultValue: '',
       inputUI: {
-        type: "text",
+        type: 'text',
       },
       tooltip: `Value to set.
 
@@ -61,14 +61,14 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: "Continue to next plugin",
+      tooltip: 'Continue to next plugin',
     },
   ],
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
-  const lib = require("../../../../../methods/lib")();
+  const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
@@ -82,24 +82,24 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   );
 
   switch (operation) {
-    case "+":
+    case '+':
       // eslint-disable-next-line no-param-reassign
       args.variables.user[variable] = String(value + quantity);
       break;
-    case "-":
+    case '-':
       // eslint-disable-next-line no-param-reassign
       args.variables.user[variable] = String(value - quantity);
       break;
-    case "*":
+    case '*':
       // eslint-disable-next-line no-param-reassign
       args.variables.user[variable] = String(value * quantity);
       break;
-    case "/":
+    case '/':
       // eslint-disable-next-line no-param-reassign
       args.variables.user[variable] = String(value / quantity);
       break;
     default:
-      throw new Error("The operation ".concat(operation, " is invalid"));
+      throw new Error('The operation '.concat(operation, ' is invalid'));
   }
 
   return {
