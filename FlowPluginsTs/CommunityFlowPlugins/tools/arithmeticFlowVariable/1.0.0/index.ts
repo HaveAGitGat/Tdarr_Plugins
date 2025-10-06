@@ -4,7 +4,6 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Arithmetic Flow Variable',
   description: 'Apply an arithmetic calculation on a flow variable.',
@@ -127,7 +126,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // Helper to set value at dynamic path
   const setValueAtPath = (obj: IpluginInputArgs, path: string[], val: string) => {
     let current = obj;
-    for (let i = 0; i < path.length - 1; i++) {
+    for (let i = 0; i < path.length - 1; i += 1) {
       // @ts-expect-error dynamic path
       if (current[path[i]] === undefined || current[path[i]] === null) {
         throw new Error(`Path "${path.slice(0, i + 1).join('.')}" does not exist in args object`);

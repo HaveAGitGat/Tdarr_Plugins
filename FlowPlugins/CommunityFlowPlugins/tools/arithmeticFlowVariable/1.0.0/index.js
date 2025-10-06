@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Arithmetic Flow Variable',
     description: 'Apply an arithmetic calculation on a flow variable.',
@@ -90,7 +89,7 @@ var plugin = function (args) {
     // Helper to set value at dynamic path
     var setValueAtPath = function (obj, path, val) {
         var current = obj;
-        for (var i = 0; i < path.length - 1; i++) {
+        for (var i = 0; i < path.length - 1; i += 1) {
             // @ts-expect-error dynamic path
             if (current[path[i]] === undefined || current[path[i]] === null) {
                 throw new Error("Path \"".concat(path.slice(0, i + 1).join('.'), "\" does not exist in args object"));
