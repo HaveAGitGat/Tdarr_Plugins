@@ -7,7 +7,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Arithmetic Flow Variable',
-  description: 'Apply an arithmetic calculation on a Flow Variable.',
+  description: 'Apply an arithmetic calculation on a flow variable.',
   style: {
     borderColor: 'green',
   },
@@ -26,10 +26,11 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: `Variable to set.
-      
+      tooltip: `Specify the name of an existing flow variable containing a numeric value to perform arithmetic on.
+      The variable must exist and contain a valid number.
+
       \\nExample\\n
-      transcodeStage
+      {{{args.variables.user.transcodeStage}}}
       `,
     },
     {
@@ -41,7 +42,12 @@ const details = (): IpluginDetails => ({
         type: 'dropdown',
         options: ['+', '-', '*', '/'],
       },
-      tooltip: 'Operation to perform on the variable',
+      tooltip: `Select the arithmetic operation to apply to the variable.
+
+      + : Add the quantity to the variable
+      - : Subtract the quantity from the variable
+      * : Multiply the variable by the quantity
+      / : Divide the variable by the quantity (quantity cannot be 0)`,
     },
     {
       label: 'Quantity',
@@ -51,10 +57,17 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: `Value to set.
+      tooltip: `Specify the numeric value to use in the arithmetic operation.
+      Must be a valid number. Cannot be 0 when using division.
 
       \\nExample\\n
       1
+
+      \\nExample\\n
+      5.5
+
+      \\nExample\\n
+      -10
       `,
     },
   ],
@@ -72,16 +85,26 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  // Get original plugin inputs from thisPlugin.inputsDB
+  const inputsOriginal = args.thisPlugin.inputsDB;
+
+  // Extract variable path from the original template string
+  const variableTemplate = String(inputsOriginal?.variable).trim();
+  const variableMatch = variableTemplate.match(/\{\{\{(?:args|baseArgs)\.([\w.]+)\}\}\}/);
+
+  if (!variableMatch) {
+    throw new Error(`Variable template "${variableTemplate}" is invalid. Expected format: {{{args.path.to.variable}}}`);
+  }
+
+  const variablePath = variableMatch[1]; // e.g., "variables.user.existingVar"
+  const pathParts = variablePath.split('.');
+  const variableName = pathParts[pathParts.length - 1]; // Last part for display purposes
+
   const variable = String(args.inputs.variable).trim();
   const operation = String(args.inputs.operation).trim();
   const quantity = parseFloat(String(args.inputs.quantity).trim());
 
-  // Validate variable exists
-  if (args.variables.user[variable] === undefined) {
-    throw new Error(`Variable "${variable}" does not exist`);
-  }
-
-  const value = parseFloat(args.variables.user[variable]);
+  const value = parseFloat(variable);
 
   // Validate numeric values
   if (Number.isNaN(quantity)) {
@@ -89,7 +112,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   if (Number.isNaN(value)) {
-    throw new Error(`Variable "${variable}" with value "${args.variables.user[variable]}" is not a valid number`);
+    throw new Error(`Variable "${variableName}" is not a valid number`);
   }
 
   // Check for division by zero
@@ -98,25 +121,38 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   args.jobLog(
-    `Applying the operation ${operation} ${quantity} to ${variable} of value ${value}`,
+    `Applying the operation ${operation} ${quantity} to ${variableName} of value ${value}`,
   );
 
+  // Helper to set value at dynamic path
+  const setValueAtPath = (obj: IpluginInputArgs, path: string[], val: string) => {
+    let current = obj;
+    for (let i = 0; i < path.length - 1; i++) {
+      // @ts-expect-error dynamic path
+      current = current[path[i]];
+    }
+
+    // @ts-expect-error dynamic path
+    current[path[path.length - 1]] = val; // eslint-disable-line no-param-reassign
+  };
+
+  let result: number;
   switch (operation) {
     case '+':
-      // eslint-disable-next-line no-param-reassign
-      args.variables.user[variable] = String(value + quantity);
+      result = value + quantity;
+      setValueAtPath(args, pathParts, String(result));
       break;
     case '-':
-      // eslint-disable-next-line no-param-reassign
-      args.variables.user[variable] = String(value - quantity);
+      result = value - quantity;
+      setValueAtPath(args, pathParts, String(result));
       break;
     case '*':
-      // eslint-disable-next-line no-param-reassign
-      args.variables.user[variable] = String(value * quantity);
+      result = value * quantity;
+      setValueAtPath(args, pathParts, String(result));
       break;
     case '/':
-      // eslint-disable-next-line no-param-reassign
-      args.variables.user[variable] = String(value / quantity);
+      result = value / quantity;
+      setValueAtPath(args, pathParts, String(result));
       break;
     default:
       throw new Error('The operation '.concat(operation, ' is invalid'));

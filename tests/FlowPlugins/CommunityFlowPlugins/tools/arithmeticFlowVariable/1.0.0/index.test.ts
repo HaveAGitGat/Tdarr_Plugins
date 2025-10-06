@@ -17,16 +17,28 @@ describe('arithmeticFlowVariable Plugin', () => {
       variables: { user: {} } as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       jobLog: jest.fn(),
+      thisPlugin: {
+        inputsDB: {
+          variable: '',
+          operation: '',
+          quantity: '',
+        },
+      },
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });
 
   describe('Addition', () => {
     it('add 1 to a variable originally set to 1 to become 2', () => {
-      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.variable = '1';
       baseArgs.inputs.operation = '+';
       baseArgs.inputs.quantity = '1';
 
       baseArgs.variables.user.existingVar = '1';
+
+      // Set the original template in inputsDB
+      baseArgs.thisPlugin.inputsDB.variable = '{{{baseArgs.variables.user.existingVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '1';
 
       const result = plugin(baseArgs);
 
@@ -36,137 +48,321 @@ describe('arithmeticFlowVariable Plugin', () => {
         'Applying the operation + 1 to existingVar of value 1',
       );
     });
-  });
 
-  describe('Substraction', () => {
-    it('substract 1 from a variable originally set to 2 to become 1', () => {
-      baseArgs.inputs.variable = 'existingVar';
-      baseArgs.inputs.operation = '-';
-      baseArgs.inputs.quantity = '1';
+    it('add 5.5 to a variable originally set to 10', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '5.5';
 
-      baseArgs.variables.user.existingVar = '2';
+      baseArgs.variables.user.myVar = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.myVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '5.5';
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(result.variables.user.existingVar).toBe('1');
+      expect(result.variables.user.myVar).toBe('15.5');
+    });
+
+    it('add negative number to a positive variable', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '-3';
+
+      baseArgs.variables.user.testVar = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.testVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '-3';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.testVar).toBe('7');
+    });
+  });
+
+  describe('Subtraction', () => {
+    it('subtract 3 from a variable originally set to 10', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '-';
+      baseArgs.inputs.quantity = '3';
+
+      baseArgs.variables.user.counter = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.counter}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '-';
+      baseArgs.thisPlugin.inputsDB.quantity = '3';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.counter).toBe('7');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation - 1 to existingVar of value 2',
+        'Applying the operation - 3 to counter of value 10',
       );
+    });
+
+    it('subtract decimal from a variable', () => {
+      baseArgs.inputs.variable = '20.5';
+      baseArgs.inputs.operation = '-';
+      baseArgs.inputs.quantity = '5.25';
+
+      baseArgs.variables.user.value = '20.5';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.value}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '-';
+      baseArgs.thisPlugin.inputsDB.quantity = '5.25';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.value).toBe('15.25');
+    });
+
+    it('subtract negative number (results in addition)', () => {
+      baseArgs.inputs.variable = '5';
+      baseArgs.inputs.operation = '-';
+      baseArgs.inputs.quantity = '-3';
+
+      baseArgs.variables.user.num = '5';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.num}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '-';
+      baseArgs.thisPlugin.inputsDB.quantity = '-3';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.num).toBe('8');
     });
   });
 
   describe('Multiplication', () => {
-    it('multiply 2 with a variable originally set to 2 to become 4', () => {
-      baseArgs.inputs.variable = 'existingVar';
+    it('multiply a variable by 3', () => {
+      baseArgs.inputs.variable = '5';
       baseArgs.inputs.operation = '*';
-      baseArgs.inputs.quantity = '2';
+      baseArgs.inputs.quantity = '3';
 
-      baseArgs.variables.user.existingVar = '2';
+      baseArgs.variables.user.multiplier = '5';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.multiplier}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '*';
+      baseArgs.thisPlugin.inputsDB.quantity = '3';
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(result.variables.user.existingVar).toBe('4');
+      expect(result.variables.user.multiplier).toBe('15');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation * 2 to existingVar of value 2',
+        'Applying the operation * 3 to multiplier of value 5',
       );
+    });
+
+    it('multiply by decimal value', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '*';
+      baseArgs.inputs.quantity = '2.5';
+
+      baseArgs.variables.user.scale = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.scale}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '*';
+      baseArgs.thisPlugin.inputsDB.quantity = '2.5';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.scale).toBe('25');
+    });
+
+    it('multiply by zero', () => {
+      baseArgs.inputs.variable = '42';
+      baseArgs.inputs.operation = '*';
+      baseArgs.inputs.quantity = '0';
+
+      baseArgs.variables.user.test = '42';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.test}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '*';
+      baseArgs.thisPlugin.inputsDB.quantity = '0';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.test).toBe('0');
+    });
+
+    it('multiply by negative number', () => {
+      baseArgs.inputs.variable = '7';
+      baseArgs.inputs.operation = '*';
+      baseArgs.inputs.quantity = '-2';
+
+      baseArgs.variables.user.negTest = '7';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.negTest}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '*';
+      baseArgs.thisPlugin.inputsDB.quantity = '-2';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.negTest).toBe('-14');
     });
   });
 
   describe('Division', () => {
-    it('division 2 with a variable originally set to 4 to become 2', () => {
-      baseArgs.inputs.variable = 'existingVar';
+    it('divide a variable by 2', () => {
+      baseArgs.inputs.variable = '10';
       baseArgs.inputs.operation = '/';
       baseArgs.inputs.quantity = '2';
 
-      baseArgs.variables.user.existingVar = '4';
+      baseArgs.variables.user.divider = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.divider}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '/';
+      baseArgs.thisPlugin.inputsDB.quantity = '2';
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(result.variables.user.existingVar).toBe('2');
+      expect(result.variables.user.divider).toBe('5');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation / 2 to existingVar of value 4',
+        'Applying the operation / 2 to divider of value 10',
       );
+    });
+
+    it('divide by decimal value', () => {
+      baseArgs.inputs.variable = '15';
+      baseArgs.inputs.operation = '/';
+      baseArgs.inputs.quantity = '2.5';
+
+      baseArgs.variables.user.ratio = '15';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.ratio}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '/';
+      baseArgs.thisPlugin.inputsDB.quantity = '2.5';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.ratio).toBe('6');
+    });
+
+    it('divide negative number by positive', () => {
+      baseArgs.inputs.variable = '-20';
+      baseArgs.inputs.operation = '/';
+      baseArgs.inputs.quantity = '4';
+
+      baseArgs.variables.user.negDiv = '-20';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.negDiv}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '/';
+      baseArgs.thisPlugin.inputsDB.quantity = '4';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(result.variables.user.negDiv).toBe('-5');
     });
   });
 
   describe('Error Handling', () => {
-    it('should throw error when variable does not exist', () => {
-      baseArgs.inputs.variable = 'nonExistentVar';
-      baseArgs.inputs.operation = '+';
-      baseArgs.inputs.quantity = '1';
-
-      expect(() => plugin(baseArgs)).toThrow('Variable "nonExistentVar" does not exist');
-    });
-
-    it('should throw error when quantity is not a valid number', () => {
-      baseArgs.inputs.variable = 'existingVar';
-      baseArgs.inputs.operation = '+';
-      baseArgs.inputs.quantity = 'abc';
-
-      baseArgs.variables.user.existingVar = '1';
-
-      expect(() => plugin(baseArgs)).toThrow('Quantity "abc" is not a valid number');
-    });
-
-    it('should throw error when variable value is not a valid number', () => {
-      baseArgs.inputs.variable = 'existingVar';
-      baseArgs.inputs.operation = '+';
-      baseArgs.inputs.quantity = '1';
-
-      baseArgs.variables.user.existingVar = 'notANumber';
-
-      expect(() => plugin(baseArgs)).toThrow('Variable "existingVar" with value "notANumber" is not a valid number');
-    });
-
     it('should throw error when dividing by zero', () => {
-      baseArgs.inputs.variable = 'existingVar';
+      baseArgs.inputs.variable = '10';
       baseArgs.inputs.operation = '/';
       baseArgs.inputs.quantity = '0';
 
-      baseArgs.variables.user.existingVar = '10';
+      baseArgs.variables.user.testVar = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.testVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '/';
+      baseArgs.thisPlugin.inputsDB.quantity = '0';
 
       expect(() => plugin(baseArgs)).toThrow('Division by zero is not allowed');
     });
 
-    it('should throw error for invalid operation', () => {
-      baseArgs.inputs.variable = 'existingVar';
-      baseArgs.inputs.operation = '%';
-      baseArgs.inputs.quantity = '2';
+    it('should throw error when variable template is invalid', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '5';
 
-      baseArgs.variables.user.existingVar = '10';
+      baseArgs.variables.user.testVar = '10';
+
+      // Invalid template format
+      baseArgs.thisPlugin.inputsDB.variable = 'invalidTemplate';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '5';
+
+      expect(() => plugin(baseArgs)).toThrow(
+        'Variable template "invalidTemplate" is invalid. Expected format: {{{args.path.to.variable}}}',
+      );
+    });
+
+    it('should throw error when quantity is not a valid number', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = 'notANumber';
+
+      baseArgs.variables.user.testVar = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.testVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = 'notANumber';
+
+      expect(() => plugin(baseArgs)).toThrow('Quantity "notANumber" is not a valid number');
+    });
+
+    it('should throw error when variable value is not a valid number', () => {
+      baseArgs.inputs.variable = 'notANumber';
+      baseArgs.inputs.operation = '+';
+      baseArgs.inputs.quantity = '5';
+
+      baseArgs.variables.user.testVar = 'notANumber';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.testVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '5';
+
+      expect(() => plugin(baseArgs)).toThrow('Variable "testVar" is not a valid number');
+    });
+
+    it('should throw error for invalid operation', () => {
+      baseArgs.inputs.variable = '10';
+      baseArgs.inputs.operation = '%';
+      baseArgs.inputs.quantity = '5';
+
+      baseArgs.variables.user.testVar = '10';
+
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.testVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '%';
+      baseArgs.thisPlugin.inputsDB.quantity = '5';
 
       expect(() => plugin(baseArgs)).toThrow('The operation % is invalid');
     });
   });
 
-  describe('Decimal Support', () => {
-    it('should handle decimal addition correctly', () => {
-      baseArgs.inputs.variable = 'existingVar';
+  describe('Different Variable Paths', () => {
+    it('should work with args prefix instead of baseArgs', () => {
+      baseArgs.inputs.variable = '100';
       baseArgs.inputs.operation = '+';
-      baseArgs.inputs.quantity = '1.5';
+      baseArgs.inputs.quantity = '50';
 
-      baseArgs.variables.user.existingVar = '2.5';
+      baseArgs.variables.user.customVar = '100';
 
-      const result = plugin(baseArgs);
-
-      expect(result.outputNumber).toBe(1);
-      expect(result.variables.user.existingVar).toBe('4');
-    });
-
-    it('should handle decimal multiplication correctly', () => {
-      baseArgs.inputs.variable = 'existingVar';
-      baseArgs.inputs.operation = '*';
-      baseArgs.inputs.quantity = '1.5';
-
-      baseArgs.variables.user.existingVar = '2';
+      baseArgs.thisPlugin.inputsDB.variable = '{{{args.variables.user.customVar}}}';
+      baseArgs.thisPlugin.inputsDB.operation = '+';
+      baseArgs.thisPlugin.inputsDB.quantity = '50';
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(result.variables.user.existingVar).toBe('3');
+      expect(result.variables.user.customVar).toBe('150');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Applying the operation + 50 to customVar of value 100',
+      );
     });
   });
 });
