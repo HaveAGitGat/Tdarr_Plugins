@@ -119,7 +119,7 @@ var plugin = function (args) {
             setValueAtPath(args, pathParts, String(result));
             break;
         default:
-            throw new Error('The operation '.concat(operation, ' is invalid'));
+            throw new Error("The operation ".concat(operation, " is invalid"));
     }
     return {
         outputFileObj: args.inputFileObj,
