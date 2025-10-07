@@ -232,12 +232,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += `Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`;
 
     // use parsed values in second pass
-    response.preset = `-y<io>-af loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
+    response.preset = '-y<io>-map 0'
+      + ` -filter:a:0 loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
       + `measured_i=${loudNormValues.input_i}:`
       + `measured_lra=${loudNormValues.input_lra}:`
       + `measured_tp=${loudNormValues.input_tp}:`
       + `measured_thresh=${loudNormValues.input_thresh}:offset=${loudNormValues.target_offset} `
-      + '-c:a aac -b:a 192k -c:s copy -c:v copy -metadata NORMALISATIONSTAGE=Complete';
+      + '-c:v copy -c:s copy -c:a copy -c:a:0 aac -b:a:0 192k -metadata NORMALISATIONSTAGE=Complete';
     response.FFmpegMode = true;
     response.processFile = true;
     response.infoLog += 'Normalisation pass processing \n';
