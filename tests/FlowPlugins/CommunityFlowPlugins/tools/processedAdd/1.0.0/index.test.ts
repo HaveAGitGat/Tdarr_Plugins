@@ -43,6 +43,7 @@ describe('processedAdd Plugin', () => {
           config: {
             serverIP: 'localhost',
             serverPort: '8000',
+            apiKey: '',
           },
         },
       },

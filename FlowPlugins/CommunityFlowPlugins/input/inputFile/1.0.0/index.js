@@ -84,7 +84,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, orignalFolder, _a, fileAccessChecks, pauseNodeIfAccessChecksFail, nodeID, _b, serverIP, serverPort, url, pauseNode, checkReadWrite;
+    var lib, orignalFolder, _a, fileAccessChecks, pauseNodeIfAccessChecksFail, nodeID, _b, serverIP, serverPort, apiKey, url, pauseNode, checkReadWrite;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
@@ -94,7 +94,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 orignalFolder = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
                 _a = args.inputs, fileAccessChecks = _a.fileAccessChecks, pauseNodeIfAccessChecksFail = _a.pauseNodeIfAccessChecksFail;
                 nodeID = process.argv[8];
-                _b = args.deps.configVars.config, serverIP = _b.serverIP, serverPort = _b.serverPort;
+                _b = args.deps.configVars.config, serverIP = _b.serverIP, serverPort = _b.serverPort, apiKey = _b.apiKey;
                 url = "http://".concat(serverIP, ":").concat(serverPort, "/api/v2/update-node");
                 pauseNode = function () { return __awaiter(void 0, void 0, void 0, function () {
                     var requestConfig;
@@ -105,7 +105,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 requestConfig = {
                                     method: 'post',
                                     url: url,
-                                    headers: {},
+                                    headers: {
+                                        'x-api-key': apiKey,
+                                    },
                                     data: {
                                         data: {
                                             nodeID: nodeID,
