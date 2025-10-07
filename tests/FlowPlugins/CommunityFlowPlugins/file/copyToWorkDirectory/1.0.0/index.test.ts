@@ -75,6 +75,7 @@ describe('copyToWorkDirectory Plugin', () => {
           config: {
             serverIP: 'localhost',
             serverPort: '8265',
+            apiKey: '',
           },
         },
       },

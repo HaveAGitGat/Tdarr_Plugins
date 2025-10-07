@@ -52,6 +52,7 @@ describe('Pause/Unpause All Nodes Plugin', () => {
           config: {
             serverIP: 'localhost',
             serverPort: '8265',
+            apiKey: '',
           },
         },
       },
