@@ -76,6 +76,7 @@ describe('processedCheck Plugin', () => {
           config: {
             serverIP: '127.0.0.1',
             serverPort: '8265',
+            apiKey: '',
           },
         },
       },

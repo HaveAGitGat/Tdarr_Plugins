@@ -183,6 +183,7 @@ export interface IpluginInputArgs {
             config: {
                 serverIP: string,
                 serverPort: string,
+                apiKey: string,
             }
         }
     },
