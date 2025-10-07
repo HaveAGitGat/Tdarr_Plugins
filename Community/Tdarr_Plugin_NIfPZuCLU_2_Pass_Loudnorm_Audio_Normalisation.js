@@ -88,7 +88,7 @@ const parseJobName = (text) => {
   };
 };
 
-const getloudNormValues = async (inputs, response, file) => {
+const getloudNormValues = async (inputs, response, file, otherArguments) => {
   // {
   // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const axios = require('axios');
@@ -99,6 +99,13 @@ const getloudNormValues = async (inputs, response, file) => {
   let loudNormValues = false;
   let tries = 0;
   let error = false;
+
+  // Prepare headers with API key if available
+  const headers = {};
+  if (otherArguments?.configVars?.config?.apiKey) {
+    headers['x-api-key'] = otherArguments.configVars.config.apiKey;
+  }
+
   while (tries < 15) {
     try {
       tries += 1;
@@ -109,7 +116,7 @@ const getloudNormValues = async (inputs, response, file) => {
         data: {
           footprintId: file.footprintId,
         },
-      });
+      }, { headers });
 
       if (logFilesReq.status !== 200) {
         throw new Error('Failed to get log files, please rerun');
@@ -131,7 +138,7 @@ const getloudNormValues = async (inputs, response, file) => {
           jobId: parseJobName(latestJob).jobId,
           jobFileId: latestJob,
         },
-      });
+      }, { headers });
 
       if (reportReq.status !== 200) {
         throw new Error('Failed to get read latest log file, please rerun');
@@ -227,7 +234,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } if (
     probeData.format.tags.NORMALISATIONSTAGE === 'FirstPassComplete'
   ) {
-    const loudNormValues = await getloudNormValues(inputs, response, file);
+    const loudNormValues = await getloudNormValues(inputs, response, file, otherArguments);
 
     response.infoLog += `Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`;
 
