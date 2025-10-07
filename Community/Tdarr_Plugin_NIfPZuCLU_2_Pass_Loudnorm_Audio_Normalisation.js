@@ -99,13 +99,13 @@ const getloudNormValues = async (inputs, response, file, otherArguments) => {
   let loudNormValues = false;
   let tries = 0;
   let error = false;
-  
+
   // Prepare headers with API key if available
   const headers = {};
   if (otherArguments?.configVars?.config?.apiKey) {
     headers['x-api-key'] = otherArguments.configVars.config.apiKey;
   }
-  
+
   while (tries < 15) {
     try {
       tries += 1;
