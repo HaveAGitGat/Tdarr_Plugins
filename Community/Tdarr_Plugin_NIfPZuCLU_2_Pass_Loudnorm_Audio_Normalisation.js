@@ -76,6 +76,15 @@ Output will be MKV to allow metadata to be added for tracking normalisation stag
       },
       tooltip: 'Enter the port number of the server if plugin having trouble connecting.',
     },
+    {
+      name: 'apiKey',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Enter the API key if your server requires authentication.',
+    },
   ],
 });
 
@@ -96,6 +105,7 @@ const getloudNormValues = async (inputs, response, file) => {
   const serverIp = inputs.serverIp ? inputs.serverIp : process.env.serverIp;
   const serverPort = inputs.serverPort ? inputs.serverPort : process.env.serverPort;
   const serverUrl = `http://${serverIp}:${serverPort}`;
+  const apiKey = inputs.apiKey || '';
   let loudNormValues = false;
   let tries = 0;
   let error = false;
@@ -105,11 +115,13 @@ const getloudNormValues = async (inputs, response, file) => {
       // wait for job report to be updated by server,
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
+      const headers = apiKey ? { 'x-api-key': apiKey } : {};
+
       const logFilesReq = await axios.post(`${serverUrl}/api/v2/list-footprintId-reports`, {
         data: {
           footprintId: file.footprintId,
         },
-      });
+      }, { headers });
 
       if (logFilesReq.status !== 200) {
         throw new Error('Failed to get log files, please rerun');
@@ -131,7 +143,7 @@ const getloudNormValues = async (inputs, response, file) => {
           jobId: parseJobName(latestJob).jobId,
           jobFileId: latestJob,
         },
-      });
+      }, { headers });
 
       if (reportReq.status !== 200) {
         throw new Error('Failed to get read latest log file, please rerun');
@@ -237,7 +249,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
       + `measured_lra=${loudNormValues.input_lra}:`
       + `measured_tp=${loudNormValues.input_tp}:`
       + `measured_thresh=${loudNormValues.input_thresh}:offset=${loudNormValues.target_offset} `
-      + '-c:a:0 aac -b:a:0 192k -c:a copy -c:s copy -c:v copy -metadata NORMALISATIONSTAGE=Complete';
+      + '-c:v copy -c:s copy -c:a copy -c:a:0 aac -b:a:0 192k -metadata NORMALISATIONSTAGE=Complete';
     response.FFmpegMode = true;
     response.processFile = true;
     response.infoLog += 'Normalisation pass processing \n';
