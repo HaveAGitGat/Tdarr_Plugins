@@ -104,6 +104,7 @@ describe('basicVideoOrAudio Plugin', () => {
           },
         },
       },
+      thisPlugin: {}
     } as IpluginInputArgs;
   });
 

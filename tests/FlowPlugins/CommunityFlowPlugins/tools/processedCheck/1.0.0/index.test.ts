@@ -81,6 +81,7 @@ describe('processedCheck Plugin', () => {
         },
       },
       installClassicPluginDeps: jest.fn(),
+      thisPlugin: {},
     } as IpluginInputArgs;
   });
 

@@ -152,6 +152,8 @@ export interface IpluginInputArgs {
     lastSuccesfulPlugin: any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lastSuccessfulRun: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    thisPlugin: any,
     updateWorker: IupdateWorker,
     logFullCliOutput: boolean,
     logOutcome: (outcome: string) => void,

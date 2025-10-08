@@ -80,6 +80,7 @@ describe('copyToWorkDirectory Plugin', () => {
         },
       },
       installClassicPluginDeps: jest.fn(),
+      thisPlugin: {},
     } as IpluginInputArgs;
 
     mockCopyFile.mockResolvedValue(undefined);
