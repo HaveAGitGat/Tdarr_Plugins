@@ -10,13 +10,13 @@ const details = () => {
     Operation: "Transcode",
     Description:
       "In a single pass ensures all files are in MKV containers and where possible encoded in h265 (Tiered bitrate based on resolution), removes audio and subtitles that are not in the configured language or marked as commentary.",
-    Version: "2.0",
+    Version: "2.1",
     Tags: "pre-processing,ffmpeg,nvenc h265",
     Inputs: [
       {
         name: "target_bitrate_480p576p",
-        type: 'string',
-        defaultValue: '1000000',
+        type: 'number',
+        defaultValue: 1000000,
         inputUI: {
           type: 'text',
         },
@@ -26,8 +26,8 @@ const details = () => {
       },
       {
         name: "target_bitrate_720p",
-        type: 'string',
-        defaultValue: '2000000',
+        type: 'number',
+        defaultValue: 2000000,
         inputUI: {
           type: 'text',
         },
@@ -37,8 +37,8 @@ const details = () => {
       },
       {
         name: "target_bitrate_1080p",
-        type: 'string',
-        defaultValue: '2500000',
+        type: 'number',
+        defaultValue: 2500000,
         inputUI: {
           type: 'text',
         },
@@ -48,8 +48,8 @@ const details = () => {
       },
       {
         name: "target_bitrate_4KUHD",
-        type: 'string',
-        defaultValue: '14000000',
+        type: 'number',
+        defaultValue: 14000000,
         inputUI: {
           type: 'text',
         },
@@ -58,15 +58,129 @@ const details = () => {
                 14000000`,
       },
       {
+        name: "target_max_increase_480p576p",
+        type: 'number',
+        defaultValue: 500000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 480p and 576p files.
+                \\nExample 1 Kbps:\\n
+                500000`,
+      },
+      {
+        name: "target_max_increase_720p",
+        type: 'number',
+        defaultValue: 2000000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 720p files.
+                \\nExample 2 Mbps:\\n
+                2000000`,
+      },
+      {
+        name: "target_max_increase_1080p",
+        type: 'number',
+        defaultValue: 2500000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 1080p files.
+                \\nExample 2.5 Mbps:\\n
+                2500000`,
+      },
+      {
+        name: "target_max_increase_4KUHD",
+        type: 'number',
+        defaultValue: 6000000,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the max increase to the target bitrate for 4KUHD files.
+                \\nExample 6 Mbps:\\n
+                6000000`,
+      },
+      {
+        name: "target_cq_480p576p",
+        type: 'number',
+        defaultValue: 29,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 480p and 576p files. Lower value equals less compression.
+                \\nDefault:\\n
+                29`,
+      },
+      {
+        name: "target_cq_720p",
+        type: 'number',
+        defaultValue: 30,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 720p files. Lower value equals less compression.
+                \\nDefault:\\n
+                30`,
+      },
+      {
+        name: "target_cq_1080p",
+        type: 'number',
+        defaultValue: 31,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 1080p files. Lower value equals less compression.
+                \\nDefault:\\n
+                31`,
+      },
+      {
+        name: "target_cq_4KUHD",
+        type: 'number',
+        defaultValue: 31,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Specify the target constant quality for 4KUHD files. Lower value equals less compression.
+                \\nDefault:\\n
+                31`,
+      },
+      {
         name: "target_pct_reduction",
-        type: 'string',
-        defaultValue: '.50',
+        type: 'number',
+        defaultValue: .5,
         inputUI: {
           type: 'text',
         },
         tooltip: `Specify the target reduction of bitrate, if current bitrate is less than resolution targets.
                 \\nExample 50%:\\n
                 .50`,
+      },
+      {
+        name: "bframe",
+        type: 'number',
+        defaultValue: 5,
+        inputUI: {
+          type: 'text',
+        },
+        tooltip: `Set max number of B frames between non-B-frames. Must be an integer between -1 and 5. 0 means that B-frames are disabled. If a value of -1 is used, it will choose an automatic value depending on the encoder. 
+                \\nDefault:\\n
+                5`,
+      },
+      {
+        name: 'ignore_low_bitrate_video',
+        type: 'boolean',
+        defaultValue: false,
+        inputUI: {
+          type: 'dropdown',
+          options: [
+            'false',
+            'true',
+          ],
+        },
+        tooltip: `Specify if video tracks below the target bitrate should be ignored. Does not affect audio or subtitle processing.
+                \\nExample:\\n
+                true`,
       },
       {
         name: "audio_language",
@@ -366,36 +480,36 @@ function buildSubtitleConfiguration(inputs, file, logger) {
 function buildVideoConfiguration(inputs, file, logger) {
   var configuration = new Configurator(["-map 0", "-map -0:d", "-c:v copy"]);
 
-  var tiered = {
+  const tiered = {
     "480p": {
       "bitrate": inputs.target_bitrate_480p576p,
-      "max_increase": 500,
-      "cq": 29
+      "max_increase": inputs.target_max_increase_480p576p,
+      "cq": inputs.target_cq_480p576p
     },
     "576p": {
       "bitrate": inputs.target_bitrate_480p576p,
-      "max_increase": 500,
-      "cq": 29
+      "max_increase": inputs.target_max_increase_480p576p,
+      "cq": inputs.target_cq_480p576p
     },
     "720p": {
       "bitrate": inputs.target_bitrate_720p,
-      "max_increase": 2000,
-      "cq": 30
+      "max_increase": inputs.target_max_increase_720p,
+      "cq": inputs.target_cq_720p
     },
     "1080p": {
       "bitrate": inputs.target_bitrate_1080p,
-      "max_increase": 2500,
-      "cq": 31
+      "max_increase": inputs.target_max_increase_1080p,
+      "cq": inputs.target_cq_1080p
     },
     "4KUHD": {
       "bitrate": inputs.target_bitrate_4KUHD,
-      "max_increase": 6000,
-      "cq": 31
+      "max_increase": inputs.target_max_increase_4KUHD,
+      "cq": inputs.target_cq_4KUHD
     },
     "Other": {
       "bitrate": inputs.target_bitrate_1080p,
-      "max_increase": 2500,
-      "cq": 31
+      "max_increase": inputs.target_max_increase_1080p,
+      "cq": inputs.target_cq_1080p
     }
   };
 
@@ -431,27 +545,26 @@ function buildVideoConfiguration(inputs, file, logger) {
     if (stream.codec_name === "png") {
       configuration.AddOutputSetting(`-map -0:v:${id}`);
     } else if (stream.codec_name !== "hevc" && stream.codec_name !== "vp9") {  // Check if should Transcode.
-      var bitrateprobe = calculateBitrate(file);
-      var bitratetarget = 0;
-      var bitratemax = 0;
-      var cq = 0;
-      var bitratecheck = 0;
-
       /*  Determine tiered bitrate variables */
-      var tier = tiered[file.video_resolution];
+      const tier = tiered[file.video_resolution];
+      const bitratedesired = tier["bitrate"];
+      const bitratedesiredmax = bitratedesired + tier["max_increase"];
 
-      bitratecheck = parseInt(tier["bitrate"]);
-      if (bitrateprobe !== null && bitrateprobe < bitratecheck) {
-        bitratetarget = parseInt((bitrateprobe * inputs.target_pct_reduction) / 1000);
-      } else {
-        bitratetarget = parseInt(tier["bitrate"] / 1000);
+      const bitrateprobe = calculateBitrate(file) || bitratedesired / inputs.target_pct_reduction;
+      const bitrateexpected = bitrateprobe * inputs.target_pct_reduction;
+      const bitrateexpectedmax = bitrateexpected * (1 + tier["max_increase"] / bitratedesired);
+
+      const bitratetarget = Math.floor(Math.min(bitratedesired, bitrateexpected) / 1000);
+      const bitratemax = Math.floor(Math.min(bitratedesiredmax, bitrateexpectedmax, bitrateprobe) / 1000);
+
+      if (bitrateprobe < bitratedesired && inputs.ignore_low_bitrate_video) {
+        logger.AddError("Low bitrate. Ignoring video stream");
+        return;
       }
-      bitratemax = bitratetarget + tier["max_increase"];
-      cq = tier["cq"];
 
       configuration.RemoveOutputSetting("-c:v copy");
       configuration.AddOutputSetting(
-        `-c:v hevc_nvenc -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
+        `-c:v hevc_nvenc -qmin 0 -cq:v ${tier["cq"]} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
       );
 
       configuration.AddInputSetting(inputSettings[file.video_codec_name]);
@@ -510,7 +623,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     id++;
   }
   // b frames argument
-  response.preset += ` -bf 5`;
+  response.preset += ` -bf ${inputs.bframe}`;
 
   // fix probe size errors
   response.preset += ` -analyzeduration 2147483647 -probesize 2147483647`;
