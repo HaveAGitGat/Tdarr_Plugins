@@ -17,6 +17,31 @@ describe('compareFileSizeRatio Plugin', () => {
       file_size: 100.0,
     } as IFileObject;
 
+    const configVars = {
+      config: {
+        serverIP: '127.0.0.1',
+        serverPort: '8266',
+        apiKey: '',
+        nodeID: '123',
+        nodeName: 'test',
+        serverURL: 'http://localhost:8266',
+        handbrakePath: '/usr/bin/HandBrake',
+        ffmpegPath: '/usr/bin/ffmpeg',
+        mkvpropeditPath: '/usr/bin/mkvpropedit',
+        pathTranslators: [],
+        platform_arch_isdocker: 'linux_x64_false',
+        logLevel: 'info',
+        processPid: 123,
+        priority: 1,
+        cronPluginUpdate: '',
+        nodeType: 'mapped',
+        unmappedNodeCache: '/tmp/unmapped_node_cache',
+        startPaused: false,
+        maxLogSizeMB: 10,
+        pollInterval: 1000,
+      },
+    };
+
     baseArgs = {
       inputs: {
         greaterThan: '40',
@@ -26,6 +51,7 @@ describe('compareFileSizeRatio Plugin', () => {
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       originalLibraryFile: mockOriginalFile,
       jobLog: jest.fn(),
+      configVars,
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
 
     // Set default working file size (50 MB = 50% of original)

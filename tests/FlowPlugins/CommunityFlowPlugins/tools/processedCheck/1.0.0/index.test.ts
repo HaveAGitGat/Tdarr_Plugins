@@ -16,6 +16,30 @@ describe('processedCheck Plugin', () => {
       ...JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       fileNameWithoutExtension: 'SampleVideo_1280x720_1mb',
     };
+    const configVars = {
+      config: {
+        serverIP: '127.0.0.1',
+        serverPort: '8266',
+        apiKey: '',
+        nodeID: '123',
+        nodeName: 'test',
+        serverURL: 'http://localhost:8266',
+        handbrakePath: '/usr/bin/HandBrake',
+        ffmpegPath: '/usr/bin/ffmpeg',
+        mkvpropeditPath: '/usr/bin/mkvpropedit',
+        pathTranslators: [],
+        platform_arch_isdocker: 'linux_x64_false',
+        logLevel: 'info',
+        processPid: 123,
+        priority: 1,
+        cronPluginUpdate: '',
+        nodeType: 'mapped',
+        unmappedNodeCache: '/tmp/unmapped_node_cache',
+        startPaused: false,
+        maxLogSizeMB: 10,
+        pollInterval: 1000,
+      },
+    };
 
     baseArgs = {
       inputs: {
@@ -60,6 +84,7 @@ describe('processedCheck Plugin', () => {
       logFullCliOutput: false,
       logOutcome: jest.fn(),
       updateStat: jest.fn(),
+      configVars,
       deps: {
         fsextra: {},
         parseArgsStringToArgv: jest.fn(),
@@ -72,13 +97,7 @@ describe('processedCheck Plugin', () => {
         ncp: {},
         axios: {},
         crudTransDBN: mockCrudTransDBN,
-        configVars: {
-          config: {
-            serverIP: '127.0.0.1',
-            serverPort: '8265',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
       installClassicPluginDeps: jest.fn(),
     } as IpluginInputArgs;

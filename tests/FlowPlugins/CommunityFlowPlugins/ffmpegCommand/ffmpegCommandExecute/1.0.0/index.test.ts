@@ -22,6 +22,31 @@ describe('ffmpegCommandExecute Plugin', () => {
       runCli: jest.fn().mockResolvedValue({ cliExitCode: 0 }),
     }));
 
+    const configVars = {
+      config: {
+        serverIP: '127.0.0.1',
+        serverPort: '8266',
+        apiKey: '',
+        nodeID: '123',
+        nodeName: 'test',
+        serverURL: 'http://localhost:8266',
+        handbrakePath: '/usr/bin/HandBrake',
+        ffmpegPath: '/usr/bin/ffmpeg',
+        mkvpropeditPath: '/usr/bin/mkvpropedit',
+        pathTranslators: [],
+        platform_arch_isdocker: 'linux_x64_false',
+        logLevel: 'info',
+        processPid: 123,
+        priority: 1,
+        cronPluginUpdate: '',
+        nodeType: 'mapped',
+        unmappedNodeCache: '/tmp/unmapped_node_cache',
+        startPaused: false,
+        maxLogSizeMB: 10,
+        pollInterval: 1000,
+      },
+    };
+
     baseArgs = {
       inputs: {},
       variables: {
@@ -66,6 +91,7 @@ describe('ffmpegCommandExecute Plugin', () => {
       logOutcome: jest.fn(),
       logFullCliOutput: false,
       workDir: '/tmp/work',
+      configVars,
       deps: {
         fsextra: {
           ensureDirSync: jest.fn(),
@@ -88,13 +114,7 @@ describe('ffmpegCommandExecute Plugin', () => {
         ncp: jest.fn(),
         axios: {},
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: '127.0.0.1',
-            serverPort: '8266',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });

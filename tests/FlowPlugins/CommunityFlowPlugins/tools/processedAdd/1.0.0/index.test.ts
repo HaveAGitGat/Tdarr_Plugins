@@ -19,6 +19,31 @@ describe('processedAdd Plugin', () => {
   beforeEach(() => {
     mockCrudTransDBN = jest.fn().mockResolvedValue(undefined);
 
+    const configVars = {
+      config: {
+        serverIP: '127.0.0.1',
+        serverPort: '8266',
+        apiKey: '',
+        nodeID: '123',
+        nodeName: 'test',
+        serverURL: 'http://localhost:8266',
+        handbrakePath: '/usr/bin/HandBrake',
+        ffmpegPath: '/usr/bin/ffmpeg',
+        mkvpropeditPath: '/usr/bin/mkvpropedit',
+        pathTranslators: [],
+        platform_arch_isdocker: 'linux_x64_false',
+        logLevel: 'info',
+        processPid: 123,
+        priority: 1,
+        cronPluginUpdate: '',
+        nodeType: 'mapped',
+        unmappedNodeCache: '/tmp/unmapped_node_cache',
+        startPaused: false,
+        maxLogSizeMB: 10,
+        pollInterval: 1000,
+      },
+    };
+
     baseArgs = {
       inputs: {
         checkType: 'filePath',
@@ -27,6 +52,7 @@ describe('processedAdd Plugin', () => {
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       originalLibraryFile: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
+      configVars,
       deps: {
         fsextra: {},
         parseArgsStringToArgv: {},
@@ -39,13 +65,7 @@ describe('processedAdd Plugin', () => {
         ncp: {},
         axios: {},
         crudTransDBN: mockCrudTransDBN,
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8000',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
