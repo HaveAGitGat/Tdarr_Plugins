@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/processedAdd/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleMP3 = require('../../../../../sampleData/media/sampleMP3_1.json');
@@ -19,6 +20,8 @@ describe('processedAdd Plugin', () => {
   beforeEach(() => {
     mockCrudTransDBN = jest.fn().mockResolvedValue(undefined);
 
+    const configVars = getConfigVars();
+
     baseArgs = {
       inputs: {
         checkType: 'filePath',
@@ -27,6 +30,7 @@ describe('processedAdd Plugin', () => {
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       originalLibraryFile: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
+      configVars,
       deps: {
         fsextra: {},
         parseArgsStringToArgv: {},
@@ -39,13 +43,7 @@ describe('processedAdd Plugin', () => {
         ncp: {},
         axios: {},
         crudTransDBN: mockCrudTransDBN,
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8000',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
