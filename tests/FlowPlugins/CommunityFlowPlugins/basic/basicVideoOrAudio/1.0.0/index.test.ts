@@ -10,7 +10,7 @@ import { details, plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/basic/basicVideoOrAudio/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
-import  getConfigVars  from '../../../../../helpers/configVars';
+import  getConfigVars  from '../../../../configVars';
 
 const sampleH264_1 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleAAC = require('../../../../../sampleData/media/sampleAAC_1.json');

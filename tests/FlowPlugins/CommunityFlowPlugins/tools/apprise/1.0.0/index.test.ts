@@ -3,7 +3,7 @@ import { plugin } from
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { CLI } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
-import getConfigVars from '../../../../../helpers/configVars';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 

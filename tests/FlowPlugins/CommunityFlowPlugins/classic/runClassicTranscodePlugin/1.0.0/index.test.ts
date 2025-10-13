@@ -1,7 +1,7 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/classic/runClassicTranscodePlugin/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
-import getConfigVars from '../../../../../helpers/configVars';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
