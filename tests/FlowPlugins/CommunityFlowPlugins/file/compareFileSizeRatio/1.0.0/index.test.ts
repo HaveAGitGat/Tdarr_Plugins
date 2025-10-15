@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/file/compareFileSizeRatio/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleMP3 = require('../../../../../sampleData/media/sampleMP3_1.json');
@@ -17,6 +18,8 @@ describe('compareFileSizeRatio Plugin', () => {
       file_size: 100.0,
     } as IFileObject;
 
+    const configVars = getConfigVars();
+
     baseArgs = {
       inputs: {
         greaterThan: '40',
@@ -26,6 +29,7 @@ describe('compareFileSizeRatio Plugin', () => {
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       originalLibraryFile: mockOriginalFile,
       jobLog: jest.fn(),
+      configVars,
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
 
     // Set default working file size (50 MB = 50% of original)

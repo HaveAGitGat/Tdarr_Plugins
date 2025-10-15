@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/webRequest/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleAAC = require('../../../../../sampleData/media/sampleAAC_1.json');
 
@@ -49,7 +50,7 @@ describe('webRequest Plugin', () => {
         unrar: jest.fn(),
         sevenBin: jest.fn(),
         nodeDiskInfo: jest.fn(),
-        configVars: {},
+        configVars: getConfigVars(),
       },
     } as unknown as IpluginInputArgs;
   });
