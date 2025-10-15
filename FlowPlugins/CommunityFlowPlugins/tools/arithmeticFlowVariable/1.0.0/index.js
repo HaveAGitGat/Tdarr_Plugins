@@ -12,7 +12,7 @@ var details = function () { return ({
     pType: '',
     requiresVersion: '2.11.01',
     sidebarPosition: 1,
-    icon: '',
+    icon: 'faCalculator',
     inputs: [
         {
             label: 'Variable',
