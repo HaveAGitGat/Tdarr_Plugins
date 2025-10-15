@@ -45,7 +45,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.user.existingVar).toBe('2');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation + 1 to existingVar of value 1',
+        'Applying the operation + 1 to {{{baseArgs.variables.user.existingVar}}} of value 1',
       );
     });
 
@@ -101,7 +101,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.user.counter).toBe('7');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation - 3 to counter of value 10',
+        'Applying the operation - 3 to {{{args.variables.user.counter}}} of value 10',
       );
     });
 
@@ -157,7 +157,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.user.multiplier).toBe('15');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation * 3 to multiplier of value 5',
+        'Applying the operation * 3 to {{{args.variables.user.multiplier}}} of value 5',
       );
     });
 
@@ -230,7 +230,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.user.divider).toBe('5');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation / 2 to divider of value 10',
+        'Applying the operation / 2 to {{{args.variables.user.divider}}} of value 10',
       );
     });
 
@@ -326,7 +326,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       baseArgs.thisPlugin.inputsDB.operation = '+';
       baseArgs.thisPlugin.inputsDB.quantity = '5';
 
-      expect(() => plugin(baseArgs)).toThrow('Variable "testVar" is not a valid number');
+      expect(() => plugin(baseArgs)).toThrow('Variable "{{{args.variables.user.testVar}}}" is not a valid number');
     });
 
     it('should throw error for invalid operation', () => {
@@ -391,7 +391,7 @@ describe('arithmeticFlowVariable Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.user.customVar).toBe('150');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Applying the operation + 50 to customVar of value 100',
+        'Applying the operation + 50 to {{{args.variables.user.customVar}}} of value 100',
       );
     });
   });

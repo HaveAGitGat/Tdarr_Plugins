@@ -97,7 +97,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const variablePath = variableMatch[1]; // e.g., "variables.user.existingVar"
   const pathParts = variablePath.split('.');
-  const variableName = pathParts[pathParts.length - 1]; // Last part for display purposes
 
   const variable = String(args.inputs.variable).trim();
   const operation = String(args.inputs.operation).trim();
@@ -111,7 +110,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   if (Number.isNaN(value)) {
-    throw new Error(`Variable "${variableName}" is not a valid number`);
+    throw new Error(`Variable "${variableTemplate}" is not a valid number`);
   }
 
   // Check for division by zero
@@ -120,7 +119,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   args.jobLog(
-    `Applying the operation ${operation} ${quantity} to ${variableName} of value ${value}`,
+    `Applying the operation ${operation} ${quantity} to ${variableTemplate} of value ${value}`,
   );
 
   // Helper to set value at dynamic path
