@@ -3,6 +3,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/input/inputFile/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -43,12 +44,7 @@ describe('Input File Plugin', () => {
         cache: '/path/to/cache',
       },
       deps: {
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8266',
-          },
-        },
+        configVars: getConfigVars(),
         axios: mockAxios,
         fsextra: {},
         parseArgsStringToArgv: jest.fn(),
@@ -148,8 +144,10 @@ describe('Input File Plugin', () => {
       expect(mockJobLog).toHaveBeenCalledWith('Node paused');
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'post',
-        url: 'http://localhost:8266/api/v2/update-node',
-        headers: {},
+        url: 'http://127.0.0.1:8266/api/v2/update-node',
+        headers: {
+          'x-api-key': '',
+        },
         data: {
           data: {
             nodeID: 'test-node-id',

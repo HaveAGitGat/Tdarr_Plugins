@@ -2,6 +2,7 @@ import { promises as fsp } from 'fs';
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/clearCache/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import getConfigVars from '../../../../configVars';
 
 const sampleAAC = require('../../../../../sampleData/media/sampleAAC_1.json');
 
@@ -57,12 +58,7 @@ describe('clearCache Plugin', () => {
         ncp: {},
         axios: {},
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8265',
-          },
-        },
+        configVars: getConfigVars(),
       },
     } as unknown as IpluginInputArgs;
 

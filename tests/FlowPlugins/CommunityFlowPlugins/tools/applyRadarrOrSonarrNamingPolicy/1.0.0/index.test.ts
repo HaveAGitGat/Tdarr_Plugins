@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/applyRadarrOrSonarrNamingPolicy/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -45,7 +46,7 @@ describe('applyRadarrOrSonarrNamingPolicy Plugin', () => {
         path: {},
         os: {},
         nodeModules: {},
-        configVars: {},
+        configVars: getConfigVars(),
       },
     } as unknown as IpluginInputArgs;
   });

@@ -84,9 +84,10 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, orignalFolder, _a, fileAccessChecks, pauseNodeIfAccessChecksFail, nodeID, _b, serverIP, serverPort, url, pauseNode, checkReadWrite;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+    var lib, orignalFolder, _a, fileAccessChecks, pauseNodeIfAccessChecksFail, nodeID, _b, serverIP, serverPort, apiKey, url, pauseNode, checkReadWrite, isNotUnmappedNode;
+    var _c, _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -94,7 +95,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 orignalFolder = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
                 _a = args.inputs, fileAccessChecks = _a.fileAccessChecks, pauseNodeIfAccessChecksFail = _a.pauseNodeIfAccessChecksFail;
                 nodeID = process.argv[8];
-                _b = args.deps.configVars.config, serverIP = _b.serverIP, serverPort = _b.serverPort;
+                _b = args.deps.configVars.config, serverIP = _b.serverIP, serverPort = _b.serverPort, apiKey = _b.apiKey;
                 url = "http://".concat(serverIP, ":").concat(serverPort, "/api/v2/update-node");
                 pauseNode = function () { return __awaiter(void 0, void 0, void 0, function () {
                     var requestConfig;
@@ -105,7 +106,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 requestConfig = {
                                     method: 'post',
                                     url: url,
-                                    headers: {},
+                                    headers: {
+                                        'x-api-key': apiKey,
+                                    },
                                     data: {
                                         data: {
                                             nodeID: nodeID,
@@ -129,9 +132,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         switch (_a.label) {
                             case 0:
                                 _a.trys.push([0, 2, , 5]);
+                                args.jobLog("Checking read access for: \"".concat(location, "\""));
                                 return [4 /*yield*/, fs_1.promises.access(location, fs_1.promises.constants.R_OK)];
                             case 1:
                                 _a.sent();
+                                args.jobLog('Read access OK');
                                 return [3 /*break*/, 5];
                             case 2:
                                 err_1 = _a.sent();
@@ -161,18 +166,19 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         }
                     });
                 }); };
-                if (!fileAccessChecks) return [3 /*break*/, 3];
+                isNotUnmappedNode = ((_d = (_c = args === null || args === void 0 ? void 0 : args.configVars) === null || _c === void 0 ? void 0 : _c.config) === null || _d === void 0 ? void 0 : _d.nodeType) !== 'unmapped';
+                if (!(fileAccessChecks && isNotUnmappedNode)) return [3 /*break*/, 3];
                 args.jobLog('Checking file access');
                 return [4 /*yield*/, checkReadWrite(orignalFolder)];
             case 1:
-                _c.sent();
+                _e.sent();
                 return [4 /*yield*/, checkReadWrite(args.librarySettings.cache)];
             case 2:
-                _c.sent();
+                _e.sent();
                 return [3 /*break*/, 4];
             case 3:
                 args.jobLog('Skipping file access checks');
-                _c.label = 4;
+                _e.label = 4;
             case 4: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: 1,
