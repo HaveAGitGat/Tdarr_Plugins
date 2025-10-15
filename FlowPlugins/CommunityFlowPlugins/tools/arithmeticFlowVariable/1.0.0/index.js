@@ -69,7 +69,6 @@ var plugin = function (args) {
     }
     var variablePath = variableMatch[1]; // e.g., "variables.user.existingVar"
     var pathParts = variablePath.split('.');
-    var variableName = pathParts[pathParts.length - 1]; // Last part for display purposes
     var variable = String(args.inputs.variable).trim();
     var operation = String(args.inputs.operation).trim();
     var quantity = parseFloat(String(args.inputs.quantity).trim());
@@ -79,13 +78,13 @@ var plugin = function (args) {
         throw new Error("Quantity \"".concat(args.inputs.quantity, "\" is not a valid number"));
     }
     if (Number.isNaN(value)) {
-        throw new Error("Variable \"".concat(variableName, "\" is not a valid number"));
+        throw new Error("Variable \"".concat(variableTemplate, "\" is not a valid number"));
     }
     // Check for division by zero
     if (operation === '/' && quantity === 0) {
         throw new Error('Division by zero is not allowed');
     }
-    args.jobLog("Applying the operation ".concat(operation, " ").concat(quantity, " to ").concat(variableName, " of value ").concat(value));
+    args.jobLog("Applying the operation ".concat(operation, " ").concat(quantity, " to ").concat(variableTemplate, " of value ").concat(value));
     // Helper to set value at dynamic path
     var setValueAtPath = function (obj, path, val) {
         var current = obj;
