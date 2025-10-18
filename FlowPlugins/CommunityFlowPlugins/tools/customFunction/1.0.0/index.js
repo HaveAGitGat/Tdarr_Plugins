@@ -36,9 +36,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var fs_1 = require("fs");
+var path_1 = __importDefault(require("path"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
@@ -90,7 +94,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, code, outputFilePath, func, response;
+    var lib, code, outputFilePath, outputFileAbsolutePath, func, response;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -99,10 +103,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 code = String(args.inputs.code);
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/script.js");
-                return [4 /*yield*/, fs_1.promises.writeFile(outputFilePath, code)];
+                outputFileAbsolutePath = path_1.default.resolve(outputFilePath);
+                return [4 /*yield*/, fs_1.promises.writeFile(outputFileAbsolutePath, code)];
             case 1:
                 _a.sent();
-                func = require(outputFilePath);
+                func = require(outputFileAbsolutePath);
                 return [4 /*yield*/, func(args)];
             case 2:
                 response = _a.sent();
