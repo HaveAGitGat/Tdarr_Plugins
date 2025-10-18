@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandExecute/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -21,6 +22,8 @@ describe('ffmpegCommandExecute Plugin', () => {
     CLI.mockImplementation(() => ({
       runCli: jest.fn().mockResolvedValue({ cliExitCode: 0 }),
     }));
+
+    const configVars = getConfigVars();
 
     baseArgs = {
       inputs: {},
@@ -66,6 +69,7 @@ describe('ffmpegCommandExecute Plugin', () => {
       logOutcome: jest.fn(),
       logFullCliOutput: false,
       workDir: '/tmp/work',
+      configVars,
       deps: {
         fsextra: {
           ensureDirSync: jest.fn(),
@@ -88,13 +92,7 @@ describe('ffmpegCommandExecute Plugin', () => {
         ncp: jest.fn(),
         axios: {},
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: '127.0.0.1',
-            serverPort: '8266',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });

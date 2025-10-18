@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/processedCheck/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -16,6 +17,7 @@ describe('processedCheck Plugin', () => {
       ...JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       fileNameWithoutExtension: 'SampleVideo_1280x720_1mb',
     };
+    const configVars = getConfigVars();
 
     baseArgs = {
       inputs: {
@@ -60,6 +62,7 @@ describe('processedCheck Plugin', () => {
       logFullCliOutput: false,
       logOutcome: jest.fn(),
       updateStat: jest.fn(),
+      configVars,
       deps: {
         fsextra: {},
         parseArgsStringToArgv: jest.fn(),
@@ -72,15 +75,10 @@ describe('processedCheck Plugin', () => {
         ncp: {},
         axios: {},
         crudTransDBN: mockCrudTransDBN,
-        configVars: {
-          config: {
-            serverIP: '127.0.0.1',
-            serverPort: '8265',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
       installClassicPluginDeps: jest.fn(),
+      thisPlugin: {},
     } as IpluginInputArgs;
   });
 

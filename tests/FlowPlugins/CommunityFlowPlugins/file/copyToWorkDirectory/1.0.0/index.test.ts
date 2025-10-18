@@ -2,6 +2,7 @@ import { promises as fsp } from 'fs';
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/file/copyToWorkDirectory/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -23,6 +24,8 @@ describe('copyToWorkDirectory Plugin', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    const configVars = getConfigVars();
 
     baseArgs = {
       inputs: {},
@@ -53,6 +56,7 @@ describe('copyToWorkDirectory Plugin', () => {
       logFullCliOutput: false,
       logOutcome: jest.fn(),
       updateStat: jest.fn(),
+      configVars,
       deps: {
         fsextra: {
           ensureDirSync: mockEnsureDirSync,
@@ -71,15 +75,10 @@ describe('copyToWorkDirectory Plugin', () => {
         ncp: jest.fn(),
         axios: jest.fn(),
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8265',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
       installClassicPluginDeps: jest.fn(),
+      thisPlugin: {},
     } as IpluginInputArgs;
 
     mockCopyFile.mockResolvedValue(undefined);

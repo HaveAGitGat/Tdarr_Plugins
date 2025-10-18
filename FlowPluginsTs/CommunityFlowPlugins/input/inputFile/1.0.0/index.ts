@@ -88,7 +88,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const checkReadWrite = async (location: string) => {
     try {
+      args.jobLog(`Checking read access for: "${location}"`);
       await fsp.access(location, fsp.constants.R_OK);
+      args.jobLog('Read access OK');
     } catch (err) {
       args.jobLog(JSON.stringify(err));
       if (pauseNodeIfAccessChecksFail) {
@@ -109,7 +111,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     }
   };
 
-  if (fileAccessChecks) {
+  const isNotUnmappedNode = args?.configVars?.config?.nodeType !== 'unmapped';
+
+  if (fileAccessChecks && isNotUnmappedNode) {
     args.jobLog('Checking file access');
     await checkReadWrite(orignalFolder);
     await checkReadWrite(args.librarySettings.cache);

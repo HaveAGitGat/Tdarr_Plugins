@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/onFlowError/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -9,6 +10,8 @@ describe('onFlowError Plugin', () => {
   let baseArgs: IpluginInputArgs;
 
   beforeEach(() => {
+    const configVars = getConfigVars();
+
     baseArgs = {
       inputs: {},
       variables: {
@@ -49,6 +52,7 @@ describe('onFlowError Plugin', () => {
       updateWorker: jest.fn(),
       logFullCliOutput: false,
       logOutcome: jest.fn(),
+      configVars,
       deps: {
         fsextra: {},
         parseArgsStringToArgv: {},
@@ -61,13 +65,7 @@ describe('onFlowError Plugin', () => {
         ncp: {},
         axios: {},
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: '127.0.0.1',
-            serverPort: '8265',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
       installClassicPluginDeps: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;

@@ -2,6 +2,7 @@ import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/pauseUnpauseAllNodes/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -15,6 +16,8 @@ describe('Pause/Unpause All Nodes Plugin', () => {
     jest.clearAllMocks();
 
     mockCrudTransDBN = jest.fn().mockResolvedValue({});
+
+    const configVars = getConfigVars();
 
     baseArgs = {
       inputs: {
@@ -36,6 +39,7 @@ describe('Pause/Unpause All Nodes Plugin', () => {
       },
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)) as IFileObject,
       jobLog: jest.fn(),
+      configVars,
       deps: {
         parseArgsStringToArgv: jest.fn(),
         fsextra: jest.fn(),
@@ -48,13 +52,7 @@ describe('Pause/Unpause All Nodes Plugin', () => {
         ncp: jest.fn(),
         axios: jest.fn(),
         crudTransDBN: mockCrudTransDBN,
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8265',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });

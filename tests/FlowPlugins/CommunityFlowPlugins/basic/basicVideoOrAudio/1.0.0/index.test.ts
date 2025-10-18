@@ -10,6 +10,7 @@ import { details, plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/basic/basicVideoOrAudio/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import  getConfigVars  from '../../../../configVars';
 
 const sampleH264_1 = require('../../../../../sampleData/media/sampleH264_1.json');
 const sampleAAC = require('../../../../../sampleData/media/sampleAAC_1.json');
@@ -19,6 +20,8 @@ describe('basicVideoOrAudio Plugin', () => {
   let baseArgs: IpluginInputArgs;
 
   beforeEach(() => {
+    const configVars = getConfigVars();
+
     baseArgs = {
       inputs: {
         basicSettingsType: 'video',
@@ -74,6 +77,7 @@ describe('basicVideoOrAudio Plugin', () => {
       lastSuccessfulRun: null,
       updateStat: jest.fn(),
       installClassicPluginDeps: jest.fn(),
+      configVars,
       deps: {
         fsextra: {
           ensureDirSync: jest.fn(),
@@ -96,14 +100,9 @@ describe('basicVideoOrAudio Plugin', () => {
         ncp: jest.fn(),
         axios: {},
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: '127.0.0.1',
-            serverPort: '8266',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
+      thisPlugin: {}
     } as IpluginInputArgs;
   });
 

@@ -3,12 +3,15 @@ import { plugin } from
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { CLI } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
 // Mock the CLI class
 jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
 const MockedCLI = CLI as jest.MockedClass<typeof CLI>;
+
+const configVars = getConfigVars();
 
 describe('Apprise Plugin', () => {
   let baseArgs: IpluginInputArgs;
@@ -49,6 +52,7 @@ describe('Apprise Plugin', () => {
       jobLog: jest.fn(),
       logFullCliOutput: false,
       updateWorker: jest.fn(),
+      configVars,
       deps: {
         parseArgsStringToArgv: jest.fn().mockImplementation((command) => {
           // Simple implementation that handles quoted strings better
@@ -84,13 +88,7 @@ describe('Apprise Plugin', () => {
         ncp: jest.fn(),
         axios: jest.fn(),
         crudTransDBN: jest.fn(),
-        configVars: {
-          config: {
-            serverIP: 'localhost',
-            serverPort: '8265',
-            apiKey: '',
-          },
-        },
+        configVars,
       },
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });
