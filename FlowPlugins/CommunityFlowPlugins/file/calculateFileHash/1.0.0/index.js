@@ -37,8 +37,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var fs_1 = require("fs");
-var crypto_1 = require("crypto");
+var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Calculate File Hash',
@@ -51,7 +50,7 @@ var details = function () { return ({
     pType: '',
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
-    icon: 'faArrowRight',
+    icon: 'faHashtag',
     inputs: [
         {
             label: 'Algorithm',
@@ -78,7 +77,7 @@ var details = function () { return ({
             label: 'Variable',
             name: 'variable',
             type: 'string',
-            defaultValue: '',
+            defaultValue: 'fileHash',
             inputUI: {
                 type: 'text',
             },
@@ -93,17 +92,6 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var getFileHash = function (filePath, algorithm, encoding) {
-    if (algorithm === void 0) { algorithm = 'sha256'; }
-    if (encoding === void 0) { encoding = 'hex'; }
-    return new Promise(function (resolve, reject) {
-        var hash = (0, crypto_1.createHash)(algorithm);
-        var stream = (0, fs_1.createReadStream)(filePath);
-        stream.on('data', function (chunk) { return hash.update(chunk); });
-        stream.on('end', function () { return resolve(hash.digest(encoding)); });
-        stream.on('error', function (err) { return reject(err); });
-    });
-};
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
     var lib, algorithm, filePath, variable, hash, err_1, errorMessage;
@@ -120,7 +108,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a.label = 1;
             case 1:
                 _a.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, getFileHash(filePath, algorithm)];
+                return [4 /*yield*/, (0, fileUtils_1.hashFile)(filePath, algorithm)];
             case 2:
                 hash = _a.sent();
                 if (!args.variables.user) {

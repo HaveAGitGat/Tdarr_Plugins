@@ -18,7 +18,7 @@ const details = (): IpluginDetails => ({
   pType: '',
   requiresVersion: '2.11.01',
   sidebarPosition: -1,
-  icon: 'faArrowRight',
+  icon: 'faHashtag',
   inputs: [
     {
       label: 'Algorithm',
@@ -55,7 +55,7 @@ const details = (): IpluginDetails => ({
       label: 'Variable',
       name: 'variable',
       type: 'string',
-      defaultValue: '',
+      defaultValue: 'fileHash',
       inputUI: {
         type: 'text',
       },
