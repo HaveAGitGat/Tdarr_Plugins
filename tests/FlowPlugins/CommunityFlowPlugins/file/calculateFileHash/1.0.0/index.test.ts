@@ -132,7 +132,7 @@ describe('calculateFileHash Plugin', () => {
       baseArgs.inputs.variable = 'file_hash';
 
       await expect(plugin(baseArgs)).rejects.toThrow(
-        "Error calculating file hash: ENOENT: no such file or directory, open 'does-not-exist'",
+        "Error calculating file hash: Error reading file for hashing: ENOENT: no such file or directory, open 'does-not-exist'",
       );
     });
   });

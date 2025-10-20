@@ -1,5 +1,4 @@
-import { createReadStream } from 'fs';
-import { BinaryLike, BinaryToTextEncoding, createHash } from 'crypto';
+import { hashFile } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -77,18 +76,6 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-const getFileHash = (
-  filePath: string,
-  algorithm = 'sha256',
-  encoding: BinaryToTextEncoding = 'hex',
-): Promise<string> => new Promise((resolve, reject) => {
-  const hash = createHash(algorithm);
-  const stream = createReadStream(filePath);
-  stream.on('data', (chunk) => hash.update(chunk as BinaryLike));
-  stream.on('end', () => resolve(hash.digest(encoding)));
-  stream.on('error', (err) => reject(err));
-});
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
@@ -104,7 +91,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   );
 
   try {
-    const hash = await getFileHash(filePath, algorithm);
+    const hash = await hashFile(filePath, algorithm);
 
     if (!args.variables.user) {
       // eslint-disable-next-line no-param-reassign
