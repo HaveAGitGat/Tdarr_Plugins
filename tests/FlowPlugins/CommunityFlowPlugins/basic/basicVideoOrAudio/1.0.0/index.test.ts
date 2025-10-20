@@ -102,6 +102,7 @@ describe('basicVideoOrAudio Plugin', () => {
         crudTransDBN: jest.fn(),
         configVars,
       },
+      thisPlugin: {}
     } as IpluginInputArgs;
   });
 
