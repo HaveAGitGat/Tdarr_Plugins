@@ -44,6 +44,7 @@ exports.plugin = exports.details = void 0;
 var fs_1 = require("fs");
 var path_1 = __importDefault(require("path"));
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var normJoinPath_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/normJoinPath"));
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Custom JS Function',
@@ -103,7 +104,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 code = String(args.inputs.code);
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/script.js");
-                outputFileAbsolutePath = path_1.default.resolve(outputFilePath);
+                outputFileAbsolutePath = (0, normJoinPath_1.default)({
+                    upath: args.deps.upath,
+                    paths: [path_1.default.resolve(outputFilePath)],
+                });
                 return [4 /*yield*/, fs_1.promises.writeFile(outputFileAbsolutePath, code)];
             case 1:
                 _a.sent();

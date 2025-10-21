@@ -15,6 +15,12 @@ jest.mock('fs', () => ({
   realpathSync: jest.fn((path: string) => path),
 }));
 
+// Mock path.resolve to prevent Windows drive letter addition
+jest.mock('path', () => ({
+  ...jest.requireActual('path'),
+  resolve: jest.fn((p: string) => p),
+}));
+
 // Mock getPluginWorkDir
 jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => ({
   getPluginWorkDir: jest.fn(() => '/tmp/test-workdir/123'),
@@ -68,6 +74,10 @@ describe('Custom Function Plugin', () => {
       },
       workDir: '/tmp/test-workdir',
       deps: {
+        upath: {
+          join: (...paths: string[]) => paths.join('/').replace(/\\/g, '/'),
+          joinSafe: (...paths: string[]) => paths.join('/').replace(/\\/g, '/'),
+        },
         fsextra: {
           ensureDirSync: jest.fn(),
         },

@@ -8,6 +8,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import normJoinPath from '../../../../FlowHelpers/1.0.0/normJoinPath';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -94,7 +95,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const code = String(args.inputs.code);
 
   const outputFilePath = `${getPluginWorkDir(args)}/script.js`;
-  const outputFileAbsolutePath = path.resolve(outputFilePath);
+  const outputFileAbsolutePath = normJoinPath({
+    upath: args.deps.upath,
+    paths: [path.resolve(outputFilePath)],
+  });
+
   await fsp.writeFile(outputFileAbsolutePath, code);
   // eslint-disable-next-line import/no-dynamic-require
   const func = require(outputFileAbsolutePath);
