@@ -1,6 +1,7 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/classic/runClassicTranscodePlugin/2.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
@@ -47,7 +48,7 @@ describe('runClassicTranscodePlugin 2.0.0', () => {
         requireFromString: jest.fn(),
         axios: {},
         os: {},
-        configVars: {},
+        configVars: getConfigVars(),
       },
       ffmpegPath: '/usr/bin/ffmpeg',
       handbrakePath: '/usr/bin/handbrake',

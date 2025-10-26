@@ -172,7 +172,7 @@ export const hashFile = (filePath: string, algorithm = 'sha256'): Promise<string
     const stream = fs.createReadStream(filePath);
 
     stream.on('data', (data) => {
-      hash.update(data);
+      hash.update(data as string | NodeJS.ArrayBufferView);
     });
 
     stream.on('end', () => {
