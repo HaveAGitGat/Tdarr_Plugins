@@ -215,6 +215,9 @@ const details = () => ({
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nIf you are using a "-vf" cmd, please put it at the end to avoid issues!
       \\nExample:\\n
+      -map -0:t -dn
+      \\n Above will remove attachment streams & data streams. While not default this is highly suggested!
+      \\nExample:\\n
       -async_depth 6 -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 
       -trellis 1 -refs 4 -g 120
       \\n Above increases async, enables look ahead, extended bitrate control, b-frames, trellis & refined 
@@ -998,7 +1001,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     case 'darwin':
       // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -map -0:t -dn -max_muxing_queue_size 1024 
+        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 1024 
         ${extraArguments}`;
       response.infoLog += '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
         + 'cmds set in extra_qsv_options will be IGNORED!\n';
@@ -1007,7 +1010,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Normal behavior
       response.preset += ` ${bitrateSettings} `
         + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} `
-        + `-c:a copy -c:s copy -map -0:t -dn -max_muxing_queue_size 1024 ${extraArguments}`;
+        + `-c:a copy -c:s copy -max_muxing_queue_size 1024 ${extraArguments}`;
   }
 
   response.processFile = true;
