@@ -105,11 +105,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       for (let i = 0; i < valuesToRemove.length; i += 1) {
         const val = valuesToRemove[i].toLowerCase();
         const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
-        if (condition === 'includes' && prop.includes(val)) {
+        if (condition === 'includes' && prop === val) {
           args.jobLog(`${prefix} includes ${val}\n`);
           // eslint-disable-next-line no-param-reassign
           stream.removed = true;
-        } else if (condition === 'not_includes' && !prop.includes(val)) {
+        } else if (condition === 'not_includes' && prop !== val) {
           args.jobLog(`${prefix} not_includes ${val}\n`);
           // eslint-disable-next-line no-param-reassign
           stream.removed = true;
