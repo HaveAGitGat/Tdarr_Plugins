@@ -455,7 +455,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // FILE VIDEO BITRATE & DURATION
+  // #region Video bitrate & duration
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     // Check if stream is a video.
@@ -508,7 +508,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // CATCH BITRATE FAILURE OR SUCCESS
+  // #region Catch Bitrate failure
   if (Number.isNaN(videoBR) || videoBR <= 0) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
@@ -526,7 +526,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     currentBitrate = Math.round(videoBR);
     response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps.\n`;
   }
-
   // Get overall bitrate for use with HEVC reprocessing
   overallBitRate = Math.round(file.file_size / (duration * 0.0075));
   // Default will halve current bitrate for Target bitrate
@@ -610,6 +609,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Container Checks
   // It's possible to remux or flat out convert from mp4 to mkv so we need to conform to standards
   // So check streams and add any extra parameters required to make file conform with output format.
   // i.e drop mov_text for mkv files and drop pgs_subtitles for mp4
@@ -649,6 +649,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Video Stream
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     // Check if stream is a video.
@@ -674,7 +675,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           hdrEnabled = true;
         }
 
-        // VALIDATE HDR - Ignore Dolby vision & badly formatted files
+        // #region Validate HDR
+        // Ignore Dolby vision & badly formatted files
         if (hdrEnabled !== true) {
           // Had at least one case where a file contained no evident HDR data but was marked as HDR content
           // meaning transcode OR plex would butcher the file
@@ -715,6 +717,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           }
         }
 
+        // #region Container Remux
         // Check if codec of stream is HEVC, Vp9 or AV1
         // AND check if file.container does NOT match inputs.container. If so remux file.
         if ((file.ffProbeData.streams[i].codec_name === 'hevc'
@@ -726,6 +729,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           return response;
         }
 
+        // #region HEVC/AV1 reprocessing
         // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
         if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
           || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
@@ -803,6 +807,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Start ffmpeg flags
   // Specify the output format
   switch (inputs.container) {
     case 'mkv':
@@ -819,6 +824,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     swDecode = true;
   }
 
+  // #region HW Decode check
   // Some video codecs don't support HW decode so mark these
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   switch (file.video_codec_name) {
@@ -843,6 +849,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.infoLog += `Input file is ${file.video_codec_name}. Hardware Decode not supported.\n`;
   }
 
+  // #region 10-bit flags
   // Are we encoding to 10 bit? If so enable correct profile & pixel format.
   if (os.platform() !== 'darwin') {
     switch (inputs.encoder) {
@@ -867,13 +874,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.infoLog += `10 bit encode enabled. Setting ${videoProfile} Profile & 10 bit pixel format\n`;
     } else if (swDecode === true) { // Just SW decode
       extraArguments += '-pix_fmt p010le ';
-    } else if (main10 === true) { // Pixel formate method when using HW decode - Use p010le
+    } else if (main10 === true) { // Pixel format method when using HW decode - Use p010le
       if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
         extraArguments += `-profile:v ${videoProfile}`;
         // eslint-disable-next-line no-param-reassign
         inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
       } else {
-        extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=p010le`;
+        extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=p010le `;
       }
       response.infoLog += `10 bit encode enabled. Setting ${videoProfile} `
         + 'Profile & 10 bit pixel format\n';
@@ -901,11 +908,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     + `Minimum = ${minimumBitrate}k\n`
     + `Maximum = ${maximumBitrate}k\n`;
 
-  // START PRESET
-  // -fflags +genpts should regenerate timestamps if they end up missing...
-  response.preset = '-fflags +genpts ';
+  // #region Start CMD Preset
+  // -fflags +genpts should regenerate timestamps if they end up missing.
+  response.preset = ' -fflags +genpts ';
 
-  // HW ACCEL FLAGS
+  // #region HW Accel Flags
   // Account for different OS
   if (swDecode !== true) {
     // Only enable hw decode for accepted formats
@@ -926,7 +933,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // DECODE FLAGS
+  // #region Decode Flags
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   if (swDecode !== true && os.platform() !== 'darwin') {
     switch (file.video_codec_name) {
@@ -953,14 +960,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.preset += '-c:v av1_qsv';
         break;
       default:
-        // Use incoming format for software decode
+        // Use incoming format for anything else
         response.preset += `-c:v ${file.video_codec_name}`;
     }
-  } else if (swDecode === true) {
-    response.preset += `-c:v ${file.video_codec_name}`;
+  } else if (swDecode === true && os.platform() !== 'darwin') {
+    switch (file.video_codec_name) {
+      case 'av1':
+        response.preset += '-c:v libdav1d'; // AV1 must specify unique sw decoder
+        break;
+      default:
+        // Use incoming format for software decode (Should work)
+        response.preset += `-c:v ${file.video_codec_name}`;
+    }
   }
 
-  // ENCODE FLAGS
+  // #region Encode flags
   response.preset += '<io> -map 0 -c:v ';
 
   // Account for different OS setup for QSV HEVC encode.
@@ -979,7 +993,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.preset += `${inputs.encoder}`; // Default
   }
 
-  // Add the rest of the ffmpeg command
+  // #region Ffmpeg cmd
   switch (os.platform()) {
     case 'darwin':
       // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
