@@ -876,7 +876,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       extraArguments += '-pix_fmt p010le ';
     } else if (main10 === true) { // Pixel format method when using HW decode - Use p010le
       if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
-        extraArguments += `-profile:v ${videoProfile}`;
+        extraArguments += `-profile:v ${videoProfile} `;
         // eslint-disable-next-line no-param-reassign
         inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
       } else {
@@ -885,11 +885,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.infoLog += `10 bit encode enabled. Setting ${videoProfile} `
         + 'Profile & 10 bit pixel format\n';
     } else if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) { // NOT main 10 so  use NV12
-      extraArguments += `-profile:v ${videoProfile}`;
+      extraArguments += `-profile:v ${videoProfile} `;
       // eslint-disable-next-line no-param-reassign
       inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
     } else {
-      extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=nv12`;
+      extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=nv12 `;
     }
   } else {
     // Mac - Video toolbox profile & pixel format
@@ -910,7 +910,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // #region Start CMD Preset
   // -fflags +genpts should regenerate timestamps if they end up missing.
-  response.preset = ' -fflags +genpts ';
+  response.preset = '-fflags +genpts ';
 
   // #region HW Accel Flags
   // Account for different OS
