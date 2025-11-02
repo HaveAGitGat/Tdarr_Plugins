@@ -75,7 +75,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: "\n      \nSpecify whether to keep the relative path\n\nFor example:\n      \nSource folder:\nC:/input/\n\nSource file:\nC:/input/test1/test2/qsv_h264.mkv\n\nCopy to Directory Output Directory\nC:/output/\n\nKeep Relative Path disabled:\nC:/output/qsv_h264.mkv\n\nKeep Relative Path enabled:\nC:/output/test1/test2/qsv_h264.mkv\n      \n      ",
+            tooltip: "\n      \nSpecify whether to keep the relative path.\n\nFor example:\n\n\\n Source folder:\n\\n C:/input/\n\n\\n Source file:\n\\n C:/input/test1/test2/qsv_h264.mkv\n\n\\n Copy to Directory Output Directory\n\\n C:/output/\n\n\\n Keep Relative Path disabled:\n\\n C:/output/qsv_h264.mkv\n\n\\n Keep Relative Path enabled:\n\\n C:/output/test1/test2/qsv_h264.mkv\n      \n      ",
         },
         {
             label: 'Make Working File',

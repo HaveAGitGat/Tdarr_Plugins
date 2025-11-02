@@ -44,24 +44,24 @@ const details = ():IpluginDetails => ({
       },
       tooltip: `
       
-Specify whether to keep the relative path
+Specify whether to keep the relative path.
 
 For example:
-      
-Source folder:
-C:/input/
 
-Source file:
-C:/input/test1/test2/qsv_h264.mkv
+\\n Source folder:
+\\n C:/input/
 
-Move to Directory Output Directory
-C:/output/
+\\n Source file:
+\\n C:/input/test1/test2/qsv_h264.mkv
 
-Keep Relative Path disabled:
-C:/output/qsv_h264.mkv
+\\n Move to Directory Output Directory
+\\n C:/output/
 
-Keep Relative Path enabled:
-C:/output/test1/test2/qsv_h264.mkv
+\\n Keep Relative Path disabled:
+\\n C:/output/qsv_h264.mkv
+
+\\n Keep Relative Path enabled:
+\\n C:/output/test1/test2/qsv_h264.mkv
       
       `,
     },
