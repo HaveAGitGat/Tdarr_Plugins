@@ -144,6 +144,29 @@ describe('ffmpegCommandStart Plugin', () => {
         mapArgs: ['-map', '0:2'],
       });
     });
+
+    it('should treat attached picture streams as attachments', () => {
+      const withAttachment = JSON.parse(JSON.stringify(sampleH264)) as IFileObject;
+      if (withAttachment.ffProbeData.streams) {
+        withAttachment.ffProbeData.streams.push({
+          index: 2,
+          codec_name: 'mjpeg',
+          codec_type: 'video',
+          disposition: {
+            attached_pic: 1,
+          },
+        });
+      }
+
+      baseArgs.inputFileObj = withAttachment;
+
+      const result = plugin(baseArgs);
+      const attachmentStream = result.variables.ffmpegCommand.streams.find((stream) => stream.index === 2);
+
+      expect(attachmentStream).toBeDefined();
+      expect(attachmentStream?.codec_type).toBe('attachment');
+      expect(attachmentStream?.removed).toBe(false);
+    });
   });
 
   describe('Container Detection', () => {
