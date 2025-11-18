@@ -41,6 +41,9 @@ var plugin = function (args) {
             if (stream.outputArgs.some(function (row) { return row.includes('qsv'); }) && os_1.default.platform() !== 'win32') {
                 stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
             }
+            else if (stream.outputArgs.some(function (row) { return row.includes('libsvtav1'); })) {
+                stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');
+            }
             else {
                 stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');
             }
