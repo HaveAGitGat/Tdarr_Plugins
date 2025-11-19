@@ -55,10 +55,17 @@ var plugin = function (args) {
     var ffmpegCommand = {
         init: true,
         inputFiles: [],
-        streams: streams.map(function (stream) { return (__assign(__assign({}, stream), { removed: false, mapArgs: [
-                '-map',
-                "0:".concat(stream.index),
-            ], inputArgs: [], outputArgs: [] })); }),
+        streams: streams.map(function (stream) {
+            var _a;
+            var normalizedStream = __assign({}, stream);
+            if (Number((_a = stream === null || stream === void 0 ? void 0 : stream.disposition) === null || _a === void 0 ? void 0 : _a.attached_pic) === 1) {
+                normalizedStream.codec_type = 'attachment';
+            }
+            return __assign(__assign({}, normalizedStream), { removed: false, mapArgs: [
+                    '-map',
+                    "0:".concat(stream.index),
+                ], inputArgs: [], outputArgs: [] });
+        }),
         container: container,
         hardwareDecoding: false,
         shouldProcess: false,

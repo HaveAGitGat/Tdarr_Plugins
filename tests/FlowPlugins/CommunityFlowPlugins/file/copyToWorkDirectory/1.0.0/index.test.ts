@@ -9,6 +9,7 @@ const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 jest.mock('fs', () => ({
   promises: {
     copyFile: jest.fn(),
+    stat: jest.fn(),
   },
   realpathSync: jest.fn((path) => path),
   existsSync: jest.fn(() => true),
@@ -17,15 +18,27 @@ jest.mock('fs', () => ({
   statSync: jest.fn(() => ({ isDirectory: () => false, isFile: () => true })),
 }));
 
+jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => ({
+  ...jest.requireActual('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils'),
+  getFileSize: jest.fn(),
+}));
+
+const { getFileSize } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
+
 describe('copyToWorkDirectory Plugin', () => {
   let baseArgs: IpluginInputArgs;
   const mockCopyFile = fsp.copyFile as jest.MockedFunction<typeof fsp.copyFile>;
+  const mockGetFileSize = getFileSize as jest.MockedFunction<typeof getFileSize>;
   const mockEnsureDirSync = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
 
     const configVars = getConfigVars();
+
+    const mockNcp = jest.fn((source, dest, callback) => {
+      callback(null); // Call callback with no error to simulate successful copy
+    });
 
     baseArgs = {
       inputs: {},
@@ -72,7 +85,7 @@ describe('copyToWorkDirectory Plugin', () => {
         requireFromString: jest.fn(),
         gracefulfs: jest.fn(),
         mvdir: jest.fn(),
-        ncp: jest.fn(),
+        ncp: mockNcp,
         axios: jest.fn(),
         crudTransDBN: jest.fn(),
         configVars,
@@ -82,6 +95,7 @@ describe('copyToWorkDirectory Plugin', () => {
     } as IpluginInputArgs;
 
     mockCopyFile.mockResolvedValue(undefined);
+    mockGetFileSize.mockResolvedValue(1048576); // 1MB file size
   });
 
   describe('Basic Functionality', () => {
@@ -89,14 +103,17 @@ describe('copyToWorkDirectory Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(mockEnsureDirSync).toHaveBeenCalledWith('/tmp/workdir');
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         baseArgs.inputFileObj._id,
         '/tmp/workdir/SampleVideo_1280x720_1mb.mp4',
+        expect.any(Function),
       );
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj._id).toBe('/tmp/workdir/SampleVideo_1280x720_1mb.mp4');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(`Input path: ${baseArgs.inputFileObj._id}`);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Output path: /tmp/workdir');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Calculating cache file size in bytes');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('1048576');
     });
 
     it('should skip copy when input and output paths are the same', async () => {
@@ -106,6 +123,7 @@ describe('copyToWorkDirectory Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(mockEnsureDirSync).not.toHaveBeenCalled();
+      expect(baseArgs.deps.ncp).not.toHaveBeenCalled();
       expect(mockCopyFile).not.toHaveBeenCalled();
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj._id).toBe(baseArgs.inputFileObj._id);
@@ -120,9 +138,10 @@ describe('copyToWorkDirectory Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         '/path/to/file.mkv',
         '/tmp/workdir/file.mkv',
+        expect.any(Function),
       );
       expect(result.outputFileObj._id).toBe('/tmp/workdir/file.mkv');
     });
@@ -133,7 +152,7 @@ describe('copyToWorkDirectory Plugin', () => {
       await plugin(baseArgs);
 
       expect(mockEnsureDirSync).toHaveBeenCalledWith('/tmp/workdir');
-      expect(mockCopyFile).toHaveBeenCalled();
+      expect(baseArgs.deps.ncp).toHaveBeenCalled();
     });
 
     it('should handle nested work directories', async () => {
@@ -142,9 +161,10 @@ describe('copyToWorkDirectory Plugin', () => {
       await plugin(baseArgs);
 
       expect(mockEnsureDirSync).toHaveBeenCalledWith('/tmp/nested/work/directory');
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         baseArgs.inputFileObj._id,
         '/tmp/nested/work/directory/SampleVideo_1280x720_1mb.mp4',
+        expect.any(Function),
       );
     });
   });
@@ -160,9 +180,10 @@ describe('copyToWorkDirectory Plugin', () => {
 
       // The getFileName function doesn't properly handle Windows paths,
       // so it treats the whole path as a filename
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         'C:\\Videos\\Movie.mp4',
         'D:\\Temp/C:\\Videos\\Movie.mp4',
+        expect.any(Function),
       );
       expect(result.outputFileObj._id).toBe('D:\\Temp/C:\\Videos\\Movie.mp4');
     });
@@ -175,9 +196,10 @@ describe('copyToWorkDirectory Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         '/home/user/videos/movie.mp4',
         '/tmp/work/movie.mp4',
+        expect.any(Function),
       );
       expect(result.outputFileObj._id).toBe('/tmp/work/movie.mp4');
     });
@@ -189,9 +211,10 @@ describe('copyToWorkDirectory Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         '/path/to/file with spaces.mp4',
         '/tmp/workdir/file with spaces.mp4',
+        expect.any(Function),
       );
       expect(result.outputFileObj._id).toBe('/tmp/workdir/file with spaces.mp4');
     });
@@ -203,9 +226,10 @@ describe('copyToWorkDirectory Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      expect(mockCopyFile).toHaveBeenCalledWith(
+      expect(baseArgs.deps.ncp).toHaveBeenCalledWith(
         '/path/to/file[2023]-test.mp4',
         '/tmp/workdir/file[2023]-test.mp4',
+        expect.any(Function),
       );
       expect(result.outputFileObj._id).toBe('/tmp/workdir/file[2023]-test.mp4');
     });
@@ -254,16 +278,40 @@ describe('copyToWorkDirectory Plugin', () => {
   });
 
   describe('Error Handling', () => {
-    it('should propagate copy file errors', async () => {
-      const copyError = new Error('Failed to copy file');
-      mockCopyFile.mockRejectedValue(copyError);
+    it('should propagate copy file errors when all methods fail', async () => {
+      // Make ncp fail
+      const mockFailingNcp = jest.fn((source, dest, callback) => {
+        callback(new Error('ncp failed'));
+      });
+      baseArgs.deps.ncp = mockFailingNcp;
+
+      // Make copyFile fail
+      mockCopyFile.mockRejectedValue(new Error('copyFile failed'));
+
+      // Make getFileSize fail on the destination to simulate unsuccessful copy
+      mockGetFileSize
+        .mockResolvedValueOnce(1048576) // source file size
+        .mockResolvedValueOnce(0) // destination file size after ncp (failed)
+        .mockResolvedValueOnce(0); // destination file size after copyFile (failed)
 
       await expect(plugin(baseArgs)).rejects.toThrow('Failed to copy file');
     });
 
     it('should ensure directory even if copy fails', async () => {
-      const copyError = new Error('Copy failed');
-      mockCopyFile.mockRejectedValue(copyError);
+      // Make ncp fail
+      const mockFailingNcp = jest.fn((source, dest, callback) => {
+        callback(new Error('ncp failed'));
+      });
+      baseArgs.deps.ncp = mockFailingNcp;
+
+      // Make copyFile fail
+      mockCopyFile.mockRejectedValue(new Error('Copy failed'));
+
+      // Make getFileSize return mismatched sizes to simulate failure
+      mockGetFileSize
+        .mockResolvedValueOnce(1048576) // source file size
+        .mockResolvedValueOnce(0) // destination file size after ncp (failed)
+        .mockResolvedValueOnce(0); // destination file size after copyFile (failed)
 
       try {
         await plugin(baseArgs);
@@ -272,6 +320,30 @@ describe('copyToWorkDirectory Plugin', () => {
       }
 
       expect(mockEnsureDirSync).toHaveBeenCalledWith('/tmp/workdir');
+    });
+
+    it('should fallback to copyFile when ncp fails', async () => {
+      // Make ncp fail
+      const mockFailingNcp = jest.fn((source, dest, callback) => {
+        callback(new Error('ncp failed'));
+      });
+      baseArgs.deps.ncp = mockFailingNcp;
+
+      // Make copyFile succeed
+      mockCopyFile.mockResolvedValue(undefined);
+
+      // Make getFileSize return matching sizes for copyFile
+      mockGetFileSize
+        .mockResolvedValueOnce(1048576) // source file size
+        .mockResolvedValueOnce(0) // destination file size after ncp (failed)
+        .mockResolvedValueOnce(1048576); // destination file size after copyFile (success)
+
+      const result = await plugin(baseArgs);
+
+      expect(mockFailingNcp).toHaveBeenCalled();
+      expect(mockCopyFile).toHaveBeenCalled();
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('Attempting copy from'));
     });
   });
 });
