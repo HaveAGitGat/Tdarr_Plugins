@@ -7,6 +7,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "import-fresh": "^3.3.0"
+    "import-fresh": "^3.3.1"
   }
 }
