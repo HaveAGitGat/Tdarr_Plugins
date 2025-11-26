@@ -1,12 +1,14 @@
 /* eslint-disable max-len */
 
 import { promises as fsp } from 'fs';
+import path from 'path';
 import { getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import normJoinPath from '../../../../FlowHelpers/1.0.0/normJoinPath';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -93,9 +95,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const code = String(args.inputs.code);
 
   const outputFilePath = `${getPluginWorkDir(args)}/script.js`;
-  await fsp.writeFile(outputFilePath, code);
+  const outputFileAbsolutePath = normJoinPath({
+    upath: args.deps.upath,
+    paths: [path.resolve(outputFilePath)],
+  });
+
+  await fsp.writeFile(outputFileAbsolutePath, code);
   // eslint-disable-next-line import/no-dynamic-require
-  const func = require(outputFilePath);
+  const func = require(outputFileAbsolutePath);
   const response = await func(args);
   return response;
 };
