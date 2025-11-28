@@ -29,7 +29,8 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter one stream property to check.
+        Enter one stream property to check. 
+        To resolve 'Subtitle codec 94213 is not supported' error, leave as codec_name.
         
         \\nExample:\\n
         codec_name
@@ -48,7 +49,8 @@ const details = (): IpluginDetails => ({
       },
       tooltip:
         `
-        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac:
+        Enter values of the property above to remove. For example, if removing by codec_name, could enter ac3,aac. 
+        To resolve 'Subtitle codec 94213 is not supported' error, enter mov_text.
         
         \\nExample:\\n
         ac3,aac
@@ -88,10 +90,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   checkFfmpegCommandInit(args);
 
   const propertyToCheck = String(args.inputs.propertyToCheck).trim();
-  const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map((item) => item.trim());
+  const valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map((item) => item.trim().toLowerCase());
   const condition = String(args.inputs.condition);
 
   args.variables.ffmpegCommand.streams.forEach((stream) => {
+    // Skip stream index 0, this is the video stream
+    if (stream.index === 0) return;
+
     let target = '';
     if (propertyToCheck.includes('.')) {
       const parts = propertyToCheck.split('.');
@@ -102,15 +107,21 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
     if (target) {
       const prop = String(target).toLowerCase();
-      for (let i = 0; i < valuesToRemove.length; i += 1) {
-        const val = valuesToRemove[i].toLowerCase();
-        const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
-        if (condition === 'includes' && prop.includes(val)) {
-          args.jobLog(`${prefix} includes ${val}\n`);
-          // eslint-disable-next-line no-param-reassign
-          stream.removed = true;
-        } else if (condition === 'not_includes' && !prop.includes(val)) {
-          args.jobLog(`${prefix} not_includes ${val}\n`);
+      const prefix = `Removing stream index ${stream.index} because ${propertyToCheck} of ${prop}`;
+      if (condition === 'includes') {
+        // Check each value individually for an exact match
+        valuesToRemove.forEach((val) => {
+          if (prop === val) {
+            args.jobLog(`${prefix} includes exact match ${val}\n`);
+            // eslint-disable-next-line no-param-reassign
+            stream.removed = true;
+          }
+        });
+      } else if (condition === 'not_includes') {
+        // Check the array as a whole for no exact matches
+        const noneMatch = valuesToRemove.every((val) => prop !== val);
+        if (noneMatch) {
+          args.jobLog(`${prefix} does not include any exact matches of [${valuesToRemove.join(', ')}]\n`);
           // eslint-disable-next-line no-param-reassign
           stream.removed = true;
         }
