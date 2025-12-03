@@ -208,6 +208,8 @@ export interface IpluginInputArgs {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mvdir: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        lodash: any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ncp: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         axios: any,
