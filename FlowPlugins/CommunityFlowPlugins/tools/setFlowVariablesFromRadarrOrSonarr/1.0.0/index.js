@@ -180,7 +180,7 @@ var extractSeasonEpisodeInfo = function (fileName) {
  * @param qualityProfileId - The quality profile ID to query
  * @returns Language name or undefined if not found or on error
  */
-var retrieveQualityProfileLanguageName = function (args, config, qualityProfileId) { return __awaiter(void 0, void 0, void 0, function () {
+var getQualityProfileLanguageName = function (args, config, qualityProfileId) { return __awaiter(void 0, void 0, void 0, function () {
     var response, data, error_1, errorMessage;
     var _a;
     return __generator(this, function (_b) {
@@ -215,7 +215,7 @@ var retrieveQualityProfileLanguageName = function (args, config, qualityProfileI
  * @param episodeNumber - The episode number
  * @returns Episode ID or default value on error
  */
-var retrieveEpisodeId = function (args, config, seriesId, seasonNumber, episodeNumber) { return __awaiter(void 0, void 0, void 0, function () {
+var getEpisodeId = function (args, config, seriesId, seasonNumber, episodeNumber) { return __awaiter(void 0, void 0, void 0, function () {
     var response, episodesArray, episodeItem, error_2, errorMessage;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -294,13 +294,13 @@ var lookupContent = function (args, config, fileName) { return __awaiter(void 0,
                     args.jobLog("Could not extract season/episode info from filename: ".concat(fileName));
                     return [2 /*return*/, { type: 'unknown', id: NOT_FOUND_ID }];
                 }
-                return [4 /*yield*/, retrieveEpisodeId(args, config, baseInfo.id, seasonNumber, episodeNumber)];
+                return [4 /*yield*/, getEpisodeId(args, config, baseInfo.id, seasonNumber, episodeNumber)];
             case 3:
                 episodeId = _d.sent();
                 return [2 /*return*/, __assign(__assign({ type: 'sonarr' }, baseInfo), { seasonNumber: seasonNumber, episodeNumber: episodeNumber, episodeId: episodeId })];
             case 4:
                 if (!(config.name === 'radarr')) return [3 /*break*/, 6];
-                return [4 /*yield*/, retrieveQualityProfileLanguageName(args, config, content.qualityProfileId)];
+                return [4 /*yield*/, getQualityProfileLanguageName(args, config, content.qualityProfileId)];
             case 5:
                 profileLanguageName = _d.sent();
                 return [2 /*return*/, __assign(__assign({ type: 'radarr' }, baseInfo), { profileLanguageName: profileLanguageName })];
@@ -349,7 +349,7 @@ var parseContent = function (args, config, fileName) { return __awaiter(void 0, 
                     return [2 /*return*/, __assign(__assign({ type: 'sonarr' }, baseInfo), { seasonNumber: (_d = (_c = data.parsedEpisodeInfo) === null || _c === void 0 ? void 0 : _c.seasonNumber) !== null && _d !== void 0 ? _d : DEFAULT_SEASON, episodeNumber: (_g = (_f = (_e = data.parsedEpisodeInfo) === null || _e === void 0 ? void 0 : _e.episodeNumbers) === null || _f === void 0 ? void 0 : _f[0]) !== null && _g !== void 0 ? _g : DEFAULT_EPISODE, episodeId: String((_k = (_j = (_h = data.episodes) === null || _h === void 0 ? void 0 : _h[0]) === null || _j === void 0 ? void 0 : _j.id) !== null && _k !== void 0 ? _k : DEFAULT_EPISODE_ID) })];
                 }
                 if (!(config.name === 'radarr')) return [3 /*break*/, 3];
-                return [4 /*yield*/, retrieveQualityProfileLanguageName(args, config, content.qualityProfileId)];
+                return [4 /*yield*/, getQualityProfileLanguageName(args, config, content.qualityProfileId)];
             case 2:
                 profileLanguageName = _l.sent();
                 return [2 /*return*/, __assign(__assign({ type: 'radarr' }, baseInfo), { profileLanguageName: profileLanguageName })];
@@ -371,7 +371,7 @@ var languageCodeCache = new Map();
  * @param languageName - The language name to look up
  * @returns ISO 639-2 (alpha3_b) language code or DEFAULT_LANGUAGE_CODE
  */
-var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
+var getLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
     var normalizedName, cachedValue, url, data, languageCode, error_5, errorMessage;
     var _a, _b, _c;
     return __generator(this, function (_d) {
@@ -380,9 +380,11 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
                 if (!languageName || languageName.trim() === '') {
                     return [2 /*return*/, ''];
                 }
+                args.jobLog("Fetching language code for \"".concat(languageName, "\""));
                 normalizedName = languageName.trim().toLowerCase();
                 cachedValue = languageCodeCache.get(normalizedName);
                 if (cachedValue !== undefined) {
+                    args.jobLog("From cache \"".concat(languageName, "\":\"").concat(cachedValue, "\""));
                     return [2 /*return*/, cachedValue];
                 }
                 _d.label = 1;
@@ -397,6 +399,7 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
             case 2:
                 data = (_d.sent()).data;
                 languageCode = (_c = (_b = (_a = data.results) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.alpha3_b) !== null && _c !== void 0 ? _c : DEFAULT_LANGUAGE_CODE;
+                args.jobLog("From API \"".concat(languageName, "\":\"").concat(languageCode, "\""));
                 // Cache the result
                 languageCodeCache.set(normalizedName, languageCode);
                 return [2 /*return*/, languageCode];
@@ -416,11 +419,11 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
  * @param fileInfo - The file information to set variables from
  */
 var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, void 0, function () {
-    var originalLanguageCode, profileLanguageToFetch, profileLanguageCode, originalLanguageCode, _a;
-    var _b;
-    var _c, _d, _e, _f, _g, _h;
-    return __generator(this, function (_j) {
-        switch (_j.label) {
+    var _a, originalLanguageCode, profileLanguageCode, _b;
+    var _c;
+    var _d, _e, _f, _g, _h, _j;
+    return __generator(this, function (_k) {
+        switch (_k.label) {
             case 0:
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user = args.variables.user || {};
@@ -429,13 +432,13 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 args.variables.user.ArrId = fileInfo.id;
                 args.jobLog("Setting variable ArrId to ".concat(args.variables.user.ArrId));
                 if (!(fileInfo.type === 'sonarr')) return [3 /*break*/, 2];
-                return [4 /*yield*/, fetchLanguageCode(args, (_c = fileInfo.originalLanguageName) !== null && _c !== void 0 ? _c : '')];
-            case 1:
-                originalLanguageCode = _j.sent();
                 // eslint-disable-next-line no-param-reassign
-                args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
+                _a = args.variables.user;
+                return [4 /*yield*/, getLanguageCode(args, (_d = fileInfo.originalLanguageName) !== null && _d !== void 0 ? _d : '')];
+            case 1:
+                // eslint-disable-next-line no-param-reassign
+                _a.ArrOriginalLanguageCode = _k.sent();
                 args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(args.variables.user.ArrOriginalLanguageCode));
-                // Set Sonarr-specific variables
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrSeasonNumber = String(fileInfo.seasonNumber);
                 args.jobLog("Setting variable ArrSeasonNumber to ".concat(args.variables.user.ArrSeasonNumber));
@@ -448,35 +451,34 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 return [3 /*break*/, 10];
             case 2:
                 if (!(fileInfo.type === 'radarr')) return [3 /*break*/, 10];
-                profileLanguageToFetch = ((_d = fileInfo.profileLanguageName) !== null && _d !== void 0 ? _d : '').toLowerCase();
-                profileLanguageCode = '';
                 originalLanguageCode = '';
-                _a = profileLanguageToFetch;
-                switch (_a) {
+                profileLanguageCode = '';
+                _b = ((_e = fileInfo.profileLanguageName) !== null && _e !== void 0 ? _e : '').toLowerCase();
+                switch (_b) {
                     case 'original': return [3 /*break*/, 3];
                     case 'any': return [3 /*break*/, 5];
                 }
                 return [3 /*break*/, 7];
             case 3:
                 args.jobLog('Profile language is "Original", using original language');
-                return [4 /*yield*/, fetchLanguageCode(args, (_e = fileInfo.originalLanguageName) !== null && _e !== void 0 ? _e : '')];
+                return [4 /*yield*/, getLanguageCode(args, (_f = fileInfo.originalLanguageName) !== null && _f !== void 0 ? _f : '')];
             case 4:
-                originalLanguageCode = _j.sent();
+                originalLanguageCode = _k.sent();
                 profileLanguageCode = originalLanguageCode;
                 return [3 /*break*/, 9];
             case 5:
                 args.jobLog('Profile language is "Any", setting to "und" (undetermined)');
-                return [4 /*yield*/, fetchLanguageCode(args, (_f = fileInfo.originalLanguageName) !== null && _f !== void 0 ? _f : '')];
+                return [4 /*yield*/, getLanguageCode(args, (_g = fileInfo.originalLanguageName) !== null && _g !== void 0 ? _g : '')];
             case 6:
-                originalLanguageCode = _j.sent();
+                originalLanguageCode = _k.sent();
                 profileLanguageCode = 'und';
                 return [3 /*break*/, 9];
             case 7: return [4 /*yield*/, Promise.all([
-                    fetchLanguageCode(args, (_g = fileInfo.originalLanguageName) !== null && _g !== void 0 ? _g : ''),
-                    fetchLanguageCode(args, (_h = fileInfo.profileLanguageName) !== null && _h !== void 0 ? _h : ''),
+                    getLanguageCode(args, (_h = fileInfo.originalLanguageName) !== null && _h !== void 0 ? _h : ''),
+                    getLanguageCode(args, (_j = fileInfo.profileLanguageName) !== null && _j !== void 0 ? _j : ''),
                 ])];
             case 8:
-                _b = _j.sent(), originalLanguageCode = _b[0], profileLanguageCode = _b[1];
+                _c = _k.sent(), originalLanguageCode = _c[0], profileLanguageCode = _c[1];
                 return [3 /*break*/, 9];
             case 9:
                 // eslint-disable-next-line no-param-reassign
@@ -485,7 +487,7 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrProfileLanguageCode = profileLanguageCode;
                 args.jobLog("Setting variable ArrProfileLanguageCode to ".concat(profileLanguageCode));
-                _j.label = 10;
+                _k.label = 10;
             case 10: return [2 /*return*/];
         }
     });
