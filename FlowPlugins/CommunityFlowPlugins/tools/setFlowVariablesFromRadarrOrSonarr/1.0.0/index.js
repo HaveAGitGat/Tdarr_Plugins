@@ -55,6 +55,7 @@ var NOT_FOUND_ID = '-1';
 var DEFAULT_SEASON = 1;
 var DEFAULT_EPISODE = 1;
 var DEFAULT_EPISODE_ID = '1';
+var DEFAULT_LANGUAGE_CODE = 'und';
 var LANGUAGE_API_TIMEOUT = 5000;
 var ARR_API_TIMEOUT = 10000;
 var API_HEADERS = {
@@ -321,7 +322,7 @@ var lookupContent = function (args, config, fileName) { return __awaiter(void 0,
  * @returns File information or not found indicator
  */
 var parseContent = function (args, config, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var response, data, content, baseInfo, profileLanguageName, error_4, errorMessage;
+    var data, content, baseInfo, profileLanguageName, error_4, errorMessage;
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     return __generator(this, function (_l) {
         switch (_l.label) {
@@ -334,8 +335,7 @@ var parseContent = function (args, config, fileName) { return __awaiter(void 0, 
                         timeout: ARR_API_TIMEOUT,
                     })];
             case 1:
-                response = _l.sent();
-                data = response.data;
+                data = (_l.sent()).data;
                 content = config.name === 'radarr' ? data.movie : data.series;
                 if (!content) {
                     args.jobLog("Parse did not return any ".concat(config.name === 'radarr' ? 'movie' : 'series', " data"));
@@ -369,10 +369,10 @@ var languageCodeCache = new Map();
  * Implements caching to avoid redundant API calls
  * @param args - Plugin input arguments
  * @param languageName - The language name to look up
- * @returns ISO 639-2 (alpha3_b) language code or empty string
+ * @returns ISO 639-2 (alpha3_b) language code or DEFAULT_LANGUAGE_CODE
  */
 var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0, void 0, void 0, function () {
-    var normalizedName, cachedValue, url, response, data, languageCode, error_5, errorMessage;
+    var normalizedName, cachedValue, url, data, languageCode, error_5, errorMessage;
     var _a, _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -395,9 +395,8 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
                         timeout: LANGUAGE_API_TIMEOUT,
                     })];
             case 2:
-                response = _d.sent();
-                data = response.data;
-                languageCode = (_c = (_b = (_a = data.results) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.alpha3_b) !== null && _c !== void 0 ? _c : '';
+                data = (_d.sent()).data;
+                languageCode = (_c = (_b = (_a = data.results) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.alpha3_b) !== null && _c !== void 0 ? _c : DEFAULT_LANGUAGE_CODE;
                 // Cache the result
                 languageCodeCache.set(normalizedName, languageCode);
                 return [2 /*return*/, languageCode];
@@ -405,7 +404,7 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
                 error_5 = _d.sent();
                 errorMessage = error_5 instanceof Error ? error_5.message : String(error_5);
                 args.jobLog("Failed to fetch language code for \"".concat(languageName, "\": ").concat(errorMessage));
-                return [2 /*return*/, ''];
+                return [2 /*return*/, DEFAULT_LANGUAGE_CODE];
             case 4: return [2 /*return*/];
         }
     });
@@ -417,10 +416,11 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
  * @param fileInfo - The file information to set variables from
  */
 var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, void 0, function () {
-    var originalLanguageCode, _a, originalLanguageCode, profileLanguageCode;
-    var _b, _c, _d;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var originalLanguageCode, profileLanguageToFetch, profileLanguageCode, originalLanguageCode, _a;
+    var _b;
+    var _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+        switch (_h.label) {
             case 0:
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user = args.variables.user || {};
@@ -429,9 +429,9 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 args.variables.user.ArrId = fileInfo.id;
                 args.jobLog("Setting variable ArrId to ".concat(args.variables.user.ArrId));
                 if (!(fileInfo.type === 'sonarr')) return [3 /*break*/, 2];
-                return [4 /*yield*/, fetchLanguageCode(args, (_b = fileInfo.originalLanguageName) !== null && _b !== void 0 ? _b : '')];
+                return [4 /*yield*/, fetchLanguageCode(args, (_c = fileInfo.originalLanguageName) !== null && _c !== void 0 ? _c : '')];
             case 1:
-                originalLanguageCode = _e.sent();
+                originalLanguageCode = _h.sent();
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
                 args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(args.variables.user.ArrOriginalLanguageCode));
@@ -445,23 +445,48 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrEpisodeId = fileInfo.episodeId;
                 args.jobLog("Setting variable ArrEpisodeId to ".concat(args.variables.user.ArrEpisodeId));
-                return [3 /*break*/, 4];
+                return [3 /*break*/, 10];
             case 2:
-                if (!(fileInfo.type === 'radarr')) return [3 /*break*/, 4];
-                return [4 /*yield*/, Promise.all([
-                        fetchLanguageCode(args, (_c = fileInfo.originalLanguageName) !== null && _c !== void 0 ? _c : ''),
-                        fetchLanguageCode(args, (_d = fileInfo.profileLanguageName) !== null && _d !== void 0 ? _d : ''),
-                    ])];
+                if (!(fileInfo.type === 'radarr')) return [3 /*break*/, 10];
+                profileLanguageToFetch = ((_d = fileInfo.profileLanguageName) !== null && _d !== void 0 ? _d : '').toLowerCase();
+                profileLanguageCode = '';
+                originalLanguageCode = '';
+                _a = profileLanguageToFetch;
+                switch (_a) {
+                    case 'original': return [3 /*break*/, 3];
+                    case 'any': return [3 /*break*/, 5];
+                }
+                return [3 /*break*/, 7];
             case 3:
-                _a = _e.sent(), originalLanguageCode = _a[0], profileLanguageCode = _a[1];
+                args.jobLog('Profile language is "Original", using original language');
+                return [4 /*yield*/, fetchLanguageCode(args, (_e = fileInfo.originalLanguageName) !== null && _e !== void 0 ? _e : '')];
+            case 4:
+                originalLanguageCode = _h.sent();
+                profileLanguageCode = originalLanguageCode;
+                return [3 /*break*/, 9];
+            case 5:
+                args.jobLog('Profile language is "Any", setting to "und" (undetermined)');
+                return [4 /*yield*/, fetchLanguageCode(args, (_f = fileInfo.originalLanguageName) !== null && _f !== void 0 ? _f : '')];
+            case 6:
+                originalLanguageCode = _h.sent();
+                profileLanguageCode = 'und';
+                return [3 /*break*/, 9];
+            case 7: return [4 /*yield*/, Promise.all([
+                    fetchLanguageCode(args, (_g = fileInfo.originalLanguageName) !== null && _g !== void 0 ? _g : ''),
+                    fetchLanguageCode(args, profileLanguageToFetch),
+                ])];
+            case 8:
+                _b = _h.sent(), originalLanguageCode = _b[0], profileLanguageCode = _b[1];
+                return [3 /*break*/, 9];
+            case 9:
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
-                args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(args.variables.user.ArrOriginalLanguageCode));
+                args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(originalLanguageCode));
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrProfileLanguageCode = profileLanguageCode;
-                args.jobLog("Setting variable ArrProfileLanguageCode to ".concat(args.variables.user.ArrProfileLanguageCode));
-                _e.label = 4;
-            case 4: return [2 /*return*/];
+                args.jobLog("Setting variable ArrProfileLanguageCode to ".concat(profileLanguageCode));
+                _h.label = 10;
+            case 10: return [2 /*return*/];
         }
     });
 }); };

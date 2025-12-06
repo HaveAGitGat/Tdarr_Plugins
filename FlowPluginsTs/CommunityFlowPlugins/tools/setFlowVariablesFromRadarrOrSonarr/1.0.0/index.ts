@@ -12,6 +12,7 @@ const NOT_FOUND_ID = '-1';
 const DEFAULT_SEASON = 1;
 const DEFAULT_EPISODE = 1;
 const DEFAULT_EPISODE_ID = '1';
+const DEFAULT_LANGUAGE_CODE = 'und';
 const LANGUAGE_API_TIMEOUT = 5000;
 const ARR_API_TIMEOUT = 10000;
 
@@ -360,14 +361,12 @@ const parseContent = async (
   fileName: string,
 ): Promise<IFileInfo> => {
   try {
-    const response = await args.deps.axios({
+    const { data } = await args.deps.axios({
       method: 'get',
       url: `${config.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
       headers: createHeaders(config.apiKey),
       timeout: ARR_API_TIMEOUT,
     });
-
-    const { data } = response;
     const content: IBaseResponse = config.name === 'radarr' ? data.movie : data.series;
 
     if (!content) {
@@ -419,7 +418,7 @@ const languageCodeCache = new Map<string, string>();
  * Implements caching to avoid redundant API calls
  * @param args - Plugin input arguments
  * @param languageName - The language name to look up
- * @returns ISO 639-2 (alpha3_b) language code or empty string
+ * @returns ISO 639-2 (alpha3_b) language code or DEFAULT_LANGUAGE_CODE
  */
 const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): Promise<string> => {
   if (!languageName || languageName.trim() === '') {
@@ -437,14 +436,12 @@ const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): 
       encodeURIComponent(languageName)
     }%22&limit=1`;
 
-    const response = await args.deps.axios({
+    const { data } = await args.deps.axios({
       method: 'get',
       url,
       timeout: LANGUAGE_API_TIMEOUT,
     });
-
-    const { data } = response;
-    const languageCode = data.results?.[0]?.alpha3_b ?? '';
+    const languageCode = data.results?.[0]?.alpha3_b ?? DEFAULT_LANGUAGE_CODE;
 
     // Cache the result
     languageCodeCache.set(normalizedName, languageCode);
@@ -453,7 +450,7 @@ const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     args.jobLog(`Failed to fetch language code for "${languageName}": ${errorMessage}`);
-    return '';
+    return DEFAULT_LANGUAGE_CODE;
   }
 };
 
@@ -495,19 +492,35 @@ const setVariables = async (
     args.variables.user.ArrEpisodeId = fileInfo.episodeId;
     args.jobLog(`Setting variable ArrEpisodeId to ${args.variables.user.ArrEpisodeId}`);
   } else if (fileInfo.type === 'radarr') {
-    // Fetch both language codes in parallel for Radarr
-    const [originalLanguageCode, profileLanguageCode] = await Promise.all([
-      fetchLanguageCode(args, fileInfo.originalLanguageName ?? ''),
-      fetchLanguageCode(args, fileInfo.profileLanguageName ?? ''),
-    ]);
+    const profileLanguageToFetch = (fileInfo.profileLanguageName ?? '').toLowerCase();
+    let profileLanguageCode = '';
+    let originalLanguageCode = '';
+
+    switch (profileLanguageToFetch) {
+      case 'original':
+        args.jobLog('Profile language is "Original", using original language');
+        originalLanguageCode = await fetchLanguageCode(args, fileInfo.originalLanguageName ?? '');
+        profileLanguageCode = originalLanguageCode;
+        break;
+      case 'any':
+        args.jobLog('Profile language is "Any", setting to "und" (undetermined)');
+        originalLanguageCode = await fetchLanguageCode(args, fileInfo.originalLanguageName ?? '');
+        profileLanguageCode = 'und';
+        break;
+      default:
+        [originalLanguageCode, profileLanguageCode] = await Promise.all([
+          fetchLanguageCode(args, fileInfo.originalLanguageName ?? ''),
+          fetchLanguageCode(args, profileLanguageToFetch),
+        ]);
+        break;
+    }
 
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
-    args.jobLog(`Setting variable ArrOriginalLanguageCode to ${args.variables.user.ArrOriginalLanguageCode}`);
-
+    args.jobLog(`Setting variable ArrOriginalLanguageCode to ${originalLanguageCode}`);
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrProfileLanguageCode = profileLanguageCode;
-    args.jobLog(`Setting variable ArrProfileLanguageCode to ${args.variables.user.ArrProfileLanguageCode}`);
+    args.jobLog(`Setting variable ArrProfileLanguageCode to ${profileLanguageCode}`);
   }
 };
 
