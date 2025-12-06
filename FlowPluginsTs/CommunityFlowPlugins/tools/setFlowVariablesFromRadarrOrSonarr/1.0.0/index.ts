@@ -188,7 +188,7 @@ const extractSeasonEpisodeInfo = (fileName: string): { seasonNumber: number; epi
  * @param qualityProfileId - The quality profile ID to query
  * @returns Language name or undefined if not found or on error
  */
-const retrieveQualityProfileLanguageName = async (
+const getQualityProfileLanguageName = async (
   args: IpluginInputArgs,
   config: IArrConfig,
   qualityProfileId: number,
@@ -219,7 +219,7 @@ const retrieveQualityProfileLanguageName = async (
  * @param episodeNumber - The episode number
  * @returns Episode ID or default value on error
  */
-const retrieveEpisodeId = async (
+const getEpisodeId = async (
   args: IpluginInputArgs,
   config: IArrConfig,
   seriesId: string,
@@ -309,7 +309,7 @@ const lookupContent = async (
         return { type: 'unknown', id: NOT_FOUND_ID };
       }
 
-      const episodeId = await retrieveEpisodeId(
+      const episodeId = await getEpisodeId(
         args,
         config,
         baseInfo.id,
@@ -327,7 +327,7 @@ const lookupContent = async (
     }
 
     if (config.name === 'radarr') {
-      const profileLanguageName = await retrieveQualityProfileLanguageName(
+      const profileLanguageName = await getQualityProfileLanguageName(
         args,
         config,
         content.qualityProfileId,
@@ -390,7 +390,7 @@ const parseContent = async (
     }
 
     if (config.name === 'radarr') {
-      const profileLanguageName = await retrieveQualityProfileLanguageName(
+      const profileLanguageName = await getQualityProfileLanguageName(
         args,
         config,
         content.qualityProfileId,
@@ -420,14 +420,16 @@ const languageCodeCache = new Map<string, string>();
  * @param languageName - The language name to look up
  * @returns ISO 639-2 (alpha3_b) language code or DEFAULT_LANGUAGE_CODE
  */
-const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): Promise<string> => {
+const getLanguageCode = async (args: IpluginInputArgs, languageName: string): Promise<string> => {
   if (!languageName || languageName.trim() === '') {
     return '';
   }
 
+  args.jobLog(`Fetching language code for "${languageName}"`);
   const normalizedName = languageName.trim().toLowerCase();
   const cachedValue = languageCodeCache.get(normalizedName);
   if (cachedValue !== undefined) {
+    args.jobLog(`From cache "${languageName}":"${cachedValue}"`);
     return cachedValue;
   }
 
@@ -442,6 +444,7 @@ const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): 
       timeout: LANGUAGE_API_TIMEOUT,
     });
     const languageCode = data.results?.[0]?.alpha3_b ?? DEFAULT_LANGUAGE_CODE;
+    args.jobLog(`From API "${languageName}":"${languageCode}"`);
 
     // Cache the result
     languageCodeCache.set(normalizedName, languageCode);
@@ -473,13 +476,10 @@ const setVariables = async (
   args.jobLog(`Setting variable ArrId to ${args.variables.user.ArrId}`);
 
   if (fileInfo.type === 'sonarr') {
-    // Fetch original language code
-    const originalLanguageCode = await fetchLanguageCode(args, fileInfo.originalLanguageName ?? '');
     // eslint-disable-next-line no-param-reassign
-    args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
+    args.variables.user.ArrOriginalLanguageCode = await getLanguageCode(args, fileInfo.originalLanguageName ?? '');
     args.jobLog(`Setting variable ArrOriginalLanguageCode to ${args.variables.user.ArrOriginalLanguageCode}`);
 
-    // Set Sonarr-specific variables
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrSeasonNumber = String(fileInfo.seasonNumber);
     args.jobLog(`Setting variable ArrSeasonNumber to ${args.variables.user.ArrSeasonNumber}`);
@@ -492,25 +492,24 @@ const setVariables = async (
     args.variables.user.ArrEpisodeId = fileInfo.episodeId;
     args.jobLog(`Setting variable ArrEpisodeId to ${args.variables.user.ArrEpisodeId}`);
   } else if (fileInfo.type === 'radarr') {
-    const profileLanguageToFetch = (fileInfo.profileLanguageName ?? '').toLowerCase();
-    let profileLanguageCode = '';
     let originalLanguageCode = '';
+    let profileLanguageCode = '';
 
-    switch (profileLanguageToFetch) {
+    switch ((fileInfo.profileLanguageName ?? '').toLowerCase()) {
       case 'original':
         args.jobLog('Profile language is "Original", using original language');
-        originalLanguageCode = await fetchLanguageCode(args, fileInfo.originalLanguageName ?? '');
+        originalLanguageCode = await getLanguageCode(args, fileInfo.originalLanguageName ?? '');
         profileLanguageCode = originalLanguageCode;
         break;
       case 'any':
         args.jobLog('Profile language is "Any", setting to "und" (undetermined)');
-        originalLanguageCode = await fetchLanguageCode(args, fileInfo.originalLanguageName ?? '');
+        originalLanguageCode = await getLanguageCode(args, fileInfo.originalLanguageName ?? '');
         profileLanguageCode = 'und';
         break;
       default:
         [originalLanguageCode, profileLanguageCode] = await Promise.all([
-          fetchLanguageCode(args, fileInfo.originalLanguageName ?? ''),
-          fetchLanguageCode(args, fileInfo.profileLanguageName ?? ''),
+          getLanguageCode(args, fileInfo.originalLanguageName ?? ''),
+          getLanguageCode(args, fileInfo.profileLanguageName ?? ''),
         ]);
         break;
     }
