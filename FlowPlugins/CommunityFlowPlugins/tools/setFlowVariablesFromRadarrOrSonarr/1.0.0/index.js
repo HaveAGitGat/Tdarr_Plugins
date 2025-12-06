@@ -380,11 +380,9 @@ var getLanguageCode = function (args, languageName) { return __awaiter(void 0, v
                 if (!languageName || languageName.trim() === '') {
                     return [2 /*return*/, ''];
                 }
-                args.jobLog("Fetching language code for \"".concat(languageName, "\""));
                 normalizedName = languageName.trim().toLowerCase();
                 cachedValue = languageCodeCache.get(normalizedName);
                 if (cachedValue !== undefined) {
-                    args.jobLog("From cache \"".concat(languageName, "\":\"").concat(cachedValue, "\""));
                     return [2 /*return*/, cachedValue];
                 }
                 _d.label = 1;
@@ -399,7 +397,6 @@ var getLanguageCode = function (args, languageName) { return __awaiter(void 0, v
             case 2:
                 data = (_d.sent()).data;
                 languageCode = (_c = (_b = (_a = data.results) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.alpha3_b) !== null && _c !== void 0 ? _c : DEFAULT_LANGUAGE_CODE;
-                args.jobLog("From API \"".concat(languageName, "\":\"").concat(languageCode, "\""));
                 // Cache the result
                 languageCodeCache.set(normalizedName, languageCode);
                 return [2 /*return*/, languageCode];

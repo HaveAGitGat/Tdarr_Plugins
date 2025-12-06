@@ -425,11 +425,9 @@ const getLanguageCode = async (args: IpluginInputArgs, languageName: string): Pr
     return '';
   }
 
-  args.jobLog(`Fetching language code for "${languageName}"`);
   const normalizedName = languageName.trim().toLowerCase();
   const cachedValue = languageCodeCache.get(normalizedName);
   if (cachedValue !== undefined) {
-    args.jobLog(`From cache "${languageName}":"${cachedValue}"`);
     return cachedValue;
   }
 
@@ -444,7 +442,6 @@ const getLanguageCode = async (args: IpluginInputArgs, languageName: string): Pr
       timeout: LANGUAGE_API_TIMEOUT,
     });
     const languageCode = data.results?.[0]?.alpha3_b ?? DEFAULT_LANGUAGE_CODE;
-    args.jobLog(`From API "${languageName}":"${languageCode}"`);
 
     // Cache the result
     languageCodeCache.set(normalizedName, languageCode);
