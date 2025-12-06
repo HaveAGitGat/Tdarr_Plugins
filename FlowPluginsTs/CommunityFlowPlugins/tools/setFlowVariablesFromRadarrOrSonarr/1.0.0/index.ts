@@ -21,8 +21,7 @@ const API_HEADERS = {
 } as const;
 
 // eslint-disable-next-line max-len
-const LANGUAGE_API_BASE_URL = 
-  'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/iso-language-codes-639-1-and-639-2@public/records';
+const LANGUAGE_API_BASE_URL = 'https://data.opendatasoft.com/api/explore/v2.1/catalog/datasets/iso-language-codes-639-1-and-639-2@public/records';
 
 // ===== INTERFACES =====
 interface IBaseResponse {
@@ -40,13 +39,6 @@ interface IBaseResponse {
 interface IEpisodeItemResponse {
   id: number;
   episodeNumber: number;
-}
-
-interface IQualityProfileItemResponse {
-  language?: {
-    id: number;
-    name: string;
-  };
 }
 
 interface IRadarrFileInfo {
@@ -71,12 +63,6 @@ interface IArrConfig {
   name: 'radarr' | 'sonarr';
   host: string;
   apiKey: string;
-}
-
-interface ILanguageApiResponse {
-  results: Array<{
-    alpha3_b?: string;
-  }>;
 }
 
 const details = (): IpluginDetails => ({
@@ -201,7 +187,7 @@ const extractSeasonEpisodeInfo = (fileName: string): { seasonNumber: number; epi
  * @param qualityProfileId - The quality profile ID to query
  * @returns Language name or undefined if not found or on error
  */
-const retrieveProfileLanguageName = async (
+const retrieveQualityProfileLanguageName = async (
   args: IpluginInputArgs,
   config: IArrConfig,
   qualityProfileId: number,
@@ -213,8 +199,8 @@ const retrieveProfileLanguageName = async (
       headers: createHeaders(config.apiKey),
       timeout: ARR_API_TIMEOUT,
     });
-    
-    const data: IQualityProfileItemResponse = response.data;
+
+    const { data } = response;
     return data?.language?.name;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -246,9 +232,9 @@ const retrieveEpisodeId = async (
       headers: createHeaders(config.apiKey),
       timeout: ARR_API_TIMEOUT,
     });
-    
+
     const episodesArray: IEpisodeItemResponse[] = response.data;
-    
+
     if (!episodesArray || episodesArray.length === 0) {
       throw new Error(
         `No episodes found for series ${seriesId} season ${seasonNumber}`,
@@ -256,11 +242,11 @@ const retrieveEpisodeId = async (
     }
 
     const episodeItem = episodesArray.find((episode) => episode.episodeNumber === episodeNumber);
-    
+
     if (!episodeItem) {
       throw new Error(
-        `Episode ${episodeNumber} not found in series ${seriesId} season ${seasonNumber}. ` +
-        `Available episodes: ${episodesArray.map(e => e.episodeNumber).join(', ')}`,
+        `Episode ${episodeNumber} not found in series ${seriesId} season ${seasonNumber}. `
+        + `Available episodes: ${episodesArray.map((e) => e.episodeNumber).join(', ')}`,
       );
     }
 
@@ -285,11 +271,11 @@ const lookupContent = async (
   fileName: string,
 ): Promise<IFileInfo> => {
   const term = buildTerm(fileName);
-  
+
   if (!term) {
     return { type: 'unknown', id: NOT_FOUND_ID };
   }
-  
+
   args.jobLog(`Found ${term} in the file path`);
 
   try {
@@ -303,7 +289,7 @@ const lookupContent = async (
 
     const contentArray: IBaseResponse[] = response.data;
     const content = contentArray?.[0];
-    
+
     if (!content) {
       args.jobLog(`No content found for ${term}`);
       return { type: 'unknown', id: NOT_FOUND_ID };
@@ -316,12 +302,12 @@ const lookupContent = async (
 
     if (config.name === 'sonarr') {
       const { seasonNumber, episodeNumber } = extractSeasonEpisodeInfo(fileName);
-      
+
       if (seasonNumber === -1 || episodeNumber === -1) {
         args.jobLog(`Could not extract season/episode info from filename: ${fileName}`);
         return { type: 'unknown', id: NOT_FOUND_ID };
       }
-      
+
       const episodeId = await retrieveEpisodeId(
         args,
         config,
@@ -329,7 +315,7 @@ const lookupContent = async (
         seasonNumber,
         episodeNumber,
       );
-      
+
       return {
         type: 'sonarr',
         ...baseInfo,
@@ -338,14 +324,14 @@ const lookupContent = async (
         episodeId,
       };
     }
-    
+
     if (config.name === 'radarr') {
-      const profileLanguageName = await retrieveProfileLanguageName(
+      const profileLanguageName = await retrieveQualityProfileLanguageName(
         args,
         config,
         content.qualityProfileId,
       );
-      
+
       return {
         type: 'radarr',
         ...baseInfo,
@@ -403,14 +389,14 @@ const parseContent = async (
         episodeId: String(data.episodes?.[0]?.id ?? DEFAULT_EPISODE_ID),
       };
     }
-    
+
     if (config.name === 'radarr') {
-      const profileLanguageName = await retrieveProfileLanguageName(
+      const profileLanguageName = await retrieveQualityProfileLanguageName(
         args,
         config,
         content.qualityProfileId,
       );
-      
+
       return {
         type: 'radarr',
         ...baseInfo,
@@ -441,25 +427,28 @@ const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): 
   }
 
   const normalizedName = languageName.trim().toLowerCase();
-  if (languageCodeCache.has(normalizedName)) {
-    return languageCodeCache.get(normalizedName)!;
+  const cachedValue = languageCodeCache.get(normalizedName);
+  if (cachedValue !== undefined) {
+    return cachedValue;
   }
 
   try {
-    const url = `${LANGUAGE_API_BASE_URL}?select=alpha3_b&where=english%20%3D%20%22${encodeURIComponent(languageName)}%22&limit=1`;
-    
+    const url = `${LANGUAGE_API_BASE_URL}?select=alpha3_b&where=english%20%3D%20%22${
+      encodeURIComponent(languageName)
+    }%22&limit=1`;
+
     const response = await args.deps.axios({
       method: 'get',
       url,
       timeout: LANGUAGE_API_TIMEOUT,
     });
-    
-    const data: ILanguageApiResponse = response.data;
+
+    const { data } = response;
     const languageCode = data.results?.[0]?.alpha3_b ?? '';
-    
+
     // Cache the result
     languageCodeCache.set(normalizedName, languageCode);
-    
+
     return languageCode;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -473,12 +462,10 @@ const fetchLanguageCode = async (args: IpluginInputArgs, languageName: string): 
  * Uses parallel language code fetching for better performance
  * @param args - Plugin input arguments
  * @param fileInfo - The file information to set variables from
- * @param config - Arr configuration
  */
 const setVariables = async (
   args: IpluginInputArgs,
   fileInfo: IFileInfo,
-  config: IArrConfig,
 ): Promise<void> => {
   // eslint-disable-next-line no-param-reassign
   args.variables.user = args.variables.user || {};
@@ -499,11 +486,11 @@ const setVariables = async (
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrSeasonNumber = String(fileInfo.seasonNumber);
     args.jobLog(`Setting variable ArrSeasonNumber to ${args.variables.user.ArrSeasonNumber}`);
-    
+
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrEpisodeNumber = String(fileInfo.episodeNumber);
     args.jobLog(`Setting variable ArrEpisodeNumber to ${args.variables.user.ArrEpisodeNumber}`);
-    
+
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrEpisodeId = fileInfo.episodeId;
     args.jobLog(`Setting variable ArrEpisodeId to ${args.variables.user.ArrEpisodeId}`);
@@ -513,11 +500,11 @@ const setVariables = async (
       fetchLanguageCode(args, fileInfo.originalLanguageName ?? ''),
       fetchLanguageCode(args, fileInfo.profileLanguageName ?? ''),
     ]);
-    
+
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
     args.jobLog(`Setting variable ArrOriginalLanguageCode to ${args.variables.user.ArrOriginalLanguageCode}`);
-    
+
     // eslint-disable-next-line no-param-reassign
     args.variables.user.ArrProfileLanguageCode = profileLanguageCode;
     args.jobLog(`Setting variable ArrProfileLanguageCode to ${args.variables.user.ArrProfileLanguageCode}`);
@@ -579,8 +566,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     // Set variables if content was found
     if (fileInfo.id !== NOT_FOUND_ID && fileInfo.type !== 'unknown') {
       args.jobLog(`Successfully found content with ID: ${fileInfo.id}`);
-      await setVariables(args, fileInfo, config);
-      
+      await setVariables(args, fileInfo);
+
       return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,
@@ -597,7 +584,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     args.jobLog(`Plugin execution failed: ${errorMessage}`);
-    
+
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
