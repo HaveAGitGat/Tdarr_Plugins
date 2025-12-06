@@ -510,7 +510,7 @@ const setVariables = async (
       default:
         [originalLanguageCode, profileLanguageCode] = await Promise.all([
           fetchLanguageCode(args, fileInfo.originalLanguageName ?? ''),
-          fetchLanguageCode(args, profileLanguageToFetch),
+          fetchLanguageCode(args, fileInfo.profileLanguageName ?? ''),
         ]);
         break;
     }

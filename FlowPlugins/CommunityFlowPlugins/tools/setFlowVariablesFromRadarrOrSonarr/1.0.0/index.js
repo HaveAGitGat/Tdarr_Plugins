@@ -418,9 +418,9 @@ var fetchLanguageCode = function (args, languageName) { return __awaiter(void 0,
 var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, void 0, function () {
     var originalLanguageCode, profileLanguageToFetch, profileLanguageCode, originalLanguageCode, _a;
     var _b;
-    var _c, _d, _e, _f, _g;
-    return __generator(this, function (_h) {
-        switch (_h.label) {
+    var _c, _d, _e, _f, _g, _h;
+    return __generator(this, function (_j) {
+        switch (_j.label) {
             case 0:
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user = args.variables.user || {};
@@ -431,7 +431,7 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 if (!(fileInfo.type === 'sonarr')) return [3 /*break*/, 2];
                 return [4 /*yield*/, fetchLanguageCode(args, (_c = fileInfo.originalLanguageName) !== null && _c !== void 0 ? _c : '')];
             case 1:
-                originalLanguageCode = _h.sent();
+                originalLanguageCode = _j.sent();
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrOriginalLanguageCode = originalLanguageCode;
                 args.jobLog("Setting variable ArrOriginalLanguageCode to ".concat(args.variables.user.ArrOriginalLanguageCode));
@@ -461,22 +461,22 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 args.jobLog('Profile language is "Original", using original language');
                 return [4 /*yield*/, fetchLanguageCode(args, (_e = fileInfo.originalLanguageName) !== null && _e !== void 0 ? _e : '')];
             case 4:
-                originalLanguageCode = _h.sent();
+                originalLanguageCode = _j.sent();
                 profileLanguageCode = originalLanguageCode;
                 return [3 /*break*/, 9];
             case 5:
                 args.jobLog('Profile language is "Any", setting to "und" (undetermined)');
                 return [4 /*yield*/, fetchLanguageCode(args, (_f = fileInfo.originalLanguageName) !== null && _f !== void 0 ? _f : '')];
             case 6:
-                originalLanguageCode = _h.sent();
+                originalLanguageCode = _j.sent();
                 profileLanguageCode = 'und';
                 return [3 /*break*/, 9];
             case 7: return [4 /*yield*/, Promise.all([
                     fetchLanguageCode(args, (_g = fileInfo.originalLanguageName) !== null && _g !== void 0 ? _g : ''),
-                    fetchLanguageCode(args, profileLanguageToFetch),
+                    fetchLanguageCode(args, (_h = fileInfo.profileLanguageName) !== null && _h !== void 0 ? _h : ''),
                 ])];
             case 8:
-                _b = _h.sent(), originalLanguageCode = _b[0], profileLanguageCode = _b[1];
+                _b = _j.sent(), originalLanguageCode = _b[0], profileLanguageCode = _b[1];
                 return [3 /*break*/, 9];
             case 9:
                 // eslint-disable-next-line no-param-reassign
@@ -485,7 +485,7 @@ var setVariables = function (args, fileInfo) { return __awaiter(void 0, void 0, 
                 // eslint-disable-next-line no-param-reassign
                 args.variables.user.ArrProfileLanguageCode = profileLanguageCode;
                 args.jobLog("Setting variable ArrProfileLanguageCode to ".concat(profileLanguageCode));
-                _h.label = 10;
+                _j.label = 10;
             case 10: return [2 /*return*/];
         }
     });
