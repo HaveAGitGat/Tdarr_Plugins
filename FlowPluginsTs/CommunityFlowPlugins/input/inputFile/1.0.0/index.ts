@@ -60,7 +60,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const { fileAccessChecks, pauseNodeIfAccessChecksFail } = args.inputs;
 
   const nodeID = process.argv[8];
-  const { serverIP, serverPort } = args.deps.configVars.config;
+  const { serverIP, serverPort, apiKey } = args.deps.configVars.config;
 
   const url = `http://${serverIP}:${serverPort}/api/v2/update-node`;
 
@@ -69,7 +69,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     const requestConfig = {
       method: 'post',
       url,
-      headers: {},
+      headers: {
+        'x-api-key': apiKey,
+      },
       data: {
         data: {
           nodeID,
@@ -86,7 +88,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const checkReadWrite = async (location: string) => {
     try {
+      args.jobLog(`Checking read access for: "${location}"`);
       await fsp.access(location, fsp.constants.R_OK);
+      args.jobLog('Read access OK');
     } catch (err) {
       args.jobLog(JSON.stringify(err));
       if (pauseNodeIfAccessChecksFail) {
@@ -107,7 +111,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     }
   };
 
-  if (fileAccessChecks) {
+  const isNotUnmappedNode = args?.configVars?.config?.nodeType !== 'unmapped';
+
+  if (fileAccessChecks && isNotUnmappedNode) {
     args.jobLog('Checking file access');
     await checkReadWrite(orignalFolder);
     await checkReadWrite(args.librarySettings.cache);
