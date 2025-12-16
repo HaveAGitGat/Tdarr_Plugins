@@ -36,6 +36,21 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify the container to use',
     },
+    {
+      label: 'GPU Acceleration',
+      name: 'gpuAcceleration',
+      type: 'string',
+      defaultValue: 'none',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'none',
+          'nvidia',
+          'vaapi',
+        ],
+      },
+      tooltip: 'Specify GPU acceleration type for thorough health checks (only applies to FFmpeg)',
+    },
   ],
   outputs: [
     {
@@ -52,6 +67,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const type = String(args.inputs.type);
+  const gpuAcceleration = String(args.inputs.gpuAcceleration);
 
   args.jobLog(`Running health check of type ${type}`);
 
@@ -74,6 +90,18 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
       '-stats',
       '-v',
       'error',
+    ];
+
+    // Add GPU acceleration flags before input if specified
+    if (gpuAcceleration === 'nvidia') {
+      cliArgs.push('-hwaccel', 'nvdec', '-hwaccel_output_format', 'cuda');
+      args.jobLog('Using NVIDIA GPU acceleration');
+    } else if (gpuAcceleration === 'vaapi') {
+      cliArgs.push('-hwaccel', 'vaapi', '-hwaccel_output_format', 'vaapi');
+      args.jobLog('Using VAAPI GPU acceleration');
+    }
+
+    cliArgs.push(
       '-i',
       args.inputFileObj._id,
       '-f',
@@ -81,7 +109,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
       '-max_muxing_queue_size',
       '9999',
       outputFilePath,
-    ];
+    );
   }
 
   const cli = new CLI({

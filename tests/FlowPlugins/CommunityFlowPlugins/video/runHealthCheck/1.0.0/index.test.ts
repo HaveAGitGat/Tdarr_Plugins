@@ -31,6 +31,7 @@ describe('runHealthCheck Plugin', () => {
     baseArgs = {
       inputs: {
         type: 'quick',
+        gpuAcceleration: 'none',
       },
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),
@@ -140,6 +141,102 @@ describe('runHealthCheck Plugin', () => {
         updateWorker: baseArgs.updateWorker,
         args: baseArgs,
       });
+    });
+
+    it('should use NVIDIA GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'nvidia';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'nvdec',
+          '-hwaccel_output_format',
+          'cuda',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using NVIDIA GPU acceleration');
+    });
+
+    it('should use VAAPI GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'vaapi';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'vaapi',
+          '-hwaccel_output_format',
+          'vaapi',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using VAAPI GPU acceleration');
+    });
+
+    it('should not use GPU acceleration for quick health check', async () => {
+      baseArgs.inputs.type = 'quick';
+      baseArgs.inputs.gpuAcceleration = 'nvidia';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/HandBrakeCLI',
+        spawnArgs: [
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-o',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+          '--scan',
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith('Using NVIDIA GPU acceleration');
     });
   });
 

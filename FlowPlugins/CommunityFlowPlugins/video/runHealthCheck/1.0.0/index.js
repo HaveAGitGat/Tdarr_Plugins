@@ -68,6 +68,21 @@ var details = function () { return ({
             },
             tooltip: 'Specify the container to use',
         },
+        {
+            label: 'GPU Acceleration',
+            name: 'gpuAcceleration',
+            type: 'string',
+            defaultValue: 'none',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'none',
+                    'nvidia',
+                    'vaapi',
+                ],
+            },
+            tooltip: 'Specify GPU acceleration type for thorough health checks (only applies to FFmpeg)',
+        },
     ],
     outputs: [
         {
@@ -79,7 +94,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, type, outputFilePath, cliPath, cliArgs, cli, res;
+    var lib, type, gpuAcceleration, outputFilePath, cliPath, cliArgs, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -87,6 +102,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 type = String(args.inputs.type);
+                gpuAcceleration = String(args.inputs.gpuAcceleration);
                 args.jobLog("Running health check of type ".concat(type));
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
                     + ".".concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
@@ -104,14 +120,17 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         '-stats',
                         '-v',
                         'error',
-                        '-i',
-                        args.inputFileObj._id,
-                        '-f',
-                        'null',
-                        '-max_muxing_queue_size',
-                        '9999',
-                        outputFilePath,
                     ];
+                    // Add GPU acceleration flags before input if specified
+                    if (gpuAcceleration === 'nvidia') {
+                        cliArgs.push('-hwaccel', 'nvdec', '-hwaccel_output_format', 'cuda');
+                        args.jobLog('Using NVIDIA GPU acceleration');
+                    }
+                    else if (gpuAcceleration === 'vaapi') {
+                        cliArgs.push('-hwaccel', 'vaapi', '-hwaccel_output_format', 'vaapi');
+                        args.jobLog('Using VAAPI GPU acceleration');
+                    }
+                    cliArgs.push('-i', args.inputFileObj._id, '-f', 'null', '-max_muxing_queue_size', '9999', outputFilePath);
                 }
                 cli = new cliUtils_1.CLI({
                     cli: cliPath,
