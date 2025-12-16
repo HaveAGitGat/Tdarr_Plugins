@@ -68,6 +68,29 @@ var details = function () { return ({
             },
             tooltip: 'Specify the container to use',
         },
+        {
+            label: 'GPU Acceleration',
+            name: 'gpuAcceleration',
+            type: 'string',
+            defaultValue: 'none',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'none',
+                    'nvdec',
+                    'cuda',
+                    'qsv',
+                    'vaapi',
+                    'dxva2',
+                    'd3d11va',
+                    'videotoolbox',
+                    'vulkan',
+                ],
+            },
+            tooltip: 'Specify GPU acceleration type for thorough health checks (only applies to FFmpeg). '
+                + 'nvdec/cuda: NVIDIA GPUs | qsv: Intel Quick Sync | vaapi: Intel/AMD Linux | '
+                + 'dxva2/d3d11va: Windows | videotoolbox: macOS/iOS | vulkan: Cross-platform',
+        },
     ],
     outputs: [
         {
@@ -79,7 +102,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, type, outputFilePath, cliPath, cliArgs, cli, res;
+    var lib, type, gpuAcceleration, outputFilePath, cliPath, cliArgs, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -87,6 +110,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 type = String(args.inputs.type);
+                gpuAcceleration = String(args.inputs.gpuAcceleration);
                 args.jobLog("Running health check of type ".concat(type));
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
                     + ".".concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
@@ -104,14 +128,47 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         '-stats',
                         '-v',
                         'error',
-                        '-i',
-                        args.inputFileObj._id,
-                        '-f',
-                        'null',
-                        '-max_muxing_queue_size',
-                        '9999',
-                        outputFilePath,
                     ];
+                    // Add GPU acceleration flags before input if specified
+                    if (gpuAcceleration !== 'none') {
+                        switch (gpuAcceleration) {
+                            case 'nvdec':
+                                cliArgs.push('-hwaccel', 'nvdec', '-hwaccel_output_format', 'cuda');
+                                args.jobLog('Using NVIDIA NVDEC GPU acceleration');
+                                break;
+                            case 'cuda':
+                                cliArgs.push('-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda');
+                                args.jobLog('Using NVIDIA CUDA GPU acceleration');
+                                break;
+                            case 'qsv':
+                                cliArgs.push('-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv');
+                                args.jobLog('Using Intel Quick Sync Video GPU acceleration');
+                                break;
+                            case 'vaapi':
+                                cliArgs.push('-hwaccel', 'vaapi', '-hwaccel_output_format', 'vaapi');
+                                args.jobLog('Using VAAPI GPU acceleration');
+                                break;
+                            case 'dxva2':
+                                cliArgs.push('-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld');
+                                args.jobLog('Using DXVA2 GPU acceleration');
+                                break;
+                            case 'd3d11va':
+                                cliArgs.push('-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11');
+                                args.jobLog('Using D3D11VA GPU acceleration');
+                                break;
+                            case 'videotoolbox':
+                                cliArgs.push('-hwaccel', 'videotoolbox');
+                                args.jobLog('Using VideoToolbox GPU acceleration');
+                                break;
+                            case 'vulkan':
+                                cliArgs.push('-hwaccel', 'vulkan', '-hwaccel_output_format', 'vulkan');
+                                args.jobLog('Using Vulkan GPU acceleration');
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    cliArgs.push('-i', args.inputFileObj._id, '-f', 'null', '-max_muxing_queue_size', '9999', outputFilePath);
                 }
                 cli = new cliUtils_1.CLI({
                     cli: cliPath,

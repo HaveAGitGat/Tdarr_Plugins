@@ -31,6 +31,7 @@ describe('runHealthCheck Plugin', () => {
     baseArgs = {
       inputs: {
         type: 'quick',
+        gpuAcceleration: 'none',
       },
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),
@@ -140,6 +141,310 @@ describe('runHealthCheck Plugin', () => {
         updateWorker: baseArgs.updateWorker,
         args: baseArgs,
       });
+    });
+
+    it('should use NVIDIA NVDEC GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'nvdec';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'nvdec',
+          '-hwaccel_output_format',
+          'cuda',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using NVIDIA NVDEC GPU acceleration');
+    });
+
+    it('should use NVIDIA CUDA GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'cuda';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'cuda',
+          '-hwaccel_output_format',
+          'cuda',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using NVIDIA CUDA GPU acceleration');
+    });
+
+    it('should use Intel QSV GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'qsv';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'qsv',
+          '-hwaccel_output_format',
+          'qsv',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using Intel Quick Sync Video GPU acceleration');
+    });
+
+    it('should use VAAPI GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'vaapi';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'vaapi',
+          '-hwaccel_output_format',
+          'vaapi',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using VAAPI GPU acceleration');
+    });
+
+    it('should use DXVA2 GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'dxva2';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'dxva2',
+          '-hwaccel_output_format',
+          'dxva2_vld',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using DXVA2 GPU acceleration');
+    });
+
+    it('should use D3D11VA GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'd3d11va';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'd3d11va',
+          '-hwaccel_output_format',
+          'd3d11',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using D3D11VA GPU acceleration');
+    });
+
+    it('should use VideoToolbox GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'videotoolbox';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'videotoolbox',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using VideoToolbox GPU acceleration');
+    });
+
+    it('should use Vulkan GPU acceleration for thorough health check', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'vulkan';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/ffmpeg',
+        spawnArgs: [
+          '-stats',
+          '-v',
+          'error',
+          '-hwaccel',
+          'vulkan',
+          '-hwaccel_output_format',
+          'vulkan',
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-f',
+          'null',
+          '-max_muxing_queue_size',
+          '9999',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Using Vulkan GPU acceleration');
+    });
+
+    it('should not use GPU acceleration for quick health check', async () => {
+      baseArgs.inputs.type = 'quick';
+      baseArgs.inputs.gpuAcceleration = 'nvdec';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith({
+        cli: '/usr/bin/HandBrakeCLI',
+        spawnArgs: [
+          '-i',
+          baseArgs.inputFileObj._id,
+          '-o',
+          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+          '--scan',
+        ],
+        spawnOpts: {},
+        jobLog: baseArgs.jobLog,
+        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
+        inputFileObj: baseArgs.inputFileObj,
+        logFullCliOutput: false,
+        updateWorker: baseArgs.updateWorker,
+        args: baseArgs,
+      });
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith('Using NVIDIA NVDEC GPU acceleration');
     });
   });
 

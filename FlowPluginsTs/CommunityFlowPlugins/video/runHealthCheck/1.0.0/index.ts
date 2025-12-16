@@ -36,6 +36,29 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify the container to use',
     },
+    {
+      label: 'GPU Acceleration',
+      name: 'gpuAcceleration',
+      type: 'string',
+      defaultValue: 'none',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'none',
+          'nvdec',
+          'cuda',
+          'qsv',
+          'vaapi',
+          'dxva2',
+          'd3d11va',
+          'videotoolbox',
+          'vulkan',
+        ],
+      },
+      tooltip: 'Specify GPU acceleration type for thorough health checks (only applies to FFmpeg). '
+        + 'nvdec/cuda: NVIDIA GPUs | qsv: Intel Quick Sync | vaapi: Intel/AMD Linux | '
+        + 'dxva2/d3d11va: Windows | videotoolbox: macOS/iOS | vulkan: Cross-platform',
+    },
   ],
   outputs: [
     {
@@ -52,6 +75,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const type = String(args.inputs.type);
+  const gpuAcceleration = String(args.inputs.gpuAcceleration);
 
   args.jobLog(`Running health check of type ${type}`);
 
@@ -74,6 +98,49 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
       '-stats',
       '-v',
       'error',
+    ];
+
+    // Add GPU acceleration flags before input if specified
+    if (gpuAcceleration !== 'none') {
+      switch (gpuAcceleration) {
+        case 'nvdec':
+          cliArgs.push('-hwaccel', 'nvdec', '-hwaccel_output_format', 'cuda');
+          args.jobLog('Using NVIDIA NVDEC GPU acceleration');
+          break;
+        case 'cuda':
+          cliArgs.push('-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda');
+          args.jobLog('Using NVIDIA CUDA GPU acceleration');
+          break;
+        case 'qsv':
+          cliArgs.push('-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv');
+          args.jobLog('Using Intel Quick Sync Video GPU acceleration');
+          break;
+        case 'vaapi':
+          cliArgs.push('-hwaccel', 'vaapi', '-hwaccel_output_format', 'vaapi');
+          args.jobLog('Using VAAPI GPU acceleration');
+          break;
+        case 'dxva2':
+          cliArgs.push('-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld');
+          args.jobLog('Using DXVA2 GPU acceleration');
+          break;
+        case 'd3d11va':
+          cliArgs.push('-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11');
+          args.jobLog('Using D3D11VA GPU acceleration');
+          break;
+        case 'videotoolbox':
+          cliArgs.push('-hwaccel', 'videotoolbox');
+          args.jobLog('Using VideoToolbox GPU acceleration');
+          break;
+        case 'vulkan':
+          cliArgs.push('-hwaccel', 'vulkan', '-hwaccel_output_format', 'vulkan');
+          args.jobLog('Using Vulkan GPU acceleration');
+          break;
+        default:
+          break;
+      }
+    }
+
+    cliArgs.push(
       '-i',
       args.inputFileObj._id,
       '-f',
@@ -81,7 +148,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
       '-max_muxing_queue_size',
       '9999',
       outputFilePath,
-    ];
+    );
   }
 
   const cli = new CLI({
