@@ -1,5 +1,5 @@
-// Convert by claude AI
-
+/* eslint-disable import/prefer-default-export */
+/* eslint-disable no-param-reassign */
 import { IpluginDetails, IpluginInputArgs, IpluginOutputArgs } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
@@ -134,8 +134,8 @@ interface DiscordField {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
   const lib = require('../../../../../methods/lib')();
-  // eslint-disable-next-line no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const webhookUrl = String(args.inputs.webhookUrl || '').trim();
@@ -244,34 +244,48 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     };
   }
 
-  const { file } = args.inputFileObj;
-  const streams = args.inputFileObj.ffProbeData?.streams || [];
+  const streams = args.inputFileObj.ffProbeData && args.inputFileObj.ffProbeData.streams 
+    ? args.inputFileObj.ffProbeData.streams 
+    : [];
 
   // Find video stream
-  const video = streams.find((s) => s.codec_type === 'video') || {};
+  let video: any = {};
+  for (let i = 0; i < streams.length; i += 1) {
+    if (streams[i].codec_type === 'video') {
+      video = streams[i];
+      break;
+    }
+  }
 
   // Find audio streams
-  const audioStreams = streams.filter((s) => s.codec_type === 'audio');
+  const audioStreams = [];
+  for (let i = 0; i < streams.length; i += 1) {
+    if (streams[i].codec_type === 'audio') {
+      audioStreams.push(streams[i]);
+    }
+  }
 
   let audioDetails = '';
   if (audioStreams.length > 0) {
     if (language === 'emoji') {
       // Ultra compact: just codec and channels
-      audioDetails = audioStreams
-        .map((s) => {
-          const codec = s.codec_name || '?';
-          const ch = s.channels || '?';
-          return `${codec} ${ch}ch`;
-        })
-        .join(' • ');
+      const parts = [];
+      for (let i = 0; i < audioStreams.length; i += 1) {
+        const s = audioStreams[i];
+        const codec = s.codec_name || '?';
+        const ch = s.channels || '?';
+        parts.push(`${codec} ${ch}ch`);
+      }
+      audioDetails = parts.join(' • ');
     } else {
-      audioDetails = audioStreams
-        .map((s, i) => {
-          const codec = s.codec_name || t.unknown;
-          const ch = s.channels || '?';
-          return `${t.audioTrack} ${i + 1}: ${codec} - ${ch} ${t.channels}`;
-        })
-        .join('\n');
+      const parts = [];
+      for (let i = 0; i < audioStreams.length; i += 1) {
+        const s = audioStreams[i];
+        const codec = s.codec_name || t.unknown;
+        const ch = s.channels || '?';
+        parts.push(`${t.audioTrack} ${i + 1}: ${codec} - ${ch} ${t.channels}`);
+      }
+      audioDetails = parts.join('\n');
     }
   } else {
     audioDetails = t.noAudio;
@@ -282,7 +296,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const codec = video.codec_long_name || video.codec_name || t.unknown;
 
   // Calculate duration
-  const rawDuration = parseFloat(args.inputFileObj.ffProbeData?.format?.duration || '0');
+  const rawDuration = parseFloat(
+    (args.inputFileObj.ffProbeData && args.inputFileObj.ffProbeData.format 
+      && args.inputFileObj.ffProbeData.format.duration) || '0',
+  );
   let readableDuration = t.unknown;
   if (!isNaN(rawDuration) && rawDuration > 0) {
     const date = new Date(rawDuration * 1000);
@@ -292,8 +309,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   // Format framerate
   const calcFrameRate = (fps: string | number): string => {
-    if (typeof fps === 'string' && fps.includes('/')) {
-      const [num, den] = fps.split('/').map(Number);
+    if (typeof fps === 'string' && fps.indexOf('/') > -1) {
+      const parts = fps.split('/');
+      const num = Number(parts[0]);
+      const den = Number(parts[1]);
       if (num && den) {
         return `${(num / den).toFixed(2)}${language === 'emoji' ? '' : ' fps'}`;
       }
@@ -303,12 +322,16 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const framerate = calcFrameRate(video.r_frame_rate || video.avg_frame_rate || t.unknown);
 
   // Bitrate
-  const rawBitrate = args.inputFileObj.ffProbeData?.format?.bit_rate;
+  const rawBitrate = args.inputFileObj.ffProbeData 
+    && args.inputFileObj.ffProbeData.format 
+    && args.inputFileObj.ffProbeData.format.bit_rate;
   const bitrateKbps = rawBitrate
     ? `${(parseInt(String(rawBitrate), 10) / 1000).toFixed(0)}${language === 'emoji' ? 'k' : ' kbps'}`
     : t.unknown;
 
-  const fullPath = args.inputFileObj.meta?.SourceFile || file || t.unknown;
+  const fullPath = (args.inputFileObj.meta && args.inputFileObj.meta.SourceFile) 
+    || args.inputFileObj.file 
+    || t.unknown;
   const fileName = `${args.inputFileObj.file_name}.${args.inputFileObj.container}`;
 
   let fields: DiscordField[] = [];
@@ -348,19 +371,18 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     ];
   } else if (language === 'emoji' && notificationType === 'complete') {
     // Complete notification - emoji compact
-    const oldSizeBytes = args.originalLibraryFile?.file_size || 0;
+    const oldSizeBytes = (args.originalLibraryFile && args.originalLibraryFile.file_size) || 0;
     const newSizeBytes = args.inputFileObj.file_size || 0;
 
     const oldSizeMB = `${(oldSizeBytes / 1024 / 1024).toFixed(1)}M`;
     const newSizeMB = `${(newSizeBytes / 1024 / 1024).toFixed(1)}M`;
 
     const ratio = oldSizeBytes > 0 ? newSizeBytes / oldSizeBytes : 0;
-    const reduction =
-      oldSizeBytes > 0
-        ? newSizeBytes === oldSizeBytes
-          ? t.noReduction
-          : `-${(100 - ratio * 100).toFixed(1)}%`
-        : t.notCalculated;
+    const reduction = oldSizeBytes > 0
+      ? (newSizeBytes === oldSizeBytes
+        ? t.noReduction
+        : `-${(100 - ratio * 100).toFixed(1)}%`)
+      : t.notCalculated;
 
     title = t.titleComplete;
     footer = t.footerComplete;
@@ -412,19 +434,18 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     ];
   } else {
     // Complete notification - full text
-    const oldSizeBytes = args.originalLibraryFile?.file_size || 0;
+    const oldSizeBytes = (args.originalLibraryFile && args.originalLibraryFile.file_size) || 0;
     const newSizeBytes = args.inputFileObj.file_size || 0;
 
     const oldSizeMB = `${(oldSizeBytes / 1024 / 1024).toFixed(1)} MB`;
     const newSizeMB = `${(newSizeBytes / 1024 / 1024).toFixed(1)} MB`;
 
     const ratio = oldSizeBytes > 0 ? newSizeBytes / oldSizeBytes : 0;
-    const reduction =
-      oldSizeBytes > 0
-        ? newSizeBytes === oldSizeBytes
-          ? t.noReduction
-          : `${(100 - ratio * 100).toFixed(1)}%`
-        : t.notCalculated;
+    const reduction = oldSizeBytes > 0
+      ? (newSizeBytes === oldSizeBytes
+        ? t.noReduction
+        : `${(100 - ratio * 100).toFixed(1)}%`)
+      : t.notCalculated;
 
     title = t.titleComplete;
     footer = t.footerComplete;
@@ -466,8 +487,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   };
 
   // Send webhook
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
   const https = require('https');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
   const http = require('http');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
   const url = require('url');
 
   const parsedUrl = url.parse(webhookUrl);
@@ -481,7 +505,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(body),
+      'Content-Length': body.length,
     },
   };
 
