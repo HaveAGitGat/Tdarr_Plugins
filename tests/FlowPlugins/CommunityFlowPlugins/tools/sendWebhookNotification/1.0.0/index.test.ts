@@ -1,3 +1,5 @@
+// Convert by claude AI
+
 import { IpluginDetails, IpluginInputArgs, IpluginOutputArgs } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
