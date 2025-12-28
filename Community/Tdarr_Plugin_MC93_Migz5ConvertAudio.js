@@ -6,7 +6,7 @@ const details = () => ({
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'This plugin can convert any 2.0 audio track/s to AAC and can create downmixed audio tracks. \n\n',
-  Version: '2.4',
+  Version: '2.5',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [{
     name: 'aac_stereo',
@@ -125,6 +125,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is audio.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
+      // Get original track metadata
+      const originalTitle = file.ffProbeData.streams[i].tags?.title || '';
+      const language = file.ffProbeData.streams[i].tags?.language || '';
+      
       // Catch error here incase user left inputs.downmix empty.
       try {
         // Check if inputs.downmix is set to true.
@@ -137,8 +141,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               || (inputs.downmix_single_track === true && is6channelAdded === false))
 
           ) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
-            response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel from 8 channel. \n';
+            // Create new title preserving original name
+            const newTitle = originalTitle ? `${originalTitle} - 5.1` : '5.1';
+            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="${newTitle}" `;
+            
+            // Preserve language if it exists
+            if (language) {
+              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
+            }
+            
+            response.infoLog += `☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "${newTitle}" from 8 channel. \n`;
             convert = true;
             is6channelAdded = true;
           }
@@ -149,8 +161,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
-            response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel from 6 channel. \n';
+            // Create new title preserving original name
+            const newTitle = originalTitle ? `${originalTitle} - 2.0` : '2.0';
+            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="${newTitle}" `;
+            
+            // Preserve language if it exists
+            if (language) {
+              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
+            }
+            
+            response.infoLog += `☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "${newTitle}" from 6 channel. \n`;
             convert = true;
             is2channelAdded = true;
           }
