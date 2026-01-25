@@ -30,7 +30,7 @@ const details = () => ({
     specified in "hevc_max_bitrate". This plugin relies on understanding the accurate video bitrate of your files. 
     It's highly recommended to first remux into MKV & enable "Run mkvpropedit on files before running plugins" under 
     Tdarr>Options.`,
-  Version: '1.4',
+  Version: '1.5',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,av1,configurable',
   Inputs: [
     {
@@ -429,6 +429,7 @@ let swDecode = false;
 let videoBR = 0;
 let hdrEnabled = false;
 let videoProfile = '';
+let subtitleDispositions = '';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -810,6 +811,46 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Subtitle Dispositions - Preserve original settings
+  // Credit PilaScat
+  let subtitleIdx = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const stream = file.ffProbeData.streams[i];
+    if (stream.codec_type && stream.codec_type.toLowerCase() === 'subtitle') {
+      const flagsArray = [];
+
+      // Get disposition flags
+      if (stream.disposition) {
+        if (stream.disposition.default === 1) {
+          flagsArray.push('default');
+        }
+        if (stream.disposition.forced === 1) {
+          flagsArray.push('forced');
+        }
+        if (stream.disposition.hearing_impaired === 1) {
+          flagsArray.push('hearing_impaired');
+        }
+        if (stream.disposition.visual_impaired === 1) {
+          flagsArray.push('visual_impaired');
+        }
+        if (stream.disposition.comment === 1) {
+          flagsArray.push('comment');
+        }
+      }
+
+      // Build disposition command
+      if (flagsArray.length > 0) {
+        const flagsString = flagsArray.join('+');
+        subtitleDispositions += `-disposition:s:${subtitleIdx} ${flagsString} `;
+      } else {
+        // No flags, explicitly set to 0
+        subtitleDispositions += `-disposition:s:${subtitleIdx} 0 `;
+      }
+
+      subtitleIdx += 1;
+    }
+  }
+
   // #region Start ffmpeg flags
   // Specify the output format
   switch (inputs.container) {
@@ -1001,15 +1042,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     case 'darwin':
       // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 1024 
-        ${extraArguments}`;
+        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -dn ${subtitleDispositions}`
+        + `-max_muxing_queue_size 1024 ${extraArguments}`;
       response.infoLog += '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
         + 'cmds set in extra_qsv_options will be IGNORED!\n';
       break;
     default:
       // Normal behavior
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} `
+        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} ${subtitleDispositions}`
         + `-c:a copy -c:s copy -max_muxing_queue_size 1024 ${extraArguments}`;
   }
 
