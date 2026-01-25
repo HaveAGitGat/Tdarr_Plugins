@@ -532,12 +532,13 @@ const tests = [
     output: {
       linux: {
         processFile: true,
-        preset: '-fflags +genpts -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 1024 -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts -fix_sub_duration -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 1024 -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + 'Input file is vc1. Hardware Decode not supported.\n'
+          + 'Input file is VC1. Hardware Decode not supported (on latest gen) so will SW decode.\n'
+          + 'VC1 likely has issues with timestamps so will attempt sub timestamp fixup.\n'
           + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
@@ -549,12 +550,13 @@ const tests = [
       },
       win32: {
         processFile: true,
-        preset: '-fflags +genpts -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 1024 -f matroska -profile:v main10 -pix_fmt p010le ',
+        preset: '-fflags +genpts -fix_sub_duration -c:v vc1<io> -map 0 -c:v hevc_qsv -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 1024 -f matroska -profile:v main10 -pix_fmt p010le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + 'Input file is vc1. Hardware Decode not supported.\n'
+          + 'Input file is VC1. Hardware Decode not supported (on latest gen) so will SW decode.\n'
+          + 'VC1 likely has issues with timestamps so will attempt sub timestamp fixup.\n'
           + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
@@ -566,12 +568,13 @@ const tests = [
       },
       darwin: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 1024 -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
+        preset: '-fflags +genpts -fix_sub_duration -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 603k -minrate 452k -maxrate 754k -bufsize 1206k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 1024 -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + 'Input file is vc1. Hardware Decode not supported.\n'
+          + 'Input file is VC1. Hardware Decode not supported (on latest gen) so will SW decode.\n'
+          + 'VC1 likely has issues with timestamps so will attempt sub timestamp fixup.\n'
           + '10 bit encode enabled. Setting VideoToolBox Profile v2 & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'

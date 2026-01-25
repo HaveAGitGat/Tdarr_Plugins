@@ -30,7 +30,7 @@ const details = () => ({
     specified in "hevc_max_bitrate". This plugin relies on understanding the accurate video bitrate of your files. 
     It's highly recommended to first remux into MKV & enable "Run mkvpropedit on files before running plugins" under 
     Tdarr>Options.`,
-  Version: '1.5',
+  Version: '1.6',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,av1,configurable',
   Inputs: [
     {
@@ -430,6 +430,7 @@ let videoBR = 0;
 let hdrEnabled = false;
 let videoProfile = '';
 let subtitleDispositions = '';
+let fixSubs = false;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -465,7 +466,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // Check if stream is a video.
     if (strstreamType === 'video') {
       if (file.ffProbeData.streams[i].codec_name !== 'mjpeg'
-        && file.ffProbeData.streams[i].codec_name !== 'png') {
+        && file.ffProbeData.streams[i].codec_name !== 'png'
+        && file.ffProbeData.streams[i].codec_name !== 'gif') {
         if (videoBR <= 0) { // Process if videoBR is not yet valid
           try { // Try checking file stats using Mediainfo first, then ffprobe.
             videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
@@ -872,7 +874,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Some video codecs don't support HW decode so mark these
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   switch (file.video_codec_name) {
-    case 'mpeg2':
+    case 'mpeg1video':
+      fixSubs = true;
+      response.infoLog += 'mpeg1 likely has issues with timestamps so will attempt sub timestamp fixup.\n';
+      break;
+    case 'mpeg2video':
+      fixSubs = true;
+      response.infoLog += 'mpeg2 likely has issues with timestamps so will attempt sub timestamp fixup.\n';
       break;
     case 'h264':
       if (high10 === true) {
@@ -884,9 +892,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       break;
     case 'hevc':
       break;
-    case 'vp9':// Should be supported by 8th Gen +
+    case 'vp9': // Should be supported by 8th Gen +
       break;
-    case 'av1':// Should be supported by 11th gen +
+    case 'av1': // Should be supported by 11th gen +
+      break;
+    case 'vc1':
+      swDecode = true;
+      response.infoLog += 'Input file is VC1. Hardware Decode not supported (on latest gen) so will SW decode.\n';
+      fixSubs = true;
+      response.infoLog += 'VC1 likely has issues with timestamps so will attempt sub timestamp fixup.\n';
       break;
     default:
       swDecode = true;
@@ -955,6 +969,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // #region Start CMD Preset
   // -fflags +genpts should regenerate timestamps if they end up missing.
   response.preset = '-fflags +genpts ';
+  if (fixSubs === true) {
+    response.preset += '-fix_sub_duration ';
+  }
 
   // #region HW Accel Flags
   // Account for different OS
@@ -981,7 +998,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   if (swDecode !== true && os.platform() !== 'darwin') {
     switch (file.video_codec_name) {
-      case 'mpeg2':
+      case 'mpeg2video':
         response.preset += '-c:v mpeg2_qsv';
         break;
       case 'h264':
@@ -1042,7 +1059,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     case 'darwin':
       // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -dn ${subtitleDispositions}`
+        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy ${subtitleDispositions}`
         + `-max_muxing_queue_size 1024 ${extraArguments}`;
       response.infoLog += '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
         + 'cmds set in extra_qsv_options will be IGNORED!\n';
