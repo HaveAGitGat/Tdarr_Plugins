@@ -15,7 +15,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_bsh1_Boosh_FFMPEG_QSV_HEVC',
   Stage: 'Pre-processing',
-  Name: 'Boosh-Transcode Using QSV GPU & FFMPEG',
+  Name: 'Boosh-Transcode using QSV GPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `==DETAILS== This is a QSV plugin. VAAPI is NOT used. Supports HEVC or AV1 encoding. 
@@ -30,7 +30,7 @@ const details = () => ({
     specified in "hevc_max_bitrate". This plugin relies on understanding the accurate video bitrate of your files. 
     It's highly recommended to first remux into MKV & enable "Run mkvpropedit on files before running plugins" under 
     Tdarr>Options.`,
-  Version: '1.4',
+  Version: '1.6',
   Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,av1,configurable',
   Inputs: [
     {
@@ -215,12 +215,13 @@ const details = () => ({
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nIf you are using a "-vf" cmd, please put it at the end to avoid issues!
       \\nExample:\\n
-      -async_depth 4 -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 
-      -adaptive_b 1
-      \\n FOR HEVC_QSV Above increases async, enables look ahead, extended bitrate control, b-frames, etc.\\n
+      -map -0:t -dn
+      \\n Above will remove attachment streams & data streams. While not default this is highly suggested!
       \\nExample:\\n
-      -async_depth 4 -aq-mode 4 -look_ahead 1 -look_ahead_depth 100 -b_strategy 1 -adaptive_i 1 -adaptive_b 1
-      \\n FOR AV1_QSV Above increases async, enable adaptive quantization, look ahead, b-frames, etc.\\n
+      -async_depth 6 -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 
+      -trellis 1 -refs 4 -g 120
+      \\n Above increases async, enables look ahead, extended bitrate control, b-frames, trellis & refined 
+      refs & g control.\\n
       \\nExample:\\n
       -vf scale_qsv=w=1280:h=720
       \\nScale video resolution Method 1\\n
@@ -363,6 +364,51 @@ const details = () => ({
       \\nExample:\\n
       3000`,
     },
+    {
+      name: 'convert_Dovi',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `\\n
+      ==DESCRIPTION==
+      \\nEnable conversion of Dolby vision & HDR10+ content. This is for setups where you either don't care about this, 
+      or you have a process setup to preserve this data.
+      \\n
+      ==WARNING== \\n
+      This will butcher any Dolby vision & HDR10+ metadata. If you want to keep this data DO NOT ENABLE THIS OPTION!
+      Again, this is for setups where you either don't care about this, or you have a process setup with dovi_tool 
+      & hdr_tool to preserve the this data
+      \\n`,
+    },
+    {
+      name: 'hwdecode_failsafe',
+      type: 'boolean',
+      defaultValue: false,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'false',
+          'true',
+        ],
+      },
+      tooltip: `\\n
+      ==DESCRIPTION==
+      \\nEnable the hw decode failsafe. This means we NEVER HW decode no matter what. Use this in flows by connecting 
+      it to the fail output. (i.e QSV fails > Try again with fail safe ON)
+      \\n
+      ==WARNING== \\n
+      This option is to bypass the normal logic (HW decoding) & always use SW decoding. This is best used as a backup 
+      in case files start failing. Normally such files have something wrong with them (broken video frame data), but 
+      this can help them be re-processed. (Basically only enable this if you have problem files or you want to add a 
+      fallback method into your flow)
+      \\n`,
+    },
   ],
 });
 
@@ -383,6 +429,8 @@ let swDecode = false;
 let videoBR = 0;
 let hdrEnabled = false;
 let videoProfile = '';
+let subtitleDispositions = '';
+let fixSubs = false;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -412,13 +460,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  // FILE VIDEO BITRATE & DURATION
+  // #region Video bitrate & duration
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     // Check if stream is a video.
     if (strstreamType === 'video') {
       if (file.ffProbeData.streams[i].codec_name !== 'mjpeg'
-        && file.ffProbeData.streams[i].codec_name !== 'png') {
+        && file.ffProbeData.streams[i].codec_name !== 'png'
+        && file.ffProbeData.streams[i].codec_name !== 'gif') {
         if (videoBR <= 0) { // Process if videoBR is not yet valid
           try { // Try checking file stats using Mediainfo first, then ffprobe.
             videoBR = Number(file.mediaInfo.track[i + 1].BitRate) / 1000;
@@ -465,7 +514,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // CATCH BITRATE FAILURE OR SUCCESS
+  // #region Catch Bitrate failure
   if (Number.isNaN(videoBR) || videoBR <= 0) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
@@ -483,7 +532,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     currentBitrate = Math.round(videoBR);
     response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps.\n`;
   }
-
   // Get overall bitrate for use with HEVC reprocessing
   overallBitRate = Math.round(file.file_size / (duration * 0.0075));
   // Default will halve current bitrate for Target bitrate
@@ -567,6 +615,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Container Checks
   // It's possible to remux or flat out convert from mp4 to mkv so we need to conform to standards
   // So check streams and add any extra parameters required to make file conform with output format.
   // i.e drop mov_text for mkv files and drop pgs_subtitles for mp4
@@ -574,14 +623,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (inputs.container.toLowerCase() === 'mkv') {
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
         try {
-          if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'mov_text'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'eia_608'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'timed_id3'
-          ) {
+          const checkCodecs = [
+            'mov_text',
+            'eia_608',
+            'timed_id3',
+          ];
+          if (checkCodecs.some((format) => file.ffProbeData.streams[i].codec_name.toLowerCase().includes(format))) {
             extraArguments += `-map -0:${i} `;
           }
         } catch (err) {
@@ -592,16 +639,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (inputs.container.toLowerCase() === 'mp4') {
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
         try {
-          if (
-            file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'hdmv_pgs_subtitle'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'eia_608'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'subrip'
-            || file.ffProbeData.streams[i].codec_name
-              .toLowerCase() === 'timed_id3'
-          ) {
+          const checkCodecs = [
+            'hdmv_pgs_subtitle',
+            'eia_608',
+            'subrip',
+            'timed_id3',
+          ];
+          if (checkCodecs.some((format) => file.ffProbeData.streams[i].codec_name.toLowerCase().includes(format))) {
             extraArguments += `-map -0:${i} `;
           }
         } catch (err) {
@@ -611,13 +655,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Video Stream
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     // Check if stream is a video.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'video') {
       // Check if codec of stream is mjpeg/png, if so then remove this "video" stream.
       // mjpeg/png are usually embedded pictures that can cause havoc with plugins.
-      if (file.ffProbeData.streams[i].codec_name === 'mjpeg' || file.ffProbeData.streams[i].codec_name === 'png') {
+      if (file.ffProbeData.streams[i].codec_name === 'mjpeg'
+        || file.ffProbeData.streams[i].codec_name === 'png'
+        || file.ffProbeData.streams[i].codec_name === 'gif') {
         extraArguments += `-map -0:v:${videoIdx} `;
       } else { // Ensure to only do further checks if video stream is valid for use
         // Check for HDR in files. Attempt to use same color
@@ -634,7 +681,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           hdrEnabled = true;
         }
 
-        // VALIDATE HDR - Ignore Dolby vision & badly formatted files
+        // #region Validate HDR
+        // Ignore Dolby vision & badly formatted files
         if (hdrEnabled !== true) {
           // Had at least one case where a file contained no evident HDR data but was marked as HDR content
           // meaning transcode OR plex would butcher the file
@@ -649,12 +697,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           } catch (err) {
             // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
           }
-        } else {
-          // If specifically marked Dolby Vision
+        } else if (inputs.convert_Dovi !== true) {
+          // If specifically marked Dolby Vision or HDR10+
           try {
-            if (file.mediaInfo.track[i + 1].HDR_Format.search('Dolby Vision') >= 0
-              || file.mediaInfo.track[i + 1].HDR_Format.search('HDR10+') >= 0
-              || file.mediaInfo.track[i + 1].HDR_Format.search('SMPTE ST 2094 App 4') >= 0) {
+            const hdrFormats = [
+              'dolby vision',
+              'hdr10+',
+              'dvhe',
+              'dvav',
+              'dav1',
+              'dvh1',
+              'smpte st 2094 app 4',
+              'bl+el+rpu',
+            ];
+            if (file.mediaInfo.track[i + 1].HDR_Format
+              && hdrFormats.some((format) => file.mediaInfo.track[i + 1].HDR_Format.toLowerCase().includes(format))) {
               response.infoLog += '==ERROR== This file has HDR metadata that cannot be re-encoded '
                 + `(${file.mediaInfo.track[i + 1].HDR_Format}), `
                 + 'Currently we cannot safely convert this HDR format and retain the Dolby Vision or HDR10+ format. '
@@ -666,6 +723,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           }
         }
 
+        // #region Container Remux
         // Check if codec of stream is HEVC, Vp9 or AV1
         // AND check if file.container does NOT match inputs.container. If so remux file.
         if ((file.ffProbeData.streams[i].codec_name === 'hevc'
@@ -677,6 +735,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           return response;
         }
 
+        // #region HEVC/AV1 reprocessing
         // Now check if we're reprocessing HEVC files, if not then ensure we don't convert HEVC again
         if (inputs.reconvert_hevc === false && (file.ffProbeData.streams[i].codec_name === 'hevc'
           || file.ffProbeData.streams[i].codec_name === 'vp9' || file.ffProbeData.streams[i].codec_name === 'av1')) {
@@ -741,8 +800,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           high10 = true;
           main10 = true;
           // If files are 10 bit or the enable_10bit setting is used mark to enable Main10.
-        } else if (file.ffProbeData.streams[i].profile === 'Main 10'
-          || file.ffProbeData.streams[i].bits_per_raw_sample === '10' || inputs.enable_10bit === true) {
+        } else if (file.ffProbeData.streams[i].profile === 'Main 10' || hdrEnabled === true
+          || file.ffProbeData.streams[i].bits_per_raw_sample === '10' || inputs.enable_10bit === true
+          || file.mediaInfo.track[i + 1].BitDepth === '10') {
           main10 = true;
         }
       }
@@ -753,6 +813,47 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // #region Subtitle Dispositions - Preserve original settings
+  // Credit PilaScat
+  let subtitleIdx = 0;
+  for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+    const stream = file.ffProbeData.streams[i];
+    if (stream.codec_type && stream.codec_type.toLowerCase() === 'subtitle') {
+      const flagsArray = [];
+
+      // Get disposition flags
+      if (stream.disposition) {
+        if (stream.disposition.default === 1) {
+          flagsArray.push('default');
+        }
+        if (stream.disposition.forced === 1) {
+          flagsArray.push('forced');
+        }
+        if (stream.disposition.hearing_impaired === 1) {
+          flagsArray.push('hearing_impaired');
+        }
+        if (stream.disposition.visual_impaired === 1) {
+          flagsArray.push('visual_impaired');
+        }
+        if (stream.disposition.comment === 1) {
+          flagsArray.push('comment');
+        }
+      }
+
+      // Build disposition command
+      if (flagsArray.length > 0) {
+        const flagsString = flagsArray.join('+');
+        subtitleDispositions += `-disposition:s:${subtitleIdx} ${flagsString} `;
+      } else {
+        // No flags, explicitly set to 0
+        subtitleDispositions += `-disposition:s:${subtitleIdx} 0 `;
+      }
+
+      subtitleIdx += 1;
+    }
+  }
+
+  // #region Start ffmpeg flags
   // Specify the output format
   switch (inputs.container) {
     case 'mkv':
@@ -764,10 +865,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     default:
   }
 
+  // If Failsafe enabled lock into software decode
+  if (inputs.hwdecode_failsafe === true) {
+    swDecode = true;
+  }
+
+  // #region HW Decode check
   // Some video codecs don't support HW decode so mark these
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
   switch (file.video_codec_name) {
-    case 'mpeg2':
+    case 'mpeg1video':
+      fixSubs = true;
+      response.infoLog += 'mpeg1 likely has issues with timestamps so will attempt sub timestamp fixup.\n';
+      break;
+    case 'mpeg2video':
+      fixSubs = true;
+      response.infoLog += 'mpeg2 likely has issues with timestamps so will attempt sub timestamp fixup.\n';
       break;
     case 'h264':
       if (high10 === true) {
@@ -779,46 +892,66 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       break;
     case 'hevc':
       break;
-    case 'vp9':// Should be supported by 8th Gen +
+    case 'vp9': // Should be supported by 8th Gen +
       break;
-    case 'av1':// Should be supported by 11th gen +
+    case 'av1': // Should be supported by 11th gen +
+      break;
+    case 'vc1':
+      swDecode = true;
+      response.infoLog += 'Input file is VC1. Hardware Decode not supported (on latest gen) so will SW decode.\n';
+      fixSubs = true;
+      response.infoLog += 'VC1 likely has issues with timestamps so will attempt sub timestamp fixup.\n';
       break;
     default:
       swDecode = true;
       response.infoLog += `Input file is ${file.video_codec_name}. Hardware Decode not supported.\n`;
   }
 
+  // #region 10-bit flags
   // Are we encoding to 10 bit? If so enable correct profile & pixel format.
   if (os.platform() !== 'darwin') {
     switch (inputs.encoder) {
       case 'hevc_qsv':
-        videoProfile = 'main10';
+        if (main10 === true) {
+          videoProfile = 'main10';
+        } else {
+          videoProfile = 'main';
+        }
         break;
       case 'av1_qsv':
         // Change this if you want high profile instead, main should be fine for 10 bit 4:2:0 content
         videoProfile = 'main';
         break;
       default:
-        videoProfile = 'main10';
+        videoProfile = 'main';
     }
     if (swDecode === true && main10 === true) {
       // This is used if we have High10 or Main10 is enabled & odd format files.
       // SW decode and use standard -pix_fmt p010le
       extraArguments += `-profile:v ${videoProfile} -pix_fmt p010le `;
       response.infoLog += `10 bit encode enabled. Setting ${videoProfile} Profile & 10 bit pixel format\n`;
-    } else if (main10 === true) { // Pixel formate method when using HW decode
+    } else if (swDecode === true) { // Just SW decode
+      extraArguments += '-pix_fmt p010le ';
+    } else if (main10 === true) { // Pixel format method when using HW decode - Use p010le
       if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
-        extraArguments += `-profile:v ${videoProfile}`;
+        extraArguments += `-profile:v ${videoProfile} `;
         // eslint-disable-next-line no-param-reassign
         inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
       } else {
-        extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=p010le`;
+        extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=p010le `;
       }
       response.infoLog += `10 bit encode enabled. Setting ${videoProfile} `
         + 'Profile & 10 bit pixel format\n';
+    } else if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) { // NOT main 10 so  use NV12
+      extraArguments += `-profile:v ${videoProfile} `;
+      // eslint-disable-next-line no-param-reassign
+      inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
+    } else {
+      extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=nv12 `;
     }
   } else {
     // Mac - Video toolbox profile & pixel format
+    // eslint-disable-next-line no-param-reassign
     extraArguments += '-profile:v 2 -pix_fmt yuv420p10le ';
     response.infoLog += '10 bit encode enabled. Setting VideoToolBox Profile v2 & 10 bit pixel format\n';
   }
@@ -833,11 +966,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     + `Minimum = ${minimumBitrate}k\n`
     + `Maximum = ${maximumBitrate}k\n`;
 
-  // START PRESET
-  // -fflags +genpts should regenerate timestamps if they end up missing...
+  // #region Start CMD Preset
+  // -fflags +genpts should regenerate timestamps if they end up missing.
   response.preset = '-fflags +genpts ';
+  if (fixSubs === true) {
+    response.preset += '-fix_sub_duration ';
+  }
 
-  // HW ACCEL FLAGS
+  // #region HW Accel Flags
   // Account for different OS
   if (swDecode !== true) {
     // Only enable hw decode for accepted formats
@@ -847,39 +983,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         break;
       case 'linux': // Linux - Full device, should fix child_device_type warnings
         response.preset += '-hwaccel qsv -hwaccel_output_format qsv '
-          + '-init_hw_device qsv:hw_any,child_device_type=vaapi ';
+          + '-init_hw_device qsv=qsv -filter_hw_device qsv ';
         break;
       case 'win32': // Windows - Full device, should fix child_device_type warnings
         response.preset += '-hwaccel qsv -hwaccel_output_format qsv '
-          + '-init_hw_device qsv:hw,child_device_type=d3d11va ';
+          + '-init_hw_device qsv=qsv -filter_hw_device qsv ';
         break;
       default:
-        response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
-    }
-  } else {
-    switch (os.platform()) {
-      case 'darwin': // Mac OS - Enable videotoolbox instead of QSV
-        response.preset += '-hwaccel videotoolbox';
-        break;
-      case 'linux': // Linux - Full device, should fix child_device_type warnings
-        response.preset += '-hwaccel_output_format qsv '
-          + '-init_hw_device qsv:hw_any,child_device_type=vaapi ';
-        break;
-      case 'win32': // Windows - Full device, should fix child_device_type warnings
-        response.preset += '-hwaccel_output_format qsv '
-          + '-init_hw_device qsv:hw,child_device_type=d3d11va ';
-        break;
-      default:
-        // Default to enabling hwaccel for output only
-        response.preset += '-hwaccel_output_format qsv -init_hw_device qsv:hw_any ';
+        response.preset += '-hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv=qsv -filter_hw_device qsv ';
     }
   }
 
-  // DECODE FLAGS
+  // #region Decode Flags
   // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
-  if (os.platform() !== 'darwin') {
+  if (swDecode !== true && os.platform() !== 'darwin') {
     switch (file.video_codec_name) {
-      case 'mpeg2':
+      case 'mpeg2video':
         response.preset += '-c:v mpeg2_qsv';
         break;
       case 'h264':
@@ -902,12 +1021,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         response.preset += '-c:v av1_qsv';
         break;
       default:
-        // Use incoming format for software decode
+        // Use incoming format for anything else
+        response.preset += `-c:v ${file.video_codec_name}`;
+    }
+  } else if (swDecode === true && os.platform() !== 'darwin') {
+    switch (file.video_codec_name) {
+      case 'av1':
+        response.preset += '-c:v libdav1d'; // AV1 must specify unique sw decoder
+        break;
+      default:
+        // Use incoming format for software decode (Should work)
         response.preset += `-c:v ${file.video_codec_name}`;
     }
   }
 
-  // ENCODE FLAGS
+  // #region Encode flags
   response.preset += '<io> -map 0 -c:v ';
 
   // Account for different OS setup for QSV HEVC encode.
@@ -926,101 +1054,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       response.preset += `${inputs.encoder}`; // Default
   }
 
-  // Only add on for HW decoded formats
-  // VC1 & VP8 are no longer supported on new HW, add cases here if your HW does support
-  if (swDecode !== true && os.platform() !== 'darwin') {
-    // Check if -vf cmd has already been used on user input
-    if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
-      switch (file.video_codec_name) {
-        case 'mpeg2':
-          // eslint-disable-next-line no-param-reassign
-          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'h264':
-          // eslint-disable-next-line no-param-reassign
-          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'mjpeg':
-          // eslint-disable-next-line no-param-reassign
-          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'hevc':
-          // eslint-disable-next-line no-param-reassign
-          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'vp9': // Should be supported by 8th Gen +
-          // eslint-disable-next-line no-param-reassign
-          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'av1': // Should be supported by 11th gen +
-          // eslint-disable-next-line no-param-reassign
-          inputs.extra_qsv_options += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        default:
-      }
-    } else if (extraArguments.search('-vf') === -1) {
-      // Check if -vf cmd has been used on the other var instead, if not add it & rest of cmd
-      switch (file.video_codec_name) {
-        case 'mpeg2':
-          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'h264':
-          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'mjpeg':
-          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'hevc':
-          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'vp9': // Should be supported by 8th Gen +
-          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'av1': // Should be supported by 11th gen +
-          extraArguments += '-vf hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        default:
-      }
-    } else {
-      // Otherwise add the cmd onto the end
-      switch (file.video_codec_name) {
-        case 'mpeg2':
-          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'h264':
-          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'mjpeg':
-          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'hevc':
-          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'vp9': // Should be supported by 8th Gen +
-          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        case 'av1': // Should be supported by 11th gen +
-          extraArguments += ',hwupload=extra_hw_frames=64,format=qsv ';
-          break;
-        default:
-      }
-    }
-  }
-
-  // Add the rest of the ffmpeg command
+  // #region Ffmpeg cmd
   switch (os.platform()) {
     case 'darwin':
       // Mac OS - Don't use extra_qsv_options - These are intended for QSV cmds so videotoolbox causes issues
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+        + `-preset ${inputs.encoder_speedpreset} -c:a copy -c:s copy ${subtitleDispositions}`
+        + `-max_muxing_queue_size 1024 ${extraArguments}`;
       response.infoLog += '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
         + 'cmds set in extra_qsv_options will be IGNORED!\n';
       break;
     default:
       // Normal behavior
       response.preset += ` ${bitrateSettings} `
-        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} `
-        + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+        + `-preset ${inputs.encoder_speedpreset} ${inputs.extra_qsv_options} ${subtitleDispositions}`
+        + `-c:a copy -c:s copy -max_muxing_queue_size 1024 ${extraArguments}`;
   }
 
   response.processFile = true;
