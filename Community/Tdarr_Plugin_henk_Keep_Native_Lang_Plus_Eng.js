@@ -62,14 +62,15 @@ const details = () => ({
     {
       name: 'radarr_url',
       type: 'string',
-      defaultValue: '192.168.1.2:7878',
+      defaultValue: 'http://192.168.1.2:7878',
       inputUI: {
         type: 'text',
       },
       tooltip:
-        'Input your Radarr url here. (Without http://). Do include the port.'
-        + '\\nExample:\\n'
-        + '192.168.1.2:7878',
+        'Input your Radarr url here. Do include the port.'
+        + '\\nExamples:\\n'
+        + 'http://192.168.1.2:7878',
+        + 'https://radarr.example.com',
     },
     {
       name: 'sonarr_api_key',
@@ -83,14 +84,15 @@ const details = () => ({
     {
       name: 'sonarr_url',
       type: 'string',
-      defaultValue: '192.168.1.2:8989',
+      defaultValue: 'http://192.168.1.2:8989',
       inputUI: {
         type: 'text',
       },
       tooltip:
-        'Input your Sonarr url here. (Without http://). Do include the port.'
-        + '\\nExample:\\n'
+        'Input your Sonarr url here. Do include the port.'
+        + '\\nExamples:\\n'
         + '192.168.1.2:8989',
+        + 'https://sonarr.example.com',
     },
   ],
 });
@@ -247,7 +249,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           radarrResult = parseArrResponse(
             await axios
               .get(
-                `http://${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
+                `${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
               )
               .then((resp) => resp.data),
             fileNameEncoded,
@@ -271,7 +273,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         if (inputs.sonarr_api_key) {
           sonarrResult = parseArrResponse(
             await axios.get(
-              `http://${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
+              `${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
             )
               .then((resp) => resp.data),
             file.meta.Directory,
