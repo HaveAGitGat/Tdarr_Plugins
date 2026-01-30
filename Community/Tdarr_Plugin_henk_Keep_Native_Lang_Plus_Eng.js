@@ -62,15 +62,14 @@ const details = () => ({
     {
       name: 'radarr_url',
       type: 'string',
-      defaultValue: 'http://192.168.1.2:7878',
+      defaultValue: '192.168.1.2:7878',
       inputUI: {
         type: 'text',
       },
       tooltip:
-        'Input your Radarr url here. Do include the port.'
+        'Input your Radarr url here. You can use http://, https://, or just the host:port (defaults to http://). Do include the port.'
         + '\\nExamples:\\n'
-        + 'http://192.168.1.2:7878',
-        + 'https://radarr.example.com',
+        + '192.168.1.2:7878 or https://radarr.example.com',
     },
     {
       name: 'sonarr_api_key',
@@ -84,15 +83,14 @@ const details = () => ({
     {
       name: 'sonarr_url',
       type: 'string',
-      defaultValue: 'http://192.168.1.2:8989',
+      defaultValue: '192.168.1.2:8989',
       inputUI: {
         type: 'text',
       },
       tooltip:
-        'Input your Sonarr url here. Do include the port.'
+        'Input your Sonarr url here. You can use http://, https://, or just the host:port (defaults to http://). Do include the port.'
         + '\\nExamples:\\n'
-        + '192.168.1.2:8989',
-        + 'https://sonarr.example.com',
+        + '192.168.1.2:8989 or https://sonarr.example.com',
     },
   ],
 });
@@ -104,6 +102,17 @@ const response = {
   FFmpegMode: true,
   reQueueAfter: false,
   infoLog: '',
+};
+
+// Helper function to normalize URLs - adds http:// if no protocol is specified
+const normalizeUrl = (url) => {
+  if (!url) return '';
+  // Check if URL already has a protocol (http:// or https://)
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Otherwise, default to http://
+  return `http://${url}`;
 };
 
 const processStreams = (result, file, user_langs) => {
@@ -249,7 +258,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           radarrResult = parseArrResponse(
             await axios
               .get(
-                `${inputs.radarr_url}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
+                `${normalizeUrl(inputs.radarr_url)}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
               )
               .then((resp) => resp.data),
             fileNameEncoded,
@@ -273,7 +282,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         if (inputs.sonarr_api_key) {
           sonarrResult = parseArrResponse(
             await axios.get(
-              `${inputs.sonarr_url}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
+              `${normalizeUrl(inputs.sonarr_url)}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
             )
               .then((resp) => resp.data),
             file.meta.Directory,
