@@ -60,7 +60,11 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'Continue to next plugin',
+            tooltip: 'File replaced: Continue to next plugin',
+        },
+        {
+            number: 2,
+            tooltip: 'File not replaced: Continue to next plugin',
         },
     ],
 }); };
@@ -79,7 +83,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args.jobLog('File has not changed, no need to replace file');
                     return [2 /*return*/, {
                             outputFileObj: args.inputFileObj,
-                            outputNumber: 1,
+                            outputNumber: 2,
                             variables: args.variables,
                         }];
                 }
