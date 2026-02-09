@@ -140,6 +140,7 @@ const details = (): IpluginDetails => ({
         options: [
           'auto',
           'nvenc',
+          'rkmpp',
           'qsv',
           'vaapi',
           'videotoolbox',
@@ -191,7 +192,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
     const stream = args.variables.ffmpegCommand.streams[i];
 
-    if (stream.codec_type === 'video') {
+    if (stream.codec_type === 'video' && stream.codec_name !== 'mjpeg') {
       const targetCodec = String(args.inputs.outputCodec);
       const { ffmpegPresetEnabled, ffmpegQualityEnabled } = args.inputs;
       const ffmpegPreset = String(args.inputs.ffmpegPreset);
@@ -217,7 +218,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
         if (ffmpegQualityEnabled) {
           if (encoderProperties.isGpu) {
-            stream.outputArgs.push('-qp', ffmpegQuality);
+            if (encoderProperties.encoder === 'hevc_qsv') {
+              stream.outputArgs.push('-global_quality', ffmpegQuality);
+            } else {
+              stream.outputArgs.push('-qp', ffmpegQuality);
+            }
           } else {
             stream.outputArgs.push('-crf', ffmpegQuality);
           }

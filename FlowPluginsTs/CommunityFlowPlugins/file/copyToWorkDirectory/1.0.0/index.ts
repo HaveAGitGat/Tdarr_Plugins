@@ -1,4 +1,3 @@
-import { promises as fsp } from 'fs';
 import { getContainer, getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -6,6 +5,7 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import normJoinPath from '../../../../FlowHelpers/1.0.0/normJoinPath';
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -67,7 +67,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.deps.fsextra.ensureDirSync(outputPath);
 
-  await fsp.copyFile(args.inputFileObj._id, ouputFilePath);
+  await fileMoveOrCopy({
+    operation: 'copy',
+    sourcePath: args.inputFileObj._id,
+    destinationPath: ouputFilePath,
+    args,
+  });
 
   return {
     outputFileObj: {

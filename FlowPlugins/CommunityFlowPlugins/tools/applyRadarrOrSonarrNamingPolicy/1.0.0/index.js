@@ -236,7 +236,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             buildPreviewRenameResquestUrl: function (fInfo) { return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(fInfo.id, "&seasonNumber=").concat(fInfo.seasonNumber); },
                             getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse, fInfo) {
                                 var _a;
-                                return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
+                                var fileToRename = (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
+                                return fileToRename
+                                    ? __assign(__assign({}, fileToRename), { newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }) : undefined;
                             },
                         },
                     };

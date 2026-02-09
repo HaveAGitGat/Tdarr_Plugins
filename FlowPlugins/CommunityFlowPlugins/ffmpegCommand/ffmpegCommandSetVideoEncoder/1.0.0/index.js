@@ -172,6 +172,7 @@ var details = function () { return ({
                 options: [
                     'auto',
                     'nvenc',
+                    'rkmpp',
                     'qsv',
                     'vaapi',
                     'videotoolbox',
@@ -227,7 +228,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 if (!(i < args.variables.ffmpegCommand.streams.length)) return [3 /*break*/, 4];
                 stream = args.variables.ffmpegCommand.streams[i];
-                if (!(stream.codec_type === 'video')) return [3 /*break*/, 3];
+                if (!(stream.codec_type === 'video' && stream.codec_name !== 'mjpeg')) return [3 /*break*/, 3];
                 targetCodec = String(args.inputs.outputCodec);
                 _a = args.inputs, ffmpegPresetEnabled = _a.ffmpegPresetEnabled, ffmpegQualityEnabled = _a.ffmpegQualityEnabled;
                 ffmpegPreset = String(args.inputs.ffmpegPreset);
@@ -248,7 +249,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
                 if (ffmpegQualityEnabled) {
                     if (encoderProperties.isGpu) {
-                        stream.outputArgs.push('-qp', ffmpegQuality);
+                        if (encoderProperties.encoder === 'hevc_qsv') {
+                            stream.outputArgs.push('-global_quality', ffmpegQuality);
+                        }
+                        else {
+                            stream.outputArgs.push('-qp', ffmpegQuality);
+                        }
                     }
                     else {
                         stream.outputArgs.push('-crf', ffmpegQuality);

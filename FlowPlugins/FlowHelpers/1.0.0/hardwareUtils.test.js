@@ -37,32 +37,45 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var hardwareUtils_1 = require("./hardwareUtils");
-var run = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var encoderProperties;
+var baseInput = {
+    targetCodec: 'h264',
+    hardwareEncoding: true,
+    hardwareType: 'auto',
+    args: {
+        workerType: 'transcodegpu',
+        ffmpegPath: 'ffmpeg',
+        jobLog: function () {
+            //
+        },
+    },
+};
+var checkHardware = function (settings) { return __awaiter(void 0, void 0, void 0, function () {
+    var input, encoderProperties;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
-                    targetCodec: 'h264',
-                    hardwareEncoding: true,
-                    hardwareType: 'auto',
-                    // @ts-expect-error type
-                    args: {
-                        workerType: 'transcodegpu',
-                        ffmpegPath: 'ffmpeg',
-                        jobLog: function (t) {
-                            // eslint-disable-next-line no-console
-                            console.log(t);
-                        },
-                    },
-                })];
+            case 0:
+                input = JSON.parse(JSON.stringify(baseInput));
+                input.args.jobLog = function () {
+                    // eslint-disable-next-line no-console
+                    // console.log(t);
+                };
+                if (settings.targetCodec) {
+                    input.targetCodec = settings.targetCodec;
+                }
+                if (settings.hardwareEncoding) {
+                    input.hardwareEncoding = settings.hardwareEncoding;
+                }
+                if (settings.hardwareType) {
+                    input.hardwareType = settings.hardwareType;
+                }
+                if (settings.ffmpegPath) {
+                    input.args.ffmpegPath = settings.ffmpegPath;
+                }
+                return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)(input)];
             case 1:
                 encoderProperties = _a.sent();
-                // eslint-disable-next-line no-console
-                console.log({
-                    encoderProperties: encoderProperties,
-                });
-                return [2 /*return*/];
+                return [2 /*return*/, encoderProperties];
         }
     });
 }); };
-void run();
+exports.default = checkHardware;

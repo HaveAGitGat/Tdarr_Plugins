@@ -1,4 +1,6 @@
-import { promises as fsp } from 'fs';
+import fs, { promises as fsp } from 'fs';
+
+import crypto from 'crypto';
 import { IpluginInputArgs } from './interfaces/interfaces';
 
 export const fileExists = async (path:string): Promise<boolean> => !!(await fsp.stat(path).catch(() => false));
@@ -163,3 +165,26 @@ export const getScanTypes = (pluginsTextRaw: string[]): IscanTypes => {
   });
   return scanTypes;
 };
+
+export const hashFile = (filePath: string, algorithm = 'sha256'): Promise<string> => new Promise((resolve, reject) => {
+  try {
+    const hash = crypto.createHash(algorithm);
+    const stream = fs.createReadStream(filePath);
+
+    stream.on('data', (data) => {
+      hash.update(data as string | NodeJS.ArrayBufferView);
+    });
+
+    stream.on('end', () => {
+      const hashStr = hash.digest('hex');
+      resolve(hashStr);
+    });
+
+    stream.on('error', (error) => {
+      reject(new Error(`Error reading file for hashing: ${error.message}`));
+    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    reject(new Error(`Error setting up file hash: ${error.message}`));
+  }
+});
