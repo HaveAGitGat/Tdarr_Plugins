@@ -32,7 +32,7 @@ function parseSxxEyyFromPath(p) {
 
 function looksLikeTvPath(p) {
   const parts = getDirParts(p);
-  if (parts.some(x => /^Season\s+\d+$/i.test(x))) return true;
+  if (parts.some(x => /^(?:Season|Series)\s+\d+$/i.test(x))) return true;
   const { season, episode } = parseSxxEyyFromPath(p);
   return season !== null && episode !== null;
 }
