@@ -40,7 +40,7 @@ function looksLikeTvPath(p) {
 function getSeriesTitleFromPath(p) {
   const parts = getDirParts(p);
   for (let i = 1; i < parts.length; i++) {
-    if (/^Season\s+\d+$/i.test(parts[i])) return parts[i - 1];
+    if (/^(?:Season|Series)\s+\d+$/i.test(parts[i])) return parts[i - 1];
   }
   const base = getFileName(p).replace(/\.(mkv|mp4|avi|ts|m4v)$/i, '');
   const idx = base.search(/S\d{1,2}E\d{1,3}/i);
