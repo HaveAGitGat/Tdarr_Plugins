@@ -398,7 +398,7 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       }));
     });
 
-    it('should use CPU preset names directly for VAAPI encoders', async () => {
+    it('should skip preset for VAAPI encoders (not supported)', async () => {
       mockGetEncoder.mockResolvedValue({
         encoder: 'hevc_vaapi',
         inputArgs: [],
@@ -416,9 +416,44 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         const result = await plugin(baseArgs);
 
         const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).toContain('-preset');
-        expect(videoStream.outputArgs).toContain(preset);
+        expect(videoStream.outputArgs).not.toContain('-preset');
       }));
+    });
+
+    it('should skip preset for rkmpp encoders (not supported)', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_rkmpp',
+        inputArgs: ['-hwaccel', 'rkmpp'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      baseArgs.inputs.ffmpegPreset = 'medium';
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [];
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).not.toContain('-preset');
+    });
+
+    it('should skip preset for videotoolbox encoders (not supported)', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_videotoolbox',
+        inputArgs: ['-hwaccel', 'videotoolbox'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      baseArgs.inputs.ffmpegPreset = 'medium';
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [];
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
     it('should handle different quality values', async () => {

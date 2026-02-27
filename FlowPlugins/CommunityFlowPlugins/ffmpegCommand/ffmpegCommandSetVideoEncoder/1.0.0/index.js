@@ -115,7 +115,7 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7, AMF uses quality/balanced/speed, QSV/VAAPI use CPU names directly',
+            tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7, AMF uses quality/balanced/speed, QSV uses CPU names directly. Ignored for VAAPI/rkmpp/videotoolbox.',
         },
         {
             label: 'Enable FFmpeg Quality',
@@ -293,10 +293,17 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 };
                                 presetToUse = amfPresetMap[ffmpegPreset] || 'balanced';
                             }
-                            // QSV/VAAPI: Use CPU-like names directly (already compatible)
-                            // No conversion needed - presetToUse remains ffmpegPreset
+                            else if (encoderProperties.encoder.includes('qsv')) {
+                                // QSV: Uses CPU-style preset names directly
+                            }
+                            else {
+                                // VAAPI, rkmpp, videotoolbox: -preset not supported
+                                presetToUse = null;
+                            }
                         }
-                        stream.outputArgs.push('-preset', presetToUse);
+                        if (presetToUse) {
+                            stream.outputArgs.push('-preset', presetToUse);
+                        }
                     }
                 }
                 if (hardwareDecoding) {
