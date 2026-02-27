@@ -67,7 +67,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Input your Radarr url here. You can use http://, https://, or just the host:port (defaults to http://). Do include the port.'
+        'Input your Radarr url here. Supports http://, https://, or'
+        + ' just host:port (defaults to http://).'
         + '\\nExamples:\\n'
         + '192.168.1.2:7878 or https://radarr.example.com',
     },
@@ -88,7 +89,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Input your Sonarr url here. You can use http://, https://, or just the host:port (defaults to http://). Do include the port.'
+        'Input your Sonarr url here. Supports http://, https://, or'
+        + ' just host:port (defaults to http://).'
         + '\\nExamples:\\n'
         + '192.168.1.2:8989 or https://sonarr.example.com',
     },
@@ -258,7 +260,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           radarrResult = parseArrResponse(
             await axios
               .get(
-                `${normalizeUrl(inputs.radarr_url)}/api/v3/parse?apikey=${inputs.radarr_api_key}&title=${fileNameEncoded}`,
+                `${normalizeUrl(inputs.radarr_url)}`
+                + `/api/v3/parse?apikey=${inputs.radarr_api_key}`
+                + `&title=${fileNameEncoded}`,
               )
               .then((resp) => resp.data),
             fileNameEncoded,
@@ -282,7 +286,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         if (inputs.sonarr_api_key) {
           sonarrResult = parseArrResponse(
             await axios.get(
-              `${normalizeUrl(inputs.sonarr_url)}/api/v3/parse?apikey=${inputs.sonarr_api_key}&title=${fileNameEncoded}`,
+              `${normalizeUrl(inputs.sonarr_url)}`
+              + `/api/v3/parse?apikey=${inputs.sonarr_api_key}`
+              + `&title=${fileNameEncoded}`,
             )
               .then((resp) => resp.data),
             file.meta.Directory,
