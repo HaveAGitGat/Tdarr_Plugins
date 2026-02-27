@@ -2,6 +2,7 @@
 
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
 import { getContainer, getFileName, getPluginWorkDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getEncoder } from '../../../../FlowHelpers/1.0.0/hardwareUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -40,24 +41,24 @@ const details = (): IpluginDetails => ({
       label: 'GPU Acceleration',
       name: 'gpuAcceleration',
       type: 'string',
-      defaultValue: 'none',
+      defaultValue: 'auto',
       inputUI: {
         type: 'dropdown',
         options: [
+          'auto',
           'none',
-          'nvdec',
-          'cuda',
+          'nvenc',
           'qsv',
           'vaapi',
+          'videotoolbox',
+          'rkmpp',
           'dxva2',
           'd3d11va',
-          'videotoolbox',
-          'vulkan',
         ],
       },
-      tooltip: 'Specify GPU acceleration type for thorough health checks (only applies to FFmpeg). '
-        + 'nvdec/cuda: NVIDIA GPUs | qsv: Intel Quick Sync | vaapi: Intel/AMD Linux | '
-        + 'dxva2/d3d11va: Windows | videotoolbox: macOS/iOS | vulkan: Cross-platform',
+      tooltip: 'Specify GPU acceleration for thorough health checks '
+        + '(FFmpeg only). auto: detect available GPU | nvenc: NVIDIA '
+        + '| qsv: Intel | vaapi: Linux | dxva2/d3d11va: Windows',
     },
   ],
   outputs: [
@@ -102,42 +103,60 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
     // Add GPU acceleration flags before input if specified
     if (gpuAcceleration !== 'none') {
-      switch (gpuAcceleration) {
-        case 'nvdec':
-          cliArgs.push('-hwaccel', 'nvdec', '-hwaccel_output_format', 'cuda');
-          args.jobLog('Using NVIDIA NVDEC GPU acceleration');
-          break;
-        case 'cuda':
-          cliArgs.push('-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda');
-          args.jobLog('Using NVIDIA CUDA GPU acceleration');
-          break;
-        case 'qsv':
-          cliArgs.push('-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv');
-          args.jobLog('Using Intel Quick Sync Video GPU acceleration');
-          break;
-        case 'vaapi':
-          cliArgs.push('-hwaccel', 'vaapi', '-hwaccel_output_format', 'vaapi');
-          args.jobLog('Using VAAPI GPU acceleration');
-          break;
-        case 'dxva2':
-          cliArgs.push('-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld');
-          args.jobLog('Using DXVA2 GPU acceleration');
-          break;
-        case 'd3d11va':
-          cliArgs.push('-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11');
-          args.jobLog('Using D3D11VA GPU acceleration');
-          break;
-        case 'videotoolbox':
-          cliArgs.push('-hwaccel', 'videotoolbox');
-          args.jobLog('Using VideoToolbox GPU acceleration');
-          break;
-        case 'vulkan':
-          cliArgs.push('-hwaccel', 'vulkan', '-hwaccel_output_format', 'vulkan');
-          args.jobLog('Using Vulkan GPU acceleration');
-          break;
-        default:
-          break;
+      let hwaccelArgs: string[] = [];
+
+      if (gpuAcceleration === 'dxva2') {
+        hwaccelArgs = [
+          '-hwaccel', 'dxva2',
+          '-hwaccel_output_format', 'dxva2_vld',
+        ];
+        args.jobLog('Using DXVA2 GPU acceleration');
+      } else if (gpuAcceleration === 'd3d11va') {
+        hwaccelArgs = [
+          '-hwaccel', 'd3d11va',
+          '-hwaccel_output_format', 'd3d11',
+        ];
+        args.jobLog('Using D3D11VA GPU acceleration');
+      } else {
+        // Use getEncoder for auto-detection or hardware-type configs
+        const isAuto = gpuAcceleration === 'auto';
+        // For explicit selection, ensure GPU detection path is taken
+        const detectionArgs = isAuto ? args : {
+          ...args,
+          workerType: (
+            args.workerType && args.workerType.includes('gpu')
+          ) ? args.workerType
+            : `${args.workerType || ''},gpu`,
+        } as IpluginInputArgs;
+
+        try {
+          const result = await getEncoder({
+            targetCodec: 'hevc',
+            hardwareEncoding: true,
+            hardwareType: isAuto ? 'auto' : gpuAcceleration,
+            args: detectionArgs,
+          });
+
+          if (result.isGpu && result.inputArgs.length > 0) {
+            hwaccelArgs = result.inputArgs;
+            args.jobLog(
+              `Using ${gpuAcceleration} GPU acceleration`
+              + ` (hwaccel: ${hwaccelArgs.join(' ')})`,
+            );
+          } else if (isAuto) {
+            args.jobLog(
+              'Auto-detection: no GPU acceleration available',
+            );
+          }
+        } catch (err) {
+          args.jobLog(
+            `GPU acceleration error: ${err}. `
+            + 'Falling back to CPU.',
+          );
+        }
       }
+
+      cliArgs.push(...hwaccelArgs);
     }
 
     cliArgs.push(

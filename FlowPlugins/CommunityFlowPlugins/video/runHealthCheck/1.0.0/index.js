@@ -1,5 +1,16 @@
 "use strict";
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -40,6 +51,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
 /* eslint-disable no-param-reassign */
 var details = function () { return ({
     name: 'Run Health Check',
@@ -72,24 +84,24 @@ var details = function () { return ({
             label: 'GPU Acceleration',
             name: 'gpuAcceleration',
             type: 'string',
-            defaultValue: 'none',
+            defaultValue: 'auto',
             inputUI: {
                 type: 'dropdown',
                 options: [
+                    'auto',
                     'none',
-                    'nvdec',
-                    'cuda',
+                    'nvenc',
                     'qsv',
                     'vaapi',
+                    'videotoolbox',
+                    'rkmpp',
                     'dxva2',
                     'd3d11va',
-                    'videotoolbox',
-                    'vulkan',
                 ],
             },
-            tooltip: 'Specify GPU acceleration type for thorough health checks (only applies to FFmpeg). '
-                + 'nvdec/cuda: NVIDIA GPUs | qsv: Intel Quick Sync | vaapi: Intel/AMD Linux | '
-                + 'dxva2/d3d11va: Windows | videotoolbox: macOS/iOS | vulkan: Cross-platform',
+            tooltip: 'Specify GPU acceleration for thorough health checks '
+                + '(FFmpeg only). auto: detect available GPU | nvenc: NVIDIA '
+                + '| qsv: Intel | vaapi: Linux | dxva2/d3d11va: Windows',
         },
     ],
     outputs: [
@@ -102,7 +114,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, type, gpuAcceleration, outputFilePath, cliPath, cliArgs, cli, res;
+    var lib, type, gpuAcceleration, outputFilePath, cliPath, cliArgs, hwaccelArgs, isAuto, detectionArgs, result, err_1, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -122,54 +134,66 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     outputFilePath,
                     '--scan',
                 ];
-                if (type === 'thorough') {
-                    cliPath = args.ffmpegPath;
-                    cliArgs = [
-                        '-stats',
-                        '-v',
-                        'error',
-                    ];
-                    // Add GPU acceleration flags before input if specified
-                    if (gpuAcceleration !== 'none') {
-                        switch (gpuAcceleration) {
-                            case 'nvdec':
-                                cliArgs.push('-hwaccel', 'nvdec', '-hwaccel_output_format', 'cuda');
-                                args.jobLog('Using NVIDIA NVDEC GPU acceleration');
-                                break;
-                            case 'cuda':
-                                cliArgs.push('-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda');
-                                args.jobLog('Using NVIDIA CUDA GPU acceleration');
-                                break;
-                            case 'qsv':
-                                cliArgs.push('-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv');
-                                args.jobLog('Using Intel Quick Sync Video GPU acceleration');
-                                break;
-                            case 'vaapi':
-                                cliArgs.push('-hwaccel', 'vaapi', '-hwaccel_output_format', 'vaapi');
-                                args.jobLog('Using VAAPI GPU acceleration');
-                                break;
-                            case 'dxva2':
-                                cliArgs.push('-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld');
-                                args.jobLog('Using DXVA2 GPU acceleration');
-                                break;
-                            case 'd3d11va':
-                                cliArgs.push('-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11');
-                                args.jobLog('Using D3D11VA GPU acceleration');
-                                break;
-                            case 'videotoolbox':
-                                cliArgs.push('-hwaccel', 'videotoolbox');
-                                args.jobLog('Using VideoToolbox GPU acceleration');
-                                break;
-                            case 'vulkan':
-                                cliArgs.push('-hwaccel', 'vulkan', '-hwaccel_output_format', 'vulkan');
-                                args.jobLog('Using Vulkan GPU acceleration');
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    cliArgs.push('-i', args.inputFileObj._id, '-f', 'null', '-max_muxing_queue_size', '9999', outputFilePath);
+                if (!(type === 'thorough')) return [3 /*break*/, 8];
+                cliPath = args.ffmpegPath;
+                cliArgs = [
+                    '-stats',
+                    '-v',
+                    'error',
+                ];
+                if (!(gpuAcceleration !== 'none')) return [3 /*break*/, 7];
+                hwaccelArgs = [];
+                if (!(gpuAcceleration === 'dxva2')) return [3 /*break*/, 1];
+                hwaccelArgs = [
+                    '-hwaccel', 'dxva2',
+                    '-hwaccel_output_format', 'dxva2_vld',
+                ];
+                args.jobLog('Using DXVA2 GPU acceleration');
+                return [3 /*break*/, 6];
+            case 1:
+                if (!(gpuAcceleration === 'd3d11va')) return [3 /*break*/, 2];
+                hwaccelArgs = [
+                    '-hwaccel', 'd3d11va',
+                    '-hwaccel_output_format', 'd3d11',
+                ];
+                args.jobLog('Using D3D11VA GPU acceleration');
+                return [3 /*break*/, 6];
+            case 2:
+                isAuto = gpuAcceleration === 'auto';
+                detectionArgs = isAuto ? args : __assign(__assign({}, args), { workerType: (args.workerType && args.workerType.includes('gpu')) ? args.workerType
+                        : "".concat(args.workerType || '', ",gpu") });
+                _a.label = 3;
+            case 3:
+                _a.trys.push([3, 5, , 6]);
+                return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
+                        targetCodec: 'hevc',
+                        hardwareEncoding: true,
+                        hardwareType: isAuto ? 'auto' : gpuAcceleration,
+                        args: detectionArgs,
+                    })];
+            case 4:
+                result = _a.sent();
+                if (result.isGpu && result.inputArgs.length > 0) {
+                    hwaccelArgs = result.inputArgs;
+                    args.jobLog("Using ".concat(gpuAcceleration, " GPU acceleration")
+                        + " (hwaccel: ".concat(hwaccelArgs.join(' '), ")"));
                 }
+                else if (isAuto) {
+                    args.jobLog('Auto-detection: no GPU acceleration available');
+                }
+                return [3 /*break*/, 6];
+            case 5:
+                err_1 = _a.sent();
+                args.jobLog("GPU acceleration error: ".concat(err_1, ". ")
+                    + 'Falling back to CPU.');
+                return [3 /*break*/, 6];
+            case 6:
+                cliArgs.push.apply(cliArgs, hwaccelArgs);
+                _a.label = 7;
+            case 7:
+                cliArgs.push('-i', args.inputFileObj._id, '-f', 'null', '-max_muxing_queue_size', '9999', outputFilePath);
+                _a.label = 8;
+            case 8:
                 cli = new cliUtils_1.CLI({
                     cli: cliPath,
                     spawnArgs: cliArgs,
@@ -182,14 +206,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args: args,
                 });
                 return [4 /*yield*/, cli.runCli()];
-            case 1:
+            case 9:
                 res = _a.sent();
-                if (!(typeof args.updateStat !== 'undefined')) return [3 /*break*/, 3];
+                if (!(typeof args.updateStat !== 'undefined')) return [3 /*break*/, 11];
                 return [4 /*yield*/, args.updateStat(args.originalLibraryFile.DB, 'totalHealthCheckCount', 1)];
-            case 2:
+            case 10:
                 _a.sent();
-                _a.label = 3;
-            case 3:
+                _a.label = 11;
+            case 11:
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running CLI failed');
                     args.logOutcome('hErr');
