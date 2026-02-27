@@ -317,15 +317,15 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       });
 
       const presetMapping = {
-        'veryslow': 'p7',
-        'slower': 'p7',
-        'slow': 'p6',
-        'medium': 'p5',
-        'fast': 'p4',
-        'faster': 'p3',
-        'veryfast': 'p2',
-        'superfast': 'p1',
-        'ultrafast': 'p1',
+        veryslow: 'p7',
+        slower: 'p7',
+        slow: 'p6',
+        medium: 'p5',
+        fast: 'p4',
+        faster: 'p3',
+        veryfast: 'p2',
+        superfast: 'p1',
+        ultrafast: 'p1',
       };
 
       await Promise.all(Object.entries(presetMapping).map(async ([cpuPreset, gpuPreset]) => {
@@ -351,15 +351,15 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       });
 
       const presetMapping = {
-        'veryslow': 'quality',
-        'slower': 'quality',
-        'slow': 'quality',
-        'medium': 'balanced',
-        'fast': 'balanced',
-        'faster': 'speed',
-        'veryfast': 'speed',
-        'superfast': 'speed',
-        'ultrafast': 'speed',
+        veryslow: 'quality',
+        slower: 'quality',
+        slow: 'quality',
+        medium: 'balanced',
+        fast: 'balanced',
+        faster: 'speed',
+        veryfast: 'speed',
+        superfast: 'speed',
+        ultrafast: 'speed',
       };
 
       await Promise.all(Object.entries(presetMapping).map(async ([cpuPreset, amfPreset]) => {

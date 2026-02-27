@@ -83,7 +83,9 @@ const details = (): IpluginDetails => ({
           ],
         },
       },
-      tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7, AMF uses quality/balanced/speed, QSV uses CPU names directly. Ignored for VAAPI/rkmpp/videotoolbox.',
+      tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7,'
+        + ' AMF uses quality/balanced/speed, QSV uses CPU names directly.'
+        + ' Ignored for VAAPI/rkmpp/videotoolbox.',
     },
     {
       label: 'Enable FFmpeg Quality',
