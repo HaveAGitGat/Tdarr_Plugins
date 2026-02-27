@@ -115,7 +115,9 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7, AMF uses quality/balanced/speed, QSV uses CPU names directly. Ignored for VAAPI/rkmpp/videotoolbox.',
+            tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7,'
+                + ' AMF uses quality/balanced/speed, QSV uses CPU names directly.'
+                + ' Ignored for VAAPI/rkmpp/videotoolbox.',
         },
         {
             label: 'Enable FFmpeg Quality',
@@ -267,29 +269,29 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         if (encoderProperties.isGpu) {
                             if (encoderProperties.encoder.includes('nvenc')) {
                                 nvencPresetMap = {
-                                    'veryslow': 'p7',
-                                    'slower': 'p7',
-                                    'slow': 'p6',
-                                    'medium': 'p5',
-                                    'fast': 'p4',
-                                    'faster': 'p3',
-                                    'veryfast': 'p2',
-                                    'superfast': 'p1',
-                                    'ultrafast': 'p1'
+                                    veryslow: 'p7',
+                                    slower: 'p7',
+                                    slow: 'p6',
+                                    medium: 'p5',
+                                    fast: 'p4',
+                                    faster: 'p3',
+                                    veryfast: 'p2',
+                                    superfast: 'p1',
+                                    ultrafast: 'p1',
                                 };
                                 presetToUse = nvencPresetMap[ffmpegPreset] || 'p5';
                             }
                             else if (encoderProperties.encoder.includes('amf')) {
                                 amfPresetMap = {
-                                    'veryslow': 'quality',
-                                    'slower': 'quality',
-                                    'slow': 'quality',
-                                    'medium': 'balanced',
-                                    'fast': 'balanced',
-                                    'faster': 'speed',
-                                    'veryfast': 'speed',
-                                    'superfast': 'speed',
-                                    'ultrafast': 'speed'
+                                    veryslow: 'quality',
+                                    slower: 'quality',
+                                    slow: 'quality',
+                                    medium: 'balanced',
+                                    fast: 'balanced',
+                                    faster: 'speed',
+                                    veryfast: 'speed',
+                                    superfast: 'speed',
+                                    ultrafast: 'speed',
                                 };
                                 presetToUse = amfPresetMap[ffmpegPreset] || 'balanced';
                             }
