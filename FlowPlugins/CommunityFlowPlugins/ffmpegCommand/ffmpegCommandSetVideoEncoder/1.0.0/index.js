@@ -115,7 +115,9 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: 'Specify ffmpeg preset',
+            tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7,'
+                + ' AMF uses quality/balanced/speed, QSV uses CPU names directly.'
+                + ' Ignored for VAAPI/rkmpp/videotoolbox.',
         },
         {
             label: 'Enable FFmpeg Quality',
@@ -211,7 +213,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties;
+    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
     var _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -262,7 +264,48 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 if (ffmpegPresetEnabled) {
                     if (targetCodec !== 'av1' && ffmpegPreset) {
-                        stream.outputArgs.push('-preset', ffmpegPreset);
+                        presetToUse = ffmpegPreset;
+                        // Convert CPU preset names to GPU-specific presets for hardware encoders
+                        if (encoderProperties.isGpu) {
+                            if (encoderProperties.encoder.includes('nvenc')) {
+                                nvencPresetMap = {
+                                    veryslow: 'p7',
+                                    slower: 'p7',
+                                    slow: 'p6',
+                                    medium: 'p5',
+                                    fast: 'p4',
+                                    faster: 'p3',
+                                    veryfast: 'p2',
+                                    superfast: 'p1',
+                                    ultrafast: 'p1',
+                                };
+                                presetToUse = nvencPresetMap[ffmpegPreset] || 'p5';
+                            }
+                            else if (encoderProperties.encoder.includes('amf')) {
+                                amfPresetMap = {
+                                    veryslow: 'quality',
+                                    slower: 'quality',
+                                    slow: 'quality',
+                                    medium: 'balanced',
+                                    fast: 'balanced',
+                                    faster: 'speed',
+                                    veryfast: 'speed',
+                                    superfast: 'speed',
+                                    ultrafast: 'speed',
+                                };
+                                presetToUse = amfPresetMap[ffmpegPreset] || 'balanced';
+                            }
+                            else if (encoderProperties.encoder.includes('qsv')) {
+                                // QSV: Uses CPU-style preset names directly
+                            }
+                            else {
+                                // VAAPI, rkmpp, videotoolbox: -preset not supported
+                                presetToUse = null;
+                            }
+                        }
+                        if (presetToUse) {
+                            stream.outputArgs.push('-preset', presetToUse);
+                        }
                     }
                 }
                 if (hardwareDecoding) {
