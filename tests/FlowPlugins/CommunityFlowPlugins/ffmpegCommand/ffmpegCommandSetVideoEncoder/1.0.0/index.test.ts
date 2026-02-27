@@ -292,7 +292,7 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
-    it('should handle different preset values', async () => {
+    it('should handle different preset values for CPU encoders', async () => {
       const presets = ['veryslow', 'slower', 'slow', 'medium', 'fast', 'faster', 'veryfast', 'superfast', 'ultrafast'];
 
       await Promise.all(presets.map(async (preset) => {
@@ -305,6 +305,155 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         expect(videoStream.outputArgs).toContain('-preset');
         expect(videoStream.outputArgs).toContain(preset);
       }));
+    });
+
+    it('should convert CPU presets to p1-p7 for NVENC encoders', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_nvenc',
+        inputArgs: ['-hwaccel', 'cuda'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const presetMapping = {
+        veryslow: 'p7',
+        slower: 'p7',
+        slow: 'p6',
+        medium: 'p5',
+        fast: 'p4',
+        faster: 'p3',
+        veryfast: 'p2',
+        superfast: 'p1',
+        ultrafast: 'p1',
+      };
+
+      await Promise.all(Object.entries(presetMapping).map(async ([cpuPreset, gpuPreset]) => {
+        baseArgs.inputs.ffmpegPreset = cpuPreset;
+        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+
+        const result = await plugin(baseArgs);
+
+        const videoStream = result.variables.ffmpegCommand.streams[0];
+        expect(videoStream.outputArgs).toContain('-preset');
+        expect(videoStream.outputArgs).toContain(gpuPreset);
+        expect(videoStream.outputArgs).not.toContain(cpuPreset);
+      }));
+    });
+
+    it('should convert CPU presets to quality/balanced/speed for AMF encoders', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_amf',
+        inputArgs: [],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const presetMapping = {
+        veryslow: 'quality',
+        slower: 'quality',
+        slow: 'quality',
+        medium: 'balanced',
+        fast: 'balanced',
+        faster: 'speed',
+        veryfast: 'speed',
+        superfast: 'speed',
+        ultrafast: 'speed',
+      };
+
+      await Promise.all(Object.entries(presetMapping).map(async ([cpuPreset, amfPreset]) => {
+        baseArgs.inputs.ffmpegPreset = cpuPreset;
+        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+
+        const result = await plugin(baseArgs);
+
+        const videoStream = result.variables.ffmpegCommand.streams[0];
+        expect(videoStream.outputArgs).toContain('-preset');
+        expect(videoStream.outputArgs).toContain(amfPreset);
+        expect(videoStream.outputArgs).not.toContain(cpuPreset);
+      }));
+    });
+
+    it('should use CPU preset names directly for QSV encoders', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const presets = ['veryslow', 'slow', 'medium', 'fast', 'veryfast'];
+
+      await Promise.all(presets.map(async (preset) => {
+        baseArgs.inputs.ffmpegPreset = preset;
+        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+
+        const result = await plugin(baseArgs);
+
+        const videoStream = result.variables.ffmpegCommand.streams[0];
+        expect(videoStream.outputArgs).toContain('-preset');
+        expect(videoStream.outputArgs).toContain(preset);
+      }));
+    });
+
+    it('should skip preset for VAAPI encoders (not supported)', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_vaapi',
+        inputArgs: [],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const presets = ['veryslow', 'slow', 'medium', 'fast', 'veryfast'];
+
+      await Promise.all(presets.map(async (preset) => {
+        baseArgs.inputs.ffmpegPreset = preset;
+        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+
+        const result = await plugin(baseArgs);
+
+        const videoStream = result.variables.ffmpegCommand.streams[0];
+        expect(videoStream.outputArgs).not.toContain('-preset');
+      }));
+    });
+
+    it('should skip preset for rkmpp encoders (not supported)', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_rkmpp',
+        inputArgs: ['-hwaccel', 'rkmpp'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      baseArgs.inputs.ffmpegPreset = 'medium';
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [];
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).not.toContain('-preset');
+    });
+
+    it('should skip preset for videotoolbox encoders (not supported)', async () => {
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_videotoolbox',
+        inputArgs: ['-hwaccel', 'videotoolbox'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      baseArgs.inputs.ffmpegPreset = 'medium';
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [];
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
     it('should handle different quality values', async () => {
