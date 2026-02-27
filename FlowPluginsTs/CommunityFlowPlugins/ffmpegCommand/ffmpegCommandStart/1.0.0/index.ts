@@ -77,6 +77,8 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
     shouldProcess: false,
     overallInputArguments: [],
     overallOuputArguments: [],
+    multiInputArguments: [],
+    multiOutputArguments: [],
   };
 
   args.variables.ffmpegCommand = ffmpegCommand;
