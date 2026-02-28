@@ -405,27 +405,29 @@ describe('runHealthCheck Plugin', () => {
       );
     });
 
-    it('should force GPU workerType for explicit selection', async () => {
+    it('should skip GPU acceleration on CPU worker for explicit selection', async () => {
       baseArgs.inputs.type = 'thorough';
       baseArgs.inputs.gpuAcceleration = 'nvenc';
       (baseArgs as unknown as Record<string, unknown>).workerType = 'transcodecpu';
 
-      getEncoder.mockResolvedValue({
-        encoder: 'hevc_nvenc',
-        inputArgs: ['-hwaccel', 'cuda'],
-        outputArgs: [],
-        isGpu: true,
-        enabledDevices: [],
-      });
+      await plugin(baseArgs);
+
+      expect(getEncoder).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('requested but running on CPU worker, skipping'),
+      );
+    });
+
+    it('should silently skip GPU on CPU worker when auto is selected', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'auto';
+      (baseArgs as unknown as Record<string, unknown>).workerType = 'transcodecpu';
 
       await plugin(baseArgs);
 
-      expect(getEncoder).toHaveBeenCalledWith(
-        expect.objectContaining({
-          args: expect.objectContaining({
-            workerType: expect.stringContaining('gpu'),
-          }),
-        }),
+      expect(getEncoder).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
+        expect.stringContaining('requested but running on CPU worker'),
       );
     });
 
