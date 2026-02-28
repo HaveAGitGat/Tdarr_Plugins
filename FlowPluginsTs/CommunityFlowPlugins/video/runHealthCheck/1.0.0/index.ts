@@ -18,9 +18,14 @@ const getHwaccelArgs = async (
 ): Promise<string[]> => {
   // CPU worker: never use GPU, regardless of selection
   if (!isGpuWorker) {
-    if (gpuAcceleration !== 'none' && gpuAcceleration !== 'auto') {
+    if (gpuAcceleration === 'none') {
+      args.jobLog('GPU acceleration: none selected, using CPU');
+    } else if (gpuAcceleration === 'auto') {
+      args.jobLog('GPU acceleration: auto selected but worker is CPU, using CPU');
+    } else {
       args.jobLog(
-        `GPU acceleration '${gpuAcceleration}' requested but running on CPU worker, skipping`,
+        `GPU acceleration: '${gpuAcceleration}' selected but worker is CPU`
+        + ' — GPU is only available on transcode GPU workers, using CPU',
       );
     }
     return [];
@@ -29,14 +34,15 @@ const getHwaccelArgs = async (
   // GPU worker
   switch (gpuAcceleration) {
     case 'none':
+      args.jobLog('GPU acceleration: none selected, using CPU');
       return [];
 
     case 'dxva2':
-      args.jobLog('Using DXVA2 GPU acceleration');
+      args.jobLog('GPU acceleration: using DXVA2 (Windows hardware decoding)');
       return ['-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld'];
 
     case 'd3d11va':
-      args.jobLog('Using D3D11VA GPU acceleration');
+      args.jobLog('GPU acceleration: using D3D11VA (Windows hardware decoding)');
       return ['-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11'];
 
     case 'auto':
@@ -53,14 +59,22 @@ const getHwaccelArgs = async (
 
         if (result.isGpu && result.inputArgs.length > 0) {
           args.jobLog(
-            `Using ${gpuAcceleration} GPU acceleration`
+            `GPU acceleration: using ${gpuAcceleration}`
             + ` (hwaccel: ${result.inputArgs.join(' ')})`,
           );
           return result.inputArgs;
         }
 
         if (gpuAcceleration === 'auto') {
-          args.jobLog('Auto-detection: no GPU acceleration available');
+          args.jobLog(
+            'GPU acceleration: auto selected on GPU worker'
+            + ' but no compatible GPU detected, falling back to CPU',
+          );
+        } else {
+          args.jobLog(
+            `GPU acceleration: '${gpuAcceleration}' selected`
+            + ' but detection returned no GPU, falling back to CPU',
+          );
         }
       } catch (err) {
         args.jobLog(

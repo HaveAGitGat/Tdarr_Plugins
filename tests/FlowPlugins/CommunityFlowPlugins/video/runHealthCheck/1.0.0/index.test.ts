@@ -177,7 +177,7 @@ describe('runHealthCheck Plugin', () => {
         }),
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining('auto GPU acceleration'),
+        expect.stringContaining('GPU acceleration: using auto'),
       );
     });
 
@@ -212,7 +212,7 @@ describe('runHealthCheck Plugin', () => {
         }),
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Auto-detection: no GPU acceleration available',
+        expect.stringContaining('auto selected on GPU worker but no compatible GPU detected'),
       );
     });
 
@@ -350,7 +350,7 @@ describe('runHealthCheck Plugin', () => {
         }),
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Using DXVA2 GPU acceleration',
+        'GPU acceleration: using DXVA2 (Windows hardware decoding)',
       );
     });
 
@@ -370,7 +370,7 @@ describe('runHealthCheck Plugin', () => {
         }),
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Using D3D11VA GPU acceleration',
+        'GPU acceleration: using D3D11VA (Windows hardware decoding)',
       );
     });
 
@@ -405,7 +405,7 @@ describe('runHealthCheck Plugin', () => {
       );
     });
 
-    it('should skip GPU acceleration on CPU worker for explicit selection', async () => {
+    it('should skip GPU on CPU worker for explicit selection with clear message', async () => {
       baseArgs.inputs.type = 'thorough';
       baseArgs.inputs.gpuAcceleration = 'nvenc';
       (baseArgs as unknown as Record<string, unknown>).workerType = 'transcodecpu';
@@ -414,11 +414,11 @@ describe('runHealthCheck Plugin', () => {
 
       expect(getEncoder).not.toHaveBeenCalled();
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining('requested but running on CPU worker, skipping'),
+        expect.stringContaining('only available on transcode GPU workers'),
       );
     });
 
-    it('should silently skip GPU on CPU worker when auto is selected', async () => {
+    it('should log CPU usage on CPU worker when auto is selected', async () => {
       baseArgs.inputs.type = 'thorough';
       baseArgs.inputs.gpuAcceleration = 'auto';
       (baseArgs as unknown as Record<string, unknown>).workerType = 'transcodecpu';
@@ -426,8 +426,8 @@ describe('runHealthCheck Plugin', () => {
       await plugin(baseArgs);
 
       expect(getEncoder).not.toHaveBeenCalled();
-      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
-        expect.stringContaining('requested but running on CPU worker'),
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'GPU acceleration: auto selected but worker is CPU, using CPU',
       );
     });
 

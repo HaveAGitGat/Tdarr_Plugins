@@ -49,8 +49,15 @@ var getHwaccelArgs = function (gpuAcceleration, isGpuWorker, args) { return __aw
             case 0:
                 // CPU worker: never use GPU, regardless of selection
                 if (!isGpuWorker) {
-                    if (gpuAcceleration !== 'none' && gpuAcceleration !== 'auto') {
-                        args.jobLog("GPU acceleration '".concat(gpuAcceleration, "' requested but running on CPU worker, skipping"));
+                    if (gpuAcceleration === 'none') {
+                        args.jobLog('GPU acceleration: none selected, using CPU');
+                    }
+                    else if (gpuAcceleration === 'auto') {
+                        args.jobLog('GPU acceleration: auto selected but worker is CPU, using CPU');
+                    }
+                    else {
+                        args.jobLog("GPU acceleration: '".concat(gpuAcceleration, "' selected but worker is CPU")
+                            + ' — GPU is only available on transcode GPU workers, using CPU');
                     }
                     return [2 /*return*/, []];
                 }
@@ -62,12 +69,14 @@ var getHwaccelArgs = function (gpuAcceleration, isGpuWorker, args) { return __aw
                     case 'auto': return [3 /*break*/, 4];
                 }
                 return [3 /*break*/, 4];
-            case 1: return [2 /*return*/, []];
+            case 1:
+                args.jobLog('GPU acceleration: none selected, using CPU');
+                return [2 /*return*/, []];
             case 2:
-                args.jobLog('Using DXVA2 GPU acceleration');
+                args.jobLog('GPU acceleration: using DXVA2 (Windows hardware decoding)');
                 return [2 /*return*/, ['-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld']];
             case 3:
-                args.jobLog('Using D3D11VA GPU acceleration');
+                args.jobLog('GPU acceleration: using D3D11VA (Windows hardware decoding)');
                 return [2 /*return*/, ['-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11']];
             case 4:
                 hardwareType = gpuAcceleration === 'auto' ? 'auto' : gpuAcceleration;
@@ -83,12 +92,17 @@ var getHwaccelArgs = function (gpuAcceleration, isGpuWorker, args) { return __aw
             case 6:
                 result = _b.sent();
                 if (result.isGpu && result.inputArgs.length > 0) {
-                    args.jobLog("Using ".concat(gpuAcceleration, " GPU acceleration")
+                    args.jobLog("GPU acceleration: using ".concat(gpuAcceleration)
                         + " (hwaccel: ".concat(result.inputArgs.join(' '), ")"));
                     return [2 /*return*/, result.inputArgs];
                 }
                 if (gpuAcceleration === 'auto') {
-                    args.jobLog('Auto-detection: no GPU acceleration available');
+                    args.jobLog('GPU acceleration: auto selected on GPU worker'
+                        + ' but no compatible GPU detected, falling back to CPU');
+                }
+                else {
+                    args.jobLog("GPU acceleration: '".concat(gpuAcceleration, "' selected")
+                        + ' but detection returned no GPU, falling back to CPU');
                 }
                 return [3 /*break*/, 8];
             case 7:
