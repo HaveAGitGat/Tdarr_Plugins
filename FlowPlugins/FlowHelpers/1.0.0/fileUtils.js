@@ -101,7 +101,7 @@ var getFileAbsoluteDir = function (filePath) {
     return parts.join('/');
 };
 exports.getFileAbsoluteDir = getFileAbsoluteDir;
-// backwards compatibility for typo 
+// backwards compatibility for typo
 exports.getFileAbosluteDir = exports.getFileAbsoluteDir;
 var getFfType = function (codecType) { return (codecType === 'video' ? 'v' : 'a'); };
 exports.getFfType = getFfType;
