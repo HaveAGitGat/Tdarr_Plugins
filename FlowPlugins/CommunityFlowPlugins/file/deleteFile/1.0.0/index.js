@@ -150,7 +150,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _b.sent();
                 _b.label = 6;
             case 6:
-                fileDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                fileDir = (0, fileUtils_1.getFileAbsoluteDir)(args.originalLibraryFile._id);
                 if (!deleteParentFolderIfEmpty) return [3 /*break*/, 11];
                 args.jobLog("Checking if folder ".concat(fileDir, " is empty"));
                 return [4 /*yield*/, fs_1.promises.readdir(fileDir)];
