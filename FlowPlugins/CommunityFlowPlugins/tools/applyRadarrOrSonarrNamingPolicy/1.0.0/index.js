@@ -264,7 +264,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fileToRename = arrApp.delegates
                     .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult, fInfo);
                 if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
-                newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                newPath = "".concat((0, fileUtils_1.getFileAbsoluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: currentFileName,

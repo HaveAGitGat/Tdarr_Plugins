@@ -2,7 +2,7 @@ import { promises as fsp } from 'fs';
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
   fileExists,
-  getContainer, getFileAbosluteDir, getFileName,
+  getContainer, getFileAbsoluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -57,7 +57,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('File has changed, replacing original file');
 
   const currentPath = args.inputFileObj._id;
-  const orignalFolder = getFileAbosluteDir(args.originalLibraryFile._id);
+  const orignalFolder = getFileAbsoluteDir(args.originalLibraryFile._id);
   const fileName = getFileName(args.inputFileObj._id);
   const container = getContainer(args.inputFileObj._id);
 
