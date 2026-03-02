@@ -123,7 +123,7 @@ describe('moveToOriginalDirectory Plugin', () => {
 
       await plugin(baseArgs);
 
-      // getFileAbosluteDir splits on '/' so Windows paths are handled differently
+      // getFileAbsoluteDir splits on '/' so Windows paths are handled differently
       expect(mockFileMoveOrCopy).toHaveBeenCalledWith({
         operation: 'move',
         sourcePath: 'C:\\temp\\work\\processed.mp4',

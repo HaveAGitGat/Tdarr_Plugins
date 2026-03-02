@@ -97,7 +97,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                directory = String(args.inputs.directory).trim() || (0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id);
+                directory = String(args.inputs.directory).trim() || (0, fileUtils_1.getFileAbsoluteDir)(args.inputFileObj._id);
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 fileToCheck = String(args.inputs.fileToCheck).trim();
                 fileToCheck = fileToCheck.replace(/\${fileName}/g, fileName);
