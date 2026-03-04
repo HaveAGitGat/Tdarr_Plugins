@@ -116,7 +116,7 @@ const parseEdlFile = (edlContent: string): IedlEntry[] => {
   const lines = edlContent.trim().split('\n');
   const entries: IedlEntry[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
+  for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i].trim();
     if (line === '') {
       continue; // eslint-disable-line no-continue
