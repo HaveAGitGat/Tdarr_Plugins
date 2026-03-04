@@ -146,7 +146,7 @@ exports.details = details;
 var parseEdlFile = function (edlContent) {
     var lines = edlContent.trim().split('\n');
     var entries = [];
-    for (var i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i += 1) {
         var line = lines[i].trim();
         if (line === '') {
             continue; // eslint-disable-line no-continue
