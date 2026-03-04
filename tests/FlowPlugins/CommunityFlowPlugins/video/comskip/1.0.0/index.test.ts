@@ -171,11 +171,13 @@ describe('Comskip Plugin', () => {
     });
 
     it('should accept comskip exit code 1 (sometimes used for commercials found)', async () => {
+      const exitCodes = [1, 0];
       let callCount = 0;
       mockCLI.mockImplementation(() => ({
-        runCli: jest.fn().mockResolvedValue({
-          cliExitCode: callCount++ === 0 ? 1 : 0,
-          errorLogFull: [],
+        runCli: jest.fn().mockImplementation(() => {
+          const code = exitCodes[callCount];
+          callCount += 1;
+          return Promise.resolve({ cliExitCode: code, errorLogFull: [] });
         }),
       }));
       mockFileExists.mockResolvedValue(false);
