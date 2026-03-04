@@ -43,6 +43,9 @@ describe('Comskip Plugin', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCLI = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils').CLI;
+    mockCLI.mockImplementation(() => ({
+      runCli: jest.fn().mockResolvedValue({ cliExitCode: 0, errorLogFull: [] }),
+    }));
     mockFileExists = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils').fileExists;
 
     baseArgs = {
@@ -112,7 +115,7 @@ describe('Comskip Plugin', () => {
   });
 
   describe('No commercials detected', () => {
-    it('should return output 2 when no EDL file is generated', async () => {
+    it('should return output 2 when no EDL or TXT file is generated', async () => {
       mockFileExists.mockResolvedValue(false);
 
       const result = await plugin(baseArgs);
@@ -120,17 +123,80 @@ describe('Comskip Plugin', () => {
       expect(result.outputNumber).toBe(2);
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'No EDL file generated - no commercials detected.',
+        'No EDL or TXT file generated - no commercials detected.',
       );
     });
 
     it('should return output 2 when EDL file has no commercial entries', async () => {
-      mockFileExists.mockResolvedValue(true);
+      // First call (EDL) exists, second call (TXT) doesn't matter
+      mockFileExists.mockResolvedValueOnce(true);
       mockReadFile.mockResolvedValue('');
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
+    });
+
+    it('should return output 2 when TXT file has no commercial entries', async () => {
+      // EDL doesn't exist, TXT exists but is empty
+      mockFileExists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+      mockReadFile.mockResolvedValue('');
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+    });
+  });
+
+  describe('TXT file fallback', () => {
+    it('should parse TXT file when no EDL file exists', async () => {
+      // EDL doesn't exist, TXT exists
+      mockFileExists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+      mockReadFile.mockResolvedValue(
+        'FILE PROCESSING COMPLETE  20489 FRAMES AT  2996\n'
+        + '-------------------\n'
+        + '1\t2820\n'
+        + '19078\t20489\n',
+      );
+
+      // Second CLI call (ffmpeg) succeeds
+      const exitCodes = [0, 0];
+      let callCount = 0;
+      mockCLI.mockImplementation(() => ({
+        runCli: jest.fn().mockImplementation(() => {
+          const code = exitCodes[callCount];
+          callCount += 1;
+          return Promise.resolve({ cliExitCode: code, errorLogFull: [] });
+        }),
+      }));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Found 2 commercial segment(s) to remove.');
+    });
+
+    it('should prefer EDL over TXT when both exist', async () => {
+      // EDL exists
+      mockFileExists.mockResolvedValueOnce(true);
+      mockReadFile.mockResolvedValue('0.00\t94.06\t0\n');
+
+      const exitCodes = [0, 0];
+      let callCount = 0;
+      mockCLI.mockImplementation(() => ({
+        runCli: jest.fn().mockImplementation(() => {
+          const code = exitCodes[callCount];
+          callCount += 1;
+          return Promise.resolve({ cliExitCode: code, errorLogFull: [] });
+        }),
+      }));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Found 1 commercial segment(s) to remove.');
+      // fileExists should only be called once (for EDL), not for TXT
+      expect(mockFileExists).toHaveBeenCalledTimes(1);
     });
   });
 

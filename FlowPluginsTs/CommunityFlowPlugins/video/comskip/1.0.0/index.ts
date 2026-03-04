@@ -16,8 +16,8 @@ const details = (): IpluginDetails => ({
   description:
     `Uses comskip to detect commercials in a video file and ffmpeg to remove them.
      \\nComskip must be installed and accessible on the system.
-     \\nThis plugin generates an EDL (Edit Decision List) via comskip,
-     then uses ffmpeg to cut out the detected commercial segments and produce a clean output file.
+     \\nThis plugin reads comskip output (EDL or TXT format) to identify commercial segments,
+     then uses ffmpeg to cut them out and produce a clean output file.
      \\nUseful for DVR recordings from OTA or cable TV.`,
   style: {
     borderColor: '#6EB5FF',
@@ -106,15 +106,14 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-interface IedlEntry {
+interface IcommercialEntry {
   start: number,
   end: number,
-  type: number,
 }
 
-const parseEdlFile = (edlContent: string): IedlEntry[] => {
+const parseEdlFile = (edlContent: string): IcommercialEntry[] => {
   const lines = edlContent.trim().split('\n');
-  const entries: IedlEntry[] = [];
+  const entries: IcommercialEntry[] = [];
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i].trim();
@@ -129,7 +128,47 @@ const parseEdlFile = (edlContent: string): IedlEntry[] => {
 
       // Type 0 = cut (commercial), Type 3 = commercial
       if (!Number.isNaN(start) && !Number.isNaN(end) && (type === 0 || type === 3)) {
-        entries.push({ start, end, type });
+        entries.push({ start, end });
+      }
+    }
+  }
+
+  return entries;
+};
+
+// Parses comskip .txt output (frame-based) and converts to seconds
+// Header format: "FILE PROCESSING COMPLETE  <frames> FRAMES AT  <rate>"
+// where rate is fps * 100 (e.g. 2996 = 29.96 fps)
+// Data lines: <start_frame>\t<end_frame>
+const parseTxtFile = (txtContent: string): IcommercialEntry[] => {
+  const lines = txtContent.trim().split('\n');
+  const entries: IcommercialEntry[] = [];
+
+  if (lines.length < 3) return entries;
+
+  // Parse framerate from header: "FILE PROCESSING COMPLETE  20489 FRAMES AT  2996"
+  const headerMatch = lines[0].match(/FRAMES\s+AT\s+(\d+)/);
+  if (!headerMatch) return entries;
+
+  const fps = parseInt(headerMatch[1], 10) / 100;
+  if (fps <= 0 || Number.isNaN(fps)) return entries;
+
+  // Skip header and separator line, parse frame ranges
+  for (let i = 2; i < lines.length; i += 1) {
+    const line = lines[i].trim();
+    if (line === '') {
+      continue; // eslint-disable-line no-continue
+    }
+    const parts = line.split(/\s+/);
+    if (parts.length >= 2) {
+      const startFrame = parseInt(parts[0], 10);
+      const endFrame = parseInt(parts[1], 10);
+
+      if (!Number.isNaN(startFrame) && !Number.isNaN(endFrame)) {
+        entries.push({
+          start: startFrame / fps,
+          end: endFrame / fps,
+        });
       }
     }
   }
@@ -138,11 +177,11 @@ const parseEdlFile = (edlContent: string): IedlEntry[] => {
 };
 
 const buildKeepSegments = (
-  edlEntries: IedlEntry[],
+  commercials: IcommercialEntry[],
   duration: number,
 ): { start: number; end: number }[] => {
-  // Sort EDL entries by start time
-  const sorted = [...edlEntries].sort((a, b) => a.start - b.start);
+  // Sort entries by start time
+  const sorted = [...commercials].sort((a, b) => a.start - b.start);
   const segments: { start: number; end: number }[] = [];
   let currentPos = 0;
 
@@ -215,14 +254,28 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     throw new Error(`Comskip failed with exit code ${comskipRes.cliExitCode}`);
   }
 
-  // Check for EDL file
+  // Check for EDL file first, then fall back to TXT
   const edlPath = normJoinPath({
     upath: args.deps.upath,
     paths: [workDir, `${fileName}.edl`],
   });
+  const txtPath = normJoinPath({
+    upath: args.deps.upath,
+    paths: [workDir, `${fileName}.txt`],
+  });
 
-  if (!(await fileExists(edlPath))) {
-    args.jobLog('No EDL file generated - no commercials detected.');
+  let commercials: IcommercialEntry[] = [];
+
+  if (await fileExists(edlPath)) {
+    const edlContent = await fsp.readFile(edlPath, 'utf8');
+    args.jobLog(`EDL file contents:\n${edlContent}`);
+    commercials = parseEdlFile(edlContent);
+  } else if (await fileExists(txtPath)) {
+    const txtContent = await fsp.readFile(txtPath, 'utf8');
+    args.jobLog(`TXT file contents:\n${txtContent}`);
+    commercials = parseTxtFile(txtContent);
+  } else {
+    args.jobLog('No EDL or TXT file generated - no commercials detected.');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
@@ -230,13 +283,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
   }
 
-  const edlContent = await fsp.readFile(edlPath, 'utf8');
-  args.jobLog(`EDL file contents:\\n${edlContent}`);
-
-  const edlEntries = parseEdlFile(edlContent);
-
-  if (edlEntries.length === 0) {
-    args.jobLog('EDL file contained no commercial segments.');
+  if (commercials.length === 0) {
+    args.jobLog('Comskip output contained no commercial segments.');
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,
@@ -244,7 +292,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
   }
 
-  args.jobLog(`Found ${edlEntries.length} commercial segment(s) to remove.`);
+  args.jobLog(`Found ${commercials.length} commercial segment(s) to remove.`);
 
   // Get video duration from ffprobe data
   let duration = 0;
@@ -260,7 +308,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   }
 
   // Build keep segments (inverse of commercials)
-  const keepSegments = buildKeepSegments(edlEntries, duration);
+  const keepSegments = buildKeepSegments(commercials, duration);
 
   if (keepSegments.length === 0) {
     args.jobLog('No content segments remaining after commercial removal - skipping.');

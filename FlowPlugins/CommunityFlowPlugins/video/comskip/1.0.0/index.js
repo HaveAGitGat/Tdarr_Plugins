@@ -56,7 +56,7 @@ var normJoinPath_1 = __importDefault(require("../../../../FlowHelpers/1.0.0/norm
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Comskip - Detect and Remove Commercials',
-    description: "Uses comskip to detect commercials in a video file and ffmpeg to remove them.\n     \\nComskip must be installed and accessible on the system.\n     \\nThis plugin generates an EDL (Edit Decision List) via comskip,\n     then uses ffmpeg to cut out the detected commercial segments and produce a clean output file.\n     \\nUseful for DVR recordings from OTA or cable TV.",
+    description: "Uses comskip to detect commercials in a video file and ffmpeg to remove them.\n     \\nComskip must be installed and accessible on the system.\n     \\nThis plugin reads comskip output (EDL or TXT format) to identify commercial segments,\n     then uses ffmpeg to cut them out and produce a clean output file.\n     \\nUseful for DVR recordings from OTA or cable TV.",
     style: {
         borderColor: '#6EB5FF',
     },
@@ -158,15 +158,51 @@ var parseEdlFile = function (edlContent) {
             var type = parseInt(parts[2], 10);
             // Type 0 = cut (commercial), Type 3 = commercial
             if (!Number.isNaN(start) && !Number.isNaN(end) && (type === 0 || type === 3)) {
-                entries.push({ start: start, end: end, type: type });
+                entries.push({ start: start, end: end });
             }
         }
     }
     return entries;
 };
-var buildKeepSegments = function (edlEntries, duration) {
-    // Sort EDL entries by start time
-    var sorted = __spreadArray([], edlEntries, true).sort(function (a, b) { return a.start - b.start; });
+// Parses comskip .txt output (frame-based) and converts to seconds
+// Header format: "FILE PROCESSING COMPLETE  <frames> FRAMES AT  <rate>"
+// where rate is fps * 100 (e.g. 2996 = 29.96 fps)
+// Data lines: <start_frame>\t<end_frame>
+var parseTxtFile = function (txtContent) {
+    var lines = txtContent.trim().split('\n');
+    var entries = [];
+    if (lines.length < 3)
+        return entries;
+    // Parse framerate from header: "FILE PROCESSING COMPLETE  20489 FRAMES AT  2996"
+    var headerMatch = lines[0].match(/FRAMES\s+AT\s+(\d+)/);
+    if (!headerMatch)
+        return entries;
+    var fps = parseInt(headerMatch[1], 10) / 100;
+    if (fps <= 0 || Number.isNaN(fps))
+        return entries;
+    // Skip header and separator line, parse frame ranges
+    for (var i = 2; i < lines.length; i += 1) {
+        var line = lines[i].trim();
+        if (line === '') {
+            continue; // eslint-disable-line no-continue
+        }
+        var parts = line.split(/\s+/);
+        if (parts.length >= 2) {
+            var startFrame = parseInt(parts[0], 10);
+            var endFrame = parseInt(parts[1], 10);
+            if (!Number.isNaN(startFrame) && !Number.isNaN(endFrame)) {
+                entries.push({
+                    start: startFrame / fps,
+                    end: endFrame / fps,
+                });
+            }
+        }
+    }
+    return entries;
+};
+var buildKeepSegments = function (commercials, duration) {
+    // Sort entries by start time
+    var sorted = __spreadArray([], commercials, true).sort(function (a, b) { return a.start - b.start; });
     var segments = [];
     var currentPos = 0;
     for (var i = 0; i < sorted.length; i++) {
@@ -183,7 +219,7 @@ var buildKeepSegments = function (edlEntries, duration) {
 };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, comskipPath, useCustomIni, customIniPath, container, inputFilePath, fileName, workDir, comskipArgs, comskipCli, comskipRes, edlPath, edlContent, edlEntries, duration, keepSegments, outputFilePath, filterParts, i, seg, concatInputs, filterComplex, ffmpegArgs, ffmpegCli, ffmpegRes;
+    var lib, comskipPath, useCustomIni, customIniPath, container, inputFilePath, fileName, workDir, comskipArgs, comskipCli, comskipRes, edlPath, txtPath, commercials, edlContent, txtContent, duration, keepSegments, outputFilePath, filterParts, i, seg, concatInputs, filterComplex, ffmpegArgs, ffmpegCli, ffmpegRes;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -232,30 +268,46 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     upath: args.deps.upath,
                     paths: [workDir, "".concat(fileName, ".edl")],
                 });
+                txtPath = (0, normJoinPath_1.default)({
+                    upath: args.deps.upath,
+                    paths: [workDir, "".concat(fileName, ".txt")],
+                });
+                commercials = [];
                 return [4 /*yield*/, (0, fileUtils_1.fileExists)(edlPath)];
             case 2:
-                if (!(_c.sent())) {
-                    args.jobLog('No EDL file generated - no commercials detected.');
-                    return [2 /*return*/, {
-                            outputFileObj: args.inputFileObj,
-                            outputNumber: 2,
-                            variables: args.variables,
-                        }];
-                }
+                if (!_c.sent()) return [3 /*break*/, 4];
                 return [4 /*yield*/, fs_1.promises.readFile(edlPath, 'utf8')];
             case 3:
                 edlContent = _c.sent();
-                args.jobLog("EDL file contents:\\n".concat(edlContent));
-                edlEntries = parseEdlFile(edlContent);
-                if (edlEntries.length === 0) {
-                    args.jobLog('EDL file contained no commercial segments.');
+                args.jobLog("EDL file contents:\n".concat(edlContent));
+                commercials = parseEdlFile(edlContent);
+                return [3 /*break*/, 8];
+            case 4: return [4 /*yield*/, (0, fileUtils_1.fileExists)(txtPath)];
+            case 5:
+                if (!_c.sent()) return [3 /*break*/, 7];
+                return [4 /*yield*/, fs_1.promises.readFile(txtPath, 'utf8')];
+            case 6:
+                txtContent = _c.sent();
+                args.jobLog("TXT file contents:\n".concat(txtContent));
+                commercials = parseTxtFile(txtContent);
+                return [3 /*break*/, 8];
+            case 7:
+                args.jobLog('No EDL or TXT file generated - no commercials detected.');
+                return [2 /*return*/, {
+                        outputFileObj: args.inputFileObj,
+                        outputNumber: 2,
+                        variables: args.variables,
+                    }];
+            case 8:
+                if (commercials.length === 0) {
+                    args.jobLog('Comskip output contained no commercial segments.');
                     return [2 /*return*/, {
                             outputFileObj: args.inputFileObj,
                             outputNumber: 2,
                             variables: args.variables,
                         }];
                 }
-                args.jobLog("Found ".concat(edlEntries.length, " commercial segment(s) to remove."));
+                args.jobLog("Found ".concat(commercials.length, " commercial segment(s) to remove."));
                 duration = 0;
                 try {
                     duration = parseFloat(((_b = (_a = args.inputFileObj.ffProbeData) === null || _a === void 0 ? void 0 : _a.format) === null || _b === void 0 ? void 0 : _b.duration) || '0');
@@ -267,7 +319,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args.jobLog('Could not determine video duration, using large fallback value.');
                     duration = 999999;
                 }
-                keepSegments = buildKeepSegments(edlEntries, duration);
+                keepSegments = buildKeepSegments(commercials, duration);
                 if (keepSegments.length === 0) {
                     args.jobLog('No content segments remaining after commercial removal - skipping.');
                     return [2 /*return*/, {
@@ -313,7 +365,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args: args,
                 });
                 return [4 /*yield*/, ffmpegCli.runCli()];
-            case 4:
+            case 9:
                 ffmpegRes = _c.sent();
                 if (ffmpegRes.cliExitCode !== 0) {
                     args.jobLog('FFmpeg commercial removal failed.');
