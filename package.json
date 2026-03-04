@@ -6,7 +6,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "import-fresh": "^3.3.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.23"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
