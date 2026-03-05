@@ -18,7 +18,8 @@ const details = (): IpluginDetails => ({
     `Uses comskip to detect commercials and configures ffmpeg to remove them.
      \\nComskip must be installed and accessible on the system.
      \\nThis plugin reads comskip output (EDL or TXT format) to identify commercial segments,
-     then configures the ffmpeg command with a filter_complex to cut them out.
+     then uses the ffmpeg concat demuxer to join the non-commercial segments.
+     \\nAll stream types (video, audio, subtitles, data) are preserved with correct timing.
      \\nMust be used between Begin Command and Execute plugins.
      \\nUseful for DVR recordings from OTA or cable TV.`,
   style: {
@@ -330,53 +331,28 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(`Keeping ${keepSegments.length} content segment(s).`);
 
-  // Build ffmpeg filter_complex to concatenate the keep segments
-  const filterParts: string[] = [];
+  // Write a concat demuxer file listing the keep segments.
+  // The concat demuxer handles ALL stream types (video, audio, subtitles, data)
+  // with correct timestamp adjustment, so nothing is lost.
+  const escapedPath = inputFilePath.replace(/'/g, "'\\''");
+  const concatLines: string[] = ['ffconcat version 1.0'];
   for (let i = 0; i < keepSegments.length; i++) {
-    const seg = keepSegments[i];
-    filterParts.push(
-      `[0:v]trim=start=${seg.start}:end=${seg.end},setpts=PTS-STARTPTS[v${i}];`
-      + `[0:a]atrim=start=${seg.start}:end=${seg.end},asetpts=PTS-STARTPTS[a${i}];`,
-    );
+    concatLines.push(`file '${escapedPath}'`);
+    concatLines.push(`inpoint ${keepSegments[i].start}`);
+    concatLines.push(`outpoint ${keepSegments[i].end}`);
   }
 
-  const concatInputs = keepSegments.map((_seg, i) => `[v${i}][a${i}]`).join('');
-  const filterComplex = `${filterParts.join('')}`
-    + `${concatInputs}concat=n=${keepSegments.length}:v=1:a=1[outv][outa]`;
+  const concatFilePath = normJoinPath({
+    upath: args.deps.upath,
+    paths: [workDir, `${fileName}.concat`],
+  });
+  await fsp.writeFile(concatFilePath, concatLines.join('\n'), 'utf8');
 
-  // Configure ffmpegCommand streams
-  const { streams } = args.variables.ffmpegCommand;
-  const videoStream = streams.find((s) => s.codec_type === 'video');
-  const audioStream = streams.find((s) => s.codec_type === 'audio');
+  args.jobLog(`Wrote concat demuxer file: ${concatFilePath}`);
 
-  if (videoStream) {
-    videoStream.mapArgs = ['-map', '[outv]'];
-    if (videoStream.outputArgs.length === 0) {
-      videoStream.outputArgs.push(
-        '-c:{outputIndex}', 'libx264', '-preset', 'medium', '-crf', '18',
-      );
-    }
-  }
-
-  if (audioStream) {
-    audioStream.mapArgs = ['-map', '[outa]'];
-    if (audioStream.outputArgs.length === 0) {
-      audioStream.outputArgs.push(
-        '-c:{outputIndex}', 'aac', '-b:{outputIndex}', '192k',
-      );
-    }
-  }
-
-  // Mark all other streams as removed
-  for (let i = 0; i < streams.length; i++) {
-    if (streams[i] !== videoStream && streams[i] !== audioStream) {
-      streams[i].removed = true;
-    }
-  }
-
-  // Add filter_complex to overall output arguments
-  args.variables.ffmpegCommand.overallOuputArguments.push(
-    '-filter_complex', filterComplex,
+  // Tell Execute to read the input via the concat demuxer
+  args.variables.ffmpegCommand.overallInputArguments.push(
+    '-f', 'concat', '-safe', '0',
   );
 
   // eslint-disable-next-line no-param-reassign
@@ -385,7 +361,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Configured ffmpeg command for commercial removal.');
 
   return {
-    outputFileObj: args.inputFileObj,
+    outputFileObj: {
+      _id: concatFilePath,
+    },
     outputNumber: 1,
     variables: args.variables,
   };

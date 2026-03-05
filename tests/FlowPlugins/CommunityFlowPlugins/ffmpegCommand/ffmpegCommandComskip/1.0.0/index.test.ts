@@ -24,11 +24,13 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => {
 
 // Mock fs promises
 const mockReadFile = jest.fn().mockResolvedValue('');
+const mockWriteFile = jest.fn().mockResolvedValue(undefined);
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
   promises: {
     ...jest.requireActual('fs').promises,
     readFile: (...fnArgs: unknown[]) => mockReadFile(...fnArgs),
+    writeFile: (...fnArgs: unknown[]) => mockWriteFile(...fnArgs),
   },
 }));
 
@@ -159,6 +161,7 @@ describe('ffmpegCommandComskip Plugin', () => {
       // ffmpegCommand should be unchanged
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
       expect(result.variables.ffmpegCommand.streams[0].mapArgs).toEqual(['-map', '0:0']);
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual([]);
     });
 
     it('should return output 2 when EDL file has no commercial entries', async () => {
@@ -182,8 +185,8 @@ describe('ffmpegCommandComskip Plugin', () => {
     });
   });
 
-  describe('EDL parsing', () => {
-    it('should configure ffmpegCommand when EDL has commercials', async () => {
+  describe('Concat demuxer approach', () => {
+    it('should write concat file and set input args when EDL has commercials', async () => {
       mockFileExists.mockResolvedValueOnce(true);
       mockReadFile.mockResolvedValue('0.00\t94.06\t0\n636.41\t930.87\t0\n');
 
@@ -192,20 +195,83 @@ describe('ffmpegCommandComskip Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
 
-      // Video stream should have [outv] mapping
-      const videoStream = result.variables.ffmpegCommand.streams[0];
-      expect(videoStream.mapArgs).toEqual(['-map', '[outv]']);
+      // Should set concat demuxer input args
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
+        ['-f', 'concat', '-safe', '0'],
+      );
 
-      // Audio stream should have [outa] mapping
-      const audioStream = result.variables.ffmpegCommand.streams[1];
-      expect(audioStream.mapArgs).toEqual(['-map', '[outa]']);
+      // outputFileObj._id should point to the concat file
+      expect(result.outputFileObj._id).toContain('.concat');
 
-      // filter_complex should be in overallOuputArguments
-      expect(result.variables.ffmpegCommand.overallOuputArguments[0]).toBe('-filter_complex');
-      const filterComplex = result.variables.ffmpegCommand.overallOuputArguments[1];
-      expect(filterComplex).toContain('[outv]');
-      expect(filterComplex).toContain('[outa]');
-      expect(filterComplex).toContain('concat=n=');
+      // Stream mapArgs should be UNCHANGED (concat demuxer preserves stream layout)
+      expect(result.variables.ffmpegCommand.streams[0].mapArgs).toEqual(['-map', '0:0']);
+      expect(result.variables.ffmpegCommand.streams[1].mapArgs).toEqual(['-map', '0:1']);
+
+      // No streams should be removed
+      expect(result.variables.ffmpegCommand.streams[0].removed).toBe(false);
+      expect(result.variables.ffmpegCommand.streams[1].removed).toBe(false);
+
+      // Verify concat file was written with correct content
+      expect(mockWriteFile).toHaveBeenCalledTimes(1);
+      const concatContent = mockWriteFile.mock.calls[0][1] as string;
+      expect(concatContent).toContain('ffconcat version 1.0');
+      expect(concatContent).toContain(`file '${baseArgs.inputFileObj._id}'`);
+      // Should have keep segments: 94.06-636.41 and 930.87-3600
+      expect(concatContent).toContain('inpoint 94.06');
+      expect(concatContent).toContain('outpoint 636.41');
+      expect(concatContent).toContain('inpoint 930.87');
+      expect(concatContent).toContain('outpoint 3600');
+      // Should NOT contain commercial segments
+      expect(concatContent).not.toContain('inpoint 0');
+      expect(concatContent).not.toContain('outpoint 94.06');
+    });
+
+    it('should preserve all stream types including subtitles and data', async () => {
+      baseArgs.variables.ffmpegCommand.streams.push(
+        {
+          index: 2,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:2'],
+        },
+        {
+          index: 3,
+          codec_name: 'bin_data',
+          codec_type: 'data',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:3'],
+        },
+        {
+          index: 4,
+          codec_name: 'ttf',
+          codec_type: 'attachment',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:4'],
+        },
+      );
+
+      mockFileExists.mockResolvedValueOnce(true);
+      mockReadFile.mockResolvedValue('0.00\t94.06\t0\n');
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      // ALL streams should be kept — concat demuxer handles all types
+      for (let i = 0; i < result.variables.ffmpegCommand.streams.length; i++) {
+        expect(result.variables.ffmpegCommand.streams[i].removed).toBe(false);
+      }
+      // Subtitle stream mapArgs preserved
+      expect(result.variables.ffmpegCommand.streams[2].mapArgs).toEqual(['-map', '0:2']);
     });
   });
 
@@ -225,12 +291,11 @@ describe('ffmpegCommandComskip Plugin', () => {
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Found 2 commercial segment(s) to remove.');
 
-      // Verify stream modifications
-      const videoStream = result.variables.ffmpegCommand.streams[0];
-      expect(videoStream.mapArgs).toEqual(['-map', '[outv]']);
-
-      const audioStream = result.variables.ffmpegCommand.streams[1];
-      expect(audioStream.mapArgs).toEqual(['-map', '[outa]']);
+      // Concat demuxer approach — streams unchanged
+      expect(result.variables.ffmpegCommand.streams[0].mapArgs).toEqual(['-map', '0:0']);
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
+        ['-f', 'concat', '-safe', '0'],
+      );
     });
 
     it('should prefer EDL over TXT when both exist', async () => {
@@ -294,55 +359,22 @@ describe('ffmpegCommandComskip Plugin', () => {
     });
   });
 
-  describe('Default encoding', () => {
-    it('should add default video encoding when outputArgs are empty', async () => {
+  describe('Stream outputArgs untouched', () => {
+    it('should not modify stream outputArgs (encoding is the user\'s choice)', async () => {
       mockFileExists.mockResolvedValueOnce(true);
       mockReadFile.mockResolvedValue('0.00\t94.06\t0\n');
 
       const result = await plugin(baseArgs);
 
-      const videoStream = result.variables.ffmpegCommand.streams[0];
-      expect(videoStream.outputArgs).toContain('-c:{outputIndex}');
-      expect(videoStream.outputArgs).toContain('libx264');
-      expect(videoStream.outputArgs).toContain('-preset');
-      expect(videoStream.outputArgs).toContain('medium');
-      expect(videoStream.outputArgs).toContain('-crf');
-      expect(videoStream.outputArgs).toContain('18');
+      // outputArgs should remain empty — Execute will default to copy
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
+      expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([]);
     });
 
-    it('should add default audio encoding when outputArgs are empty', async () => {
-      mockFileExists.mockResolvedValueOnce(true);
-      mockReadFile.mockResolvedValue('0.00\t94.06\t0\n');
-
-      const result = await plugin(baseArgs);
-
-      const audioStream = result.variables.ffmpegCommand.streams[1];
-      expect(audioStream.outputArgs).toContain('-c:{outputIndex}');
-      expect(audioStream.outputArgs).toContain('aac');
-      expect(audioStream.outputArgs).toContain('-b:{outputIndex}');
-      expect(audioStream.outputArgs).toContain('192k');
-    });
-
-    it('should preserve existing video stream outputArgs from other plugins', async () => {
-      // Simulate SetVideoEncoder having already configured the stream
+    it('should preserve existing stream outputArgs from other plugins', async () => {
       baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [
-        '-c:{outputIndex}', 'libx265', '-crf', '25', '-preset', 'fast',
+        '-c:{outputIndex}', 'libx265', '-crf', '25',
       ];
-
-      mockFileExists.mockResolvedValueOnce(true);
-      mockReadFile.mockResolvedValue('0.00\t94.06\t0\n');
-
-      const result = await plugin(baseArgs);
-
-      const videoStream = result.variables.ffmpegCommand.streams[0];
-      // Should keep the existing encoder, not add defaults
-      expect(videoStream.outputArgs).toEqual([
-        '-c:{outputIndex}', 'libx265', '-crf', '25', '-preset', 'fast',
-      ]);
-      expect(videoStream.outputArgs).not.toContain('libx264');
-    });
-
-    it('should preserve existing audio stream outputArgs from other plugins', async () => {
       baseArgs.variables.ffmpegCommand.streams[1].outputArgs = [
         '-c:{outputIndex}', 'ac3', '-b:{outputIndex}', '384k',
       ];
@@ -352,52 +384,12 @@ describe('ffmpegCommandComskip Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      const audioStream = result.variables.ffmpegCommand.streams[1];
-      expect(audioStream.outputArgs).toEqual([
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
+        '-c:{outputIndex}', 'libx265', '-crf', '25',
+      ]);
+      expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([
         '-c:{outputIndex}', 'ac3', '-b:{outputIndex}', '384k',
       ]);
-      expect(audioStream.outputArgs).not.toContain('aac');
-    });
-  });
-
-  describe('Stream handling', () => {
-    it('should mark extra streams as removed', async () => {
-      // Add subtitle and data streams
-      baseArgs.variables.ffmpegCommand.streams.push(
-        {
-          index: 2,
-          codec_name: 'subrip',
-          codec_type: 'subtitle',
-          removed: false,
-          forceEncoding: false,
-          inputArgs: [],
-          outputArgs: [],
-          mapArgs: ['-map', '0:2'],
-        },
-        {
-          index: 3,
-          codec_name: 'bin_data',
-          codec_type: 'data',
-          removed: false,
-          forceEncoding: false,
-          inputArgs: [],
-          outputArgs: [],
-          mapArgs: ['-map', '0:3'],
-        },
-      );
-
-      mockFileExists.mockResolvedValueOnce(true);
-      mockReadFile.mockResolvedValue('0.00\t94.06\t0\n');
-
-      const result = await plugin(baseArgs);
-
-      expect(result.outputNumber).toBe(1);
-      // Video and audio should not be removed
-      expect(result.variables.ffmpegCommand.streams[0].removed).toBe(false);
-      expect(result.variables.ffmpegCommand.streams[1].removed).toBe(false);
-      // Subtitle and data should be removed
-      expect(result.variables.ffmpegCommand.streams[2].removed).toBe(true);
-      expect(result.variables.ffmpegCommand.streams[3].removed).toBe(true);
     });
   });
 
