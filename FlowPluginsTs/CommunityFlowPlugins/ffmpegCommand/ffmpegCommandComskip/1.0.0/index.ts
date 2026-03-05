@@ -4,6 +4,7 @@ import {
   getContainer, getFileName, getPluginWorkDir, fileExists,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import normJoinPath from '../../../../FlowHelpers/1.0.0/normJoinPath';
+import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -14,10 +15,11 @@ import {
 const details = (): IpluginDetails => ({
   name: 'Comskip - Detect and Remove Commercials',
   description:
-    `Uses comskip to detect commercials in a video file and ffmpeg to remove them.
+    `Uses comskip to detect commercials and configures ffmpeg to remove them.
      \\nComskip must be installed and accessible on the system.
      \\nThis plugin reads comskip output (EDL or TXT format) to identify commercial segments,
-     then uses ffmpeg to cut them out and produce a clean output file.
+     then configures the ffmpeg command with a filter_complex to cut them out.
+     \\nMust be used between Begin Command and Execute plugins.
      \\nUseful for DVR recordings from OTA or cable TV.`,
   style: {
     borderColor: '#6EB5FF',
@@ -206,6 +208,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  checkFfmpegCommandInit(args);
+
   const comskipPath = String(args.inputs.comskipPath);
   const useCustomIni = args.inputs.useCustomIni === true || args.inputs.useCustomIni === 'true';
   const customIniPath = String(args.inputs.customIniPath);
@@ -217,6 +221,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   if (container === 'original') {
     container = getContainer(inputFilePath);
   }
+
+  // Update the ffmpegCommand container
+  // eslint-disable-next-line no-param-reassign
+  args.variables.ffmpegCommand.container = container;
+
   const workDir = getPluginWorkDir(args);
 
   args.jobLog('Starting comskip commercial detection...');
@@ -321,11 +330,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(`Keeping ${keepSegments.length} content segment(s).`);
 
-  // Build ffmpeg complex filter to concatenate the keep segments
-  const outputFilePath = `${workDir}/${fileName}.${container}`;
-
-  // Use ffmpeg segment approach: multiple -ss/-to with concat
-  // Build a filter_complex with trim and concat
+  // Build ffmpeg filter_complex to concatenate the keep segments
   const filterParts: string[] = [];
   for (let i = 0; i < keepSegments.length; i++) {
     const seg = keepSegments[i];
@@ -335,52 +340,52 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     );
   }
 
-  // Build concat input labels
   const concatInputs = keepSegments.map((_seg, i) => `[v${i}][a${i}]`).join('');
   const filterComplex = `${filterParts.join('')}`
     + `${concatInputs}concat=n=${keepSegments.length}:v=1:a=1[outv][outa]`;
 
-  const ffmpegArgs: string[] = [
-    '-y',
-    '-i', inputFilePath,
-    '-filter_complex', filterComplex,
-    '-map', '[outv]',
-    '-map', '[outa]',
-    '-c:v', 'libx264',
-    '-preset', 'medium',
-    '-crf', '18',
-    '-c:a', 'aac',
-    '-b:a', '192k',
-    outputFilePath,
-  ];
+  // Configure ffmpegCommand streams
+  const { streams } = args.variables.ffmpegCommand;
+  const videoStream = streams.find((s) => s.codec_type === 'video');
+  const audioStream = streams.find((s) => s.codec_type === 'audio');
 
-  args.jobLog('Running ffmpeg to remove commercials...');
-
-  const ffmpegCli = new CLI({
-    cli: args.ffmpegPath,
-    spawnArgs: ffmpegArgs,
-    spawnOpts: {},
-    jobLog: args.jobLog,
-    outputFilePath,
-    inputFileObj: args.inputFileObj,
-    logFullCliOutput: args.logFullCliOutput,
-    updateWorker: args.updateWorker,
-    args,
-  });
-
-  const ffmpegRes = await ffmpegCli.runCli();
-
-  if (ffmpegRes.cliExitCode !== 0) {
-    args.jobLog('FFmpeg commercial removal failed.');
-    throw new Error('FFmpeg commercial removal failed');
+  if (videoStream) {
+    videoStream.mapArgs = ['-map', '[outv]'];
+    if (videoStream.outputArgs.length === 0) {
+      videoStream.outputArgs.push(
+        '-c:{outputIndex}', 'libx264', '-preset', 'medium', '-crf', '18',
+      );
+    }
   }
 
-  args.jobLog(`Commercials removed successfully. Output: ${outputFilePath}`);
+  if (audioStream) {
+    audioStream.mapArgs = ['-map', '[outa]'];
+    if (audioStream.outputArgs.length === 0) {
+      audioStream.outputArgs.push(
+        '-c:{outputIndex}', 'aac', '-b:{outputIndex}', '192k',
+      );
+    }
+  }
+
+  // Mark all other streams as removed
+  for (let i = 0; i < streams.length; i++) {
+    if (streams[i] !== videoStream && streams[i] !== audioStream) {
+      streams[i].removed = true;
+    }
+  }
+
+  // Add filter_complex to overall output arguments
+  args.variables.ffmpegCommand.overallOuputArguments.push(
+    '-filter_complex', filterComplex,
+  );
+
+  // eslint-disable-next-line no-param-reassign
+  args.variables.ffmpegCommand.shouldProcess = true;
+
+  args.jobLog('Configured ffmpeg command for commercial removal.');
 
   return {
-    outputFileObj: {
-      _id: outputFilePath,
-    },
+    outputFileObj: args.inputFileObj,
     outputNumber: 1,
     variables: args.variables,
   };
