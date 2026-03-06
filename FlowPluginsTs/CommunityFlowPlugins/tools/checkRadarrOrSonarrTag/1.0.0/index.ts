@@ -77,12 +77,6 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-interface IHTTPHeaders {
-  'Content-Type': string,
-  'X-Api-Key': string,
-  Accept: string,
-}
-
 interface ITag {
   id: number,
   label: string,
@@ -95,17 +89,10 @@ interface IParseResponse {
   },
 }
 
-interface IMovieOrSeriesResponse {
-  data: {
-    id: number,
-    tags?: number[],
-  },
-}
-
 interface IArrApp {
   name: string,
   host: string,
-  headers: IHTTPHeaders,
+  headers: Record<string, string>,
   content: string,
   getIdAndTags: (parseResponse: IParseResponse) => { id: number, tags: number[] },
 }
@@ -159,11 +146,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  // Variables initialization
   let tagFound = false;
   const arr = String(args.inputs.arr);
   const arr_host = String(args.inputs.arr_host).trim();
-  const arrHost = arr_host.charAt(arr_host.length - 1) === '/' ? arr_host.slice(0, -1) : arr_host;
+  const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
   const tagName = String(args.inputs.tag_name).trim().toLowerCase();
   const originalFileName = args.originalLibraryFile?._id ?? '';
   const currentFileName = args.inputFileObj?._id ?? '';
@@ -177,7 +163,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     };
   }
 
-  const headers: IHTTPHeaders = {
+  const headers = {
     'Content-Type': 'application/json',
     'X-Api-Key': String(args.inputs.arr_api_key),
     Accept: 'application/json',
@@ -207,18 +193,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(`Checking for tag '${tagName}' in ${arrApp.name}...`);
 
-  // Get the movie/series ID and tags
   let result = await getId(args, arrApp, originalFileName);
-  // Useful in some edge cases
   if (result.id === -1 && currentFileName !== originalFileName) {
     result = await getId(args, arrApp, currentFileName);
   }
 
-  // Checking that the file has been found
   if (result.id !== -1) {
     args.jobLog(`${arrApp.content} '${result.id}' found with tag IDs: [${result.tags.join(', ')}]`);
 
-    // Fetch all tags to map tag names to IDs
     try {
       const tagsResponse = await args.deps.axios({
         method: 'get',
@@ -229,7 +211,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       const tags: ITag[] = tagsResponse.data || [];
       args.jobLog(`Found ${tags.length} tags in ${arrApp.name}`);
 
-      // Find the tag ID for the specified tag name
       let targetTag: ITag | undefined;
       for (let i = 0; i < tags.length; i += 1) {
         if (tags[i].label.toLowerCase() === tagName) {
@@ -241,7 +222,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       if (targetTag) {
         args.jobLog(`Tag '${tagName}' has ID ${targetTag.id}`);
 
-        // Check if the movie/series has this tag
         let hasTag = false;
         for (let i = 0; i < result.tags.length; i += 1) {
           if (result.tags[i] === targetTag.id) {

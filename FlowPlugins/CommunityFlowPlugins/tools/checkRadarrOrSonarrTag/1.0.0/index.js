@@ -174,7 +174,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 tagFound = false;
                 arr = String(args.inputs.arr);
                 arr_host = String(args.inputs.arr_host).trim();
-                arrHost = arr_host.charAt(arr_host.length - 1) === '/' ? arr_host.slice(0, -1) : arr_host;
+                arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 tagName = String(args.inputs.tag_name).trim().toLowerCase();
                 originalFileName = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
                 currentFileName = (_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
