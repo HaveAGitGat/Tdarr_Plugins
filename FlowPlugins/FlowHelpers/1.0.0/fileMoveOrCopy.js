@@ -249,6 +249,9 @@ var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, func
             case 1:
                 sourceFileSize = _c.sent();
                 args.jobLog("".concat(sourceFileSize));
+                if (sourceFileSize === 0) {
+                    throw new Error("Source file ".concat(sourcePath, " has size 0 or does not exist, aborting ").concat(operation));
+                }
                 if (!(operation === 'move')) return [3 /*break*/, 3];
                 return [4 /*yield*/, tryMove({
                         sourcePath: sourcePath,
