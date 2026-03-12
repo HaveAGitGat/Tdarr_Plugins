@@ -1,6 +1,6 @@
 import fs from 'fs';
 import {
-  editreadyParser, ffmpegParser, getHandBrakeFps, handbrakeParser,
+  editreadyParser, ffmpegParser, getFpsFromSpeed, getHandBrakeFps, handbrakeParser,
 } from './cliParsers';
 import { Ilog, IpluginInputArgs, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
@@ -259,13 +259,22 @@ class CLI {
         });
       }
     } else if (this.config.cli.toLowerCase().includes('ffmpeg')) {
-      const n = str.indexOf('fps');
-      const shouldUpdate = str.length >= 6 && n >= 6;
+      const shouldUpdate = str.length >= 6
+        && (str.indexOf('fps') >= 6 || str.indexOf('speed') >= 6);
 
-      const fps = parseInt(getFFmpegVar({
+      let fps = parseInt(getFFmpegVar({
         str,
         variable: 'fps',
       }), 10);
+
+      // FFmpeg 7 omits fps= for non-encoding tasks (remux, stream copy, etc.)
+      // Fall back to computing FPS from speed= and source video frame rate
+      if (!(fps > 0)) {
+        fps = getFpsFromSpeed({
+          str,
+          videoFrameRate: this.config.inputFileObj?.meta?.VideoFrameRate,
+        });
+      }
 
       let frameCount = 0;
 
