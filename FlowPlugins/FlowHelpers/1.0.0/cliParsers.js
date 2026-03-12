@@ -95,7 +95,9 @@ var getFFmpegPercentage = function (_a) {
             perc = (frame);
         }
     }
-    else if (time > 0 && Duration > 0) {
+    // If frame-based percentage exceeds 100 (e.g. filters like yadif=1 or nnedi
+    // that double the frame count), fall back to time-based progress
+    if ((perc > 100 || perc === 0) && time > 0 && Duration > 0) {
         perc = ((time / Duration) * 100);
     }
     var percString = perc.toFixed(2);
