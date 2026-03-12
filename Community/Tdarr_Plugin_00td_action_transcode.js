@@ -422,7 +422,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Set up required variables.
   let videoIdx = 0;
-  let CPU10 = false;
   let extraArguments = '';
   let genpts = '';
   let bitrateSettings = '';
@@ -557,15 +556,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         return response;
       }
 
-      // Check if video stream is HDR or 10bit
-      if (
-        inputs.target_codec === 'hevc'
-        && (file.ffProbeData.streams[i].profile === 'High 10'
-          || file.ffProbeData.streams[i].bits_per_raw_sample === '10')
-      ) {
-        CPU10 = true;
-      }
-
       // Increment videoIdx.
       videoIdx += 1;
     }
@@ -582,24 +572,10 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+
   if (encoderProperties.encoder.includes('nvenc')) {
-    if (file.video_codec_name === 'h263') {
-      response.preset = '-c:v h263_cuvid';
-    } else if (file.video_codec_name === 'h264' && CPU10 === false) {
-      response.preset = '-c:v h264_cuvid';
-    } else if (file.video_codec_name === 'mjpeg') {
-      response.preset = '-c:v mjpeg_cuvid';
-    } else if (file.video_codec_name === 'mpeg1') {
-      response.preset = '-c:v mpeg1_cuvid';
-    } else if (file.video_codec_name === 'mpeg2') {
-      response.preset = '-c:v mpeg2_cuvid';
-    } else if (file.video_codec_name === 'mpeg4') {
-      response.preset = '-c:v mpeg4_cuvid';
-    } else if (file.video_codec_name === 'vc1') {
-      response.preset = '-c:v vc1_cuvid';
-    } else if (file.video_codec_name === 'vp8') {
-      response.preset = '-c:v vp8_cuvid';
-    }
+    response.preset = '-hwaccel cuda -hwaccel_output_format cuda';
   }
 
   const vEncode = `-cq:v 19 ${bitrateSettings}`;
