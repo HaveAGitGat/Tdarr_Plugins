@@ -203,7 +203,7 @@ var CLI = /** @class */ (function () {
             });
         }); };
         this.parseOutput = function (data) {
-            var _a, _b, _c, _d, _e, _f, _g;
+            var _a, _b, _c, _d, _e, _f, _g, _h, _j;
             var str = "".concat(data);
             //
             if (_this.config.logFullCliOutput === true) {
@@ -236,16 +236,24 @@ var CLI = /** @class */ (function () {
                 }
             }
             else if (_this.config.cli.toLowerCase().includes('ffmpeg')) {
-                var n = str.indexOf('fps');
-                var shouldUpdate = str.length >= 6 && n >= 6;
+                var shouldUpdate = str.length >= 6
+                    && (str.indexOf('fps') >= 6 || str.indexOf('speed') >= 6);
                 var fps = parseInt((0, exports.getFFmpegVar)({
                     str: str,
                     variable: 'fps',
                 }), 10);
+                // FFmpeg 7 omits fps= for non-encoding tasks (remux, stream copy, etc.)
+                // Fall back to computing FPS from speed= and source video frame rate
+                if (!(fps > 0)) {
+                    fps = (0, cliParsers_1.getFpsFromSpeed)({
+                        str: str,
+                        videoFrameRate: (_b = (_a = _this.config.inputFileObj) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.VideoFrameRate,
+                    });
+                }
                 var frameCount = 0;
                 try {
                     // @ts-expect-error type
-                    var frameCountTmp = (_a = _this.config.inputFileObj.ffProbeData) === null || _a === void 0 ? void 0 : _a.streams.filter(function (row) { return row.codec_type === 'video'; })[0].nb_frames;
+                    var frameCountTmp = (_c = _this.config.inputFileObj.ffProbeData) === null || _c === void 0 ? void 0 : _c.streams.filter(function (row) { return row.codec_type === 'video'; })[0].nb_frames;
                     if (frameCountTmp
                         // @ts-expect-error type
                         && !isNaN(frameCountTmp)) { // eslint-disable-line no-restricted-globals
@@ -259,9 +267,9 @@ var CLI = /** @class */ (function () {
                 var percentage = (0, cliParsers_1.ffmpegParser)({
                     str: str,
                     frameCount: frameCount,
-                    videoFrameRate: (_c = (_b = _this.config.inputFileObj) === null || _b === void 0 ? void 0 : _b.meta) === null || _c === void 0 ? void 0 : _c.VideoFrameRate,
-                    ffprobeDuration: (_e = (_d = _this.config.inputFileObj.ffProbeData) === null || _d === void 0 ? void 0 : _d.format) === null || _e === void 0 ? void 0 : _e.duration,
-                    metaDuration: (_g = (_f = _this.config.inputFileObj) === null || _f === void 0 ? void 0 : _f.meta) === null || _g === void 0 ? void 0 : _g.Duration,
+                    videoFrameRate: (_e = (_d = _this.config.inputFileObj) === null || _d === void 0 ? void 0 : _d.meta) === null || _e === void 0 ? void 0 : _e.VideoFrameRate,
+                    ffprobeDuration: (_g = (_f = _this.config.inputFileObj.ffProbeData) === null || _f === void 0 ? void 0 : _f.format) === null || _g === void 0 ? void 0 : _g.duration,
+                    metaDuration: (_j = (_h = _this.config.inputFileObj) === null || _h === void 0 ? void 0 : _h.meta) === null || _j === void 0 ? void 0 : _j.Duration,
                 });
                 if (shouldUpdate === true && fps > 0) {
                     _this.config.updateWorker({

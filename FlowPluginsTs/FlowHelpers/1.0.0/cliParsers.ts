@@ -248,11 +248,48 @@ const editreadyParser = ({ str }:{str: string}): number => {
   return percentage;
 };
 
+// When FFmpeg 7 omits fps= for non-encoding tasks (remux, stream copy, etc.),
+// compute an effective FPS from speed= and the source video frame rate.
+// e.g. speed=931x with 23.976fps source => ~22321 effective fps
+const getFpsFromSpeed = ({
+  str,
+  videoFrameRate,
+}: {
+  str: string,
+  videoFrameRate: number | undefined,
+}): number => {
+  if (!videoFrameRate || videoFrameRate <= 0) {
+    return 0;
+  }
+
+  let speedStr = getFFmpegVar({
+    str,
+    variable: 'speed',
+  });
+
+  if (!speedStr) {
+    return 0;
+  }
+
+  // Remove trailing 'x' from speed value (e.g. "931x" -> "931", "1.46e+03x" -> "1.46e+03")
+  speedStr = speedStr.replace(/x$/i, '');
+
+  const speed = parseFloat(speedStr);
+
+  // eslint-disable-next-line no-restricted-globals
+  if (isNaN(speed) || speed <= 0) {
+    return 0;
+  }
+
+  return Math.round(speed * videoFrameRate);
+};
+
 export {
   handbrakeParser,
   ffmpegParser,
   getFFmpegPercentage,
   getFFmpegVar,
   getHandBrakeFps,
+  getFpsFromSpeed,
   editreadyParser,
 };
