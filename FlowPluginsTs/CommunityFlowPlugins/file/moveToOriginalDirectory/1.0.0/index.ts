@@ -1,6 +1,6 @@
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileAbosluteDir, getFileName,
+  getContainer, getFileAbsoluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -39,7 +39,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const fileName = getFileName(args.inputFileObj._id);
   const container = getContainer(args.inputFileObj._id);
-  const outputDir = getFileAbosluteDir(args.originalLibraryFile._id);
+  const outputDir = getFileAbsoluteDir(args.originalLibraryFile._id);
 
   const ouputFilePath = `${outputDir}/${fileName}.${container}`;
 
