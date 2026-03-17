@@ -99,6 +99,22 @@ const details = () => ({
           veryfast`,
     },
     {
+      name: 'skipHEVC',
+      type: 'boolean',
+      defaultValue: true,
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'true',
+          'false',
+        ],
+      },
+      tooltip: `Input "true" if you want to skip files already encoded with HEVC
+        
+        \\nExample:\\n
+        true`,
+    },
+    {
       name: 'sdDisabled',
       type: 'boolean',
       defaultValue: false,
@@ -190,14 +206,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // check if the file contains a hevc track
-  // it will not be transcoded if true and the plugin will exit
+  // it will not be transcoded if skipHEVC is set to true and the plugin will exit
   if (file.ffProbeData.streams.some((x) => x.codec_name?.toLowerCase() === 'hevc')) {
     response.infoLog += '☑File is already in hevc! \n';
-    //return response;
+    if(inputs.skipHEVC) {
+      return response;
+    }
+  } else {
+    response.infoLog += '☒File is not hevc!\n';
   }
-
-  // if we made it to this point it is safe to assume there is no hevc stream
-  response.infoLog += '☒File is not hevc!\n';
   response.infoLog += `☑Preset set as ${inputs.ffmpegPreset}\n`;
 
   // set crf by resolution
