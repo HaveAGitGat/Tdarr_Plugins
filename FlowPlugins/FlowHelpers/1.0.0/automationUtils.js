@@ -42,7 +42,9 @@ exports.pollUntilConfirmed = exports.checkOtherWorkersRunning = exports.isAutoma
 var automationDummyFilePattern = /\/.tdarr\/automation-.+-.+\.txt$/;
 var isAutomationFile = function (filepath) { return automationDummyFilePattern.test(filepath); };
 exports.isAutomationFile = isAutomationFile;
-// Returns true if other non-automation workers are running on the node
+// Returns true if other non-automation workers are running on the node.
+// Returns 'error' on server/network failure so callers can distinguish
+// "no workers" from "couldn't check".
 var checkOtherWorkersRunning = function (args, enableDebugLog) { return __awaiter(void 0, void 0, void 0, function () {
     var nodeID, serverURL, apiKey, nodesRes, node, nodeIds, myJobId, workerIds, otherWorkerCount, i, worker, err_1;
     var _a, _b, _c, _d, _e, _f, _g, _h;
@@ -101,8 +103,8 @@ var checkOtherWorkersRunning = function (args, enableDebugLog) { return __awaite
                 if (enableDebugLog) {
                     args.jobLog("checkWorkers error: ".concat(err_1));
                 }
-                return [3 /*break*/, 4];
-            case 4: return [2 /*return*/, false];
+                return [2 /*return*/, 'error'];
+            case 4: return [2 /*return*/];
         }
     });
 }); };
@@ -110,9 +112,11 @@ exports.checkOtherWorkersRunning = checkOtherWorkersRunning;
 // Runs a polling loop that bumps worker percentage each iteration.
 // Calls `checkFn` each poll. When `checkFn` returns true for `confirmCount`
 // consecutive times, the loop exits.
+// If `checkFn` returns 'error', the confirmation counter is reset
+// (treat errors as "uncertain, keep going").
 // Returns when the exit condition is met.
 var pollUntilConfirmed = function (args, pollIntervalMs, confirmCount, checkFn, exitMessage) { return __awaiter(void 0, void 0, void 0, function () {
-    var percentage, confirmedCount, finished, firstCheck, conditionMet;
+    var percentage, confirmedCount, finished, firstCheck, conditionMet, err_2;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -122,17 +126,35 @@ var pollUntilConfirmed = function (args, pollIntervalMs, confirmCount, checkFn, 
                 firstCheck = true;
                 _a.label = 1;
             case 1:
-                if (!!finished) return [3 /*break*/, 4];
+                if (!!finished) return [3 /*break*/, 7];
                 args.updateWorker({ percentage: percentage });
                 percentage = (percentage + 1) % 100;
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, pollIntervalMs); })];
             case 2:
                 _a.sent(); // eslint-disable-line no-await-in-loop
-                return [4 /*yield*/, checkFn(firstCheck)];
+                conditionMet = void 0;
+                _a.label = 3;
             case 3:
-                conditionMet = _a.sent();
+                _a.trys.push([3, 5, , 6]);
+                return [4 /*yield*/, checkFn(firstCheck)];
+            case 4:
+                conditionMet = _a.sent(); // eslint-disable-line no-await-in-loop
+                return [3 /*break*/, 6];
+            case 5:
+                err_2 = _a.sent();
+                // If checkFn throws, treat as error - reset confirmation counter
+                args.jobLog("pollUntilConfirmed: checkFn threw, resetting confirmations: ".concat(err_2));
+                conditionMet = 'error';
+                return [3 /*break*/, 6];
+            case 6:
                 firstCheck = false;
-                if (conditionMet) {
+                if (conditionMet === 'error') {
+                    // Server/network error - don't count toward exit, reset counter
+                    if (confirmedCount > 0) {
+                        confirmedCount = 0;
+                    }
+                }
+                else if (conditionMet) {
                     confirmedCount += 1;
                     if (confirmedCount >= confirmCount) {
                         args.jobLog(exitMessage);
@@ -143,7 +165,7 @@ var pollUntilConfirmed = function (args, pollIntervalMs, confirmCount, checkFn, 
                     confirmedCount = 0;
                 }
                 return [3 /*break*/, 1];
-            case 4: return [2 /*return*/];
+            case 7: return [2 /*return*/];
         }
     });
 }); };

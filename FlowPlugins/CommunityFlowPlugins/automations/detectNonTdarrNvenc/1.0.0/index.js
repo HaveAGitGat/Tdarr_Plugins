@@ -40,7 +40,6 @@ exports.plugin = exports.details = void 0;
 var automationUtils_1 = require("../../../../FlowHelpers/1.0.0/automationUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 // Sets ffmpeg/HandBrake process priority (cross-platform).
-// Mirrors be/srcts/commonModules/procPriority.ts logic but runs from a plugin context.
 var setTdarrProcessPriority = function (priority, platform, 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 childProcess, jobLog) {
@@ -118,7 +117,7 @@ var details = function () { return ({
     tags: 'automations,gpu,nvenc,priority,nvidia',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.11.01',
+    requiresVersion: '2.64.01',
     sidebarPosition: -1,
     icon: 'faMicrochip',
     inputs: [
@@ -261,6 +260,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                     return [4 /*yield*/, (0, automationUtils_1.checkOtherWorkersRunning)(args, firstPoll)];
                                 case 1:
                                     othersRunning = _a.sent();
+                                    if (othersRunning === 'error')
+                                        return [2 /*return*/, 'error'];
                                     return [2 /*return*/, !othersRunning];
                             }
                         });

@@ -50,7 +50,7 @@ var details = function () { return ({
     tags: 'automations,sleep,encoding,prevent',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.11.01',
+    requiresVersion: '2.64.01',
     sidebarPosition: -1,
     icon: 'faMoon',
     inputs: [
@@ -82,23 +82,33 @@ jobLog) {
     var proc = null;
     try {
         if (platform === 'win32') {
-            // Set ES_CONTINUOUS | ES_SYSTEM_REQUIRED to prevent sleep
-            // This needs to be reset on cleanup
-            // Use Add-Type with P/Invoke to call SetThreadExecutionState
-            // ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED = 2147483651
-            // ES_CONTINUOUS only = 2147483648
-            var setCmd = 'powershell -Command "Add-Type -MemberDefinition '
-                + '\'[DllImport(\\"kernel32.dll\\")] public static extern uint SetThreadExecutionState(uint f);\' '
+            // Spawn a long-running PowerShell process that calls SetThreadExecutionState
+            // in a loop. The state is per-thread, so a one-shot execSync call loses it
+            // when the PowerShell process exits. This keeps the thread alive and refreshes
+            // the state every 30 seconds.
+            // ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED = 0x80000003
+            // ES_CONTINUOUS only (clear) = 0x80000000
+            var psScript = 'Add-Type -MemberDefinition '
+                + '\'[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint f);\' '
                 + '-Name SleepUtil -Namespace Win32; '
-                + '[Win32.SleepUtil]::SetThreadExecutionState(2147483651)"';
-            childProcess.execSync(setCmd, { timeout: 10000, windowsHide: true });
-            jobLog('Sleep prevention active (Windows SetThreadExecutionState)');
+                + 'while ($true) { [Win32.SleepUtil]::SetThreadExecutionState(2147483651) | Out-Null; '
+                + 'Start-Sleep -Seconds 30 }';
+            proc = childProcess.spawn('powershell', ['-NoProfile', '-Command', psScript], { stdio: 'ignore', windowsHide: true, detached: false });
+            jobLog('Sleep prevention active (Windows SetThreadExecutionState, refreshing)');
+            var winProc_1 = proc;
             return function () {
                 try {
-                    var clearCmd = 'powershell -Command "Add-Type -MemberDefinition '
+                    winProc_1.kill();
+                }
+                catch (err) {
+                    // cleanup best-effort
+                }
+                // Reset execution state via a separate PowerShell call as best-effort
+                try {
+                    var clearCmd = 'powershell -NoProfile -Command "Add-Type -MemberDefinition '
                         + '\'[DllImport(\\"kernel32.dll\\")] public static extern uint SetThreadExecutionState(uint f);\' '
-                        + '-Name SleepUtil2 -Namespace Win32; '
-                        + '[Win32.SleepUtil2]::SetThreadExecutionState(2147483648)"';
+                        + '-Name SleepUtilClr -Namespace Win32; '
+                        + '[Win32.SleepUtilClr]::SetThreadExecutionState(2147483648)"';
                     childProcess.execSync(clearCmd, { timeout: 10000, windowsHide: true });
                 }
                 catch (err) {
@@ -123,7 +133,7 @@ jobLog) {
                 }
             };
         }
-        // Linux: use systemd-inhibit if available, else try xdg-screensaver
+        // Linux: use systemd-inhibit if available
         try {
             proc = childProcess.spawn('systemd-inhibit', ['--what=idle:sleep', '--who=Tdarr', '--why=Encoding in progress', 'sleep', 'infinity'], { stdio: 'ignore', detached: false });
             jobLog('Sleep prevention active (systemd-inhibit)');
@@ -175,6 +185,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 case 0: return [4 /*yield*/, (0, automationUtils_1.checkOtherWorkersRunning)(args, firstCheck)];
                                 case 1:
                                     othersRunning = _a.sent();
+                                    if (othersRunning === 'error')
+                                        return [2 /*return*/, 'error'];
                                     return [2 /*return*/, !othersRunning];
                             }
                         });

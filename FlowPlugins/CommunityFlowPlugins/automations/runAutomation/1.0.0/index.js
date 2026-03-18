@@ -38,6 +38,54 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+// Retries an async function with exponential backoff.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+var withRetry = function (fn, maxAttempts, baseDelayMs, jobLog) { return __awaiter(void 0, void 0, void 0, function () {
+    var lastErr, _loop_1, attempt, state_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _loop_1 = function (attempt) {
+                    var _b, err_1, delay_1;
+                    return __generator(this, function (_c) {
+                        switch (_c.label) {
+                            case 0:
+                                _c.trys.push([0, 2, , 5]);
+                                _b = {};
+                                return [4 /*yield*/, fn()];
+                            case 1: return [2 /*return*/, (_b.value = _c.sent(), _b)];
+                            case 2:
+                                err_1 = _c.sent();
+                                lastErr = err_1;
+                                if (!(attempt < maxAttempts)) return [3 /*break*/, 4];
+                                delay_1 = baseDelayMs * (Math.pow(2, (attempt - 1)));
+                                jobLog("Request failed (attempt ".concat(attempt, "/").concat(maxAttempts, "), retrying in ").concat(delay_1, "ms: ").concat(err_1));
+                                return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, delay_1); })];
+                            case 3:
+                                _c.sent(); // eslint-disable-line no-await-in-loop
+                                _c.label = 4;
+                            case 4: return [3 /*break*/, 5];
+                            case 5: return [2 /*return*/];
+                        }
+                    });
+                };
+                attempt = 1;
+                _a.label = 1;
+            case 1:
+                if (!(attempt <= maxAttempts)) return [3 /*break*/, 4];
+                return [5 /*yield**/, _loop_1(attempt)];
+            case 2:
+                state_1 = _a.sent();
+                if (typeof state_1 === "object")
+                    return [2 /*return*/, state_1.value];
+                _a.label = 3;
+            case 3:
+                attempt += 1;
+                return [3 /*break*/, 1];
+            case 4: throw lastErr;
+        }
+    });
+}); };
 var details = function () { return ({
     name: 'Run Automation',
     description: 'Triggers another automation by its config ID, optionally passing a JSON payload.',
@@ -47,7 +95,7 @@ var details = function () { return ({
     tags: 'automations,trigger,run',
     isStartPlugin: false,
     pType: '',
-    requiresVersion: '2.11.01',
+    requiresVersion: '2.64.01',
     sidebarPosition: -1,
     icon: 'faPlay',
     inputs: [
@@ -75,6 +123,19 @@ var details = function () { return ({
             tooltip: 'Optional JSON payload to pass to the automation.',
         },
         {
+            label: 'Target Node',
+            name: 'targetNode',
+            type: 'string',
+            defaultValue: 'thisNode',
+            inputUI: {
+                type: 'dropdown',
+                options: ['thisNode', 'automationDefault'],
+            },
+            tooltip: 'Choose where to run the automation.'
+                + ' "thisNode" sends the current node ID as the target.'
+                + ' "automationDefault" uses the target nodes configured on the automation.',
+        },
+        {
             label: 'Skip If Already Running',
             name: 'skipIfRunning',
             type: 'string',
@@ -95,7 +156,7 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, configId, payloadStr, skipIfRunning, serverURL, apiKey, headers, confirmCount, pollDelayMs_1, notRunningCount, poll, nodesRes, nodes, myNodeID, nodeIdsToCheck, isRunning, i, node, workerIds, j, worker, payload, response;
+    var lib, configId, payloadStr, targetNode, skipIfRunning, serverURL, apiKey, headers, confirmCount, pollDelayMs_1, notRunningCount, poll, nodesRes, nodes, myNodeID, nodeIdsToCheck, isRunning, i, node, workerIds, j, worker, payload, data, myNodeID, response;
     var _a, _b, _c, _d, _e, _f;
     return __generator(this, function (_g) {
         switch (_g.label) {
@@ -105,6 +166,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 configId = String(args.inputs.configId).trim();
                 payloadStr = String(args.inputs.payload).trim() || '{}';
+                targetNode = String(args.inputs.targetNode);
                 skipIfRunning = String(args.inputs.skipIfRunning);
                 if (!configId) {
                     throw new Error('No automation config ID provided');
@@ -128,10 +190,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 2:
                 _g.sent(); // eslint-disable-line no-await-in-loop
                 _g.label = 3;
-            case 3: return [4 /*yield*/, args.deps.axios.get("".concat(serverURL, "/api/v2/get-nodes"), {
+            case 3: return [4 /*yield*/, withRetry(function () { return args.deps.axios.get("".concat(serverURL, "/api/v2/get-nodes"), {
                     timeout: 30000,
                     headers: headers,
-                })];
+                }); }, 3, 2000, args.jobLog)];
             case 4:
                 nodesRes = _g.sent();
                 nodes = nodesRes.data || {};
@@ -174,18 +236,24 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _g.label = 7;
             case 7:
                 payload = JSON.parse(payloadStr);
-                return [4 /*yield*/, args.deps.axios.post("".concat(serverURL, "/api/v2/run-automation"), {
-                        data: {
-                            configId: configId,
-                            payload: payload,
-                        },
+                data = {
+                    configId: configId,
+                    payload: payload,
+                };
+                if (targetNode === 'thisNode') {
+                    myNodeID = args.configVars.config.nodeID;
+                    data.targetNodeIds = [myNodeID];
+                    args.jobLog("Targeting this node: ".concat(myNodeID));
+                }
+                return [4 /*yield*/, withRetry(function () { return args.deps.axios.post("".concat(serverURL, "/api/v2/run-automation"), {
+                        data: data,
                     }, {
                         timeout: 30000,
                         headers: {
                             'content-Type': 'application/json',
                             'x-api-key': apiKey,
                         },
-                    })];
+                    }); }, 3, 2000, args.jobLog)];
             case 8:
                 response = _g.sent();
                 if (response.status !== 200) {
