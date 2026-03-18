@@ -60,7 +60,11 @@ describe('runAutomation Plugin', () => {
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       'http://localhost:8266/api/v2/run-automation',
-      { data: { configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'] } },
+      {
+        data: {
+          configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'],
+        },
+      },
       expect.objectContaining({ timeout: 30000 }),
     );
     expect(result.outputNumber).toBe(1);
@@ -88,7 +92,11 @@ describe('runAutomation Plugin', () => {
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       'http://localhost:8266/api/v2/run-automation',
-      { data: { configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'] } },
+      {
+        data: {
+          configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'],
+        },
+      },
       expect.objectContaining({ timeout: 30000 }),
     );
     expect(result.outputNumber).toBe(1);
@@ -128,7 +136,11 @@ describe('runAutomation Plugin', () => {
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       expect.any(String),
-      { data: { configId: 'test-config-123', payload: {}, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'] } },
+      {
+        data: {
+          configId: 'test-config-123', payload: {}, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'],
+        },
+      },
       expect.any(Object),
     );
   });
