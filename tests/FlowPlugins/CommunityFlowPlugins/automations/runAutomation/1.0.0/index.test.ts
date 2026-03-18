@@ -31,6 +31,7 @@ describe('runAutomation Plugin', () => {
       },
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),
+      originalLibraryFile: JSON.parse(JSON.stringify(sampleH264)),
       jobLog: jest.fn(),
       configVars: getConfigVars(),
       deps: {
@@ -50,20 +51,25 @@ describe('runAutomation Plugin', () => {
   it('should export details with correct structure', () => {
     const d = details();
     expect(d.name).toBe('Run Automation');
-    expect(d.inputs.length).toBe(4);
+    expect(d.inputs.length).toBe(5);
     expect(d.outputs.length).toBe(1);
   });
 
-  it('should trigger automation with configId, payload, and targetNodeIds (thisNode default)', async () => {
+  it('should trigger automation with configId, payload, targetNodeIds, and libraryIds (defaults)', async () => {
     const result = await plugin(baseArgs);
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       'http://localhost:8266/api/v2/run-automation',
-      { data: { configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'] } },
+      {
+        data: {
+          configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'],
+        },
+      },
       expect.objectContaining({ timeout: 30000 }),
     );
     expect(result.outputNumber).toBe(1);
     expect(baseArgs.jobLog).toHaveBeenCalledWith('Targeting this node: 123');
+    expect(baseArgs.jobLog).toHaveBeenCalledWith('Targeting this library: 2MY5YD7P8');
     expect(baseArgs.jobLog).toHaveBeenCalledWith('Automation test-config-123 triggered');
   });
 
@@ -73,11 +79,40 @@ describe('runAutomation Plugin', () => {
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       'http://localhost:8266/api/v2/run-automation',
-      { data: { configId: 'test-config-123', payload: { key: 'value' } } },
+      { data: { configId: 'test-config-123', payload: { key: 'value' }, libraryIds: ['2MY5YD7P8'] } },
       expect.objectContaining({ timeout: 30000 }),
     );
     expect(result.outputNumber).toBe(1);
     expect(baseArgs.jobLog).not.toHaveBeenCalledWith(expect.stringContaining('Targeting this node'));
+  });
+
+  it('should send libraryIds when targetLibrary is currentLibrary', async () => {
+    baseArgs.inputs.targetLibrary = 'currentLibrary';
+    const result = await plugin(baseArgs);
+
+    expect(mockAxiosPost).toHaveBeenCalledWith(
+      'http://localhost:8266/api/v2/run-automation',
+      {
+        data: {
+          configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'],
+        },
+      },
+      expect.objectContaining({ timeout: 30000 }),
+    );
+    expect(result.outputNumber).toBe(1);
+    expect(baseArgs.jobLog).toHaveBeenCalledWith('Targeting this library: 2MY5YD7P8');
+  });
+
+  it('should not send libraryIds when targetLibrary is automationDefault', async () => {
+    baseArgs.inputs.targetLibrary = 'automationDefault';
+    await plugin(baseArgs);
+
+    expect(mockAxiosPost).toHaveBeenCalledWith(
+      'http://localhost:8266/api/v2/run-automation',
+      { data: { configId: 'test-config-123', payload: { key: 'value' }, targetNodeIds: ['123'] } },
+      expect.objectContaining({ timeout: 30000 }),
+    );
+    expect(baseArgs.jobLog).not.toHaveBeenCalledWith(expect.stringContaining('Targeting this library'));
   });
 
   it('should throw if no configId provided', async () => {
@@ -101,7 +136,11 @@ describe('runAutomation Plugin', () => {
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       expect.any(String),
-      { data: { configId: 'test-config-123', payload: {}, targetNodeIds: ['123'] } },
+      {
+        data: {
+          configId: 'test-config-123', payload: {}, targetNodeIds: ['123'], libraryIds: ['2MY5YD7P8'],
+        },
+      },
       expect.any(Object),
     );
   });
@@ -239,9 +278,9 @@ describe('runAutomation Plugin', () => {
       });
     });
 
-    describe('onThisNode', () => {
+    describe('onCurrentNode', () => {
       beforeEach(() => {
-        baseArgs.inputs.skipIfRunning = 'onThisNode';
+        baseArgs.inputs.skipIfRunning = 'onCurrentNode';
       });
 
       it('should skip if automation is running on this node', async () => {
