@@ -199,10 +199,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       data,
     }, {
       timeout: 30000,
-      headers: {
-        'content-Type': 'application/json',
-        'x-api-key': apiKey,
-      },
+      headers,
     }),
     3,
     2000,

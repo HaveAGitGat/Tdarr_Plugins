@@ -247,22 +247,6 @@ describe('detectNonTdarrNvenc Plugin', () => {
     );
   });
 
-  it('should initialize args.variables.user if undefined', async () => {
-    baseArgs.variables = { user: undefined } as unknown as IpluginInputArgs['variables'];
-    mockNoOtherWorkers();
-    mockExecSync.mockReturnValue(pmonNoEnc);
-
-    const pluginPromise = plugin(baseArgs);
-    await flush();
-
-    for (let i = 0; i < 3; i += 1) {
-      await advanceOnePoll(); // eslint-disable-line no-await-in-loop
-    }
-
-    await pluginPromise;
-    expect(baseArgs.variables.user).toEqual({});
-  });
-
   describe('Priority on Windows', () => {
     it('should use powershell commands on win32', async () => {
       baseArgs.platform = 'win32';
@@ -297,6 +281,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
       expect(mockExec).toHaveBeenCalledWith(
         expect.stringContaining('PriorityClass'),
         expect.any(Object),
+        expect.any(Function),
       );
     });
   });

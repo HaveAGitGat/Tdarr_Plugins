@@ -117,25 +117,29 @@ const startSleepPrevention = (
     }
 
     // Linux: use systemd-inhibit if available
-    try {
-      proc = childProcess.spawn(
-        'systemd-inhibit',
-        ['--what=idle:sleep', '--who=Tdarr', '--why=Encoding in progress', 'sleep', 'infinity'],
-        { stdio: 'ignore', detached: false },
-      );
-      jobLog('Sleep prevention active (systemd-inhibit)');
+    proc = childProcess.spawn(
+      'systemd-inhibit',
+      ['--what=idle:sleep', '--who=Tdarr', '--why=Encoding in progress', 'sleep', 'infinity'],
+      { stdio: 'ignore', detached: false },
+    );
+    // spawn errors are async — listen for them
+    let inhibitFailed = false;
+    proc.on('error', (err: Error) => {
+      inhibitFailed = true;
+      jobLog(`systemd-inhibit not available: ${err.message}`);
+    });
+    jobLog('Sleep prevention active (systemd-inhibit)');
 
-      const inhProc = proc;
-      return () => {
+    const inhProc = proc;
+    return () => {
+      if (!inhibitFailed) {
         try {
           inhProc.kill();
         } catch (err) {
           // cleanup best-effort
         }
-      };
-    } catch (err) {
-      jobLog('systemd-inhibit not available, sleep prevention not active');
-    }
+      }
+    };
   } catch (err) {
     jobLog(`Could not start sleep prevention: ${err}`);
   }
@@ -152,11 +156,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const childProcess = require('child_process');
   const pollInterval = Math.max(10, Number(args.inputs.pollIntervalSeconds) || 15) * 1000;
-
-  if (!args.variables.user) {
-    // eslint-disable-next-line no-param-reassign
-    args.variables.user = {};
-  }
 
   args.jobLog('Starting sleep prevention loop');
   const stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog);

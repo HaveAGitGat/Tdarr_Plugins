@@ -145,30 +145,6 @@ describe('preventSleepWhileEncoding Plugin', () => {
     expect(baseArgs.updateWorker).toHaveBeenCalledWith({ percentage: 2 });
   });
 
-  it('should initialize args.variables.user if undefined', async () => {
-    baseArgs.variables = { user: undefined } as unknown as IpluginInputArgs['variables'];
-
-    mockAxiosGet.mockResolvedValue({
-      data: {
-        123: {
-          workers: {
-            w1: { job: { jobId: 'my-job-1' }, file: 'something.mkv' },
-          },
-        },
-      },
-    });
-
-    const pluginPromise = plugin(baseArgs);
-    await flush();
-
-    for (let i = 0; i < 3; i += 1) {
-      await advanceOnePoll(); // eslint-disable-line no-await-in-loop
-    }
-
-    await pluginPromise;
-    expect(baseArgs.variables.user).toEqual({});
-  });
-
   it('should skip automation workers when counting', async () => {
     mockAxiosGet.mockResolvedValue({
       data: {
