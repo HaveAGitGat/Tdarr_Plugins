@@ -98,8 +98,14 @@ childProcess, jobLog) {
             cmdFFmpeg = "for p in $(pgrep ^ffmpeg$ || true); do renice -n ".concat(niceVal, " -p $p; done");
             cmdHandBrake = "for p in $(pgrep ^HandBrakeCLI$ || true); do renice -n ".concat(niceVal, " -p $p; done");
         }
-        childProcess.exec(cmdFFmpeg, { windowsHide: true });
-        childProcess.exec(cmdHandBrake, { windowsHide: true });
+        childProcess.exec(cmdFFmpeg, { windowsHide: true }, function (err) {
+            if (err)
+                jobLog("Error setting ffmpeg priority: ".concat(err));
+        });
+        childProcess.exec(cmdHandBrake, { windowsHide: true }, function (err) {
+            if (err)
+                jobLog("Error setting HandBrake priority: ".concat(err));
+        });
     }
     catch (err) {
         jobLog("Error setting process priority: ".concat(err));
@@ -231,10 +237,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 pollInterval = Math.max(5, Number(args.inputs.pollIntervalSeconds) || 15) * 1000;
                 lowPriority = (String(args.inputs.lowPriority) || 'low');
                 normalPriority = (String(args.inputs.normalPriority) || 'normal');
-                if (!args.variables.user) {
-                    // eslint-disable-next-line no-param-reassign
-                    args.variables.user = {};
-                }
                 args.jobLog('Starting NVENC priority monitor');
                 isLowered = false;
                 firstCheck = true;

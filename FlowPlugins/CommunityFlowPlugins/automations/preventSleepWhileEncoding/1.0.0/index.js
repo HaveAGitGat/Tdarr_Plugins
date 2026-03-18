@@ -134,22 +134,25 @@ jobLog) {
             };
         }
         // Linux: use systemd-inhibit if available
-        try {
-            proc = childProcess.spawn('systemd-inhibit', ['--what=idle:sleep', '--who=Tdarr', '--why=Encoding in progress', 'sleep', 'infinity'], { stdio: 'ignore', detached: false });
-            jobLog('Sleep prevention active (systemd-inhibit)');
-            var inhProc_1 = proc;
-            return function () {
+        proc = childProcess.spawn('systemd-inhibit', ['--what=idle:sleep', '--who=Tdarr', '--why=Encoding in progress', 'sleep', 'infinity'], { stdio: 'ignore', detached: false });
+        // spawn errors are async — listen for them
+        var inhibitFailed_1 = false;
+        proc.on('error', function (err) {
+            inhibitFailed_1 = true;
+            jobLog("systemd-inhibit not available: ".concat(err.message));
+        });
+        jobLog('Sleep prevention active (systemd-inhibit)');
+        var inhProc_1 = proc;
+        return function () {
+            if (!inhibitFailed_1) {
                 try {
                     inhProc_1.kill();
                 }
                 catch (err) {
                     // cleanup best-effort
                 }
-            };
-        }
-        catch (err) {
-            jobLog('systemd-inhibit not available, sleep prevention not active');
-        }
+            }
+        };
     }
     catch (err) {
         jobLog("Could not start sleep prevention: ".concat(err));
@@ -168,10 +171,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 childProcess = require('child_process');
                 pollInterval = Math.max(10, Number(args.inputs.pollIntervalSeconds) || 15) * 1000;
-                if (!args.variables.user) {
-                    // eslint-disable-next-line no-param-reassign
-                    args.variables.user = {};
-                }
                 args.jobLog('Starting sleep prevention loop');
                 stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog);
                 confirmCount = 3;

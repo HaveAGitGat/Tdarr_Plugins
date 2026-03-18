@@ -249,10 +249,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         data: data,
                     }, {
                         timeout: 30000,
-                        headers: {
-                            'content-Type': 'application/json',
-                            'x-api-key': apiKey,
-                        },
+                        headers: headers,
                     }); }, 3, 2000, args.jobLog)];
             case 8:
                 response = _g.sent();
