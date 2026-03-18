@@ -126,23 +126,36 @@ var details = function () { return ({
             label: 'Target Node',
             name: 'targetNode',
             type: 'string',
-            defaultValue: 'thisNode',
+            defaultValue: 'currentNode',
             inputUI: {
                 type: 'dropdown',
-                options: ['thisNode', 'automationDefault'],
+                options: ['currentNode', 'automationDefault'],
             },
             tooltip: 'Choose where to run the automation.'
-                + ' "thisNode" sends the current node ID as the target.'
+                + ' "currentNode" sends the current node ID as the target.'
                 + ' "automationDefault" uses the target nodes configured on the automation.',
+        },
+        {
+            label: 'Target Library',
+            name: 'targetLibrary',
+            type: 'string',
+            defaultValue: 'currentLibrary',
+            inputUI: {
+                type: 'dropdown',
+                options: ['currentLibrary', 'automationDefault'],
+            },
+            tooltip: 'Choose which library to run the automation against.'
+                + ' "currentLibrary" sends the current file\'s library ID as the target.'
+                + ' "automationDefault" uses the libraries configured on the automation.',
         },
         {
             label: 'Skip If Already Running',
             name: 'skipIfRunning',
             type: 'string',
-            defaultValue: 'onThisNode',
+            defaultValue: 'onCurrentNode',
             inputUI: {
                 type: 'dropdown',
-                options: ['disabled', 'onThisNode', 'onAnyNode'],
+                options: ['disabled', 'onCurrentNode', 'onAnyNode'],
             },
             tooltip: 'Skip triggering if the automation is already running on this node or any node.',
         },
@@ -156,10 +169,10 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, configId, payloadStr, targetNode, skipIfRunning, serverURL, apiKey, headers, confirmCount, pollDelayMs_1, notRunningCount, poll, nodesRes, nodes, myNodeID, nodeIdsToCheck, isRunning, i, node, workerIds, j, worker, payload, data, myNodeID, response;
-    var _a, _b, _c, _d, _e, _f;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
+    var lib, configId, payloadStr, targetNode, targetLibrary, skipIfRunning, serverURL, apiKey, headers, confirmCount, pollDelayMs_1, notRunningCount, poll, nodesRes, nodes, myNodeID, nodeIdsToCheck, isRunning, i, node, workerIds, j, worker, payload, data, myNodeID, libraryId, response;
+    var _a, _b, _c, _d, _e, _f, _g;
+    return __generator(this, function (_h) {
+        switch (_h.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -167,6 +180,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 configId = String(args.inputs.configId).trim();
                 payloadStr = String(args.inputs.payload).trim() || '{}';
                 targetNode = String(args.inputs.targetNode);
+                targetLibrary = String(args.inputs.targetLibrary);
                 skipIfRunning = String(args.inputs.skipIfRunning);
                 if (!configId) {
                     throw new Error('No automation config ID provided');
@@ -177,28 +191,28 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     'content-Type': 'application/json',
                     'x-api-key': apiKey,
                 };
-                if (!(skipIfRunning === 'onThisNode' || skipIfRunning === 'onAnyNode')) return [3 /*break*/, 7];
+                if (!(skipIfRunning === 'onCurrentNode' || skipIfRunning === 'onAnyNode')) return [3 /*break*/, 7];
                 confirmCount = 3;
                 pollDelayMs_1 = 5000;
                 notRunningCount = 0;
                 poll = 0;
-                _g.label = 1;
+                _h.label = 1;
             case 1:
                 if (!(poll < confirmCount)) return [3 /*break*/, 6];
                 if (!(poll > 0)) return [3 /*break*/, 3];
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, pollDelayMs_1); })];
             case 2:
-                _g.sent(); // eslint-disable-line no-await-in-loop
-                _g.label = 3;
+                _h.sent(); // eslint-disable-line no-await-in-loop
+                _h.label = 3;
             case 3: return [4 /*yield*/, withRetry(function () { return args.deps.axios.get("".concat(serverURL, "/api/v2/get-nodes"), {
                     timeout: 30000,
                     headers: headers,
                 }); }, 3, 2000, args.jobLog)];
             case 4:
-                nodesRes = _g.sent();
+                nodesRes = _h.sent();
                 nodes = nodesRes.data || {};
                 myNodeID = args.configVars.config.nodeID;
-                nodeIdsToCheck = skipIfRunning === 'onThisNode'
+                nodeIdsToCheck = skipIfRunning === 'onCurrentNode'
                     ? [myNodeID]
                     : Object.keys(nodes);
                 isRunning = false;
@@ -227,23 +241,30 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         }];
                 }
                 notRunningCount += 1;
-                _g.label = 5;
+                _h.label = 5;
             case 5:
                 poll += 1;
                 return [3 /*break*/, 1];
             case 6:
                 args.jobLog("Automation ".concat(configId, " confirmed not running (").concat(notRunningCount, "/").concat(confirmCount, " checks)"));
-                _g.label = 7;
+                _h.label = 7;
             case 7:
                 payload = JSON.parse(payloadStr);
                 data = {
                     configId: configId,
                     payload: payload,
                 };
-                if (targetNode === 'thisNode') {
+                if (targetNode === 'currentNode') {
                     myNodeID = args.configVars.config.nodeID;
                     data.targetNodeIds = [myNodeID];
                     args.jobLog("Targeting this node: ".concat(myNodeID));
+                }
+                if (targetLibrary === 'currentLibrary') {
+                    libraryId = ((_f = args.originalLibraryFile) === null || _f === void 0 ? void 0 : _f.DB) || '';
+                    if (libraryId) {
+                        data.libraryIds = [libraryId];
+                        args.jobLog("Targeting this library: ".concat(libraryId));
+                    }
                 }
                 return [4 /*yield*/, withRetry(function () { return args.deps.axios.post("".concat(serverURL, "/api/v2/run-automation"), {
                         data: data,
@@ -252,11 +273,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         headers: headers,
                     }); }, 3, 2000, args.jobLog)];
             case 8:
-                response = _g.sent();
+                response = _h.sent();
                 if (response.status !== 200) {
                     throw new Error("Automation trigger failed with status ".concat(response.status));
                 }
-                if ((_f = response.data) === null || _f === void 0 ? void 0 : _f.error) {
+                if ((_g = response.data) === null || _g === void 0 ? void 0 : _g.error) {
                     throw new Error("Automation trigger failed: ".concat(response.data.error));
                 }
                 args.jobLog("Automation ".concat(configId, " triggered"));
