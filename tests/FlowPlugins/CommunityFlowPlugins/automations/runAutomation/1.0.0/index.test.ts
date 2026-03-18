@@ -54,7 +54,7 @@ describe('runAutomation Plugin', () => {
     expect(d.outputs.length).toBe(1);
   });
 
-  it('should trigger automation with configId, payload, and targetNodes (thisNode default)', async () => {
+  it('should trigger automation with configId, payload, and targetNodeIds (thisNode default)', async () => {
     const result = await plugin(baseArgs);
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
@@ -67,7 +67,7 @@ describe('runAutomation Plugin', () => {
     expect(baseArgs.jobLog).toHaveBeenCalledWith('Automation test-config-123 triggered');
   });
 
-  it('should not send targetNodes when targetNode is automationDefault', async () => {
+  it('should not send targetNodeIds when targetNode is automationDefault', async () => {
     baseArgs.inputs.targetNode = 'automationDefault';
     const result = await plugin(baseArgs);
 
