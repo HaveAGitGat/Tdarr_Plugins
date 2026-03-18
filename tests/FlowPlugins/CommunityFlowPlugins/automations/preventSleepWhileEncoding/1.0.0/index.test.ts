@@ -226,12 +226,18 @@ describe('preventSleepWhileEncoding Plugin', () => {
       }
       await pluginPromise;
 
+      // spawn starts a long-running PowerShell that refreshes the state
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'powershell',
+        expect.arrayContaining([expect.stringContaining('SetThreadExecutionState')]),
+        expect.any(Object),
+      );
+      // execSync is only used for the cleanup (clear) call
+      expect(mockExecSync).toHaveBeenCalledTimes(1);
       expect(mockExecSync).toHaveBeenCalledWith(
         expect.stringContaining('SetThreadExecutionState'),
         expect.any(Object),
       );
-      // Set + clear
-      expect(mockExecSync).toHaveBeenCalledTimes(2);
     });
 
     it('should use caffeinate on darwin', async () => {
