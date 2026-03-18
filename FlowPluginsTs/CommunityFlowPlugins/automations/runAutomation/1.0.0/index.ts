@@ -70,23 +70,36 @@ const details = (): IpluginDetails => ({
       label: 'Target Node',
       name: 'targetNode',
       type: 'string',
-      defaultValue: 'thisNode',
+      defaultValue: 'currentNode',
       inputUI: {
         type: 'dropdown',
-        options: ['thisNode', 'automationDefault'],
+        options: ['currentNode', 'automationDefault'],
       },
       tooltip: 'Choose where to run the automation.'
-        + ' "thisNode" sends the current node ID as the target.'
+        + ' "currentNode" sends the current node ID as the target.'
         + ' "automationDefault" uses the target nodes configured on the automation.',
+    },
+    {
+      label: 'Target Library',
+      name: 'targetLibrary',
+      type: 'string',
+      defaultValue: 'currentLibrary',
+      inputUI: {
+        type: 'dropdown',
+        options: ['currentLibrary', 'automationDefault'],
+      },
+      tooltip: 'Choose which library to run the automation against.'
+        + ' "currentLibrary" sends the current file\'s library ID as the target.'
+        + ' "automationDefault" uses the libraries configured on the automation.',
     },
     {
       label: 'Skip If Already Running',
       name: 'skipIfRunning',
       type: 'string',
-      defaultValue: 'onThisNode',
+      defaultValue: 'onCurrentNode',
       inputUI: {
         type: 'dropdown',
-        options: ['disabled', 'onThisNode', 'onAnyNode'],
+        options: ['disabled', 'onCurrentNode', 'onAnyNode'],
       },
       tooltip: 'Skip triggering if the automation is already running on this node or any node.',
     },
@@ -107,6 +120,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const configId = String(args.inputs.configId).trim();
   const payloadStr = String(args.inputs.payload).trim() || '{}';
   const targetNode = String(args.inputs.targetNode);
+  const targetLibrary = String(args.inputs.targetLibrary);
   const skipIfRunning = String(args.inputs.skipIfRunning);
 
   if (!configId) {
@@ -120,7 +134,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     'x-api-key': apiKey,
   };
 
-  if (skipIfRunning === 'onThisNode' || skipIfRunning === 'onAnyNode') {
+  if (skipIfRunning === 'onCurrentNode' || skipIfRunning === 'onAnyNode') {
     const confirmCount = 3;
     const pollDelayMs = 5000;
     let notRunningCount = 0;
@@ -144,7 +158,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       const nodes = nodesRes.data || {};
       const myNodeID = args.configVars.config.nodeID;
 
-      const nodeIdsToCheck = skipIfRunning === 'onThisNode'
+      const nodeIdsToCheck = skipIfRunning === 'onCurrentNode'
         ? [myNodeID]
         : Object.keys(nodes);
 
@@ -187,10 +201,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     payload,
   };
 
-  if (targetNode === 'thisNode') {
+  if (targetNode === 'currentNode') {
     const myNodeID = args.configVars.config.nodeID;
     data.targetNodeIds = [myNodeID];
     args.jobLog(`Targeting this node: ${myNodeID}`);
+  }
+
+  if (targetLibrary === 'currentLibrary') {
+    const libraryId = args.originalLibraryFile?.DB || '';
+    if (libraryId) {
+      data.libraryIds = [libraryId];
+      args.jobLog(`Targeting this library: ${libraryId}`);
+    }
   }
 
   const response = await withRetry<// eslint-disable-next-line @typescript-eslint/no-explicit-any
