@@ -55,12 +55,8 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEncoder = exports.getBestNvencDevice = exports.hasEncoder = void 0;
-var os_1 = __importDefault(require("os"));
 var hasEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
     var spawn, isEnabled, commandArr_1, err_1;
     var ffmpegPath = _b.ffmpegPath, encoder = _b.encoder, inputArgs = _b.inputArgs, outputArgs = _b.outputArgs, filter = _b.filter, args = _b.args;
@@ -249,8 +245,10 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         inputArgs: [
                             '-hwaccel',
                             'qsv',
+                            '-hwaccel_output_format',
+                            'qsv',
                         ],
-                        outputArgs: __spreadArray([], (os_1.default.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []), true),
+                        outputArgs: [],
                         filter: '',
                     },
                     {
@@ -300,6 +298,8 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         enabled: false,
                         inputArgs: [
                             '-hwaccel',
+                            'qsv',
+                            '-hwaccel_output_format',
                             'qsv',
                         ],
                         outputArgs: [],

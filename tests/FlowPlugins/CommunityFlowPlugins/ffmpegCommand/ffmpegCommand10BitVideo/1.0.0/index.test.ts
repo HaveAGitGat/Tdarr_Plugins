@@ -141,13 +141,10 @@ describe('ffmpegCommand10BitVideo Plugin', () => {
       expect(videoStream?.outputArgs).toContain('-profile:v:{outputTypeIndex}');
       expect(videoStream?.outputArgs).toContain('main10');
 
-      // Platform-specific behavior - either -vf scale_qsv or -pix_fmt should be present
-      const hasScaleQsv = videoStream?.outputArgs.includes('-vf')
-                          && videoStream?.outputArgs.includes('scale_qsv=format=p010le');
-      const hasPixFmt = videoStream?.outputArgs.includes('-pix_fmt:v:{outputTypeIndex}')
-                        && videoStream?.outputArgs.includes('p010le');
-
-      expect(hasScaleQsv || hasPixFmt).toBe(true);
+      // QSV should always use scale_qsv filter for 10-bit format conversion
+      expect(videoStream?.outputArgs).toContain('-vf');
+      expect(videoStream?.outputArgs).toContain('scale_qsv=format=p010le');
+      expect(videoStream?.outputArgs).not.toContain('-pix_fmt:v:{outputTypeIndex}');
     });
 
     it('should handle different hardware encoder names', () => {
@@ -166,10 +163,9 @@ describe('ffmpegCommand10BitVideo Plugin', () => {
         expect(videoStream?.outputArgs).toContain('-profile:v:{outputTypeIndex}');
         expect(videoStream?.outputArgs).toContain('main10');
 
-        // Should have some form of 10-bit pixel format configuration
-        const hasP010le = videoStream?.outputArgs.some((arg) => arg.includes('p010le'));
-        const hasScaleQsv = videoStream?.outputArgs.some((arg) => arg.includes('scale_qsv'));
-        expect(hasP010le || hasScaleQsv).toBe(true);
+        // QSV encoders should always use scale_qsv filter for 10-bit
+        expect(videoStream?.outputArgs).toContain('-vf');
+        expect(videoStream?.outputArgs).toContain('scale_qsv=format=p010le');
       });
     });
   });
