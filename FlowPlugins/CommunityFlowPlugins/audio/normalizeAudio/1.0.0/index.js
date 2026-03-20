@@ -182,6 +182,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 normArgs2 = [
                     '-i',
                     args.inputFileObj._id,
+                    '-map',
+                    '0',
                     '-c',
                     'copy',
                     '-c:a',

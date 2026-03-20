@@ -194,6 +194,8 @@ const plugin = async (args: INormalizeAudioPluginInputArgs): Promise<IpluginOutp
   const normArgs2 = [
     '-i',
     args.inputFileObj._id,
+    '-map',
+    '0',
     '-c',
     'copy',
     '-c:a',
