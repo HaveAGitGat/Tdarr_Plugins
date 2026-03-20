@@ -278,6 +278,92 @@ describe('checkFlowVariable Plugin', () => {
     });
   });
 
+  describe('Plain Flow Variable Name Lookup', () => {
+    it('should look up a plain variable name from args.variables.user', () => {
+      baseArgs.variables.user.transcodeStage = 'nvenc';
+      baseArgs.inputs.variable = 'transcodeStage';
+      baseArgs.inputs.condition = '==';
+      baseArgs.inputs.value = 'nvenc';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Looking up flow variable: args.variables.user.transcodeStage',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Variable transcodeStage of value nvenc matches condition == nvenc',
+      );
+    });
+
+    it('should not match when plain variable value differs', () => {
+      baseArgs.variables.user.transcodeStage = 'qsv';
+      baseArgs.inputs.variable = 'transcodeStage';
+      baseArgs.inputs.condition = '==';
+      baseArgs.inputs.value = 'nvenc';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Looking up flow variable: args.variables.user.transcodeStage',
+      );
+    });
+
+    it('should work with != condition on plain variable name', () => {
+      baseArgs.variables.user.transcodeStage = 'qsv';
+      baseArgs.inputs.variable = 'transcodeStage';
+      baseArgs.inputs.condition = '!=';
+      baseArgs.inputs.value = 'nvenc';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should fall back to literal when plain name is not in args.variables.user', () => {
+      baseArgs.inputs.variable = 'notSetVariable';
+      baseArgs.inputs.condition = '==';
+      baseArgs.inputs.value = 'notSetVariable';
+
+      const result = plugin(baseArgs);
+
+      // falls back to treating the variable input as a literal string
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
+        expect.stringContaining('Looking up flow variable'),
+      );
+    });
+
+    it('should not use plain lookup when variable contains a dot', () => {
+      baseArgs.variables.user['some.dotted'] = 'value';
+      baseArgs.inputs.variable = 'some.dotted';
+      baseArgs.inputs.condition = '==';
+      baseArgs.inputs.value = 'value';
+
+      plugin(baseArgs);
+
+      // dot means it won't enter the plain lookup branch
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
+        expect.stringContaining('Looking up flow variable'),
+      );
+    });
+
+    it('should not use plain lookup when variable contains braces', () => {
+      baseArgs.inputs.variable = '{{{args.variables.user.test}}}';
+      baseArgs.inputs.condition = '==';
+      baseArgs.inputs.value = '{{{args.variables.user.test}}}';
+
+      const result = plugin(baseArgs);
+
+      // braces means it won't enter the plain lookup branch
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
+        expect.stringContaining('Looking up flow variable'),
+      );
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle undefined values by converting to string', () => {
       baseArgs.inputs.variable = 'args.nonExistentProperty';
