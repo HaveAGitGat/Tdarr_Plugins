@@ -100,7 +100,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let audioIdx = 0;
   let has2Channel = false;
   let has6Channel = false;
-  let has7Channel = false;
   let convert = false;
   let is2channelAdded = false;
   let is6channelAdded = false;
@@ -115,9 +114,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         }
         if (file.ffProbeData.streams[i].channels === 6) {
           has6Channel = true;
-        }
-        if (file.ffProbeData.streams[i].channels === 7) {
-          has7Channel = true;
         }
       }
     } catch (err) {
@@ -154,7 +150,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               || (inputs.downmix_single_track === true && is6channelAdded === false))
           ) {
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="5.1" `;
-            response.infoLog += '☒Audio track is 7 channel (6.1), no 6 channel exists. Creating 6 channel from 7 channel. \n';
+            response.infoLog += '☒Audio track is 7 channel (6.1), no 6 channel exists.'
+              + ' Creating 6 channel from 7 channel. \n';
             convert = true;
             is6channelAdded = true;
           }
@@ -178,7 +175,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="2.0" `;
-            response.infoLog += '☒Audio track is 7 channel (6.1), no 2 channel exists. Creating 2 channel from 7 channel. \n';
+            response.infoLog += '☒Audio track is 7 channel (6.1), no 2 channel exists.'
+              + ' Creating 2 channel from 7 channel. \n';
             convert = true;
             is2channelAdded = true;
           }
