@@ -11,14 +11,18 @@ import FileProperties from './fileProperties';
 const codecSynonyms: { [key: string]: string } = {
   h265: 'hevc',
   hevc: 'h265',
+  h264: 'avc',
+  avc: 'h264',
 };
 
 const replaceAll = (str: string, search: string, replacement: string): string => str.split(search).join(replacement);
 
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+const validProperties = Object.values(FileProperties) as string[];
+
 const details = (): IpluginDetails => ({
   name: 'Check File Variation Exists',
-  description: 'Check if a file with a similar name exists. Capitalization is respected.',
+  description: 'Check if a file with a similar name exists.'
+    + ' Replaces exact case and UPPERCASE variants in the filename.',
   style: {
     borderColor: 'orange',
   },
@@ -100,6 +104,16 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   if (propList.length !== expectedList.length) {
     args.jobLog('Amount of properties does not match amount of expected values.');
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 2,
+      variables: args.variables,
+    };
+  }
+
+  const invalidProps = propList.filter((prop) => !validProperties.includes(prop));
+  if (invalidProps.length > 0) {
+    args.jobLog(`Unknown properties: ${invalidProps.join(', ')}. Valid properties: ${validProperties.join(', ')}`);
     return {
       outputFileObj: args.inputFileObj,
       outputNumber: 2,

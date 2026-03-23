@@ -45,12 +45,15 @@ var fileProperties_1 = __importDefault(require("./fileProperties"));
 var codecSynonyms = {
     h265: 'hevc',
     hevc: 'h265',
+    h264: 'avc',
+    avc: 'h264',
 };
 var replaceAll = function (str, search, replacement) { return str.split(search).join(replacement); };
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+var validProperties = Object.values(fileProperties_1.default);
 var details = function () { return ({
     name: 'Check File Variation Exists',
-    description: 'Check if a file with a similar name exists. Capitalization is respected.',
+    description: 'Check if a file with a similar name exists.'
+        + ' Replaces exact case and UPPERCASE variants in the filename.',
     style: {
         borderColor: 'orange',
     },
@@ -109,7 +112,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, propList, expectedList, propMap, sourceContainer, sourceFileNameOnly, propertyToSourceMap, newFileName, newContainer, directory, targetPath, similarExists;
+    var lib, propList, expectedList, invalidProps, propMap, sourceContainer, sourceFileNameOnly, propertyToSourceMap, newFileName, newContainer, directory, targetPath, similarExists;
     var _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
@@ -133,6 +136,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 if (propList.length !== expectedList.length) {
                     args.jobLog('Amount of properties does not match amount of expected values.');
+                    return [2 /*return*/, {
+                            outputFileObj: args.inputFileObj,
+                            outputNumber: 2,
+                            variables: args.variables,
+                        }];
+                }
+                invalidProps = propList.filter(function (prop) { return !validProperties.includes(prop); });
+                if (invalidProps.length > 0) {
+                    args.jobLog("Unknown properties: ".concat(invalidProps.join(', '), ". Valid properties: ").concat(validProperties.join(', ')));
                     return [2 /*return*/, {
                             outputFileObj: args.inputFileObj,
                             outputNumber: 2,

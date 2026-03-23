@@ -134,6 +134,34 @@ describe('checkFileVariationExists Plugin', () => {
       expect(result.outputNumber).toBe(1);
     });
 
+    it('should replace h264 synonym with avc in the file name', async () => {
+      baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_h264_720p.mp4';
+      baseArgs.inputFileObj.video_codec_name = 'h264';
+      baseArgs.inputs.expectedValues = 'avc';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_avc_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should replace avc synonym with h264 in the file name', async () => {
+      baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_avc_720p.mp4';
+      baseArgs.inputFileObj.video_codec_name = 'avc';
+      baseArgs.inputs.expectedValues = 'h264';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_h264_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+
     it('should replace synonym in filename when filename uses different name than codec metadata', async () => {
       baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_h265_720p.mp4';
       baseArgs.inputFileObj.video_codec_name = 'hevc';
@@ -238,6 +266,32 @@ describe('checkFileVariationExists Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No properties provided.');
+      expect(result.outputNumber).toBe(2);
+      expect(fileExists).not.toHaveBeenCalled();
+    });
+
+    it('should output 2 and log when an unknown property is provided', async () => {
+      baseArgs.inputs.propsToCheck = 'bitrate';
+      baseArgs.inputs.expectedValues = '5000';
+
+      const result = await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('Unknown properties: bitrate'),
+      );
+      expect(result.outputNumber).toBe(2);
+      expect(fileExists).not.toHaveBeenCalled();
+    });
+
+    it('should output 2 when one of multiple properties is unknown', async () => {
+      baseArgs.inputs.propsToCheck = 'codec,bitrate';
+      baseArgs.inputs.expectedValues = 'hevc,5000';
+
+      const result = await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('Unknown properties: bitrate'),
+      );
       expect(result.outputNumber).toBe(2);
       expect(fileExists).not.toHaveBeenCalled();
     });
