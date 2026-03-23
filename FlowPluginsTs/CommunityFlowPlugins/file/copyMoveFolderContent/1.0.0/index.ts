@@ -1,6 +1,6 @@
 import { promises as fsp } from 'fs';
 import {
-  getContainer, getFileAbosluteDir, getSubStem,
+  getContainer, getFileAbsoluteDir, getSubStem,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -136,7 +136,7 @@ const doOperation = async ({
   if (sourcePath === destinationPath) {
     args.jobLog(`Input and output path are the same, skipping ${operation}`);
   } else {
-    args.deps.fsextra.ensureDirSync(getFileAbosluteDir(destinationPath));
+    args.deps.fsextra.ensureDirSync(getFileAbsoluteDir(destinationPath));
 
     await fileMoveOrCopy({
       operation,
@@ -182,10 +182,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     outputPath = outputDirectory;
   }
 
-  let sourceDir = getFileAbosluteDir(args.originalLibraryFile._id);
+  let sourceDir = getFileAbsoluteDir(args.originalLibraryFile._id);
 
   if (sourceDirectory === 'workingDirectory') {
-    sourceDir = getFileAbosluteDir(args.inputFileObj._id);
+    sourceDir = getFileAbsoluteDir(args.inputFileObj._id);
   }
 
   let filesInDir = (await fsp.readdir(sourceDir))

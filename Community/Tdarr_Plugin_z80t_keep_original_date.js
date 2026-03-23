@@ -33,7 +33,7 @@ const details = () => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -41,7 +41,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const touch = require('touch');
   const os = require('os');
-  const fs = require('fs');
+  const { promises: fsp } = require('fs');
 
   const log = (msg) => {
     if (inputs.log === true) {
@@ -62,15 +62,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     const { mtimeMs, ctimeMs } = otherArguments.originalLibraryFile.statSync;
     if (os.platform() === 'win32') {
-      fs.utimes(
+      await fsp.utimes(
         file._id,
         ctimeMs / 1000,
         mtimeMs / 1000,
-        (err) => {
-          if (err) {
-            log('Error updating modified date');
-          }
-        },
       );
     } else {
       touch.sync(file._id, { mtimeMs, force: true });

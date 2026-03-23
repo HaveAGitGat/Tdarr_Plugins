@@ -18,11 +18,14 @@ export const getFileName = (filePath: string): string => {
   return parts2.join('.');
 };
 
-export const getFileAbosluteDir = (filePath: string):string => {
+export const getFileAbsoluteDir = (filePath: string):string => {
   const parts = filePath.split('/');
   parts.pop();
   return parts.join('/');
 };
+
+// backwards compatibility for typo
+export const getFileAbosluteDir = getFileAbsoluteDir;
 
 export const getFfType = (codecType: string): string => (codecType === 'video' ? 'v' : 'a');
 
@@ -172,7 +175,7 @@ export const hashFile = (filePath: string, algorithm = 'sha256'): Promise<string
     const stream = fs.createReadStream(filePath);
 
     stream.on('data', (data) => {
-      hash.update(data);
+      hash.update(data as string | NodeJS.ArrayBufferView);
     });
 
     stream.on('end', () => {

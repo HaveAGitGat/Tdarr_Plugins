@@ -7,7 +7,8 @@ import {
 
 const details = (): IpluginDetails => ({
   name: 'Notify Radarr or Sonarr',
-  description: 'Notify Radarr or Sonarr to refresh after file change',
+  description: 'Notify Radarr or Sonarr to refresh after file change. '
+    + 'Waits for the scan to complete before continuing.',
   style: {
     borderColor: 'green',
   },
@@ -88,6 +89,61 @@ interface IArrApp {
     buildRefreshResquestData: (id: number) => string
   }
 }
+
+interface ICommandResponse {
+  data: {
+    id: number,
+    status: string,
+  },
+}
+
+const POLL_INTERVAL_SECONDS = 5;
+const TIMEOUT_SECONDS = 120;
+
+const waitForCommand = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  commandId: number,
+): Promise<boolean> => {
+  const startTime = Date.now();
+  const timeoutMs = TIMEOUT_SECONDS * 1000;
+  const pollIntervalMs = POLL_INTERVAL_SECONDS * 1000;
+
+  args.jobLog(`Waiting for command ${commandId} to complete (timeout: ${TIMEOUT_SECONDS}s)...`);
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const elapsed = Date.now() - startTime;
+    if (elapsed >= timeoutMs) {
+      args.jobLog(`Command ${commandId} timed out after ${TIMEOUT_SECONDS}s.`);
+      return false;
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((resolve) => {
+      setTimeout(resolve, pollIntervalMs);
+    });
+
+    // eslint-disable-next-line no-await-in-loop
+    const res: ICommandResponse = await args.deps.axios({
+      method: 'get',
+      url: `${arrApp.host}/api/v3/command/${commandId}`,
+      headers: arrApp.headers,
+    });
+
+    const { status } = res.data;
+    args.jobLog(`Command ${commandId} status: ${status}`);
+
+    if (status === 'completed') {
+      return true;
+    }
+
+    if (status === 'failed' || status === 'aborted' || status === 'cancelled') {
+      args.jobLog(`Command ${commandId} ended with status: ${status}`);
+      return false;
+    }
+  }
+};
 
 const getId = async (
   args: IpluginInputArgs,
@@ -172,15 +228,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // Checking that the file has been found
   if (id !== -1) {
     // Using command endpoint to queue a refresh task
-    await args.deps.axios({
+    const commandResponse: ICommandResponse = await args.deps.axios({
       method: 'post',
       url: `${arrApp.host}/api/v3/command`,
       headers,
       data: arrApp.delegates.buildRefreshResquestData(id),
     });
 
-    refreshed = true;
-    args.jobLog(`✔ ${arrApp.content} '${id}' refreshed in ${arrApp.name}.`);
+    const commandId = commandResponse.data.id;
+    args.jobLog(`${arrApp.content} '${id}' refresh queued in ${arrApp.name} (command ${commandId}).`);
+
+    const completed = await waitForCommand(args, arrApp, commandId);
+    if (completed) {
+      refreshed = true;
+      args.jobLog(`✔ ${arrApp.content} '${id}' scan completed in ${arrApp.name}.`);
+    } else {
+      args.jobLog(`⚠ ${arrApp.content} '${id}' scan did not complete within timeout.`);
+    }
   }
 
   return {
