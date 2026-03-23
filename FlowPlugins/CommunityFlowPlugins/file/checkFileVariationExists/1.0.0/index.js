@@ -49,7 +49,7 @@ var codecSynonyms = {
 var replaceAll = function (str, search, replacement) { return str.split(search).join(replacement); };
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Check File variation exists',
+    name: 'Check File Variation Exists',
     description: 'Check if a file with a similar name exists. Capitalization is respected.',
     style: {
         borderColor: 'orange',

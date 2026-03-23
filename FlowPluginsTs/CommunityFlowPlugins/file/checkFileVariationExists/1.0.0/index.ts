@@ -17,7 +17,7 @@ const replaceAll = (str: string, search: string, replacement: string): string =>
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
-  name: 'Check File variation exists',
+  name: 'Check File Variation Exists',
   description: 'Check if a file with a similar name exists. Capitalization is respected.',
   style: {
     borderColor: 'orange',
