@@ -35,7 +35,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - run: npm i -g typescript && tsc
+    - run: npm i -g typescript@5.9.3 && tsc
     - run: npm run checkPlugins
     - run: npm run lint
     - run: npm run test
@@ -58,7 +58,7 @@ jobs:
       with:
         node-version: 18.x
     - run: npm ci
-    - run: npm i -g typescript && tsc
+    - run: npm i -g typescript@5.9.3 && tsc
     - run: npm run test:flows
 
   auto_compile_and_push:
@@ -81,7 +81,7 @@ jobs:
       with:
         node-version: '18.x'
 
-    - run: npm ci && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
+    - run: npm ci && npm i -g typescript@5.9.3 && rm -rdf ./FlowPlugins && tsc -v && tsc
 
     - uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
       ## fix this check
