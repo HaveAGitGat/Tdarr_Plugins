@@ -52,16 +52,26 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const ffmpegCommand = {
     init: true,
     inputFiles: [],
-    streams: streams.map((stream:Istreams) => ({
-      ...stream,
-      removed: false,
-      mapArgs: [
-        '-map',
-        `0:${stream.index}`,
-      ],
-      inputArgs: [],
-      outputArgs: [],
-    })),
+    streams: streams.map((stream:Istreams) => {
+      const normalizedStream = {
+        ...stream,
+      };
+
+      if (Number(stream?.disposition?.attached_pic) === 1) {
+        normalizedStream.codec_type = 'attachment';
+      }
+
+      return {
+        ...normalizedStream,
+        removed: false,
+        mapArgs: [
+          '-map',
+          `0:${stream.index}`,
+        ],
+        inputArgs: [],
+        outputArgs: [],
+      };
+    }),
     container,
     hardwareDecoding: false,
     shouldProcess: false,

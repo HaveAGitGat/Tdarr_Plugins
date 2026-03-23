@@ -40,8 +40,8 @@ exports.plugin = exports.details = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Check If Processed',
-    description: "\n    Check if file has already been added to processed list by 'Add To Processed' flow plugin.\n    You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.\n  ",
+    name: 'Check Skiplist',
+    description: "\n    Check if file has already been added to skiplist by 'Add To Skiplist' flow plugin.\n    You can view and clear the skiplist by going to Library -> Skiplist.\n  ",
     style: {
         borderColor: 'orange',
     },
@@ -71,11 +71,11 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'File has not been processed',
+            tooltip: 'File is not on library skiplist',
         },
         {
             number: 2,
-            tooltip: 'File has been processed',
+            tooltip: 'File is on library skiplist',
         },
     ],
 }); };
@@ -105,17 +105,17 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 propertyToCheck = _a.sent();
                 _a.label = 4;
             case 4:
-                args.jobLog("Checking if file has already been processed: ".concat(propertyToCheck));
+                args.jobLog("Checking if file is on skiplist: ".concat(propertyToCheck));
                 return [4 /*yield*/, args.deps.crudTransDBN('F2FOutputJSONDB', 'getById', propertyToCheck, {})];
             case 5:
                 outputHist = _a.sent();
                 outputNumber = 1;
                 if (outputHist !== undefined && outputHist.DB === args.inputFileObj.DB) {
-                    args.jobLog('File has already been processed by this library');
+                    args.jobLog('File is on library skiplist');
                     outputNumber = 2;
                 }
                 else {
-                    args.jobLog('File has not been processed by this library');
+                    args.jobLog('File is not on library skiplist');
                 }
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
