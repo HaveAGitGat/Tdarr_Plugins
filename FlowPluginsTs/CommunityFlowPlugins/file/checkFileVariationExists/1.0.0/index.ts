@@ -34,7 +34,7 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
-      label: 'Properties to check',
+      label: 'Properties To Check',
       name: 'propsToCheck',
       type: 'string',
       defaultValue: 'codec',
@@ -45,7 +45,7 @@ const details = (): IpluginDetails => ({
           + 'Available properties: codec, container, resolution',
     },
     {
-      label: 'Expected values',
+      label: 'Expected Values',
       name: 'expectedValues',
       type: 'string',
       defaultValue: 'hevc',
