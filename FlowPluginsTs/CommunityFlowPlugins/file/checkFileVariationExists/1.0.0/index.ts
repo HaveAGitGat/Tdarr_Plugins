@@ -3,8 +3,17 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import { fileExists, getContainer, getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import {
+  fileExists, getContainer, getFileName, getFileAbsoluteDir,
+} from '../../../../FlowHelpers/1.0.0/fileUtils';
 import FileProperties from './fileProperties';
+
+const codecSynonyms: { [key: string]: string } = {
+  h265: 'hevc',
+  hevc: 'h265',
+};
+
+const replaceAll = (str: string, search: string, replacement: string): string => str.split(search).join(replacement);
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -72,11 +81,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  let sourceFileName = args.inputFileObj._id;
   const propList: FileProperties[] = String(args.inputs.propsToCheck).trim().split(',')
-    .map((val) => val.trim() as FileProperties);
+    .map((val) => val.trim())
+    .filter((val) => val.length > 0) as FileProperties[];
 
-  const expectedList = String(args.inputs.expectedValues).trim().split(',');
+  const expectedList = String(args.inputs.expectedValues).trim().split(',')
+    .map((val) => val.trim())
+    .filter((val) => val.length > 0);
 
   if (propList.length === 0) {
     args.jobLog('No properties provided.');
@@ -102,31 +113,54 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     propMap[prop] = expectedList[index];
   });
 
+  const sourceContainer = getContainer(args.inputFileObj._id);
+  const sourceFileNameOnly = getFileName(args.inputFileObj._id);
+
   const propertyToSourceMap = {
     [FileProperties.codec]: args.inputFileObj.video_codec_name,
-    [FileProperties.container]: getContainer(args.inputFileObj._id),
+    [FileProperties.container]: sourceContainer,
     [FileProperties.resolution]: args.inputFileObj.video_resolution,
   };
 
-  // Handle codec synonym
-  sourceFileName = sourceFileName.replace('h265', 'hevc');
+  let newFileName = sourceFileNameOnly;
+  let newContainer = sourceContainer;
 
   propList.forEach((prop) => {
     const sourceValue = propertyToSourceMap[prop];
     const destValue = propMap[prop];
-    if (sourceValue !== undefined && destValue !== undefined) {
-      sourceFileName = sourceFileName.replace(sourceValue, destValue);
-      sourceFileName = sourceFileName.replace(sourceValue.toUpperCase(), destValue);
+    if (sourceValue === undefined || destValue === undefined) {
+      return;
+    }
+
+    if (prop === FileProperties.container) {
+      newContainer = destValue;
+      return;
+    }
+
+    // Replace exact case and uppercase variants in filename only
+    newFileName = replaceAll(newFileName, sourceValue, destValue);
+    newFileName = replaceAll(newFileName, sourceValue.toUpperCase(), destValue);
+
+    // Handle codec synonyms (e.g. h265 <-> hevc)
+    if (prop === FileProperties.codec && codecSynonyms[sourceValue]) {
+      const synonym = codecSynonyms[sourceValue];
+      newFileName = replaceAll(newFileName, synonym, destValue);
+      newFileName = replaceAll(newFileName, synonym.toUpperCase(), destValue);
     }
   });
 
+  const directory = String(args.inputs.directory || '').trim()
+    || getFileAbsoluteDir(args.inputFileObj._id);
+
+  const targetPath = `${directory}/${newFileName}.${newContainer}`;
+
   let similarExists = false;
 
-  if (await fileExists(sourceFileName)) {
+  if (await fileExists(targetPath)) {
     similarExists = true;
-    args.jobLog(`Similar file exists: ${sourceFileName}`);
+    args.jobLog(`Similar file exists: ${targetPath}`);
   } else {
-    args.jobLog(`Similar file does not exist: ${sourceFileName}. Replaced properties: ${JSON.stringify(propList)}`);
+    args.jobLog(`Similar file does not exist: ${targetPath}. Replaced properties: ${JSON.stringify(propList)}`);
   }
 
   return {

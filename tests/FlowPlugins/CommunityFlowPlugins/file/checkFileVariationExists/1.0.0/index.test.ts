@@ -5,9 +5,12 @@ import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/i
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
-// Mock the lib module
+// Mock the lib module - use real loadDefaultValues by default, tests can override
+const realLoadDefaultValues = require('../../../../../../methods/loadDefaultValues');
+// eslint-disable-next-line prefer-const
+let mockLoadDefaultValues = realLoadDefaultValues;
 jest.mock('../../../../../../methods/lib', () => () => ({
-  loadDefaultValues: require('../../../../../../methods/loadDefaultValues'),
+  loadDefaultValues: (...libArgs: unknown[]) => mockLoadDefaultValues(...libArgs),
 }));
 
 // Mock the fileUtils module
@@ -24,6 +27,11 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => (
     parts2.pop();
     return parts2.join('.');
   }),
+  getFileAbsoluteDir: jest.fn((filePath: string) => {
+    const parts = filePath.split('/');
+    parts.pop();
+    return parts.join('/');
+  }),
 }));
 
 const { fileExists } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
@@ -34,6 +42,7 @@ describe('checkFileVariationExists Plugin', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     fileExists.mockResolvedValue(false);
+    mockLoadDefaultValues = realLoadDefaultValues;
 
     baseArgs = {
       inputs: {
@@ -57,7 +66,7 @@ describe('checkFileVariationExists Plugin', () => {
       },
       inputFileObj: {
         ...JSON.parse(JSON.stringify(sampleH264)),
-        _id: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
+        _id: 'C:/Transcode/Source Folder/SampleVideo_h264_720p.mp4',
         video_codec_name: 'h264',
         video_resolution: '720p',
         container: 'mp4',
@@ -86,10 +95,20 @@ describe('checkFileVariationExists Plugin', () => {
       expect(result.outputNumber).toBe(2);
     });
 
-    it('should replace h265 with hevc synonym in the file name', async () => {
+    it('should replace codec in filename and check correct path', async () => {
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_hevc_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should replace h265 synonym with hevc in the file name', async () => {
       baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_h265_720p.mp4';
       baseArgs.inputFileObj.video_codec_name = 'h265';
-      baseArgs.inputs.propsToCheck = 'codec';
       baseArgs.inputs.expectedValues = 'hevc';
       fileExists.mockResolvedValue(true);
 
@@ -100,10 +119,38 @@ describe('checkFileVariationExists Plugin', () => {
       );
       expect(result.outputNumber).toBe(1);
     });
+
+    it('should replace hevc synonym with h265 in the file name', async () => {
+      baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_hevc_720p.mp4';
+      baseArgs.inputFileObj.video_codec_name = 'hevc';
+      baseArgs.inputs.expectedValues = 'h265';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_h265_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should replace synonym in filename when filename uses different name than codec metadata', async () => {
+      baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_h265_720p.mp4';
+      baseArgs.inputFileObj.video_codec_name = 'hevc';
+      baseArgs.inputs.expectedValues = 'av1';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_av1_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
   });
 
   describe('Container Replacement', () => {
-    it('should replace container in the file name', async () => {
+    it('should replace container extension', async () => {
       baseArgs.inputs.propsToCheck = 'container';
       baseArgs.inputs.expectedValues = 'mkv';
       baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo.mp4';
@@ -182,6 +229,32 @@ describe('checkFileVariationExists Plugin', () => {
       expect(result.outputNumber).toBe(2);
       expect(fileExists).not.toHaveBeenCalled();
     });
+
+    it('should output 2 when properties input is empty (bypassing defaults)', async () => {
+      mockLoadDefaultValues = (inputs: Record<string, unknown>) => inputs;
+      baseArgs.inputs.propsToCheck = '  ';
+      baseArgs.inputs.expectedValues = '  ';
+
+      const result = await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No properties provided.');
+      expect(result.outputNumber).toBe(2);
+      expect(fileExists).not.toHaveBeenCalled();
+    });
+
+    it('should handle trailing commas gracefully', async () => {
+      mockLoadDefaultValues = (inputs: Record<string, unknown>) => inputs;
+      baseArgs.inputs.propsToCheck = 'codec,';
+      baseArgs.inputs.expectedValues = 'hevc,';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_hevc_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
   });
 
   describe('Uppercase Handling', () => {
@@ -196,6 +269,70 @@ describe('checkFileVariationExists Plugin', () => {
 
       expect(fileExists).toHaveBeenCalledWith(
         'C:/Transcode/Source Folder/SampleVideo_hevc_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+  });
+
+  describe('Directory input', () => {
+    it('should use custom directory when provided', async () => {
+      baseArgs.inputs.directory = 'D:/Media/Movies';
+      baseArgs.inputs.propsToCheck = 'codec';
+      baseArgs.inputs.expectedValues = 'hevc';
+      baseArgs.inputFileObj._id = 'C:/Transcode/Source Folder/SampleVideo_h264_720p.mp4';
+      baseArgs.inputFileObj.video_codec_name = 'h264';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'D:/Media/Movies/SampleVideo_hevc_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should use source file directory when directory input is empty', async () => {
+      baseArgs.inputs.directory = '';
+      baseArgs.inputs.propsToCheck = 'codec';
+      baseArgs.inputs.expectedValues = 'hevc';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source Folder/SampleVideo_hevc_720p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+  });
+
+  describe('Path safety', () => {
+    it('should only replace in filename, not in directory path', async () => {
+      baseArgs.inputs.propsToCheck = 'resolution';
+      baseArgs.inputs.expectedValues = '1080p';
+      baseArgs.inputFileObj._id = 'C:/Transcode/720p/SampleVideo_720p.mp4';
+      baseArgs.inputFileObj.video_resolution = '720p';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/720p/SampleVideo_1080p.mp4',
+      );
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should replace all occurrences in filename', async () => {
+      baseArgs.inputs.propsToCheck = 'codec';
+      baseArgs.inputs.expectedValues = 'hevc';
+      baseArgs.inputFileObj._id = 'C:/Transcode/Source/h264_video_h264.mp4';
+      baseArgs.inputFileObj.video_codec_name = 'h264';
+      fileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileExists).toHaveBeenCalledWith(
+        'C:/Transcode/Source/hevc_video_hevc.mp4',
       );
       expect(result.outputNumber).toBe(1);
     });

@@ -42,6 +42,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var fileProperties_1 = __importDefault(require("./fileProperties"));
+var codecSynonyms = {
+    h265: 'hevc',
+    hevc: 'h265',
+};
+var replaceAll = function (str, search, replacement) { return str.split(search).join(replacement); };
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check File variation exists',
@@ -104,7 +109,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, sourceFileName, propList, expectedList, propMap, propertyToSourceMap, similarExists;
+    var lib, propList, expectedList, propMap, sourceContainer, sourceFileNameOnly, propertyToSourceMap, newFileName, newContainer, directory, targetPath, similarExists;
     var _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
@@ -112,10 +117,12 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                sourceFileName = args.inputFileObj._id;
                 propList = String(args.inputs.propsToCheck).trim().split(',')
-                    .map(function (val) { return val.trim(); });
-                expectedList = String(args.inputs.expectedValues).trim().split(',');
+                    .map(function (val) { return val.trim(); })
+                    .filter(function (val) { return val.length > 0; });
+                expectedList = String(args.inputs.expectedValues).trim().split(',')
+                    .map(function (val) { return val.trim(); })
+                    .filter(function (val) { return val.length > 0; });
                 if (propList.length === 0) {
                     args.jobLog('No properties provided.');
                     return [2 /*return*/, {
@@ -136,30 +143,47 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 propList.forEach(function (prop, index) {
                     propMap[prop] = expectedList[index];
                 });
+                sourceContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                sourceFileNameOnly = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 propertyToSourceMap = (_a = {},
                     _a[fileProperties_1.default.codec] = args.inputFileObj.video_codec_name,
-                    _a[fileProperties_1.default.container] = (0, fileUtils_1.getContainer)(args.inputFileObj._id),
+                    _a[fileProperties_1.default.container] = sourceContainer,
                     _a[fileProperties_1.default.resolution] = args.inputFileObj.video_resolution,
                     _a);
-                // Handle codec synonym
-                sourceFileName = sourceFileName.replace('h265', 'hevc');
+                newFileName = sourceFileNameOnly;
+                newContainer = sourceContainer;
                 propList.forEach(function (prop) {
                     var sourceValue = propertyToSourceMap[prop];
                     var destValue = propMap[prop];
-                    if (sourceValue !== undefined && destValue !== undefined) {
-                        sourceFileName = sourceFileName.replace(sourceValue, destValue);
-                        sourceFileName = sourceFileName.replace(sourceValue.toUpperCase(), destValue);
+                    if (sourceValue === undefined || destValue === undefined) {
+                        return;
+                    }
+                    if (prop === fileProperties_1.default.container) {
+                        newContainer = destValue;
+                        return;
+                    }
+                    // Replace exact case and uppercase variants in filename only
+                    newFileName = replaceAll(newFileName, sourceValue, destValue);
+                    newFileName = replaceAll(newFileName, sourceValue.toUpperCase(), destValue);
+                    // Handle codec synonyms (e.g. h265 <-> hevc)
+                    if (prop === fileProperties_1.default.codec && codecSynonyms[sourceValue]) {
+                        var synonym = codecSynonyms[sourceValue];
+                        newFileName = replaceAll(newFileName, synonym, destValue);
+                        newFileName = replaceAll(newFileName, synonym.toUpperCase(), destValue);
                     }
                 });
+                directory = String(args.inputs.directory || '').trim()
+                    || (0, fileUtils_1.getFileAbsoluteDir)(args.inputFileObj._id);
+                targetPath = "".concat(directory, "/").concat(newFileName, ".").concat(newContainer);
                 similarExists = false;
-                return [4 /*yield*/, (0, fileUtils_1.fileExists)(sourceFileName)];
+                return [4 /*yield*/, (0, fileUtils_1.fileExists)(targetPath)];
             case 1:
                 if (_b.sent()) {
                     similarExists = true;
-                    args.jobLog("Similar file exists: ".concat(sourceFileName));
+                    args.jobLog("Similar file exists: ".concat(targetPath));
                 }
                 else {
-                    args.jobLog("Similar file does not exist: ".concat(sourceFileName, ". Replaced properties: ").concat(JSON.stringify(propList)));
+                    args.jobLog("Similar file does not exist: ".concat(targetPath, ". Replaced properties: ").concat(JSON.stringify(propList)));
                 }
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
