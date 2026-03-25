@@ -69,6 +69,7 @@ export interface IpluginDetails {
         tooltip: string,
     }[],
     requiresVersion: string,
+    skipAutoDownload?: boolean,
 }
 
 export interface Ilog {
@@ -199,6 +200,7 @@ export interface IpluginInputArgs {
     logFullCliOutput: boolean,
     logOutcome: (outcome: string) => void,
     scanIndividualFile?: (filee: IFileObjectMin, scanTypes: IscanTypes) => Promise<IFileObject>,
+    shouldDownloadWorkingFile?: (filePath: string) => Promise<void>,
     updateStat: (db: string, key: string, inc: number) => Promise<void>,
     configVars: IconfigVars,
     deps: {
