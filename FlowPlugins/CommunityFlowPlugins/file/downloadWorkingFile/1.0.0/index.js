@@ -40,11 +40,11 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Download Working File',
-    description: "Download the working file from the server to the node."
-        + " Use with the 'Set Flow Variable' plugin to set skipAutoDownload to true"
-        + " so that the automatic download is skipped and you have full control over when the download happens."
-        + " This gives you the ability to use error edges on the download step"
-        + " (e.g. to handle 404 errors).",
+    description: 'Download the working file from the server to the node.'
+        + ' Use with the \'Set Flow Variable\' plugin to set skipAutoDownload to true'
+        + ' so that the automatic download is skipped and you have full control over when the download happens.'
+        + ' This gives you the ability to use error edges on the download step'
+        + ' (e.g. to handle 404 errors).',
     style: {
         borderColor: 'green',
     },
@@ -55,20 +55,7 @@ var details = function () { return ({
     sidebarPosition: -1,
     icon: 'faArrowDown',
     skipAutoDownload: true,
-    inputs: [
-        {
-            label: 'Reset skipAutoDownload',
-            name: 'resetSkipAutoDownload',
-            type: 'boolean',
-            defaultValue: 'true',
-            inputUI: {
-                type: 'switch',
-            },
-            tooltip: "Reset the skipAutoDownload variable back to false after downloading."
-                + " This means subsequent plugins will use the automatic download behaviour as normal."
-                + " Disable this if you want to keep manual control for the rest of the flow.",
-        },
-    ],
+    inputs: [],
     outputs: [
         {
             number: 1,
@@ -95,15 +82,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 _a.sent();
                 args.jobLog('Download complete');
-                if (String(args.inputs.resetSkipAutoDownload) === 'true') {
-                    if (!args.variables.user) {
-                        // eslint-disable-next-line no-param-reassign
-                        args.variables.user = {};
-                    }
-                    // eslint-disable-next-line no-param-reassign
-                    args.variables.user.skipAutoDownload = 'false';
-                    args.jobLog('Reset skipAutoDownload to false');
-                }
                 return [2 /*return*/, {
                         outputFileObj: {
                             _id: filePath,

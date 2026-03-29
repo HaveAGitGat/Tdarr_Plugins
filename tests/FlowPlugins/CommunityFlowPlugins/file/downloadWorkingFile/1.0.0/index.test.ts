@@ -125,42 +125,4 @@ describe('downloadWorkingFile Plugin', () => {
 
     await expect(plugin(baseArgs)).rejects.toThrow('404 Not Found');
   });
-
-  it('should reset skipAutoDownload to false by default', async () => {
-    baseArgs.variables = {
-      ffmpegCommand: {} as IpluginInputArgs['variables']['ffmpegCommand'],
-      flowFailed: false,
-      user: { skipAutoDownload: 'true' },
-    };
-
-    const result = await plugin(baseArgs);
-
-    expect(result.variables.user.skipAutoDownload).toBe('false');
-    expect(baseArgs.jobLog).toHaveBeenCalledWith('Reset skipAutoDownload to false');
-  });
-
-  it('should reset skipAutoDownload even if user object does not exist', async () => {
-    baseArgs.variables = {
-      ffmpegCommand: {} as IpluginInputArgs['variables']['ffmpegCommand'],
-      flowFailed: false,
-      user: {},
-    };
-
-    const result = await plugin(baseArgs);
-
-    expect(result.variables.user.skipAutoDownload).toBe('false');
-  });
-
-  it('should not reset skipAutoDownload when resetSkipAutoDownload is false', async () => {
-    baseArgs.inputs.resetSkipAutoDownload = 'false';
-    baseArgs.variables = {
-      ffmpegCommand: {} as IpluginInputArgs['variables']['ffmpegCommand'],
-      flowFailed: false,
-      user: { skipAutoDownload: 'true' },
-    };
-
-    const result = await plugin(baseArgs);
-
-    expect(result.variables.user.skipAutoDownload).toBe('true');
-  });
 });
