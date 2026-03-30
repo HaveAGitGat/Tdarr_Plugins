@@ -1,5 +1,25 @@
 import os from 'os';
+import fs from 'fs';
+import path from 'path';
 import { IpluginInputArgs } from './interfaces/interfaces';
+
+const getVaapiRenderDevice = (): string => {
+  const defaultDevice = '/dev/dri/renderD128';
+  try {
+    const driDir = '/dev/dri';
+    if (!fs.existsSync(driDir)) {
+      return defaultDevice;
+    }
+    const files = fs.readdirSync(driDir);
+    const renderDevices = files
+      .filter((f) => f.startsWith('renderD'))
+      .sort()
+      .map((f) => path.join(driDir, f));
+    return renderDevices.length > 0 ? renderDevices[0] : defaultDevice;
+  } catch (err) {
+    return defaultDevice;
+  }
+};
 
 export const hasEncoder = async ({
   ffmpegPath,
@@ -192,6 +212,17 @@ export const getEncoder = async ({
     args.workerType
     && args.workerType.includes('gpu')
     && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec))) {
+    const vaapiDevice = getVaapiRenderDevice();
+    const vaapiInputArgs = [
+      '-hwaccel',
+      'vaapi',
+      '-hwaccel_device',
+      vaapiDevice,
+      '-hwaccel_output_format',
+      'vaapi',
+    ];
+    const vaapiFilter = '-vf format=nv12,hwupload';
+
     const gpuEncoders: IgpuEncoder[] = [
       {
         encoder: 'hevc_nvenc',
@@ -234,17 +265,10 @@ export const getEncoder = async ({
       },
       {
         encoder: 'hevc_vaapi',
-        inputArgs: [
-          '-hwaccel',
-          'vaapi',
-          '-hwaccel_device',
-          '/dev/dri/renderD128',
-          '-hwaccel_output_format',
-          'vaapi',
-        ],
+        inputArgs: vaapiInputArgs,
         outputArgs: [],
         enabled: false,
-        filter: '-vf format=nv12,hwupload',
+        filter: vaapiFilter,
       },
       {
         encoder: 'hevc_videotoolbox',
@@ -331,9 +355,9 @@ export const getEncoder = async ({
       {
         encoder: 'av1_vaapi',
         enabled: false,
-        inputArgs: [],
+        inputArgs: vaapiInputArgs,
         outputArgs: [],
-        filter: '',
+        filter: vaapiFilter,
       },
     ];
 
