@@ -26,6 +26,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
   beforeEach(() => {
     baseArgs = {
       inputs: {
+        cropMode: 'most_common',
         cropThreshold: '24',
         sampleCount: '5',
         framesPerSample: '30',
@@ -195,7 +196,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
     });
 
-    it('should use the most common crop value across samples', () => {
+    it('should use the most common crop value across samples by default', () => {
       let callCount = 0;
       childProcess.execSync.mockImplementation(() => {
         callCount += 1;
@@ -210,6 +211,46 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
 
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('crop=1920:800:0:140');
+    });
+
+    it('should use minimum crop (least aggressive) when cropMode is minimum', () => {
+      baseArgs.inputs.cropMode = 'minimum';
+      let callCount = 0;
+      childProcess.execSync.mockImplementation(() => {
+        callCount += 1;
+        if (callCount <= 3) {
+          // Smaller content area (more aggressive crop)
+          return makeCropdetectOutput(1920, 800, 0, 140, 30);
+        }
+        // Larger content area (less aggressive crop) - this should be picked
+        return makeCropdetectOutput(1920, 900, 0, 90, 30);
+      });
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('crop=1920:900:0:90');
+    });
+
+    it('should use maximum crop (most aggressive) when cropMode is maximum', () => {
+      baseArgs.inputs.cropMode = 'maximum';
+      let callCount = 0;
+      childProcess.execSync.mockImplementation(() => {
+        callCount += 1;
+        if (callCount <= 3) {
+          // Smaller content area (more aggressive crop) - this should be picked
+          return makeCropdetectOutput(1920, 800, 0, 140, 30);
+        }
+        // Larger content area (less aggressive crop)
+        return makeCropdetectOutput(1920, 900, 0, 90, 30);
+      });
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
       const videoStream = result.variables.ffmpegCommand.streams[0];
       expect(videoStream.outputArgs).toContain('crop=1920:800:0:140');
     });

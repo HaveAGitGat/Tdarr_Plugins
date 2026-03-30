@@ -19,6 +19,24 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Crop Mode',
+            name: 'cropMode',
+            type: 'string',
+            defaultValue: 'most_common',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'most_common',
+                    'minimum',
+                    'maximum',
+                ],
+            },
+            tooltip: 'How to select the final crop from all detected values.'
+                + ' "most_common" picks the crop value that appears most often across samples.'
+                + ' "minimum" picks the least aggressive crop (preserves the most content).'
+                + ' "maximum" picks the most aggressive crop (removes the most black bars).',
+        },
+        {
             label: 'Crop Threshold',
             name: 'cropThreshold',
             type: 'number',
@@ -86,9 +104,30 @@ var parseCropValues = function (output) {
     }
     return results;
 };
-var getMostCommonCrop = function (crops) {
+var selectCrop = function (crops, mode) {
     if (crops.length === 0)
         return null;
+    if (mode === 'minimum') {
+        // Least aggressive crop: largest w and h (preserves the most content)
+        var result = crops[0];
+        for (var i = 1; i < crops.length; i += 1) {
+            if ((crops[i].w * crops[i].h) > (result.w * result.h)) {
+                result = crops[i];
+            }
+        }
+        return result;
+    }
+    if (mode === 'maximum') {
+        // Most aggressive crop: smallest w and h (removes the most black bars)
+        var result = crops[0];
+        for (var i = 1; i < crops.length; i += 1) {
+            if ((crops[i].w * crops[i].h) < (result.w * result.h)) {
+                result = crops[i];
+            }
+        }
+        return result;
+    }
+    // Default: most_common
     var counts = new Map();
     for (var i = 0; i < crops.length; i += 1) {
         var key = "".concat(crops[i].w, ":").concat(crops[i].h, ":").concat(crops[i].x, ":").concat(crops[i].y);
@@ -119,6 +158,7 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     var childProcess = require('child_process');
+    var cropMode = String(args.inputs.cropMode) || 'most_common';
     var cropThreshold = Math.max(0, Math.min(255, Number(args.inputs.cropThreshold) || 24));
     var sampleCount = Math.max(1, Number(args.inputs.sampleCount) || 5);
     var framesPerSample = Math.max(1, Number(args.inputs.framesPerSample) || 30);
@@ -180,7 +220,7 @@ var plugin = function (args) {
             variables: args.variables,
         };
     }
-    var crop = getMostCommonCrop(allCrops);
+    var crop = selectCrop(allCrops, cropMode);
     if (!crop) {
         args.jobLog('Could not determine consistent crop values');
         return {

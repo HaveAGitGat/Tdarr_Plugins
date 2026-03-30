@@ -22,6 +22,24 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
+      label: 'Crop Mode',
+      name: 'cropMode',
+      type: 'string',
+      defaultValue: 'most_common',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'most_common',
+          'minimum',
+          'maximum',
+        ],
+      },
+      tooltip: 'How to select the final crop from all detected values.'
+        + ' "most_common" picks the crop value that appears most often across samples.'
+        + ' "minimum" picks the least aggressive crop (preserves the most content).'
+        + ' "maximum" picks the most aggressive crop (removes the most black bars).',
+    },
+    {
       label: 'Crop Threshold',
       name: 'cropThreshold',
       type: 'number',
@@ -99,9 +117,32 @@ const parseCropValues = (output: string): ICropValues[] => {
   return results;
 };
 
-const getMostCommonCrop = (crops: ICropValues[]): ICropValues | null => {
+const selectCrop = (crops: ICropValues[], mode: string): ICropValues | null => {
   if (crops.length === 0) return null;
 
+  if (mode === 'minimum') {
+    // Least aggressive crop: largest w and h (preserves the most content)
+    let result = crops[0];
+    for (let i = 1; i < crops.length; i += 1) {
+      if ((crops[i].w * crops[i].h) > (result.w * result.h)) {
+        result = crops[i];
+      }
+    }
+    return result;
+  }
+
+  if (mode === 'maximum') {
+    // Most aggressive crop: smallest w and h (removes the most black bars)
+    let result = crops[0];
+    for (let i = 1; i < crops.length; i += 1) {
+      if ((crops[i].w * crops[i].h) < (result.w * result.h)) {
+        result = crops[i];
+      }
+    }
+    return result;
+  }
+
+  // Default: most_common
   const counts = new Map<string, { count: number; crop: ICropValues }>();
 
   for (let i = 0; i < crops.length; i += 1) {
@@ -137,6 +178,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const childProcess = require('child_process');
 
+  const cropMode = String(args.inputs.cropMode) || 'most_common';
   const cropThreshold = Math.max(0, Math.min(255, Number(args.inputs.cropThreshold) || 24));
   const sampleCount = Math.max(1, Number(args.inputs.sampleCount) || 5);
   const framesPerSample = Math.max(1, Number(args.inputs.framesPerSample) || 30);
@@ -211,7 +253,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     };
   }
 
-  const crop = getMostCommonCrop(allCrops);
+  const crop = selectCrop(allCrops, cropMode);
 
   if (!crop) {
     args.jobLog('Could not determine consistent crop values');
