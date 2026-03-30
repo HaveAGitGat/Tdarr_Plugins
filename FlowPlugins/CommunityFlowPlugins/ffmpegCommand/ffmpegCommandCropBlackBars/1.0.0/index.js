@@ -22,17 +22,17 @@ var details = function () { return ({
             label: 'Crop Mode',
             name: 'cropMode',
             type: 'string',
-            defaultValue: 'most_common',
+            defaultValue: 'mostCommon',
             inputUI: {
                 type: 'dropdown',
                 options: [
-                    'most_common',
+                    'mostCommon',
                     'minimum',
                     'maximum',
                 ],
             },
             tooltip: 'How to select the final crop from all detected values.'
-                + ' "most_common" picks the crop value that appears most often across samples.'
+                + ' "mostCommon" picks the crop value that appears most often across samples.'
                 + ' "minimum" picks the least aggressive crop (preserves the most content).'
                 + ' "maximum" picks the most aggressive crop (removes the most black bars).',
         },
@@ -127,7 +127,7 @@ var selectCrop = function (crops, mode) {
         }
         return result;
     }
-    // Default: most_common
+    // Default: mostCommon
     var counts = new Map();
     for (var i = 0; i < crops.length; i += 1) {
         var key = "".concat(crops[i].w, ":").concat(crops[i].h, ":").concat(crops[i].x, ":").concat(crops[i].y);
@@ -158,7 +158,7 @@ var plugin = function (args) {
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     var childProcess = require('child_process');
-    var cropMode = String(args.inputs.cropMode) || 'most_common';
+    var cropMode = String(args.inputs.cropMode) || 'mostCommon';
     var cropThreshold = Math.max(0, Math.min(255, Number(args.inputs.cropThreshold) || 24));
     var sampleCount = Math.max(1, Number(args.inputs.sampleCount) || 5);
     var framesPerSample = Math.max(1, Number(args.inputs.framesPerSample) || 30);

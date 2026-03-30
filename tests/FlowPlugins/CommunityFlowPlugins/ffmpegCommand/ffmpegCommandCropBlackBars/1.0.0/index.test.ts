@@ -26,7 +26,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
   beforeEach(() => {
     baseArgs = {
       inputs: {
-        cropMode: 'most_common',
+        cropMode: 'mostCommon',
         cropThreshold: '24',
         sampleCount: '5',
         framesPerSample: '30',
