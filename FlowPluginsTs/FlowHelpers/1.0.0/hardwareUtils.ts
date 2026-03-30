@@ -212,6 +212,17 @@ export const getEncoder = async ({
     args.workerType
     && args.workerType.includes('gpu')
     && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec))) {
+    const vaapiDevice = getVaapiRenderDevice();
+    const vaapiInputArgs = [
+      '-hwaccel',
+      'vaapi',
+      '-hwaccel_device',
+      vaapiDevice,
+      '-hwaccel_output_format',
+      'vaapi',
+    ];
+    const vaapiFilter = '-vf format=nv12,hwupload';
+
     const gpuEncoders: IgpuEncoder[] = [
       {
         encoder: 'hevc_nvenc',
@@ -254,17 +265,10 @@ export const getEncoder = async ({
       },
       {
         encoder: 'hevc_vaapi',
-        inputArgs: [
-          '-hwaccel',
-          'vaapi',
-          '-hwaccel_device',
-          getVaapiRenderDevice(),
-          '-hwaccel_output_format',
-          'vaapi',
-        ],
+        inputArgs: vaapiInputArgs,
         outputArgs: [],
         enabled: false,
-        filter: '-vf format=nv12,hwupload',
+        filter: vaapiFilter,
       },
       {
         encoder: 'hevc_videotoolbox',
@@ -351,16 +355,9 @@ export const getEncoder = async ({
       {
         encoder: 'av1_vaapi',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'vaapi',
-          '-hwaccel_device',
-          getVaapiRenderDevice(),
-          '-hwaccel_output_format',
-          'vaapi',
-        ],
+        inputArgs: vaapiInputArgs,
         outputArgs: [],
-        filter: '-vf format=nv12,hwupload',
+        filter: vaapiFilter,
       },
     ];
 
