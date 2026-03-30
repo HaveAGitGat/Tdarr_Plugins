@@ -1,5 +1,25 @@
 import os from 'os';
+import fs from 'fs';
+import path from 'path';
 import { IpluginInputArgs } from './interfaces/interfaces';
+
+const getVaapiRenderDevice = (): string => {
+  const defaultDevice = '/dev/dri/renderD128';
+  try {
+    const driDir = '/dev/dri';
+    if (!fs.existsSync(driDir)) {
+      return defaultDevice;
+    }
+    const files = fs.readdirSync(driDir);
+    const renderDevices = files
+      .filter((f) => f.startsWith('renderD'))
+      .sort()
+      .map((f) => path.join(driDir, f));
+    return renderDevices.length > 0 ? renderDevices[0] : defaultDevice;
+  } catch (err) {
+    return defaultDevice;
+  }
+};
 
 export const hasEncoder = async ({
   ffmpegPath,
@@ -238,7 +258,7 @@ export const getEncoder = async ({
           '-hwaccel',
           'vaapi',
           '-hwaccel_device',
-          '/dev/dri/renderD128',
+          getVaapiRenderDevice(),
           '-hwaccel_output_format',
           'vaapi',
         ],
@@ -331,9 +351,16 @@ export const getEncoder = async ({
       {
         encoder: 'av1_vaapi',
         enabled: false,
-        inputArgs: [],
+        inputArgs: [
+          '-hwaccel',
+          'vaapi',
+          '-hwaccel_device',
+          getVaapiRenderDevice(),
+          '-hwaccel_output_format',
+          'vaapi',
+        ],
         outputArgs: [],
-        filter: '',
+        filter: '-vf format=nv12,hwupload',
       },
     ];
 
