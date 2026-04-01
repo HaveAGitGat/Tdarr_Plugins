@@ -1,5 +1,5 @@
 module.exports.dependencies = [
-  'touch',
+  'touch@3.1.1',
 ];
 
 // tdarrSkipTest
