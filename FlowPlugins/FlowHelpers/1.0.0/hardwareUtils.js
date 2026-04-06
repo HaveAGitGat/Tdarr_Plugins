@@ -190,7 +190,8 @@ var getBestNvencDevice = function (_a) {
                 try {
                     var cmd_gpu = "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ".concat(gpui);
                     result_util = parseInt(execSync(cmd_gpu), 10);
-                    if (!Number.isNaN(result_util)) { // != "No devices were found") {
+                    if (!Number.isNaN(result_util)) {
+                        // != "No devices were found") {
                         args.jobLog("GPU ".concat(gpui, " : Utilization ").concat(result_util, "%\n"));
                         if (result_util < lowest_gpu_util) {
                             gpu_num = gpui;
@@ -214,7 +215,8 @@ var getBestNvencDevice = function (_a) {
 };
 exports.getBestNvencDevice = getBestNvencDevice;
 var encoderFilter = function (encoder, targetCodec) {
-    if (targetCodec === 'hevc' && (encoder.includes('hevc') || encoder.includes('h265'))) {
+    if (targetCodec === 'hevc'
+        && (encoder.includes('hevc') || encoder.includes('h265'))) {
         return true;
     }
     if (targetCodec === 'h264' && encoder.includes('h264')) {
@@ -226,7 +228,7 @@ var encoderFilter = function (encoder, targetCodec) {
     return false;
 };
 var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var supportedGpuEncoders, vaapiDevice, vaapiInputArgs, vaapiFilter, gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _c, enabledDevices, res;
+    var supportedGpuEncoders, qsvInputArgs, vaapiDevice, vaapiInputArgs, vaapiFilter, gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _c, enabledDevices, res;
     var targetCodec = _b.targetCodec, hardwareEncoding = _b.hardwareEncoding, hardwareType = _b.hardwareType, args = _b.args;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -234,7 +236,9 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                 supportedGpuEncoders = ['hevc', 'h264', 'av1'];
                 if (!(args.workerType
                     && args.workerType.includes('gpu')
-                    && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec)))) return [3 /*break*/, 5];
+                    && hardwareEncoding
+                    && supportedGpuEncoders.includes(targetCodec))) return [3 /*break*/, 5];
+                qsvInputArgs = ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'];
                 vaapiDevice = getVaapiRenderDevice();
                 vaapiInputArgs = [
                     '-hwaccel',
@@ -249,20 +253,14 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'hevc_nvenc',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'cuda',
-                        ],
+                        inputArgs: ['-hwaccel', 'cuda'],
                         outputArgs: [],
                         filter: '',
                     },
                     {
                         encoder: 'hevc_rkmpp',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'rkmpp',
-                        ],
+                        inputArgs: ['-hwaccel', 'rkmpp'],
                         outputArgs: [],
                         filter: '',
                     },
@@ -276,10 +274,8 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'hevc_qsv',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'qsv',
-                        ],
+                        inputArgs: qsvInputArgs,
+                        probeInputArgs: ['-hwaccel', 'qsv'],
                         outputArgs: __spreadArray([], (os_1.default.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []), true),
                         filter: '',
                     },
@@ -293,10 +289,7 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'hevc_videotoolbox',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'videotoolbox',
-                        ],
+                        inputArgs: ['-hwaccel', 'videotoolbox'],
                         outputArgs: [],
                         filter: '',
                     },
@@ -304,10 +297,7 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'h264_nvenc',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'cuda',
-                        ],
+                        inputArgs: ['-hwaccel', 'cuda'],
                         outputArgs: [],
                         filter: '',
                     },
@@ -321,30 +311,22 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'h264_qsv',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'qsv',
-                        ],
+                        inputArgs: qsvInputArgs,
+                        probeInputArgs: ['-hwaccel', 'qsv'],
                         outputArgs: [],
                         filter: '',
                     },
                     {
                         encoder: 'h264_rkmpp',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'rkmpp',
-                        ],
+                        inputArgs: ['-hwaccel', 'rkmpp'],
                         outputArgs: [],
                         filter: '',
                     },
                     {
                         encoder: 'h264_videotoolbox',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'videotoolbox',
-                        ],
+                        inputArgs: ['-hwaccel', 'videotoolbox'],
                         outputArgs: [],
                         filter: '',
                     },
@@ -366,7 +348,8 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'av1_qsv',
                         enabled: false,
-                        inputArgs: [],
+                        inputArgs: qsvInputArgs,
+                        probeInputArgs: ['-hwaccel', 'qsv'],
                         outputArgs: [],
                         filter: '',
                     },
@@ -397,7 +380,7 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                 return [4 /*yield*/, (0, exports.hasEncoder)({
                         ffmpegPath: args.ffmpegPath,
                         encoder: gpuEncoder.encoder,
-                        inputArgs: gpuEncoder.inputArgs,
+                        inputArgs: gpuEncoder.probeInputArgs || gpuEncoder.inputArgs,
                         outputArgs: gpuEncoder.outputArgs,
                         filter: gpuEncoder.filter,
                         args: args,
