@@ -162,15 +162,29 @@ function generate_crop_values(file, otherArguments) {
     log: ``,
   };
 
+  //parse cropdetect output in Node.js instead of awk/tail (cross-platform)
+  const parseCropdetect = function(cmd) {
+    const output = execSync(cmd, { encoding: 'utf-8' });
+    const lines = output.split('\n')
+      .filter(function(line) { return line.includes('crop='); })
+      .map(function(line) {
+        const match = line.match(/crop=\S+/);
+        return match ? match[0] : null;
+      })
+      .filter(Boolean);
+    return lines.slice(-240).join('\n');
+  };
+
   //create crop value
   if (!fs.existsSync(`${cropfile}`)) {
     returns.log += `Creating crop values...\n`;
-    execSync(
-      `${otherArguments.ffmpegPath} -ss 300 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 > \"${cropfile}\"`
+    let cropData = parseCropdetect(
+      `"${otherArguments.ffmpegPath}" -ss 300 -i "${source}" -frames:v 240 -vf cropdetect -f null - 2>&1`
     );
-    execSync(
-      `${otherArguments.ffmpegPath} -ss 1200 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 >> \"${cropfile}\"`
+    cropData += '\n' + parseCropdetect(
+      `"${otherArguments.ffmpegPath}" -ss 1200 -i "${source}" -frames:v 240 -vf cropdetect -f null - 2>&1`
     );
+    fs.writeFileSync(cropfile, cropData);
   } else {
     returns.log += `Crop values already exist\n`;
   }

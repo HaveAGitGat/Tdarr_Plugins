@@ -85,7 +85,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 args.jobLog('File has changed, replacing original file');
                 currentPath = args.inputFileObj._id;
-                orignalFolder = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                orignalFolder = (0, fileUtils_1.getFileAbsoluteDir)(args.originalLibraryFile._id);
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 newPath = "".concat(orignalFolder, "/").concat(fileName, ".").concat(container);

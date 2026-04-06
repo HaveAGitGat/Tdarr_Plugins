@@ -1,6 +1,6 @@
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileAbosluteDir, getFileName,
+  getContainer, getFileAbsoluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -265,7 +265,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     // Only if there is a rename to execute
     if (fileToRename !== undefined) {
-      newPath = `${getFileAbosluteDir(currentFileName)
+      newPath = `${getFileAbsoluteDir(currentFileName)
       }/${getFileName(fileToRename.newPath)
       }.${getContainer(fileToRename.newPath)}`;
 
