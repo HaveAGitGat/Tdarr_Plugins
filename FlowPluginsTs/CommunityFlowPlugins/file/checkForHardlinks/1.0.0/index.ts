@@ -14,7 +14,7 @@ const details = (): IpluginDetails => ({
   style: {
     borderColor: 'orange',
   },
-  tags: 'video',
+  tags: '',
   isStartPlugin: false,
   pType: '',
   requiresVersion: '2.11.01',
