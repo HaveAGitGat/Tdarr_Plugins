@@ -130,6 +130,31 @@ var details = function () { return ({
             tooltip: 'Specify whether to set crf (or qp for GPU encoding)',
         },
         {
+            label: 'Enable QSV global_quality (instead of qp)',
+            name: 'qsvGlobalQuality',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'hardwareType',
+                                    value: 'qsv',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'For QSV encoders, use -global_quality instead of -qp for quality-based rate control',
+        },
+        {
             label: 'FFmpeg Quality',
             name: 'ffmpegQuality',
             type: 'number',
@@ -155,6 +180,129 @@ var details = function () { return ({
             tooltip: 'Specify ffmpeg quality crf (or qp for GPU encoding)',
         },
         {
+            label: 'QSV Global Quality',
+            name: 'qsvGlobalQualityValue',
+            type: 'number',
+            defaultValue: '25',
+            inputUI: {
+                type: 'slider',
+                sliderOptions: {
+                    min: 1,
+                    max: 51,
+                },
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'qsvGlobalQuality',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                                {
+                                    name: 'hardwareType',
+                                    value: 'qsv',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'When using QSV encoders with global_quality, this sets the global_quality value instead of qp',
+        },
+        {
+            label: 'QSV Look Ahead',
+            name: 'qsvLookAhead',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'hardwareType',
+                                    value: 'qsv',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Enable QSV look_ahead by setting this to 1',
+        },
+        {
+            label: 'QSV Extended Bitrate Control',
+            name: 'qsvExtBrc',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'hardwareType',
+                                    value: 'qsv',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Enable QSV extbrc. Required for look_ahead_depth on supported QSV encoders',
+        },
+        {
+            label: 'QSV Look Ahead Depth',
+            name: 'qsvLookAheadDepth',
+            type: 'number',
+            defaultValue: '0',
+            inputUI: {
+                type: 'slider',
+                sliderOptions: {
+                    min: 0,
+                    max: 100,
+                },
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'hardwareType',
+                                    value: 'qsv',
+                                    condition: '===',
+                                },
+                                {
+                                    name: 'qsvLookAhead',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                                {
+                                    name: 'qsvExtBrc',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Set QSV look_ahead_depth when look_ahead and extbrc are enabled',
+        },
+        {
             label: 'Hardware Encoding',
             name: 'hardwareEncoding',
             type: 'boolean',
@@ -171,14 +319,7 @@ var details = function () { return ({
             defaultValue: 'auto',
             inputUI: {
                 type: 'dropdown',
-                options: [
-                    'auto',
-                    'nvenc',
-                    'rkmpp',
-                    'qsv',
-                    'vaapi',
-                    'videotoolbox',
-                ],
+                options: ['auto', 'nvenc', 'rkmpp', 'qsv', 'vaapi', 'videotoolbox'],
             },
             tooltip: 'Specify codec of the output file',
         },
@@ -211,9 +352,8 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
+    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, qsvGlobalQuality, qsvGlobalQualityValue, qsvLookAhead, qsvExtBrc, qsvLookAheadDepth, forceEncoding, hardwareEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
     var _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -235,14 +375,18 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a = args.inputs, ffmpegPresetEnabled = _a.ffmpegPresetEnabled, ffmpegQualityEnabled = _a.ffmpegQualityEnabled;
                 ffmpegPreset = String(args.inputs.ffmpegPreset);
                 ffmpegQuality = String(args.inputs.ffmpegQuality);
+                qsvGlobalQuality = args.inputs.qsvGlobalQuality === true;
+                qsvGlobalQualityValue = String(args.inputs.qsvGlobalQualityValue);
+                qsvLookAhead = args.inputs.qsvLookAhead === true;
+                qsvExtBrc = args.inputs.qsvExtBrc === true;
+                qsvLookAheadDepth = Number(args.inputs.qsvLookAheadDepth);
                 forceEncoding = args.inputs.forceEncoding === true;
-                hardwarEncoding = args.inputs.hardwareEncoding === true;
-                if (!(forceEncoding
-                    || stream.codec_name !== targetCodec)) return [3 /*break*/, 3];
+                hardwareEncoding = args.inputs.hardwareEncoding === true;
+                if (!(forceEncoding || stream.codec_name !== targetCodec)) return [3 /*break*/, 3];
                 args.variables.ffmpegCommand.shouldProcess = true;
                 return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
                         targetCodec: targetCodec,
-                        hardwareEncoding: hardwarEncoding,
+                        hardwareEncoding: hardwareEncoding,
                         hardwareType: hardwareType,
                         args: args,
                     })];
@@ -251,8 +395,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
                 if (ffmpegQualityEnabled) {
                     if (encoderProperties.isGpu) {
-                        if (encoderProperties.encoder === 'hevc_qsv') {
-                            stream.outputArgs.push('-global_quality', ffmpegQuality);
+                        if (encoderProperties.encoder.includes('qsv') && qsvGlobalQuality) {
+                            stream.outputArgs.push('-global_quality', qsvGlobalQualityValue);
                         }
                         else {
                             stream.outputArgs.push('-qp', ffmpegQuality);
@@ -262,8 +406,19 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         stream.outputArgs.push('-crf', ffmpegQuality);
                     }
                 }
+                if (encoderProperties.encoder.includes('qsv')) {
+                    if (qsvExtBrc) {
+                        stream.outputArgs.push('-extbrc', '1');
+                    }
+                    if (qsvLookAhead) {
+                        stream.outputArgs.push('-look_ahead', '1');
+                        if (qsvExtBrc && qsvLookAheadDepth > 0) {
+                            stream.outputArgs.push('-look_ahead_depth', String(qsvLookAheadDepth));
+                        }
+                    }
+                }
                 if (ffmpegPresetEnabled) {
-                    if (targetCodec !== 'av1' && ffmpegPreset) {
+                    if (ffmpegPreset) {
                         presetToUse = ffmpegPreset;
                         // Convert CPU preset names to GPU-specific presets for hardware encoders
                         if (encoderProperties.isGpu) {

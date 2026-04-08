@@ -1,14 +1,17 @@
-import { plugin } from
-  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetVideoEncoder/1.0.0/index';
+// eslint-disable-next-line max-len
+import { plugin } from '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetVideoEncoder/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
 // Mock the getEncoder function from hardwareUtils
-jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils', () => ({
-  getEncoder: jest.fn(),
-}));
+jest.mock(
+  '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils',
+  () => ({
+    getEncoder: jest.fn(),
+  }),
+);
 
 describe('ffmpegCommandSetVideoEncoder Plugin', () => {
   let baseArgs: IpluginInputArgs;
@@ -18,7 +21,9 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
 
   beforeEach(() => {
     // Reset the mock
-    const { getEncoder } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils');
+    const {
+      getEncoder,
+    } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils');
     mockGetEncoder = getEncoder as jest.MockedFunction<
       typeof import('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils').getEncoder
     >;
@@ -37,6 +42,7 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         ffmpegPreset: 'fast',
         ffmpegQualityEnabled: true,
         ffmpegQuality: '25',
+        qsvExtBrc: false,
         hardwareEncoding: true,
         hardwareType: 'auto',
         hardwareDecoding: true,
@@ -142,47 +148,46 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
   });
 
   describe('Codec Types', () => {
-    it.each([
-      'hevc',
-      'h264',
-      'av1',
-    ])('should handle %s codec', async (codec) => {
-      baseArgs.inputs.outputCodec = codec;
-      let expectedEncoder: string;
-      if (codec === 'hevc') {
-        expectedEncoder = 'libx265';
-      } else if (codec === 'h264') {
-        expectedEncoder = 'libx264';
-      } else {
-        expectedEncoder = 'libsvtav1';
-      }
-      mockGetEncoder.mockResolvedValue({
-        encoder: expectedEncoder,
-        inputArgs: [],
-        outputArgs: [],
-        isGpu: false,
-        enabledDevices: [],
-      });
+    it.each(['hevc', 'h264', 'av1'])(
+      'should handle %s codec',
+      async (codec) => {
+        baseArgs.inputs.outputCodec = codec;
+        let expectedEncoder: string;
+        if (codec === 'hevc') {
+          expectedEncoder = 'libx265';
+        } else if (codec === 'h264') {
+          expectedEncoder = 'libx264';
+        } else {
+          expectedEncoder = 'libsvtav1';
+        }
+        mockGetEncoder.mockResolvedValue({
+          encoder: expectedEncoder,
+          inputArgs: [],
+          outputArgs: [],
+          isGpu: false,
+          enabledDevices: [],
+        });
 
-      const result = await plugin(baseArgs);
+        const result = await plugin(baseArgs);
 
-      expect(mockGetEncoder).toHaveBeenCalledWith({
-        targetCodec: codec,
-        hardwareEncoding: true,
-        hardwareType: 'auto',
-        args: baseArgs,
-      });
+        expect(mockGetEncoder).toHaveBeenCalledWith({
+          targetCodec: codec,
+          hardwareEncoding: true,
+          hardwareType: 'auto',
+          args: baseArgs,
+        });
 
-      const videoStream = result.variables.ffmpegCommand.streams[0];
-      expect(videoStream.outputArgs).toContain(expectedEncoder);
-    });
+        const videoStream = result.variables.ffmpegCommand.streams[0];
+        expect(videoStream.outputArgs).toContain(expectedEncoder);
+      },
+    );
   });
 
   describe('Hardware Encoding Settings', () => {
-    it('should handle GPU encoding with QSV using global_quality', async () => {
+    it('should handle GPU encoding with QSV using qp by default', async () => {
       mockGetEncoder.mockResolvedValue({
         encoder: 'hevc_qsv',
-        inputArgs: ['-hwaccel', 'qsv'],
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
         outputArgs: ['-load_plugin', 'hevc_hw'],
         isGpu: true,
         enabledDevices: [],
@@ -192,9 +197,15 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
 
       const videoStream = result.variables.ffmpegCommand.streams[0];
       expect(videoStream.outputArgs).toContain('hevc_qsv');
-      expect(videoStream.outputArgs).toContain('-global_quality');
+      expect(videoStream.outputArgs).toContain('-qp');
       expect(videoStream.outputArgs).toContain('25');
-      expect(videoStream.inputArgs).toEqual(['-hwaccel', 'qsv']);
+      expect(videoStream.outputArgs).not.toContain('-global_quality');
+      expect(videoStream.inputArgs).toEqual([
+        '-hwaccel',
+        'qsv',
+        '-hwaccel_output_format',
+        'qsv',
+      ]);
     });
 
     it('should handle GPU encoding with NVENC using qp', async () => {
@@ -253,6 +264,158 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         args: baseArgs,
       });
     });
+
+    it('should use QSV global_quality when enabled', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.qsvGlobalQuality = true;
+      baseArgs.inputs.qsvGlobalQualityValue = '19';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: ['-load_plugin', 'hevc_hw'],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('-global_quality');
+      expect(videoStream.outputArgs).toContain('19');
+      expect(videoStream.outputArgs).not.toContain('-qp');
+    });
+
+    it('should use QSV global_quality for H264 QSV when enabled', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.outputCodec = 'h264';
+      baseArgs.inputs.qsvGlobalQuality = true;
+      baseArgs.inputs.qsvGlobalQualityValue = '21';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'h264_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('h264_qsv');
+      expect(videoStream.outputArgs).toContain('-global_quality');
+      expect(videoStream.outputArgs).toContain('21');
+      expect(videoStream.outputArgs).not.toContain('-qp');
+    });
+
+    it('should use QSV global_quality for AV1 QSV when enabled', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.outputCodec = 'av1';
+      baseArgs.inputs.qsvGlobalQuality = true;
+      baseArgs.inputs.qsvGlobalQualityValue = '20';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'av1_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('av1_qsv');
+      expect(videoStream.outputArgs).toContain('-global_quality');
+      expect(videoStream.outputArgs).toContain('20');
+      expect(videoStream.outputArgs).not.toContain('-qp');
+    });
+
+    it('should apply QSV look_ahead and look_ahead_depth when enabled', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.qsvLookAhead = true;
+      baseArgs.inputs.qsvExtBrc = true;
+      baseArgs.inputs.qsvLookAheadDepth = '40';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('-extbrc');
+      expect(videoStream.outputArgs).toContain('1');
+      expect(videoStream.outputArgs).toContain('-look_ahead');
+      expect(videoStream.outputArgs).toContain('1');
+      expect(videoStream.outputArgs).toContain('-look_ahead_depth');
+      expect(videoStream.outputArgs).toContain('40');
+    });
+
+    it('should apply QSV extbrc without requiring look_ahead', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.qsvExtBrc = true;
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('-extbrc');
+      expect(videoStream.outputArgs).toContain('1');
+      expect(videoStream.outputArgs).not.toContain('-look_ahead');
+      expect(videoStream.outputArgs).not.toContain('-look_ahead_depth');
+    });
+
+    it('should not apply QSV look_ahead_depth when look_ahead is disabled', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.qsvLookAhead = false;
+      baseArgs.inputs.qsvExtBrc = true;
+      baseArgs.inputs.qsvLookAheadDepth = '40';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).not.toContain('-look_ahead');
+      expect(videoStream.outputArgs).not.toContain('-look_ahead_depth');
+      expect(videoStream.outputArgs).not.toContain('40');
+    });
+
+    it('should not apply QSV look_ahead_depth when extbrc is disabled', async () => {
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.qsvLookAhead = true;
+      baseArgs.inputs.qsvExtBrc = false;
+      baseArgs.inputs.qsvLookAheadDepth = '40';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('-look_ahead');
+      expect(videoStream.outputArgs).toContain('1');
+      expect(videoStream.outputArgs).not.toContain('-extbrc');
+      expect(videoStream.outputArgs).not.toContain('-look_ahead_depth');
+      expect(videoStream.outputArgs).not.toContain('40');
+    });
   });
 
   describe('Quality and Preset Settings', () => {
@@ -276,7 +439,7 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
-    it('should not apply preset for av1 codec', async () => {
+    it('should apply preset for software av1 codec', async () => {
       baseArgs.inputs.outputCodec = 'av1';
       mockGetEncoder.mockResolvedValue({
         encoder: 'libsvtav1',
@@ -289,22 +452,54 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       const result = await plugin(baseArgs);
 
       const videoStream = result.variables.ffmpegCommand.streams[0];
-      expect(videoStream.outputArgs).not.toContain('-preset');
+      expect(videoStream.outputArgs).toContain('-preset');
+      expect(videoStream.outputArgs).toContain('fast');
+    });
+
+    it('should apply CPU-style preset directly for AV1 QSV encoders', async () => {
+      baseArgs.inputs.outputCodec = 'av1';
+      baseArgs.inputs.hardwareType = 'qsv';
+      baseArgs.inputs.ffmpegPreset = 'slow';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'av1_qsv',
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.outputArgs).toContain('-preset');
+      expect(videoStream.outputArgs).toContain('slow');
     });
 
     it('should handle different preset values for CPU encoders', async () => {
-      const presets = ['veryslow', 'slower', 'slow', 'medium', 'fast', 'faster', 'veryfast', 'superfast', 'ultrafast'];
+      const presets = [
+        'veryslow',
+        'slower',
+        'slow',
+        'medium',
+        'fast',
+        'faster',
+        'veryfast',
+        'superfast',
+        'ultrafast',
+      ];
 
-      await Promise.all(presets.map(async (preset) => {
-        baseArgs.inputs.ffmpegPreset = preset;
-        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+      await Promise.all(
+        presets.map(async (preset) => {
+          baseArgs.inputs.ffmpegPreset = preset;
+          baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
 
-        const result = await plugin(baseArgs);
+          const result = await plugin(baseArgs);
 
-        const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).toContain('-preset');
-        expect(videoStream.outputArgs).toContain(preset);
-      }));
+          const videoStream = result.variables.ffmpegCommand.streams[0];
+          expect(videoStream.outputArgs).toContain('-preset');
+          expect(videoStream.outputArgs).toContain(preset);
+        }),
+      );
     });
 
     it('should convert CPU presets to p1-p7 for NVENC encoders', async () => {
@@ -328,17 +523,19 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         ultrafast: 'p1',
       };
 
-      await Promise.all(Object.entries(presetMapping).map(async ([cpuPreset, gpuPreset]) => {
-        baseArgs.inputs.ffmpegPreset = cpuPreset;
-        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+      await Promise.all(
+        Object.entries(presetMapping).map(async ([cpuPreset, gpuPreset]) => {
+          baseArgs.inputs.ffmpegPreset = cpuPreset;
+          baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
 
-        const result = await plugin(baseArgs);
+          const result = await plugin(baseArgs);
 
-        const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).toContain('-preset');
-        expect(videoStream.outputArgs).toContain(gpuPreset);
-        expect(videoStream.outputArgs).not.toContain(cpuPreset);
-      }));
+          const videoStream = result.variables.ffmpegCommand.streams[0];
+          expect(videoStream.outputArgs).toContain('-preset');
+          expect(videoStream.outputArgs).toContain(gpuPreset);
+          expect(videoStream.outputArgs).not.toContain(cpuPreset);
+        }),
+      );
     });
 
     it('should convert CPU presets to quality/balanced/speed for AMF encoders', async () => {
@@ -362,17 +559,19 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         ultrafast: 'speed',
       };
 
-      await Promise.all(Object.entries(presetMapping).map(async ([cpuPreset, amfPreset]) => {
-        baseArgs.inputs.ffmpegPreset = cpuPreset;
-        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+      await Promise.all(
+        Object.entries(presetMapping).map(async ([cpuPreset, amfPreset]) => {
+          baseArgs.inputs.ffmpegPreset = cpuPreset;
+          baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
 
-        const result = await plugin(baseArgs);
+          const result = await plugin(baseArgs);
 
-        const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).toContain('-preset');
-        expect(videoStream.outputArgs).toContain(amfPreset);
-        expect(videoStream.outputArgs).not.toContain(cpuPreset);
-      }));
+          const videoStream = result.variables.ffmpegCommand.streams[0];
+          expect(videoStream.outputArgs).toContain('-preset');
+          expect(videoStream.outputArgs).toContain(amfPreset);
+          expect(videoStream.outputArgs).not.toContain(cpuPreset);
+        }),
+      );
     });
 
     it('should use CPU preset names directly for QSV encoders', async () => {
@@ -386,16 +585,18 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
 
       const presets = ['veryslow', 'slow', 'medium', 'fast', 'veryfast'];
 
-      await Promise.all(presets.map(async (preset) => {
-        baseArgs.inputs.ffmpegPreset = preset;
-        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+      await Promise.all(
+        presets.map(async (preset) => {
+          baseArgs.inputs.ffmpegPreset = preset;
+          baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
 
-        const result = await plugin(baseArgs);
+          const result = await plugin(baseArgs);
 
-        const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).toContain('-preset');
-        expect(videoStream.outputArgs).toContain(preset);
-      }));
+          const videoStream = result.variables.ffmpegCommand.streams[0];
+          expect(videoStream.outputArgs).toContain('-preset');
+          expect(videoStream.outputArgs).toContain(preset);
+        }),
+      );
     });
 
     it('should skip preset for VAAPI encoders (not supported)', async () => {
@@ -409,15 +610,17 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
 
       const presets = ['veryslow', 'slow', 'medium', 'fast', 'veryfast'];
 
-      await Promise.all(presets.map(async (preset) => {
-        baseArgs.inputs.ffmpegPreset = preset;
-        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+      await Promise.all(
+        presets.map(async (preset) => {
+          baseArgs.inputs.ffmpegPreset = preset;
+          baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
 
-        const result = await plugin(baseArgs);
+          const result = await plugin(baseArgs);
 
-        const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).not.toContain('-preset');
-      }));
+          const videoStream = result.variables.ffmpegCommand.streams[0];
+          expect(videoStream.outputArgs).not.toContain('-preset');
+        }),
+      );
     });
 
     it('should skip preset for rkmpp encoders (not supported)', async () => {
@@ -459,16 +662,18 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
     it('should handle different quality values', async () => {
       const qualityValues = ['18', '23', '28'];
 
-      await Promise.all(qualityValues.map(async (quality) => {
-        baseArgs.inputs.ffmpegQuality = quality;
-        baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
+      await Promise.all(
+        qualityValues.map(async (quality) => {
+          baseArgs.inputs.ffmpegQuality = quality;
+          baseArgs.variables.ffmpegCommand.streams[0].outputArgs = []; // Reset
 
-        const result = await plugin(baseArgs);
+          const result = await plugin(baseArgs);
 
-        const videoStream = result.variables.ffmpegCommand.streams[0];
-        expect(videoStream.outputArgs).toContain('-crf');
-        expect(videoStream.outputArgs).toContain(quality);
-      }));
+          const videoStream = result.variables.ffmpegCommand.streams[0];
+          expect(videoStream.outputArgs).toContain('-crf');
+          expect(videoStream.outputArgs).toContain(quality);
+        }),
+      );
     });
   });
 

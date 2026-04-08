@@ -29,12 +29,12 @@ export const hasEncoder = async ({
   filter,
   args,
 }: {
-  ffmpegPath: string,
-  encoder: string,
-  inputArgs: string[],
-  outputArgs: string[],
-  filter: string,
-  args: IpluginInputArgs,
+  ffmpegPath: string;
+  encoder: string;
+  inputArgs: string[];
+  outputArgs: string[];
+  filter: string;
+  args: IpluginInputArgs;
 }): Promise<boolean> => {
   const { spawn } = require('child_process');
   let isEnabled = false;
@@ -103,12 +103,13 @@ export const hasEncoder = async ({
 };
 
 interface IgpuEncoder {
-  encoder: string,
-  enabled: boolean,
+  encoder: string;
+  enabled: boolean;
 
-  inputArgs: string[],
-  outputArgs: string[],
-  filter: string,
+  inputArgs: string[];
+  probeInputArgs?: string[];
+  outputArgs: string[];
+  filter: string;
 }
 
 // credit to UNCode101 for this
@@ -116,8 +117,8 @@ export const getBestNvencDevice = ({
   args,
   nvencDevice,
 }: {
-  args: IpluginInputArgs
-  nvencDevice: IgpuEncoder,
+  args: IpluginInputArgs;
+  nvencDevice: IgpuEncoder;
 }): IgpuEncoder => {
   const { execSync } = require('child_process');
   let gpu_num = -1;
@@ -146,12 +147,15 @@ export const getBestNvencDevice = ({
     for (let gpui = 0; gpui < gpu_count; gpui += 1) {
       // Check if GPU # is in GPUs to exclude
       if (gpus_to_exclude.includes(String(gpui))) {
-        args.jobLog(`GPU ${gpui}: ${gpu_names[gpui]} is in exclusion list, will not be used!\n`);
+        args.jobLog(
+          `GPU ${gpui}: ${gpu_names[gpui]} is in exclusion list, will not be used!\n`,
+        );
       } else {
         try {
           const cmd_gpu = `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits -i ${gpui}`;
           result_util = parseInt(execSync(cmd_gpu), 10);
-          if (!Number.isNaN(result_util)) { // != "No devices were found") {
+          if (!Number.isNaN(result_util)) {
+            // != "No devices were found") {
             args.jobLog(`GPU ${gpui} : Utilization ${result_util}%\n`);
 
             if (result_util < lowest_gpu_util) {
@@ -160,7 +164,9 @@ export const getBestNvencDevice = ({
             }
           }
         } catch (error) {
-          args.jobLog(`Error in reading GPU ${gpui} Utilization\nError: ${error}\n`);
+          args.jobLog(
+            `Error in reading GPU ${gpui} Utilization\nError: ${error}\n`,
+          );
         }
       }
     }
@@ -176,11 +182,16 @@ export const getBestNvencDevice = ({
 };
 
 const encoderFilter = (encoder: string, targetCodec: string) => {
-  if (targetCodec === 'hevc' && (encoder.includes('hevc') || encoder.includes('h265'))) {
+  if (
+    targetCodec === 'hevc'
+    && (encoder.includes('hevc') || encoder.includes('h265'))
+  ) {
     return true;
-  } if (targetCodec === 'h264' && encoder.includes('h264')) {
+  }
+  if (targetCodec === 'h264' && encoder.includes('h264')) {
     return true;
-  } if (targetCodec === 'av1' && encoder.includes('av1')) {
+  }
+  if (targetCodec === 'av1' && encoder.includes('av1')) {
     return true;
   }
 
@@ -188,11 +199,11 @@ const encoderFilter = (encoder: string, targetCodec: string) => {
 };
 
 export interface IgetEncoder {
-  encoder: string,
-  inputArgs: string[],
-  outputArgs: string[],
-  isGpu: boolean,
-  enabledDevices: IgpuEncoder[],
+  encoder: string;
+  inputArgs: string[];
+  outputArgs: string[];
+  isGpu: boolean;
+  enabledDevices: IgpuEncoder[];
 }
 
 export const getEncoder = async ({
@@ -201,17 +212,20 @@ export const getEncoder = async ({
   hardwareType,
   args,
 }: {
-  targetCodec: string,
-  hardwareEncoding: boolean,
-  hardwareType: string,
-  args: IpluginInputArgs,
+  targetCodec: string;
+  hardwareEncoding: boolean;
+  hardwareType: string;
+  args: IpluginInputArgs;
 }): Promise<IgetEncoder> => {
   const supportedGpuEncoders = ['hevc', 'h264', 'av1'];
 
   if (
     args.workerType
     && args.workerType.includes('gpu')
-    && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec))) {
+    && hardwareEncoding
+    && supportedGpuEncoders.includes(targetCodec)
+  ) {
+    const qsvInputArgs = ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'];
     const vaapiDevice = getVaapiRenderDevice();
     const vaapiInputArgs = [
       '-hwaccel',
@@ -227,20 +241,14 @@ export const getEncoder = async ({
       {
         encoder: 'hevc_nvenc',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'cuda',
-        ],
+        inputArgs: ['-hwaccel', 'cuda'],
         outputArgs: [],
         filter: '',
       },
       {
         encoder: 'hevc_rkmpp',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'rkmpp',
-        ],
+        inputArgs: ['-hwaccel', 'rkmpp'],
         outputArgs: [],
         filter: '',
       },
@@ -254,10 +262,8 @@ export const getEncoder = async ({
       {
         encoder: 'hevc_qsv',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'qsv',
-        ],
+        inputArgs: qsvInputArgs,
+        probeInputArgs: ['-hwaccel', 'qsv'],
         outputArgs: [
           ...(os.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []),
         ],
@@ -273,10 +279,7 @@ export const getEncoder = async ({
       {
         encoder: 'hevc_videotoolbox',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'videotoolbox',
-        ],
+        inputArgs: ['-hwaccel', 'videotoolbox'],
         outputArgs: [],
         filter: '',
       },
@@ -285,10 +288,7 @@ export const getEncoder = async ({
       {
         encoder: 'h264_nvenc',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'cuda',
-        ],
+        inputArgs: ['-hwaccel', 'cuda'],
         outputArgs: [],
         filter: '',
       },
@@ -302,30 +302,22 @@ export const getEncoder = async ({
       {
         encoder: 'h264_qsv',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'qsv',
-        ],
+        inputArgs: qsvInputArgs,
+        probeInputArgs: ['-hwaccel', 'qsv'],
         outputArgs: [],
         filter: '',
       },
       {
         encoder: 'h264_rkmpp',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'rkmpp',
-        ],
+        inputArgs: ['-hwaccel', 'rkmpp'],
         outputArgs: [],
         filter: '',
       },
       {
         encoder: 'h264_videotoolbox',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'videotoolbox',
-        ],
+        inputArgs: ['-hwaccel', 'videotoolbox'],
         outputArgs: [],
         filter: '',
       },
@@ -348,7 +340,8 @@ export const getEncoder = async ({
       {
         encoder: 'av1_qsv',
         enabled: false,
-        inputArgs: [],
+        inputArgs: qsvInputArgs,
+        probeInputArgs: ['-hwaccel', 'qsv'],
         outputArgs: [],
         filter: '',
       },
@@ -367,7 +360,9 @@ export const getEncoder = async ({
       const idx = filteredGpuEncoders.findIndex((device) => device.encoder.includes(hardwareType));
 
       if (idx === -1) {
-        throw new Error(`Could not find encoder ${targetCodec} for hardware ${hardwareType}`);
+        throw new Error(
+          `Could not find encoder ${targetCodec} for hardware ${hardwareType}`,
+        );
       }
 
       return {
@@ -385,14 +380,16 @@ export const getEncoder = async ({
       gpuEncoder.enabled = await hasEncoder({
         ffmpegPath: args.ffmpegPath,
         encoder: gpuEncoder.encoder,
-        inputArgs: gpuEncoder.inputArgs,
+        inputArgs: gpuEncoder.probeInputArgs || gpuEncoder.inputArgs,
         outputArgs: gpuEncoder.outputArgs,
         filter: gpuEncoder.filter,
         args,
       });
     }
 
-    const enabledDevices = filteredGpuEncoders.filter((device) => device.enabled === true);
+    const enabledDevices = filteredGpuEncoders.filter(
+      (device) => device.enabled === true,
+    );
 
     args.jobLog(JSON.stringify({ enabledDevices }));
 
@@ -427,7 +424,9 @@ export const getEncoder = async ({
     }
 
     if (!supportedGpuEncoders.includes(targetCodec)) {
-      args.jobLog(`Target codec ${targetCodec} is not supported for GPU encoding`);
+      args.jobLog(
+        `Target codec ${targetCodec} is not supported for GPU encoding`,
+      );
     }
   }
 
@@ -439,7 +438,8 @@ export const getEncoder = async ({
       isGpu: false,
       enabledDevices: [],
     };
-  } if (targetCodec === 'h264') {
+  }
+  if (targetCodec === 'h264') {
     return {
       encoder: 'libx264',
       inputArgs: [],
@@ -447,7 +447,8 @@ export const getEncoder = async ({
       isGpu: false,
       enabledDevices: [],
     };
-  } if (targetCodec === 'av1') {
+  }
+  if (targetCodec === 'av1') {
     return {
       encoder: 'libsvtav1',
       inputArgs: [],
