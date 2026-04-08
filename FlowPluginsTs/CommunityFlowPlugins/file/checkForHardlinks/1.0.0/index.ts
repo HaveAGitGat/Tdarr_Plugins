@@ -9,7 +9,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Check For Hardlinks',
-  description: 'Check if the original file has hardlinks (nlink > 1). Useful for detecting files that share'
+  description: 'Check if the working file has hardlinks (nlink > 1). Useful for detecting files that share'
   + ' data blocks on disk, allowing you to route hardlinked files differently in your flow.',
   style: {
     borderColor: 'orange',
@@ -39,7 +39,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const filePath = args.originalLibraryFile._id;
+  const filePath = args.inputFileObj._id;
 
   args.jobLog(`Checking hardlinks for: ${filePath}`);
 

@@ -64,7 +64,7 @@ describe('checkForHardlinks Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
-      expect(mockStat).toHaveBeenCalledWith(baseArgs.originalLibraryFile._id);
+      expect(mockStat).toHaveBeenCalledWith(baseArgs.inputFileObj._id);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         expect.stringContaining('3 link(s)'),
       );
@@ -109,7 +109,7 @@ describe('checkForHardlinks Plugin', () => {
       await plugin(baseArgs);
 
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining(baseArgs.originalLibraryFile._id),
+        expect.stringContaining(baseArgs.inputFileObj._id),
       );
     });
 

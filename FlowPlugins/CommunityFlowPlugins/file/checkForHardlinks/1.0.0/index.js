@@ -41,7 +41,7 @@ var fs_1 = require("fs");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check For Hardlinks',
-    description: 'Check if the original file has hardlinks (nlink > 1). Useful for detecting files that share'
+    description: 'Check if the working file has hardlinks (nlink > 1). Useful for detecting files that share'
         + ' data blocks on disk, allowing you to route hardlinked files differently in your flow.',
     style: {
         borderColor: 'orange',
@@ -74,7 +74,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                filePath = args.originalLibraryFile._id;
+                filePath = args.inputFileObj._id;
                 args.jobLog("Checking hardlinks for: ".concat(filePath));
                 return [4 /*yield*/, fs_1.promises.stat(filePath)];
             case 1:
