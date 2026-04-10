@@ -109,7 +109,6 @@ const details = (): IpluginDetails => ({
 });
 
 interface IAudioTrackInfo {
-  index: number;
   audioIndex: number;
   channels: number;
   lra: string;
@@ -131,8 +130,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lraSurround = String(args.inputs.lraSurround);
   const lraStereo = String(args.inputs.lraStereo);
   const targetTp = String(args.inputs.tp);
-  const bitrateStereo = String(args.inputs.bitrateStereo);
-  const bitrateSurround = String(args.inputs.bitrateSurround);
+  const sanitizeBitrate = (val: string): string => val.replace(/[^0-9]/g, '');
+  const bitrateStereo = sanitizeBitrate(String(args.inputs.bitrateStereo));
+  const bitrateSurround = sanitizeBitrate(String(args.inputs.bitrateSurround));
   const maxGain = parseFloat(String(args.inputs.maxGain));
 
   const container = getContainer(args.inputFileObj._id);
@@ -148,7 +148,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         const channels = stream.channels || 2;
         const isSurround = channels > 2;
         audioTracks.push({
-          index: stream.index ?? i,
           audioIndex: audioIdx,
           channels,
           lra: isSurround ? lraSurround : lraStereo,
