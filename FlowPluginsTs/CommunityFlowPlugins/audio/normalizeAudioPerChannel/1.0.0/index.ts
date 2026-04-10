@@ -30,12 +30,12 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: '-24.0',
       inputUI: { type: 'text' },
-      tooltip: `Target integrated loudness in LUFS (Loudness Units relative to Full Scale). \\n
-              Common values: \\n
-              -14.0 = Spotify / YouTube streaming standard \\n
-              -16.0 = Apple Music / AES streaming recommendation \\n
-              -23.0 = EBU R128 broadcast standard \\n
-              -24.0 = EBU R128 home cinema standard (default) \\n`,
+      tooltip: `Target integrated loudness in LUFS (Loudness Units relative to Full Scale). \n
+              Common values: \n
+              -14.0 = Spotify / YouTube streaming standard \n
+              -16.0 = Apple Music / AES streaming recommendation \n
+              -23.0 = EBU R128 broadcast standard \n
+              -24.0 = EBU R128 home cinema standard (default) \n`,
     },
     {
       label: 'LRA for Surround (5.1/7.1) tracks (LU)',
@@ -43,11 +43,11 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: '15.0',
       inputUI: { type: 'text' },
-      tooltip: `Loudness Range for surround tracks (channels > 2). \\n
-              Higher values preserve more of the original dynamic range. \\n
-              15.0 = cinematic feel, explosions remain impactful (default) \\n
-              11.0 = moderate compression \\n
-              7.0 = heavy compression, less dynamic \\n`,
+      tooltip: `Loudness Range for surround tracks (channels > 2). \n
+              Higher values preserve more of the original dynamic range. \n
+              15.0 = cinematic feel, explosions remain impactful (default) \n
+              11.0 = moderate compression \n
+              7.0 = heavy compression, less dynamic \n`,
     },
     {
       label: 'LRA for Stereo/Mono tracks (LU)',
@@ -55,11 +55,11 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: '7.0',
       inputUI: { type: 'text' },
-      tooltip: `Loudness Range for stereo and mono tracks (channels <= 2). \\n
-              Lower values produce more consistent volume between quiet and loud sections. \\n
-              7.0 = dialogue and action close in volume, good for TV/headphones (default) \\n
-              5.0 = very compressed, ideal for nighttime viewing \\n
-              11.0 = moderate dynamics \\n`,
+      tooltip: `Loudness Range for stereo and mono tracks (channels <= 2). \n
+              Lower values produce more consistent volume between quiet and loud sections. \n
+              7.0 = dialogue and action close in volume, good for TV/headphones (default) \n
+              5.0 = very compressed, ideal for nighttime viewing \n
+              11.0 = moderate dynamics \n`,
     },
     {
       label: 'Target True Peak (dBTP)',
@@ -67,10 +67,10 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: '-2.0',
       inputUI: { type: 'text' },
-      tooltip: `Maximum true peak level in dBTP (decibels True Peak). \\n
-              Should be kept below 0 dBTP to prevent clipping. \\n
-              -1.0 = EBU R128 / streaming recommended ceiling \\n
-              -2.0 = Conservative headroom for lossy codec safety (default) \\n`,
+      tooltip: `Maximum true peak level in dBTP (decibels True Peak). \n
+              Should be kept below 0 dBTP to prevent clipping. \n
+              -1.0 = EBU R128 / streaming recommended ceiling \n
+              -2.0 = Conservative headroom for lossy codec safety (default) \n`,
     },
     {
       label: 'Audio Bitrate Stereo (kbps)',
@@ -94,9 +94,9 @@ const details = (): IpluginDetails => ({
       type: 'string',
       defaultValue: '15',
       inputUI: { type: 'text' },
-      tooltip: `Maximum gain in Loudness Units that will be applied per track. \\n
-              If the required gain exceeds this value, the track is copied without \\n
-              normalization to avoid amplifying noise in mostly-quiet files. \\n
+      tooltip: `Maximum gain in Loudness Units that will be applied per track. \n
+              If the required gain exceeds this value, the track is copied without \n
+              normalization to avoid amplifying noise in mostly-quiet files. \n
               Defaults to 15`,
     },
   ],
@@ -255,7 +255,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       );
     }
 
-    const measured = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1));
+    let measured;
+    try {
+      measured = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1));
+    } catch (e) {
+      throw new Error(
+        `Failed to parse loudnorm JSON for track #${track.audioIndex}: ${(e as Error).message}`,
+      );
+    }
+
     args.jobLog(`Track #${track.audioIndex} measured: ${JSON.stringify(measured)}`);
 
     const gainNeeded = parseFloat(targetI) - parseFloat(measured.input_i);
@@ -278,6 +286,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       track.measuredThresh = measured.input_thresh;
       track.targetOffset = measured.target_offset;
     }
+  }
+
+  // Check if any tracks need normalization
+  const tracksToNormalize = audioTracks.filter((t) => t.measuredI !== '');
+
+  if (tracksToNormalize.length === 0) {
+    args.jobLog('No tracks require normalization (all exceeded max gain), skipping pass 2');
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 1,
+      variables: args.variables,
+    };
   }
 
   // Pass 2: Apply normalization with per-track filters
