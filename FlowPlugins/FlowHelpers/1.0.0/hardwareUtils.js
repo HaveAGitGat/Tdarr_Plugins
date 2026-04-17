@@ -60,7 +60,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEncoder = exports.getBestNvencDevice = exports.hasEncoder = void 0;
-var os_1 = __importDefault(require("os"));
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var getVaapiRenderDevice = function () {
@@ -279,8 +278,10 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         inputArgs: [
                             '-hwaccel',
                             'qsv',
+                            '-hwaccel_output_format',
+                            'qsv',
                         ],
-                        outputArgs: __spreadArray([], (os_1.default.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []), true),
+                        outputArgs: [],
                         filter: '',
                     },
                     {
@@ -323,6 +324,8 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         enabled: false,
                         inputArgs: [
                             '-hwaccel',
+                            'qsv',
+                            '-hwaccel_output_format',
                             'qsv',
                         ],
                         outputArgs: [],
