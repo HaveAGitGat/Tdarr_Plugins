@@ -34,7 +34,9 @@ var plugin = function (args) {
         var stream = args.variables.ffmpegCommand.streams[i];
         if (stream.codec_type === 'video') {
             stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
-            if (stream.outputArgs.some(function (row) { return row.includes('qsv'); })) {
+            var isQsv = stream.outputArgs.some(function (row) { return row.includes('qsv'); });
+            var hwDecoding = args.variables.ffmpegCommand.hardwareDecoding === true;
+            if (isQsv && hwDecoding) {
                 stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
             }
             else {
