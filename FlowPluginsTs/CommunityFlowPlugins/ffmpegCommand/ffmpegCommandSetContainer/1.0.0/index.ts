@@ -1,6 +1,7 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
 import { getContainer } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -64,6 +65,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  checkFfmpegCommandInit(args);
+
   const newContainer = String(args.inputs.container);
   const { forceConform } = args.inputs;
 
@@ -121,7 +124,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         'mpeg',
       ].includes(container)
     ) {
-      args.variables.ffmpegCommand.overallOuputArguments.push('-fflags', '+genpts');
+      args.variables.ffmpegCommand.overallInputArguments.push('-fflags', '+genpts');
     }
   }
 

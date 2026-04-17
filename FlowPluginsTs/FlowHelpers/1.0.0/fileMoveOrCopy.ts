@@ -208,6 +208,10 @@ const fileMoveOrCopy = async ({
   const sourceFileSize = await getSizeBytes(sourcePath);
   args.jobLog(`${sourceFileSize}`);
 
+  if (sourceFileSize === 0) {
+    throw new Error(`Source file ${sourcePath} has size 0 or does not exist, aborting ${operation}`);
+  }
+
   if (operation === 'move') {
     const moved = await tryMove({
       sourcePath,

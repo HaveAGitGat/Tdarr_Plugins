@@ -74,6 +74,16 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify request body',
     },
+    {
+      label: 'Log Response Body',
+      name: 'logResponseBody',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'Specify whether to log response body in the job report',
+    },
   ],
   outputs: [
     {
@@ -93,6 +103,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const requestUrl = String(args.inputs.requestUrl);
   const requestHeaders = JSON.parse(String(args.inputs.requestHeaders));
   const requestBody = JSON.parse(String(args.inputs.requestBody));
+  const { logResponseBody } = args.inputs;
 
   const requestConfig = {
     method,
@@ -104,6 +115,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   try {
     const res = await args.deps.axios(requestConfig);
     args.jobLog(`Web request succeeded: Status Code: ${res.status}`);
+
+    if (logResponseBody) {
+      args.jobLog(`Response Body: ${JSON.stringify(res.data)}`);
+    }
   } catch (err) {
     args.jobLog('Web Request Failed');
     args.jobLog(JSON.stringify(err));

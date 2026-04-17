@@ -1,6 +1,6 @@
 // All credit for original plugin logic goes to Migz.
-// This Plugin is essentially just his NVENC/CPU plugin modified to work with QSV & with extra hevc logic.
-// Extra logic is mainly to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
+// This Plugin started as his NVENC/CPU plugin modified to work with QSV & with extra hevc logic.
+// Rewritten to control encoder quality/speed & to allow HEVC files to be reprocessed to reduce file size
 
 // NOTE - This does not use VAAPI, it is QSV only. So newer intel iGPUs only. 8th+ gen should work.
 // Additionally this was designed and tested on UNRAID via docker, though there is logic to support use on
@@ -18,18 +18,20 @@ const details = () => ({
   Name: 'Boosh-Transcode Using QSV GPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: `==DETAILS== This is a QSV plugin. 8th+ gen INTEL QSV enabled CPUs are recommended. VAAPI is NOT used. 
-    \n\n==OS SUPPORT== This plugin supports Linux & Windows using QSV. Mac is supported though cannot use QSV and 
-    relies on 'VideoToolBox' - Expect to see different encode speed & quality on Mac compared to other platforms. 
-    Ensure you set your node settings accordingly!
-    \n\n==LOGIC== Files will be transcoded into H265/HEVC using Quick Sync Video (QSV) via Intel GPU using ffmpeg. 
-    Settings are dependant on file bitrate working by the logic that H265 can support the same amount of data at half 
-    the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 unless "reconvert_hevc" is marked as 
-    true. If it is then these will be reconverted again if they exceed the bitrate specified in "hevc_max_bitrate".
-    This plugin relies on understanding the accurate video bitrate of your files. It's highly recommended to remux 
-    into MKV & enable "Run mkvpropedit on files before running plugins" under Tdarr>Options.`,
-  Version: '1.3',
-  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,configurable',
+  Description: `==DETAILS== This is a QSV plugin. VAAPI is NOT used. Supports HEVC or AV1 encoding. 
+    Ensure you have supported hardware!
+    \n\n==OS SUPPORT== This plugin supports Linux & Windows using QSV. Mac is not officially supported.
+    If you do use Mac, encodes will use videotoolbox instead of QSV & will ignore the encoder selection.
+    \n\n==LOGIC== Files will be transcoded into the selected format of HEVC or AV1, using Quick Sync Video (QSV) 
+    via an Intel GPU using ffmpeg.
+    Settings are dependant on file bitrate & a bitrate modifier. The general logic is that either format can support 
+    the same amount of data at half the bitrate of H264. This plugin will skip files already in HEVC, AV1 & VP9 unless 
+    "reconvert_hevc" is marked as true. If it is then these will be reconverted again if they exceed the bitrate 
+    specified in "hevc_max_bitrate". This plugin relies on understanding the accurate video bitrate of your files. 
+    It's highly recommended to first remux into MKV & enable "Run mkvpropedit on files before running plugins" under 
+    Tdarr>Options.`,
+  Version: '1.4',
+  Tags: 'pre-processing,ffmpeg,video only,qsv,h265,hevc,av1,configurable',
   Inputs: [
     {
       name: 'container',
@@ -53,6 +55,27 @@ const details = () => ({
       mkv
       \\nExample:\\n
       mp4`,
+    },
+    {
+      name: 'encoder',
+      type: 'string',
+      defaultValue: 'hevc_qsv',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'hevc_qsv',
+          'av1_qsv',
+        ],
+      },
+      tooltip: `\\n
+      ==DESCRIPTION==
+      \\nSpecifies the hardware encoder to use. Either HEVC or AV1
+      \\nEnsure that your hardware is able to use the selected encoder. 
+      A 8th Gen+ intel CPU is suggested for HEVC, & a Intel Arc GPU for AV1
+      \\n
+      ==INFO==
+      \\nOnly HEVC or AV1 encoders are supported!
+      \\nWhen using AV1, consider adjusting the Bitrate modifier to tune your output results`,
     },
     {
       name: 'force_conform',
@@ -109,6 +132,28 @@ const details = () => ({
       false`,
     },
     {
+      name: 'target_bitrate_modifier',
+      type: 'number',
+      defaultValue: 0.5,
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `\\n
+      ==DESCRIPTION==
+      \\nSpecify the modifier for the target bitrate. The logic is that HEVC can obtain the same quality 
+      at half the bitrate.
+      \\nIf you feel this isn't achieving the quality you want then increase this value. 
+      \\nRecommended to leave at default. Setting to 1.0 or higher will achieve no size reduction.
+      \\nLook at the min & max bitrate options if you just want to set lower & upper limits for acceptable bitrate
+      \\n
+      ==INFO==
+      \\nDefault is "0.5".
+      \\nExample:\\n
+      0.5
+      \\nExample:\\n
+      0.75`,
+    },
+    {
       name: 'encoder_speedpreset',
       type: 'string',
       defaultValue: 'slow',
@@ -155,10 +200,13 @@ const details = () => ({
       There are extra QSV options that can be
       forced on/off as desired. See here for some possible cmds - 
       https://ffmpeg.org/ffmpeg-codecs.html#toc-HEVC-Options-1
+      OR https://ffmpeg.org/ffmpeg-codecs.html#AV1-Options
       \\n
       ==WARNING== \\n
       Be certain to verify the cmds work before adding to your workflow. \\n
-      Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv". This will give a list of supported commands. \\n
+      Check Tdarr Help Tab. Enter ffmpeg cmd - "-h encoder=hevc_qsv" OR "-h encoder=av1_qsv". 
+      This will give a list of supported commands. \\n
+      THERE ARE CMD DIFFERENCES BETWEEN HEVC & AV1! DO NOT JUST BLINDLY COPY CMDS BELOW AND EXPECT THEM TO WORK! \\n
       MAC SPECIFIC - This option is ignored on Mac because videotoolbox is used rather than qsv.
       \\n
       ==INFO==
@@ -167,13 +215,17 @@ const details = () => ({
       bitrate etc. Anything else entered here might be supported but could cause undesired results.
       \\nIf you are using a "-vf" cmd, please put it at the end to avoid issues!
       \\nExample:\\n
-      -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 -adaptive_b 1
-      \\n Above enables look ahead, extended bitrate control, b-frames, etc.\\n
+      -async_depth 4 -look_ahead 1 -look_ahead_depth 100 -extbrc 1 -rdo 1 -mbbrc 1 -b_strategy 1 -adaptive_i 1 
+      -adaptive_b 1
+      \\n FOR HEVC_QSV Above increases async, enables look ahead, extended bitrate control, b-frames, etc.\\n
+      \\nExample:\\n
+      -async_depth 4 -aq-mode 4 -look_ahead 1 -look_ahead_depth 100 -b_strategy 1 -adaptive_i 1 -adaptive_b 1
+      \\n FOR AV1_QSV Above increases async, enable adaptive quantization, look ahead, b-frames, etc.\\n
       \\nExample:\\n
       -vf scale_qsv=w=1280:h=720
       \\nScale video resolution Method 1\\n
       \\nExample:\\n
-      -vf scale_qsv=1280:-1
+      -vf scale_qsv=720:-1
       \\nScale video resolution Method 2\\n`,
     },
     {
@@ -205,8 +257,8 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\nSpecify a maximum average video bitrate. When encoding we take the current video bitrate and halve it 
-      to get an average target. This option sets a upper limit to that average 
+      \\nSpecify a maximum average video bitrate. When encoding default behaviour is to halve the current video 
+      bitrate to get an average target. This option sets a upper limit to that average 
       (i.e if you have a video bitrate of 10000, half is 5000, if your maximum desired average bitrate is 4000
       then we use that as the target instead of 5000).
       \\n
@@ -229,8 +281,8 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\nSpecify a minimum average video bitrate. When encoding we take the current video bitrate and halve 
-      it to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
+      \\nSpecify a minimum average video bitrate. When encoding default behaviour is to halve the current video bitrate 
+      to get an average target. This option sets a lower limit to that average (i.e if you have a video bitrate
       of 3000, half is 1500, if your minimum desired average bitrate is 2000 then we use that as the target instead
       of 1500).
       \\n
@@ -257,21 +309,21 @@ const details = () => ({
       },
       tooltip: `\\n
       ==DESCRIPTION==
-      \\nSet to reprocess HEVC, VP9 or AV1 files (i.e reduce bitrate of files already in those codecs). 
-      \\nSince this uses the same logic as normal, halving the current bitrate, this is NOT recommended 
-      unless you know what you are doing, so please leave FALSE if unsure! 
+      \\nSet to reprocess HEVC/VP9/AV1 files (i.e reduce bitrate of files already in those codecs).
+      \\nSince this uses the same logic as normal, halving the current bitrate, this is NOT recommended
+      unless you know what you are doing, so please leave FALSE if unsure!
       \\nNEEDS to be used in conjunction with "bitrate_cutoff" or "hevc_max_bitrate" otherwise is ignored.
       \\nThis is useful in certain situations, perhaps you have a file which is HEVC but has an extremely high
       bitrate and you'd like to reduce it.
       \\n
       ==WARNING== \\n
-      IF YOU HAVE VP9 OR AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION. \\n
-      \\nThis option has the potential to LOOP your encodes! You can encode a file to HEVC and still 
-      be above your cutoff and it would be converted again & again if this is set to true (since it's now HEVC). 
-      So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping. 
+      IF YOU HAVE HEVC/VP9/AV1 FILES YOU WANT TO KEEP IN THOSE FORMATS THEN DO NOT USE THIS OPTION. \\n
+      \\nThis option has the potential to LOOP your encodes! You can encode a file to HEVC and still
+      be above your cutoff and it would be converted again & again if this is set to true (since it's now HEVC).
+      So if you use this be sure to set "hevc_max_bitrate" & "max_average_bitrate" to help prevent the plugin looping.
       Also it is highly suggested that you have your "hevc_max_bitrate" higher than "max_average_bitrate".
       \\nPlease be certain you want this enabled before setting it otherwise leave this as FALSE!
-      While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
+      While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so
       and will be forced to fall back onto estimates. Please bare this in mind when using the HEVC reprocess option.
       \\n
       \\nExample:\\n
@@ -289,13 +341,14 @@ const details = () => ({
       tooltip: `\\n
       ==DESCRIPTION==
       \\nHas no effect unless "reconvert_hevc" is set to true. This allows you to specify a maximum
-      allowed average OVERALL bitrate for HEVC or similar files. Much like the "bitrate_cutoff" option, but
-      specifically for HEVC files. It should be set HIGHER then your standard cutoff for safety.
-      \\nAlso, it's highly suggested you use the min & max average bitrate options in combination with this. You
-      will want those to control the encoded video bitrate, otherwise you may end up repeatedly reprocessing HEVC files.
-      i.e your file might have a overall bitrate of 20000, if your hevc cutoff is 5000 then it's going to reconvert 
-      multiple times before it'll fall below that cutoff. While HEVC reprocessing can be useful this is why it is NOT 
-      recommended!
+      allowed average OVERALL bitrate for HEVC/AV1/VP9 files. Much like the "bitrate_cutoff" option, but
+      specifically for these files. It should be set HIGHER then your standard cutoff for safety.
+      \\nAlso, it's highly suggested you use the min & max average bitrate options in combination with this. You will
+      want this to control the encoded video bitrate, otherwise you may end up unintentionally reprocessing these files.
+      i.e your file might have a overall bitrate of 20000, if your hevc cutoff is 5000 then it's going to
+      reconvert multiple times before it'll be below that cutoff.
+      \\nWhile HEVC/AV1/VP9 reprocessing can be useful this is why it is NOT recommended unless you know what you are
+      doing!
       \\n
       ==WARNING== \\n
       While the plugin will attempt to generate accurate video bitrate metadata, it can not always reliably do so 
@@ -313,7 +366,7 @@ const details = () => ({
   ],
 });
 
-// Set up required variables.
+// VARIABLES
 let currentBitrate = 0;
 let overallBitRate = 0;
 let targetBitrate = 0;
@@ -328,6 +381,8 @@ let main10 = false;
 let high10 = false;
 let swDecode = false;
 let videoBR = 0;
+let hdrEnabled = false;
+let videoProfile = '';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
@@ -351,6 +406,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  if (inputs.Target_bitrate_modifier >= 1) {
+    response.processFile = false;
+    response.infoLog += '☒ Target bitrate modifier has been set to 1 or higher. Will not encode. Exiting\n';
+    return response;
+  }
+
+  // FILE VIDEO BITRATE & DURATION
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const strstreamType = file.ffProbeData.streams[i].codec_type.toLowerCase();
     // Check if stream is a video.
@@ -403,12 +465,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // CATCH BITRATE FAILURE OR SUCCESS
   if (Number.isNaN(videoBR) || videoBR <= 0) {
     // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
     currentBitrate = Math.round(file.file_size / (duration * 0.0075));
-    response.infoLog += '==WARNING== Failed to get an accurate video bitrate, '
-      + `falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps. `
-      + 'Bitrate calculations for video encode will likely be inaccurate...\n';
+    if (Number.isNaN(currentBitrate) || currentBitrate <= 0) {
+      response.infoLog += '==ERROR== Failed to get any bitrate data from this file!\n'
+        + 'This is highly likely due to some file problem. Highly suggested to run '
+        + 'mkvpropedit via Tdarr options or in a Flow to ensure this file has correct stats!\n'
+        + 'THIS ENCODE WILL FAIL/ERROR!';
+    } else {
+      response.infoLog += '==WARNING== Failed to get an accurate video bitrate, '
+        + `falling back to old method to get OVERALL file bitrate of ${currentBitrate}kbps. `
+        + 'Bitrate calculations for video encode will likely be inaccurate...\n';
+    }
   } else {
     currentBitrate = Math.round(videoBR);
     response.infoLog += `☑ It looks like the current video bitrate is ${currentBitrate}kbps.\n`;
@@ -416,8 +486,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Get overall bitrate for use with HEVC reprocessing
   overallBitRate = Math.round(file.file_size / (duration * 0.0075));
-  // Halve current bitrate for Target bitrate, in theory h265 can be half the bitrate as h264 without losing quality.
-  targetBitrate = Math.round(currentBitrate / 2);
+  // Default will halve current bitrate for Target bitrate
+  // In theory h265 can be half the bitrate as h264 without losing quality.
+  targetBitrate = Math.round(currentBitrate * inputs.target_bitrate_modifier);
   // Allow some leeway under and over the targetBitrate.
   minimumBitrate = Math.round(targetBitrate * 0.75);
   maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -470,7 +541,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     // If so then clamp target bitrate
     if (targetBitrate > inputs.max_average_bitrate) {
       response.infoLog += 'Our target bitrate is above the max_average_bitrate so clamping at max of '
-      + `${inputs.max_average_bitrate}kbps.\n`;
+        + `${inputs.max_average_bitrate}kbps.\n`;
       targetBitrate = Math.round(inputs.max_average_bitrate);
       minimumBitrate = Math.round(targetBitrate * 0.75);
       maximumBitrate = Math.round(targetBitrate * 1.25);
@@ -481,7 +552,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // (Entered means user actually wants something to happen, empty would disable this).
   if (inputs.min_average_bitrate > 0) {
     // Exit the plugin is the cutoff is less than the min average bitrate. Most likely user error
-    if (inputs.bitrate_cutoff < inputs.min_average_bitrate) {
+    if (inputs.bitrate_cutoff > 0 && inputs.bitrate_cutoff < inputs.min_average_bitrate) {
       response.infoLog += `☒ Bitrate cutoff ${inputs.bitrate_cutoff}k is less than the set minimum `
         + `average bitrate set of ${inputs.min_average_bitrate}kbps. We don't want this. Cancelling plugin.\n`;
       return response;
@@ -501,7 +572,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // i.e drop mov_text for mkv files and drop pgs_subtitles for mp4
   if (inputs.force_conform === true) {
     if (inputs.container.toLowerCase() === 'mkv') {
-      extraArguments += '-map -0:d ';
       for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
         try {
           if (
@@ -557,10 +627,43 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             || file.ffProbeData.streams[i].color_transfer === 'arib-std-b67')
           && file.ffProbeData.streams[i].color_primaries === 'bt2020') {
           response.infoLog += '==WARNING== This looks to be a HDR file. HDR is supported but '
-          + 'correct encoding is not guaranteed.\n';
+            + 'correct encoding is not guaranteed.\n';
           extraArguments += `-color_primaries ${file.ffProbeData.streams[i].color_primaries} `
-          + `-color_trc ${file.ffProbeData.streams[i].color_transfer} `
-          + `-colorspace ${file.ffProbeData.streams[i].color_space} `;
+            + `-color_trc ${file.ffProbeData.streams[i].color_transfer} `
+            + `-colorspace ${file.ffProbeData.streams[i].color_space} `;
+          hdrEnabled = true;
+        }
+
+        // VALIDATE HDR - Ignore Dolby vision & badly formatted files
+        if (hdrEnabled !== true) {
+          // Had at least one case where a file contained no evident HDR data but was marked as HDR content
+          // meaning transcode OR plex would butcher the file
+          try {
+            if (typeof file.mediaInfo.track[i + 1].HDR_Format !== 'undefined') {
+              response.infoLog += '==ERROR== This file has Media data implying it is HDR '
+                + `(${file.mediaInfo.track[i + 1].HDR_Format}), `
+                + 'but no details about color space or primaries... '
+                + 'Unable to convert and safely keep HDR data. Aborting!\n';
+              return response;
+            }
+          } catch (err) {
+            // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+          }
+        } else {
+          // If specifically marked Dolby Vision
+          try {
+            if (file.mediaInfo.track[i + 1].HDR_Format.search('Dolby Vision') >= 0
+              || file.mediaInfo.track[i + 1].HDR_Format.search('HDR10+') >= 0
+              || file.mediaInfo.track[i + 1].HDR_Format.search('SMPTE ST 2094 App 4') >= 0) {
+              response.infoLog += '==ERROR== This file has HDR metadata that cannot be re-encoded '
+                + `(${file.mediaInfo.track[i + 1].HDR_Format}), `
+                + 'Currently we cannot safely convert this HDR format and retain the Dolby Vision or HDR10+ format. '
+                + 'Aborting!\n';
+              return response;
+            }
+          } catch (err) {
+            // Catch error - Ignore & carry on - If check can bomb out if tags don't exist...
+          }
         }
 
         // Check if codec of stream is HEVC, Vp9 or AV1
@@ -607,12 +710,20 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             // If we're not using the hevc max bitrate then we need a safety net to try and ensure we don't keep
             // looping this plugin. For maximum safety we simply multiply the cutoff by 2.
           } else if (currentBitrate > (inputs.bitrate_cutoff * 2)) {
-            inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
-            response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. `
-              + `Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate}kbps.\n`
-              + 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety!\n'
-              + `Cutoff now temporarily ${inflatedCutoff}kbps.\n`
-              + '☒ The file is still above this new cutoff! Reconverting.\n';
+            if (inputs.bitrate_cutoff > 0) {
+              inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
+              response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. `
+                + `Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate}kbps.\n`
+                + 'HEVC specific cutoff not set so bitrate_cutoff is multiplied by 2 for safety!\n'
+                + `Cutoff now temporarily ${inflatedCutoff}kbps.\n`
+                + '☒ The file is still above this new cutoff! Reconverting.\n';
+            } else {
+              response.infoLog += `Reconvert_hevc is ${inputs.reconvert_hevc} & the file is already HEVC, VP9 or AV1. `
+                + `Will use Overall file Bitrate for HEVC files as safety, bitrate is ${overallBitRate}kbps.\n`
+                + 'HEVC specific cutoff not set & bitrate_cutoff is not set!\n'
+                + '☒ We have no safe way to prevent a transcode loop. Exiting.\n';
+              return response;
+            }
           } else {
             // File is below cutoff so we can exit
             inflatedCutoff = Math.round(inputs.bitrate_cutoff * 2);
@@ -661,7 +772,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     case 'h264':
       if (high10 === true) {
         swDecode = true;
-        response.infoLog += 'Input file is h264 High10. Hardware Decode not supported.\n';
+        response.infoLog += 'Input file is h264 High10. Hardware Decode not supported so will SW decode.\n';
       }
       break;
     case 'mjpeg':
@@ -679,20 +790,32 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Are we encoding to 10 bit? If so enable correct profile & pixel format.
   if (os.platform() !== 'darwin') {
+    switch (inputs.encoder) {
+      case 'hevc_qsv':
+        videoProfile = 'main10';
+        break;
+      case 'av1_qsv':
+        // Change this if you want high profile instead, main should be fine for 10 bit 4:2:0 content
+        videoProfile = 'main';
+        break;
+      default:
+        videoProfile = 'main10';
+    }
     if (swDecode === true && main10 === true) {
       // This is used if we have High10 or Main10 is enabled & odd format files.
       // SW decode and use standard -pix_fmt p010le
-      extraArguments += '-profile:v main10 -pix_fmt p010le ';
-      response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n';
+      extraArguments += `-profile:v ${videoProfile} -pix_fmt p010le `;
+      response.infoLog += `10 bit encode enabled. Setting ${videoProfile} Profile & 10 bit pixel format\n`;
     } else if (main10 === true) { // Pixel formate method when using HW decode
       if (inputs.extra_qsv_options.search('-vf scale_qsv') >= 0) {
-        extraArguments += '-profile:v main10';
+        extraArguments += `-profile:v ${videoProfile}`;
         // eslint-disable-next-line no-param-reassign
         inputs.extra_qsv_options += ',format=p010le'; // Only add on the pixel format to existing scale_qsv cmd
       } else {
-        extraArguments += '-profile:v main10 -vf scale_qsv=format=p010le';
+        extraArguments += `-profile:v ${videoProfile} -vf scale_qsv=format=p010le`;
       }
-      response.infoLog += '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n';
+      response.infoLog += `10 bit encode enabled. Setting ${videoProfile} `
+        + 'Profile & 10 bit pixel format\n';
     }
   } else {
     // Mac - Video toolbox profile & pixel format
@@ -794,14 +917,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // Mac OS & uses hevc_videotoolbox not QSV - Only shows up on Mac installs
       break;
     case 'linux':
-      response.preset += 'hevc_qsv';
+      response.preset += `${inputs.encoder}`;
       break;
     case 'win32':
-      response.preset += 'hevc_qsv';
-      // Tested working on a Win 10 - i5-10505
+      response.preset += `${inputs.encoder}`;
       break;
     default:
-      response.preset += 'hevc_qsv'; // Default to QSV
+      response.preset += `${inputs.encoder}`; // Default
   }
 
   // Only add on for HW decoded formats

@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -90,7 +90,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 newName = String(args.inputs.fileRename).trim();
                 newName = newName.replace(/\${fileName}/g, fileName);
                 newName = newName.replace(/\${container}/g, (0, fileUtils_1.getContainer)(args.inputFileObj._id));
-                fileDir = (0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id);
+                fileDir = (0, fileUtils_1.getFileAbsoluteDir)(args.inputFileObj._id);
                 newPath = "".concat(fileDir, "/").concat(newName);
                 if (args.inputFileObj._id === newPath) {
                     args.jobLog('Input and output path are the same, skipping rename.');

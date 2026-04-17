@@ -28,6 +28,7 @@ const details = (): IpluginDetails => ({
         options: [
           '1',
           '2',
+          '3',
           '6',
           '8',
         ],

@@ -4,6 +4,7 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import { getFfType } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -120,6 +121,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  checkFfmpegCommandInit(args);
+
   const { useInputBitrate } = args.inputs;
   const targetBitratePercent = String(args.inputs.targetBitratePercent);
   const fallbackBitrate = String(args.inputs.fallbackBitrate);
@@ -131,9 +134,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       if (useInputBitrate) {
         args.jobLog('Attempting to use % of input bitrate as output bitrate');
         // check if input bitrate is available
-        const mediainfoIndex = stream.index + 1;
+        const tracks = args?.inputFileObj?.mediaInfo?.track;
+        let inputBitrate = tracks?.find((x) => x.StreamOrder === stream.index.toString())?.BitRate;
 
-        let inputBitrate = args?.inputFileObj?.mediaInfo?.track?.[mediainfoIndex]?.BitRate;
         if (inputBitrate) {
           args.jobLog(`Found input bitrate: ${inputBitrate}`);
           // @ts-expect-error type

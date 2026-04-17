@@ -1,9 +1,9 @@
-import os from 'os';
 import {
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = () :IpluginDetails => ({
@@ -33,12 +33,17 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
+  checkFfmpegCommandInit(args);
+
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
     const stream = args.variables.ffmpegCommand.streams[i];
     if (stream.codec_type === 'video') {
       stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
 
-      if (stream.outputArgs.some((row) => row.includes('qsv')) && os.platform() !== 'win32') {
+      const isQsv = stream.outputArgs.some((row) => row.includes('qsv'));
+      const hwDecoding = args.variables.ffmpegCommand.hardwareDecoding === true;
+
+      if (isQsv && hwDecoding) {
         stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
       } else if (stream.outputArgs.some((row) => row.includes('libsvtav1'))) {
         stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');

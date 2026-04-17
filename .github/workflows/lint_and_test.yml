@@ -4,16 +4,19 @@ on:
   pull_request:
     branches: ['**']
 
+permissions:
+  contents: read
+
 jobs:
   test:
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [22.x]
         os:
           [
-            ["ubuntu-20.04"],
-            ["windows-2019"],
-            ["macos-11.0"],
+            ["ubuntu-22.04"],
+            ["windows-2022"],
+            ["macos-26"],
           ]
     runs-on: ${{ matrix.os }}
 
@@ -23,43 +26,64 @@ jobs:
         git config --global core.autocrlf false
         git config --global core.eol lf
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm i
-    - run: npm i -g typescript && tsc  
+    - run: npm ci
+    - run: npm i -g typescript@5.9.3 && tsc
     - run: npm run checkPlugins
     - run: npm run lint
     - run: npm run test
+
+  test_flows:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Set git to use LF
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1
+      with:
+        node-version: 22.x
+    - run: npm ci
+    - run: npm i -g typescript@5.9.3 && tsc
+    - run: npm run test:flows
 
   auto_compile_and_push:
     if: github.ref != 'refs/heads/master'
     needs: [
       test
       ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     permissions:
       # Give the default GITHUB_TOKEN write permission to commit and push the changed files back to the repository.
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
   
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
 
-    - run: npm i && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
+    - run: npm ci && npm i -g typescript@5.9.3 && rm -rdf ./FlowPlugins && tsc -v && tsc
 
-    - uses: stefanzweifel/git-auto-commit-action@v5
+    - uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
       ## fix this check
       if: github.event.pull_request.head.repo.full_name == github.repository
       with:

@@ -82,7 +82,7 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mp4.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 603k\n'
@@ -98,7 +98,7 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mp4.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 603k\n'
@@ -150,8 +150,8 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps.\n'
-          + 'Input file is h264 High10. Hardware Decode not supported.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + 'Input file is h264 High10. Hardware Decode not supported so will SW decode.\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 3227k\n'
@@ -167,8 +167,8 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps.\n'
-          + 'Input file is h264 High10. Hardware Decode not supported.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + 'Input file is h264 High10. Hardware Decode not supported so will SW decode.\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 3227k\n'
@@ -184,7 +184,7 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 6454kbps.\n'
-          + 'Input file is h264 High10. Hardware Decode not supported.\n'
+          + 'Input file is h264 High10. Hardware Decode not supported so will SW decode.\n'
           + '10 bit encode enabled. Setting VideoToolBox Profile v2 & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
@@ -227,7 +227,7 @@ const tests = [
         infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
           + 'Reconvert_hevc is true & the file is already HEVC, VP9 or AV1. Using HEVC specific cutoff of 6000kbps.\n'
           + '☒ The file is still above this new cutoff! Reconverting.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 6000k\n'
@@ -245,7 +245,7 @@ const tests = [
         infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
           + 'Reconvert_hevc is true & the file is already HEVC, VP9 or AV1. Using HEVC specific cutoff of 6000kbps.\n'
           + '☒ The file is still above this new cutoff! Reconverting.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 6000k\n'
@@ -399,7 +399,7 @@ const tests = [
     output: {
       linux: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -414,7 +414,7 @@ const tests = [
       },
       win32: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw,child_device_type=d3d11va -c:v h264_qsv<io> -map 0 -c:v hevc_qsv -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast  -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -f matroska -vf hwupload=extra_hw_frames=64,format=qsv ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -429,7 +429,7 @@ const tests = [
       },
       darwin: {
         processFile: true,
-        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:3 -map -0:4 -map -0:5 -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
+        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 3227k -minrate 2420k -maxrate 4034k -bufsize 6454k -preset fast -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:3 -map -0:4 -map -0:5 -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
         handBrakeMode: false,
         FFmpegMode: true,
         reQueueAfter: true,
@@ -468,7 +468,7 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 603k\n'
@@ -484,7 +484,7 @@ const tests = [
         FFmpegMode: true,
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 603k\n'
@@ -538,7 +538,7 @@ const tests = [
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
           + 'Input file is vc1. Hardware Decode not supported.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 603k\n'
@@ -555,7 +555,7 @@ const tests = [
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 1206kbps.\n'
           + 'Input file is vc1. Hardware Decode not supported.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 603k\n'
@@ -616,7 +616,7 @@ const tests = [
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
           + '==WARNING== This looks to be a HDR file. HDR is supported but correct encoding is not guaranteed.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 6000k\n'
@@ -633,7 +633,7 @@ const tests = [
         reQueueAfter: true,
         infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
           + '==WARNING== This looks to be a HDR file. HDR is supported but correct encoding is not guaranteed.\n'
-          + '10 bit encode enabled. Setting Main10 Profile & 10 bit pixel format\n'
+          + '10 bit encode enabled. Setting main10 Profile & 10 bit pixel format\n'
           + 'Container for output selected as mkv.\n'
           + 'Encode variable bitrate settings:\n'
           + 'Target = 6000k\n'
@@ -656,6 +656,97 @@ const tests = [
           + 'Target = 6000k\n'
           + 'Minimum = 4500k\n'
           + 'Maximum = 7500k\n'
+          + '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
+          + 'cmds set in extra_qsv_options will be IGNORED!\n'
+          + 'File Transcoding...\n',
+        container: '.mkv',
+      },
+    },
+  },
+  // Test 10 - The 'Everything' Test
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH265_1.json'));
+        file.ffProbeData.streams[0].color_space = 'bt2020nc';
+        file.ffProbeData.streams[0].color_transfer = 'smpte2084';
+        file.ffProbeData.streams[0].color_primaries = 'bt2020';
+        file.mediaInfo.track[1].BitRate = 12000000;
+        file.ffProbeData.streams[0].profile = 'Main 10';
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        container: 'mkv',
+        encoder: 'av1_qsv',
+        force_confirm: 'true',
+        enable_10bit: 'true',
+        target_bitrate_modifier: '0.4',
+        encoder_speedpreset: 'slow',
+        extra_qsv_options: '-async_depth 4 -aq-mode 4 -look_ahead 1 -look_ahead_depth 100 -b_strategy 1 -adaptive_i 1 -adaptive_b 1',
+        bitrate_cutoff: '7500',
+        max_average_bitrate: '7000',
+        min_average_bitrate: '3500',
+        reconvert_hevc: 'true',
+        hevc_max_bitrate: '8100',
+      },
+      otherArguments: {},
+    },
+    output: {
+      linux: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw_any,child_device_type=vaapi -c:v hevc_qsv<io> -map 0 -c:v av1_qsv -b:v 4800k -minrate 3600k -maxrate 6000k -bufsize 12000k -preset slow -async_depth 4 -aq-mode 4 -look_ahead 1 -look_ahead_depth 100 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -c:a copy -c:s copy -max_muxing_queue_size 9999 -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc -f matroska -profile:v main -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
+          + '==WARNING== This looks to be a HDR file. HDR is supported but correct encoding is not guaranteed.\n'
+          + 'Reconvert_hevc is true & the file is already HEVC, VP9 or AV1. Using HEVC specific cutoff of 8100kbps.\n'
+          + '☒ The file is still above this new cutoff! Reconverting.\n'
+          + '10 bit encode enabled. Setting main Profile & 10 bit pixel format\n'
+          + 'Container for output selected as mkv.\n'
+          + 'Encode variable bitrate settings:\n'
+          + 'Target = 4800k\n'
+          + 'Minimum = 3600k\n'
+          + 'Maximum = 6000k\n'
+          + 'File Transcoding...\n',
+        container: '.mkv',
+      },
+      win32: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel qsv -hwaccel_output_format qsv -init_hw_device qsv:hw,child_device_type=d3d11va -c:v hevc_qsv<io> -map 0 -c:v av1_qsv -b:v 4800k -minrate 3600k -maxrate 6000k -bufsize 12000k -preset slow -async_depth 4 -aq-mode 4 -look_ahead 1 -look_ahead_depth 100 -b_strategy 1 -adaptive_i 1 -adaptive_b 1 -c:a copy -c:s copy -max_muxing_queue_size 9999 -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc -f matroska -profile:v main -vf scale_qsv=format=p010le,hwupload=extra_hw_frames=64,format=qsv ',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
+          + '==WARNING== This looks to be a HDR file. HDR is supported but correct encoding is not guaranteed.\n'
+          + 'Reconvert_hevc is true & the file is already HEVC, VP9 or AV1. Using HEVC specific cutoff of 8100kbps.\n'
+          + '☒ The file is still above this new cutoff! Reconverting.\n'
+          + '10 bit encode enabled. Setting main Profile & 10 bit pixel format\n'
+          + 'Container for output selected as mkv.\n'
+          + 'Encode variable bitrate settings:\n'
+          + 'Target = 4800k\n'
+          + 'Minimum = 3600k\n'
+          + 'Maximum = 6000k\n'
+          + 'File Transcoding...\n',
+        container: '.mkv',
+      },
+      darwin: {
+        processFile: true,
+        preset: '-fflags +genpts -hwaccel videotoolbox<io> -map 0 -c:v hevc_videotoolbox -b:v 4800k -minrate 3600k -maxrate 6000k -bufsize 12000k -preset slow -c:a copy -c:s copy -max_muxing_queue_size 9999 -color_primaries bt2020 -color_trc smpte2084 -colorspace bt2020nc -f matroska -profile:v 2 -pix_fmt yuv420p10le ',
+        handBrakeMode: false,
+        FFmpegMode: true,
+        reQueueAfter: true,
+        infoLog: '☑ It looks like the current video bitrate is 12000kbps.\n'
+          + '==WARNING== This looks to be a HDR file. HDR is supported but correct encoding is not guaranteed.\n'
+          + 'Reconvert_hevc is true & the file is already HEVC, VP9 or AV1. Using HEVC specific cutoff of 8100kbps.\n'
+          + '☒ The file is still above this new cutoff! Reconverting.\n'
+          + '10 bit encode enabled. Setting VideoToolBox Profile v2 & 10 bit pixel format\n'
+          + 'Container for output selected as mkv.\n'
+          + 'Encode variable bitrate settings:\n'
+          + 'Target = 4800k\n'
+          + 'Minimum = 3600k\n'
+          + 'Maximum = 6000k\n'
           + '==ALERT== OS detected as MAC - This will use VIDEOTOOLBOX to encode which is NOT QSV\n'
           + 'cmds set in extra_qsv_options will be IGNORED!\n'
           + 'File Transcoding...\n',

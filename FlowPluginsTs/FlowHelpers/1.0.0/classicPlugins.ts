@@ -149,11 +149,11 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
   );
 
   if (result?.file?._id && args.inputFileObj._id !== result.file._id) {
+    args.jobLog(`File ID changed from ${args.inputFileObj._id} to ${result.file._id}`);
     // eslint-disable-next-line no-param-reassign
     args.inputFileObj._id = result.file._id;
     // eslint-disable-next-line no-param-reassign
     args.inputFileObj.file = result.file.file;
-    args.jobLog(`File ID changed from ${args.inputFileObj._id} to ${result.file._id}`);
   }
 
   return {

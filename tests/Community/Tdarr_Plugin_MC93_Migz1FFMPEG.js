@@ -168,6 +168,60 @@ const tests = [
       container: '.mp4',
     },
   },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'ts',
+        enable_10bit: 'false',
+        force_conform: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-c:v h264_cuvid -fflags +genpts, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as ts. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.ts',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'avi',
+        enable_10bit: 'false',
+        force_conform: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-c:v h264_cuvid -fflags +genpts, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as avi. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.avi',
+    },
+  },
 ];
 
 void run(tests);

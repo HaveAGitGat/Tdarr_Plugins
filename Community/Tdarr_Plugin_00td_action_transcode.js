@@ -298,6 +298,10 @@ const getEncoder = async ({
         filter: '-vf format=nv12,hwupload',
       },
       {
+        encoder: 'hevc_rkmpp',
+        enabled: false,
+      },
+      {
         encoder: 'hevc_qsv',
         enabled: false,
       },
@@ -308,6 +312,10 @@ const getEncoder = async ({
 
       {
         encoder: 'h264_nvenc',
+        enabled: false,
+      },
+      {
+        encoder: 'h264_rkmpp',
         enabled: false,
       },
       {

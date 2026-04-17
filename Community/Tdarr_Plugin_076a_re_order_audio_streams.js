@@ -126,7 +126,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  ffmpegCommand += ` -map 0:s? -map 0:d? `;
+  ffmpegCommand += ` -map 0:s? -map 0:d? -map 0:t? `;
 
   response.processFile = true;
   response.preset = ffmpegCommand;

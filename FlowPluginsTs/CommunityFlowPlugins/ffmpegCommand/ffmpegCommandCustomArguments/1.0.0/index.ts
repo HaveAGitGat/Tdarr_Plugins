@@ -1,3 +1,4 @@
+import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import {
   IpluginDetails,
   IpluginInputArgs,
@@ -53,6 +54,8 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
+
+  checkFfmpegCommandInit(args);
 
   const inputArguments = String(args.inputs.inputArguments);
   const outputArguments = String(args.inputs.outputArguments);

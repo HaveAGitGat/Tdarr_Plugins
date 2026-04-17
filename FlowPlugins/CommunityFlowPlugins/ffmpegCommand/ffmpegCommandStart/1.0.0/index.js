@@ -43,12 +43,29 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+    var streams = [];
+    try {
+        streams = JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams));
+    }
+    catch (err) {
+        var message = "Error parsing FFprobe streams, it seems FFprobe could not scan the file: ".concat(JSON.stringify(err));
+        args.jobLog(message);
+        throw new Error(message);
+    }
     var ffmpegCommand = {
+        init: true,
         inputFiles: [],
-        streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map(function (stream) { return (__assign(__assign({}, stream), { removed: false, mapArgs: [
-                '-map',
-                "0:".concat(stream.index),
-            ], inputArgs: [], outputArgs: [] })); }),
+        streams: streams.map(function (stream) {
+            var _a;
+            var normalizedStream = __assign({}, stream);
+            if (Number((_a = stream === null || stream === void 0 ? void 0 : stream.disposition) === null || _a === void 0 ? void 0 : _a.attached_pic) === 1) {
+                normalizedStream.codec_type = 'attachment';
+            }
+            return __assign(__assign({}, normalizedStream), { removed: false, mapArgs: [
+                    '-map',
+                    "0:".concat(stream.index),
+                ], inputArgs: [], outputArgs: [] });
+        }),
         container: container,
         hardwareDecoding: false,
         shouldProcess: false,

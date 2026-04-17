@@ -4,7 +4,7 @@ import Ijob from './synced/jobInterface';
 
 export interface IpluginInputUi {
     // boolean inputs will default to a switch
-    type: 'dropdown' | 'text' | 'textarea' | 'directory' | 'slider' | 'switch',
+    type: 'dropdown' | 'text' | 'textarea' | 'directory' | 'slider' | 'switch' | 'codeEditor',
     options?: string[],
     sliderOptions?: {max: number, min: number, }
     style?: Record<string, unknown>,
@@ -87,6 +87,7 @@ export interface IffmpegCommandStream extends Istreams {
 }
 
 export interface IffmpegCommand {
+    init: boolean,
     inputFiles: string[],
     streams: IffmpegCommandStream[]
     container: string,
@@ -110,7 +111,17 @@ export interface Ivariables {
     user: Record<string, string>,
     healthCheck?: 'Success',
     queueTags?: string,
-    liveSizeCompare?: IliveSizeCompare
+    liveSizeCompare?: IliveSizeCompare,
+    removeFromTdarr?: boolean,
+    automation?: {
+        payload: Record<string, unknown>,
+        flowId: string,
+        configId: string,
+        runId: string,
+        executeImmediately: boolean,
+        bypassStagedFileLimit: boolean,
+        createdAt: number,
+    },
 }
 
 export interface IpluginOutputArgs {
@@ -121,11 +132,46 @@ export interface IpluginOutputArgs {
     variables: Ivariables,
 }
 
+export interface IconfigVars {
+    config: {
+        nodeID: string,
+        nodeName: string,
+        serverURL: string,
+        serverIP: string,
+        serverPort: string,
+        handbrakePath: string,
+        ffmpegPath: string,
+        mkvpropeditPath: string,
+        pathTranslators: {
+            server: string,
+            node: string,
+        }[],
+        platform_arch_isdocker: string,
+        logLevel: string,
+        processPid: number,
+        priority: number,
+        cronPluginUpdate: string,
+        apiKey: string,
+        seededWorkerLimits?:{
+            [index: string]: number,
+        },
+        maxLogSizeMB: number,
+        pollInterval: number,
+        nodeType: 'mapped' | 'unmapped',
+        unmappedNodeCache: string,
+        startPaused: boolean,
+    }
+}
+
 export interface IpluginInputArgs {
     inputFileObj: IFileObject,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     librarySettings: any,
     inputs: Record<string, unknown>,
+    userVariables: {
+        global: Record<string, string>,
+        library: Record<string, string>,
+    },
     jobLog: Ilog,
     workDir: string,
     platform: string,
@@ -140,17 +186,21 @@ export interface IpluginInputArgs {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config: any,
     job: Ijob,
+    isAutomation: boolean,
     platform_arch_isdocker: string,
     variables: Ivariables,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lastSuccesfulPlugin: any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lastSuccessfulRun: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    thisPlugin: any,
     updateWorker: IupdateWorker,
     logFullCliOutput: boolean,
     logOutcome: (outcome: string) => void,
     scanIndividualFile?: (filee: IFileObjectMin, scanTypes: IscanTypes) => Promise<IFileObject>,
     updateStat: (db: string, key: string, inc: number) => Promise<void>,
+    configVars: IconfigVars,
     deps: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fsextra: any,
@@ -173,12 +223,7 @@ export interface IpluginInputArgs {
         axios: any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         crudTransDBN: (collection: string, mode: string, docID: string, obj: any) => any,
-        configVars: {
-            config: {
-                serverIP: string,
-                serverPort: string,
-            }
-        }
+        configVars: IconfigVars,
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     installClassicPluginDeps: (deps: string[]) => Promise<any>,

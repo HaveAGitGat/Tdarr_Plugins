@@ -39,18 +39,39 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
   const container = getContainer(args.inputFileObj._id);
 
+  let streams = [];
+
+  try {
+    streams = JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams));
+  } catch (err) {
+    const message = `Error parsing FFprobe streams, it seems FFprobe could not scan the file: ${JSON.stringify(err)}`;
+    args.jobLog(message);
+    throw new Error(message);
+  }
+
   const ffmpegCommand = {
+    init: true,
     inputFiles: [],
-    streams: JSON.parse(JSON.stringify(args.inputFileObj.ffProbeData.streams)).map((stream:Istreams) => ({
-      ...stream,
-      removed: false,
-      mapArgs: [
-        '-map',
-        `0:${stream.index}`,
-      ],
-      inputArgs: [],
-      outputArgs: [],
-    })),
+    streams: streams.map((stream:Istreams) => {
+      const normalizedStream = {
+        ...stream,
+      };
+
+      if (Number(stream?.disposition?.attached_pic) === 1) {
+        normalizedStream.codec_type = 'attachment';
+      }
+
+      return {
+        ...normalizedStream,
+        removed: false,
+        mapArgs: [
+          '-map',
+          `0:${stream.index}`,
+        ],
+        inputArgs: [],
+        outputArgs: [],
+      };
+    }),
     container,
     hardwareDecoding: false,
     shouldProcess: false,

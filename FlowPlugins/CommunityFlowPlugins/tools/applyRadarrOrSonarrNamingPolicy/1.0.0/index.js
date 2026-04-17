@@ -20,8 +20,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -236,7 +236,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             buildPreviewRenameResquestUrl: function (fInfo) { return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(fInfo.id, "&seasonNumber=").concat(fInfo.seasonNumber); },
                             getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse, fInfo) {
                                 var _a;
-                                return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
+                                var fileToRename = (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
+                                return fileToRename
+                                    ? __assign(__assign({}, fileToRename), { newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }) : undefined;
                             },
                         },
                     };
@@ -262,7 +264,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fileToRename = arrApp.delegates
                     .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult, fInfo);
                 if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
-                newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                newPath = "".concat((0, fileUtils_1.getFileAbsoluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: currentFileName,
