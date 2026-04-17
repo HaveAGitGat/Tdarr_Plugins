@@ -121,10 +121,10 @@ describe('ffmpegCommandRemoveStreamByProperty Plugin', () => {
       expect(h264Stream?.removed).toBe(false);
 
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Removing stream index 1 because codec_name of aac includes aac\n',
+        'Removing stream index 1 because codec_name of aac includes aac, ac3\n',
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Removing stream index 2 because codec_name of ac3 includes ac3\n',
+        'Removing stream index 2 because codec_name of ac3 includes aac, ac3\n',
       );
     });
 
@@ -141,7 +141,11 @@ describe('ffmpegCommandRemoveStreamByProperty Plugin', () => {
       );
       expect(removedStreams).toHaveLength(0);
 
-      expect(baseArgs.jobLog).not.toHaveBeenCalled();
+      // New behavior: plugin logs "Keep" for all non-matching streams
+      expect(baseArgs.jobLog).toHaveBeenCalledTimes(3);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Keep stream index 0 because codec_name of h264 includes mp3\n',
+      );
     });
   });
 
@@ -282,7 +286,7 @@ describe('ffmpegCommandRemoveStreamByProperty Plugin', () => {
       expect(aacStream?.removed).toBe(true);
 
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Removing stream index 1 because codec_name of aac includes aac\n',
+        'Removing stream index 1 because codec_name of aac includes AAC\n',
       );
     });
 
@@ -494,6 +498,283 @@ describe('ffmpegCommandRemoveStreamByProperty Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         'Removing stream index 2 because channels of 6 includes 6\n',
       );
+    });
+  });
+
+  describe('Codec Type Filtering', () => {
+    beforeEach(() => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'h264',
+          codec_type: 'video',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:0'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'eng' },
+        },
+        {
+          index: 1,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:1'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'eng' },
+        },
+        {
+          index: 2,
+          codec_name: 'ac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:2'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'spa' },
+        },
+        {
+          index: 3,
+          codec_name: 'srt',
+          codec_type: 'subtitle',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:3'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'eng' },
+        },
+      ];
+    });
+
+    it('should only remove audio streams when codecType is audio', () => {
+      baseArgs.inputs.codecType = 'audio';
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'eng';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      // Only the eng audio stream should be removed
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(1);
+      expect(removedStreams[0].index).toBe(1);
+      expect(removedStreams[0].codec_type).toBe('audio');
+
+      // Video and subtitle with eng should not be touched
+      const videoStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 0,
+      );
+      const subtitleStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 3,
+      );
+      expect(videoStream?.removed).toBe(false);
+      expect(subtitleStream?.removed).toBe(false);
+    });
+
+    it('should only remove video streams when codecType is video', () => {
+      baseArgs.inputs.codecType = 'video';
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'eng';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(1);
+      expect(removedStreams[0].index).toBe(0);
+      expect(removedStreams[0].codec_type).toBe('video');
+    });
+
+    it('should only remove subtitle streams when codecType is subtitle', () => {
+      baseArgs.inputs.codecType = 'subtitle';
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'eng';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(1);
+      expect(removedStreams[0].index).toBe(3);
+      expect(removedStreams[0].codec_type).toBe('subtitle');
+    });
+
+    it('should remove all matching streams when codecType is any', () => {
+      baseArgs.inputs.codecType = 'any';
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'eng';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(3);
+      expect(removedStreams.map((s) => s.index)).toEqual([0, 1, 3]);
+    });
+
+    it('should default to any when codecType is not set', () => {
+      // Simulate missing codecType (loadDefaultValues would set it to 'any')
+      baseArgs.inputs.codecType = 'any';
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'eng';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      // Should affect all stream types
+      expect(removedStreams).toHaveLength(3);
+    });
+
+    it('should combine codecType filter with not_includes condition', () => {
+      baseArgs.inputs.codecType = 'audio';
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'eng';
+      baseArgs.inputs.condition = 'not_includes';
+
+      const result = plugin(baseArgs);
+
+      // Only audio streams are considered; spa audio should be removed
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(1);
+      expect(removedStreams[0].index).toBe(2);
+      expect(removedStreams[0].codec_type).toBe('audio');
+
+      // Video and subtitle should not be affected
+      const videoStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 0,
+      );
+      const subtitleStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 3,
+      );
+      expect(videoStream?.removed).toBe(false);
+      expect(subtitleStream?.removed).toBe(false);
+    });
+  });
+
+  describe('Not Includes with Multiple Values (bug fix)', () => {
+    beforeEach(() => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:0'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'en' },
+        },
+        {
+          index: 1,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:1'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'de' },
+        },
+        {
+          index: 2,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:2'],
+          inputArgs: [],
+          outputArgs: [],
+          tags: { language: 'it' },
+        },
+      ];
+    });
+
+    it('should only remove streams matching NONE of the values', () => {
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'de, en, ger, eng, und';
+      baseArgs.inputs.condition = 'not_includes';
+
+      const result = plugin(baseArgs);
+
+      // Only 'it' should be removed because it does not match any value
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(1);
+      expect(removedStreams[0].index).toBe(2);
+      expect(removedStreams[0].tags?.language).toBe('it');
+
+      // 'en' and 'de' should be kept
+      const keptStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => !stream.removed,
+      );
+      expect(keptStreams).toHaveLength(2);
+      expect(keptStreams.map((s) => s.tags?.language)).toEqual(['en', 'de']);
+    });
+
+    it('should keep all streams when all match at least one value', () => {
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'en, de, it';
+      baseArgs.inputs.condition = 'not_includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(0);
+    });
+
+    it('should remove all streams when none match any value', () => {
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'fr, ja';
+      baseArgs.inputs.condition = 'not_includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(3);
+    });
+
+    it('should remove streams matching ANY value for includes with multiple values', () => {
+      baseArgs.inputs.propertyToCheck = 'tags.language';
+      baseArgs.inputs.valuesToRemove = 'en, de';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(2);
+      expect(removedStreams.map((s) => s.tags?.language)).toEqual(['en', 'de']);
+
+      // 'it' should be kept
+      const itStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 2,
+      );
+      expect(itStream?.removed).toBe(false);
     });
   });
 });

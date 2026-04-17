@@ -11,12 +11,12 @@ jobs:
   test:
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [22.x]
         os:
           [
             ["ubuntu-22.04"],
             ["windows-2022"],
-            ["macos-14"],
+            ["macos-26"],
           ]
     runs-on: ${{ matrix.os }}
 
@@ -35,7 +35,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - run: npm i -g typescript && tsc
+    - run: npm i -g typescript@5.9.3 && tsc
     - run: npm run checkPlugins
     - run: npm run lint
     - run: npm run test
@@ -53,12 +53,12 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Use Node.js 18.x
+    - name: Use Node.js 22.x
       uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1
       with:
-        node-version: 18.x
+        node-version: 22.x
     - run: npm ci
-    - run: npm i -g typescript && tsc
+    - run: npm i -g typescript@5.9.3 && tsc
     - run: npm run test:flows
 
   auto_compile_and_push:
@@ -79,9 +79,9 @@ jobs:
   
     - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
 
-    - run: npm ci && npm i -g typescript && rm -rdf ./FlowPlugins && tsc -v && tsc
+    - run: npm ci && npm i -g typescript@5.9.3 && rm -rdf ./FlowPlugins && tsc -v && tsc
 
     - uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
       ## fix this check
