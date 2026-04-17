@@ -182,8 +182,8 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
     it('should handle GPU encoding with QSV using global_quality', async () => {
       mockGetEncoder.mockResolvedValue({
         encoder: 'hevc_qsv',
-        inputArgs: ['-hwaccel', 'qsv'],
-        outputArgs: ['-load_plugin', 'hevc_hw'],
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
         isGpu: true,
         enabledDevices: [],
       });
@@ -194,7 +194,7 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream.outputArgs).toContain('hevc_qsv');
       expect(videoStream.outputArgs).toContain('-global_quality');
       expect(videoStream.outputArgs).toContain('25');
-      expect(videoStream.inputArgs).toEqual(['-hwaccel', 'qsv']);
+      expect(videoStream.inputArgs).toEqual(['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv']);
     });
 
     it('should handle GPU encoding with NVENC using qp', async () => {

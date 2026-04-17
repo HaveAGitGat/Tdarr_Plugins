@@ -20,6 +20,7 @@ describe('processedCheck Plugin', () => {
     const configVars = getConfigVars();
 
     baseArgs = {
+      isAutomation: false,
       inputs: {
         checkType: 'filePath',
       },

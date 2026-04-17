@@ -17,6 +17,22 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
+            label: 'Codec Type',
+            name: 'codecType',
+            type: 'string',
+            defaultValue: 'any',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'audio',
+                    'video',
+                    'subtitle',
+                    'any',
+                ],
+            },
+            tooltip: "\n      Stream Codec Type to check against the property.\n        ",
+        },
+        {
             label: 'Property To Check',
             name: 'propertyToCheck',
             type: 'string',
@@ -65,10 +81,13 @@ var plugin = function (args) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
+    var codecType = String(args.inputs.codecType).trim();
     var propertyToCheck = String(args.inputs.propertyToCheck).trim();
     var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map(function (item) { return item.trim(); });
     var condition = String(args.inputs.condition);
-    args.variables.ffmpegCommand.streams.forEach(function (stream) {
+    args.variables.ffmpegCommand.streams
+        .filter(function (stream) { return codecType === 'any' || stream.codec_type === codecType; })
+        .forEach(function (stream) {
         var _a;
         var target = '';
         if (propertyToCheck.includes('.')) {
@@ -78,22 +97,22 @@ var plugin = function (args) {
         else {
             target = stream[propertyToCheck];
         }
-        if (target) {
-            var prop = String(target).toLowerCase();
-            for (var i = 0; i < valuesToRemove.length; i += 1) {
-                var val = valuesToRemove[i].toLowerCase();
-                var prefix = "Removing stream index ".concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop);
-                if (condition === 'includes' && prop.includes(val)) {
-                    args.jobLog("".concat(prefix, " includes ").concat(val, "\n"));
-                    // eslint-disable-next-line no-param-reassign
-                    stream.removed = true;
-                }
-                else if (condition === 'not_includes' && !prop.includes(val)) {
-                    args.jobLog("".concat(prefix, " not_includes ").concat(val, "\n"));
-                    // eslint-disable-next-line no-param-reassign
-                    stream.removed = true;
-                }
-            }
+        if (!target) {
+            return;
+        }
+        var prop = String(target).toLowerCase();
+        // For includes:      remove if the property includes ANY of the values
+        // For not_includes:  remove if the property includes NONE of the values
+        var shouldRemove = condition === 'includes'
+            ? valuesToRemove.some(function (val) { return prop.includes(val.toLowerCase()); })
+            : !valuesToRemove.some(function (val) { return prop.includes(val.toLowerCase()); });
+        var valuesStr = valuesToRemove.join(', ');
+        var action = shouldRemove ? 'Removing' : 'Keep';
+        // eslint-disable-next-line max-len
+        args.jobLog("".concat(action, " stream index ").concat(stream.index, " because ").concat(propertyToCheck, " of ").concat(prop, " ").concat(condition, " ").concat(valuesStr, "\n"));
+        if (shouldRemove) {
+            // eslint-disable-next-line no-param-reassign
+            stream.removed = true;
         }
     });
     return {

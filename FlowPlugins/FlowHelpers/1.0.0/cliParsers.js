@@ -95,10 +95,16 @@ var getFFmpegPercentage = function (_a) {
             perc = (frame);
         }
     }
-    // If frame-based percentage exceeds 100 (e.g. filters like yadif=1 or nnedi
-    // that double the frame count), fall back to time-based progress
-    if ((perc > 100 || perc === 0) && time > 0 && Duration > 0) {
-        perc = ((time / Duration) * 100);
+    // Switch to time-based progress when frame-based exceeds 100
+    // (e.g. filters like yadif=1 or nnedi that double the frame count) (#452),
+    // is unavailable, or is significantly below time-based (nb_frames from
+    // r_frame_rate doesn't match actual encoding fps) (#1236)
+    if (time > 0 && Duration > 0) {
+        var timePerc = ((time / Duration) * 100);
+        if (perc > 100 || perc === 0
+            || (timePerc <= 100 && perc < timePerc * 0.75)) {
+            perc = timePerc;
+        }
     }
     var percString = perc.toFixed(2);
     // eslint-disable-next-line no-restricted-globals
