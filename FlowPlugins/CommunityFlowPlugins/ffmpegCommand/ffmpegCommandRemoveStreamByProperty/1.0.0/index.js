@@ -97,7 +97,7 @@ var plugin = function (args) {
         else {
             target = stream[propertyToCheck];
         }
-        if (!target) {
+        if (target === undefined || target === null || target === '') {
             return;
         }
         var prop = String(target).toLowerCase();
