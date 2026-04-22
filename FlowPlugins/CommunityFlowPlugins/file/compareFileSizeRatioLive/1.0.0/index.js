@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Compare File Size Ratio Live',
-    description: "\n  Compare either the estimated final size or current output size to the input size and \n  give an error if estimated final size or current size surpasses the threshold %.\n\n  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins \n  that output a file.\n\n  Can be placed anywhere before a plugin which outputs a new file.\n\n  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if \n  {{{args.variables.liveSizeCompare.error}}} is true.\n  ',\n  ",
+    description: "\n  Compare either the estimated final size or current output size to the input size and\n  give an error if estimated final size or current size falls outside the lower or upper threshold %.\n\n  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins\n  that output a file.\n\n  Can be placed anywhere before a plugin which outputs a new file.\n\n  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if\n  {{{args.variables.liveSizeCompare.error}}} is true. The ratio that triggered the error\n  (either 'high' or 'low') is available at {{{args.variables.liveSizeCompare.ratio}}}.\n  ",
     style: {
         borderColor: 'orange',
     },
@@ -77,7 +77,37 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: "Enter the threshold size percentage relative to the input size. \n      An error will be triggered if the estimated or current size exceeds this percentage.\n\n      For example, if the input size is 100MB and the threshold is 60%, the estimated final size or current size\n      must not surpass 60MB else an error will be given and processing will stop.\n      ",
+            tooltip: "Enter the upper threshold size percentage relative to the input size.\n      An error will be triggered (with ratio set to 'high') if the estimated or current size exceeds\n      this percentage.\n\n      For example, if the input size is 100MB and the threshold is 60%, the estimated final size or current size\n      must not surpass 60MB else an error will be given and processing will stop.\n      ",
+        },
+        {
+            label: 'Lower Threshold Size %',
+            name: 'lowerThresholdPerc',
+            type: 'number',
+            defaultValue: '0',
+            inputUI: {
+                type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'enabled',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                                {
+                                    name: 'compareMethod',
+                                    value: 'estimatedFinalSize',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: "Enter the lower threshold size percentage relative to the input size.\n      An error will be triggered (with ratio set to 'low') if the estimated final size falls below\n      this percentage.\n\n      For example, if the input size is 100MB and the lower threshold is 20%, an error will be given if\n      the estimated final size drops below 20MB.\n\n      Only applies to the 'estimatedFinalSize' compare method, since 'currentSize' starts at zero and\n      would always trip the lower bound. Set to 0 to disable.\n      ",
         },
         {
             label: 'Check Delay (seconds)',
@@ -121,14 +151,17 @@ var plugin = function (args) {
     var enabled = Boolean(args.inputs.enabled);
     var compareMethod = String(args.inputs.compareMethod);
     var thresholdPerc = Number(args.inputs.thresholdPerc);
+    var lowerThresholdPerc = Number(args.inputs.lowerThresholdPerc);
     var checkDelaySeconds = Number(args.inputs.checkDelaySeconds);
     // eslint-disable-next-line no-param-reassign
     args.variables.liveSizeCompare = {
         enabled: enabled,
         compareMethod: compareMethod,
         thresholdPerc: thresholdPerc,
+        lowerThresholdPerc: lowerThresholdPerc,
         checkDelaySeconds: checkDelaySeconds,
         error: false,
+        ratio: '',
     };
     return {
         outputFileObj: args.inputFileObj,
