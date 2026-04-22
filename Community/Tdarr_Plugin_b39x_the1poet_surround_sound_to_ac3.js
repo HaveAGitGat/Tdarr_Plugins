@@ -54,11 +54,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
   let audioIdx = -1;
-  let totalAudioStreams = 0;
   let ffmpegCommandInsert = '';
   let hasnonAC3SurroundTrack = false;
 
   let shouldTranscode = true;
+  let newAudioIdx = 0;
   if (inputs.overwriteTracks === false) {
     const hasAc3_6Stream = file.ffProbeData.streams.filter((row) => row.channels === 6
       && row.codec_name === 'ac3');
@@ -66,20 +66,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       shouldTranscode = false;
     }
 
-    for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
-      const currStream = file.ffProbeData.streams[i];
-      try {
-        if (currStream.codec_type.toLowerCase() === 'audio') {
-          totalAudioStreams += 1;
-        }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.log(err);
-      }
-    }
+    newAudioIdx = file.ffProbeData.streams.filter(
+      (row) => typeof row?.codec_type === 'string' && row.codec_type.toLowerCase() === 'audio',
+    ).length;
   }
-
-  let newAudioIdx = totalAudioStreams;
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const currStream = file.ffProbeData.streams[i];
     try {
