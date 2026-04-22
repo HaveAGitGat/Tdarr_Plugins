@@ -7,7 +7,7 @@ const details = () => ({
   Description: '[Contains built-in filter]  If the file has surround sound tracks not in ac3,'
     + ` they will be converted to ac3. \n\n
 `,
-  Version: '1.01',
+  Version: '1.02',
   Tags: 'pre-processing,ffmpeg,audio only,',
   Inputs: [
     {
@@ -54,6 +54,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
   let audioIdx = -1;
+  let totalAudioStreams = 0;
   let ffmpegCommandInsert = '';
   let hasnonAC3SurroundTrack = false;
 
@@ -64,8 +65,21 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (hasAc3_6Stream.length > 0) {
       shouldTranscode = false;
     }
+
+    for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
+      const currStream = file.ffProbeData.streams[i];
+      try {
+        if (currStream.codec_type.toLowerCase() === 'audio') {
+          totalAudioStreams += 1;
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log(err);
+      }
+    }
   }
 
+  let newAudioIdx = totalAudioStreams;
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     const currStream = file.ffProbeData.streams[i];
     try {
@@ -86,7 +100,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         if (inputs.overwriteTracks === true) {
           ffmpegCommandInsert += ` -c:a:${audioIdx} ac3 `;
         } else {
-          ffmpegCommandInsert += `-map 0:a:${audioIdx} -c:a:${audioIdx} ac3 `;
+          ffmpegCommandInsert += ` -map 0:a:${audioIdx} -c:a:${newAudioIdx} ac3 `;
+          newAudioIdx += 1;
         }
         hasnonAC3SurroundTrack = true;
       }
