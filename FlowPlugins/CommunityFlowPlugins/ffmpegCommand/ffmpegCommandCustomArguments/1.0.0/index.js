@@ -45,6 +45,54 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+
+function splitArgs(str) {
+  var out = [];
+  var cur = '';
+  var quote = null;
+  var i = 0;
+
+  while (i < str.length) {
+    var ch = str[i];
+
+    // whitespace outside quotes = token break
+    if (!quote && (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r')) {
+      if (cur.length) {
+        out.push(cur);
+        cur = '';
+      }
+      i++;
+      continue;
+    }
+
+    // handle quotes
+    if (ch === '"' || ch === "'") {
+      if (quote === ch) {
+        quote = null; // closing quote
+      } else if (!quote) {
+        quote = ch;   // opening quote
+      } else {
+        cur += ch;    // different quote inside quoted string
+      }
+      i++;
+      continue;
+    }
+
+    // handle backslash escapes
+    if (ch === '\\' && i + 1 < str.length) {
+      cur += str[i + 1];
+      i += 2;
+      continue;
+    }
+
+    cur += ch;
+    i++;
+  }
+
+  if (cur.length) out.push(cur);
+  return out;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var _a, _b;
@@ -55,10 +103,12 @@ var plugin = function (args) {
     var inputArguments = String(args.inputs.inputArguments);
     var outputArguments = String(args.inputs.outputArguments);
     if (inputArguments) {
-        (_a = args.variables.ffmpegCommand.overallInputArguments).push.apply(_a, inputArguments.split(' '));
+      (_a = args.variables.ffmpegCommand.overallInputArguments)
+        .push.apply(_a, splitArgs(inputArguments));
     }
     if (outputArguments) {
-        (_b = args.variables.ffmpegCommand.overallOuputArguments).push.apply(_b, outputArguments.split(' '));
+      (_b = args.variables.ffmpegCommand.overallOuputArguments)
+        .push.apply(_b, splitArgs(outputArguments));
     }
     return {
         outputFileObj: args.inputFileObj,
