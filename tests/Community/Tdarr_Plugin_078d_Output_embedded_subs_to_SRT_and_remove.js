@@ -98,21 +98,13 @@ const tests = [
         },
       },
     },
-    outputModify: (output) => ({
-      ...output,
-      infoLog: output.infoLog.startsWith('Sub extraction failed:')
-        ? 'Sub extraction failed'
-        : output.infoLog,
-    }),
-    output: {
-      processFile: true,
-      preset: ', -map 0 -map -0:6 -c copy',
-      container: '.mkv',
-      handBrakeMode: false,
-      FFmpegMode: true,
-      reQueueAfter: true,
-      infoLog: 'Sub extraction failed',
-    },
+    error: { shouldThrow: true },
+    outputModify: (message) => (
+      typeof message === 'string' && message.startsWith('Sub extraction failed, keeping embedded subs:')
+        ? 'Sub extraction failed, keeping embedded subs'
+        : message
+    ),
+    output: 'Sub extraction failed, keeping embedded subs',
   },
 ];
 
