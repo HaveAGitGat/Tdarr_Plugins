@@ -40,7 +40,8 @@ exports.plugin = exports.details = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
     name: 'Notify Radarr or Sonarr',
-    description: 'Notify Radarr or Sonarr to refresh after file change',
+    description: 'Notify Radarr or Sonarr to refresh after file change. '
+        + 'Waits for the scan to complete before continuing.',
     style: {
         borderColor: 'green',
     },
@@ -100,6 +101,53 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var POLL_INTERVAL_SECONDS = 5;
+var TIMEOUT_SECONDS = 120;
+var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 0, void 0, void 0, function () {
+    var startTime, timeoutMs, pollIntervalMs, elapsed, res, status_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                startTime = Date.now();
+                timeoutMs = TIMEOUT_SECONDS * 1000;
+                pollIntervalMs = POLL_INTERVAL_SECONDS * 1000;
+                args.jobLog("Waiting for command ".concat(commandId, " to complete (timeout: ").concat(TIMEOUT_SECONDS, "s)..."));
+                _a.label = 1;
+            case 1:
+                if (!true) return [3 /*break*/, 4];
+                elapsed = Date.now() - startTime;
+                if (elapsed >= timeoutMs) {
+                    args.jobLog("Command ".concat(commandId, " timed out after ").concat(TIMEOUT_SECONDS, "s."));
+                    return [2 /*return*/, false];
+                }
+                // eslint-disable-next-line no-await-in-loop
+                return [4 /*yield*/, new Promise(function (resolve) {
+                        setTimeout(resolve, pollIntervalMs);
+                    })];
+            case 2:
+                // eslint-disable-next-line no-await-in-loop
+                _a.sent();
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrApp.host, "/api/v3/command/").concat(commandId),
+                        headers: arrApp.headers,
+                    })];
+            case 3:
+                res = _a.sent();
+                status_1 = res.data.status;
+                args.jobLog("Command ".concat(commandId, " status: ").concat(status_1));
+                if (status_1 === 'completed') {
+                    return [2 /*return*/, true];
+                }
+                if (status_1 === 'failed' || status_1 === 'aborted' || status_1 === 'cancelled') {
+                    args.jobLog("Command ".concat(commandId, " ended with status: ").concat(status_1));
+                    return [2 /*return*/, false];
+                }
+                return [3 /*break*/, 1];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
     var imdbId, id, _a, _b, _c, _d;
     var _e, _f, _g, _h, _j;
@@ -139,7 +187,7 @@ var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0,
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, id;
+    var lib, refreshed, arr, arr_host, arrHost, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, completed;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -190,8 +238,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 id = _e.sent();
                 _e.label = 3;
             case 3:
-                if (!(id !== -1)) return [3 /*break*/, 5];
-                // Using command endpoint to queue a refresh task
+                if (!(id !== -1)) return [3 /*break*/, 6];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'post',
                         url: "".concat(arrApp.host, "/api/v3/command"),
@@ -199,12 +246,21 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         data: arrApp.delegates.buildRefreshResquestData(id),
                     })];
             case 4:
-                // Using command endpoint to queue a refresh task
-                _e.sent();
-                refreshed = true;
-                args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' refreshed in ").concat(arrApp.name, "."));
-                _e.label = 5;
-            case 5: return [2 /*return*/, {
+                commandResponse = _e.sent();
+                commandId = commandResponse.data.id;
+                args.jobLog("".concat(arrApp.content, " '").concat(id, "' refresh queued in ").concat(arrApp.name, " (command ").concat(commandId, ")."));
+                return [4 /*yield*/, waitForCommand(args, arrApp, commandId)];
+            case 5:
+                completed = _e.sent();
+                if (completed) {
+                    refreshed = true;
+                    args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' scan completed in ").concat(arrApp.name, "."));
+                }
+                else {
+                    args.jobLog("\u26A0 ".concat(arrApp.content, " '").concat(id, "' scan did not complete within timeout."));
+                }
+                _e.label = 6;
+            case 6: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: refreshed ? 1 : 2,
                     variables: args.variables,

@@ -40,7 +40,79 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
+var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
 /* eslint-disable no-param-reassign */
+var getHwaccelArgs = function (gpuAcceleration, isGpuWorker, args) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, hardwareType, result, err_1;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                // CPU worker: never use GPU, regardless of selection
+                if (!isGpuWorker) {
+                    if (gpuAcceleration === 'none') {
+                        args.jobLog('GPU acceleration: none selected, using CPU');
+                    }
+                    else if (gpuAcceleration === 'auto') {
+                        args.jobLog('GPU acceleration: auto selected but worker is CPU, using CPU');
+                    }
+                    else {
+                        args.jobLog("GPU acceleration: '".concat(gpuAcceleration, "' selected but worker is CPU")
+                            + ' — GPU is only available on transcode GPU workers, using CPU');
+                    }
+                    return [2 /*return*/, []];
+                }
+                _a = gpuAcceleration;
+                switch (_a) {
+                    case 'none': return [3 /*break*/, 1];
+                    case 'dxva2': return [3 /*break*/, 2];
+                    case 'd3d11va': return [3 /*break*/, 3];
+                    case 'auto': return [3 /*break*/, 4];
+                }
+                return [3 /*break*/, 4];
+            case 1:
+                args.jobLog('GPU acceleration: none selected, using CPU');
+                return [2 /*return*/, []];
+            case 2:
+                args.jobLog('GPU acceleration: using DXVA2 (Windows hardware decoding)');
+                return [2 /*return*/, ['-hwaccel', 'dxva2', '-hwaccel_output_format', 'dxva2_vld']];
+            case 3:
+                args.jobLog('GPU acceleration: using D3D11VA (Windows hardware decoding)');
+                return [2 /*return*/, ['-hwaccel', 'd3d11va', '-hwaccel_output_format', 'd3d11']];
+            case 4:
+                hardwareType = gpuAcceleration === 'auto' ? 'auto' : gpuAcceleration;
+                _b.label = 5;
+            case 5:
+                _b.trys.push([5, 7, , 8]);
+                return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
+                        targetCodec: 'hevc',
+                        hardwareEncoding: true,
+                        hardwareType: hardwareType,
+                        args: args,
+                    })];
+            case 6:
+                result = _b.sent();
+                if (result.isGpu && result.inputArgs.length > 0) {
+                    args.jobLog("GPU acceleration: using ".concat(gpuAcceleration)
+                        + " (hwaccel: ".concat(result.inputArgs.join(' '), ")"));
+                    return [2 /*return*/, result.inputArgs];
+                }
+                if (gpuAcceleration === 'auto') {
+                    args.jobLog('GPU acceleration: auto selected on GPU worker'
+                        + ' but no compatible GPU detected, falling back to CPU');
+                }
+                else {
+                    args.jobLog("GPU acceleration: '".concat(gpuAcceleration, "' selected")
+                        + ' but detection returned no GPU, falling back to CPU');
+                }
+                return [3 /*break*/, 8];
+            case 7:
+                err_1 = _b.sent();
+                args.jobLog("GPU acceleration error: ".concat(err_1, ". Falling back to CPU."));
+                return [3 /*break*/, 8];
+            case 8: return [2 /*return*/, []];
+        }
+    });
+}); };
 var details = function () { return ({
     name: 'Run Health Check',
     description: 'Run a quick health check using HandBrake or a thorough health check using FFmpeg',
@@ -68,6 +140,29 @@ var details = function () { return ({
             },
             tooltip: 'Specify the container to use',
         },
+        {
+            label: 'GPU Acceleration',
+            name: 'gpuAcceleration',
+            type: 'string',
+            defaultValue: 'auto',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'auto',
+                    'none',
+                    'nvenc',
+                    'qsv',
+                    'vaapi',
+                    'videotoolbox',
+                    'rkmpp',
+                    'dxva2',
+                    'd3d11va',
+                ],
+            },
+            tooltip: 'Specify GPU acceleration for thorough health checks '
+                + '(FFmpeg only). auto: detect available GPU | nvenc: NVIDIA '
+                + '| qsv: Intel | vaapi: Linux | dxva2/d3d11va: Windows',
+        },
     ],
     outputs: [
         {
@@ -79,7 +174,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, type, outputFilePath, cliPath, cliArgs, cli, res;
+    var lib, type, gpuAcceleration, outputFilePath, cliPath, cliArgs, isGpuWorker, hwaccelArgs, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -87,6 +182,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 type = String(args.inputs.type);
+                gpuAcceleration = String(args.inputs.gpuAcceleration);
                 args.jobLog("Running health check of type ".concat(type));
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id))
                     + ".".concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
@@ -98,21 +194,21 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     outputFilePath,
                     '--scan',
                 ];
-                if (type === 'thorough') {
-                    cliPath = args.ffmpegPath;
-                    cliArgs = [
-                        '-stats',
-                        '-v',
-                        'error',
-                        '-i',
-                        args.inputFileObj._id,
-                        '-f',
-                        'null',
-                        '-max_muxing_queue_size',
-                        '9999',
-                        outputFilePath,
-                    ];
-                }
+                if (!(type === 'thorough')) return [3 /*break*/, 2];
+                cliPath = args.ffmpegPath;
+                cliArgs = [
+                    '-stats',
+                    '-v',
+                    'error',
+                ];
+                isGpuWorker = !!(args.workerType && args.workerType.includes('gpu'));
+                return [4 /*yield*/, getHwaccelArgs(gpuAcceleration, isGpuWorker, args)];
+            case 1:
+                hwaccelArgs = _a.sent();
+                cliArgs.push.apply(cliArgs, hwaccelArgs);
+                cliArgs.push('-i', args.inputFileObj._id, '-f', 'null', '-max_muxing_queue_size', '9999', outputFilePath);
+                _a.label = 2;
+            case 2:
                 cli = new cliUtils_1.CLI({
                     cli: cliPath,
                     spawnArgs: cliArgs,
@@ -125,14 +221,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     args: args,
                 });
                 return [4 /*yield*/, cli.runCli()];
-            case 1:
-                res = _a.sent();
-                if (!(typeof args.updateStat !== 'undefined')) return [3 /*break*/, 3];
-                return [4 /*yield*/, args.updateStat(args.originalLibraryFile.DB, 'totalHealthCheckCount', 1)];
-            case 2:
-                _a.sent();
-                _a.label = 3;
             case 3:
+                res = _a.sent();
+                if (!(typeof args.updateStat !== 'undefined')) return [3 /*break*/, 5];
+                return [4 /*yield*/, args.updateStat(args.originalLibraryFile.DB, 'totalHealthCheckCount', 1)];
+            case 4:
+                _a.sent();
+                _a.label = 5;
+            case 5:
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running CLI failed');
                     args.logOutcome('hErr');

@@ -8,17 +8,17 @@ import {
 const details = (): IpluginDetails => ({
   name: 'Compare File Size Ratio Live',
   description: `
-  Compare either the estimated final size or current output size to the input size and 
-  give an error if estimated final size or current size surpasses the threshold %.
+  Compare either the estimated final size or current output size to the input size and
+  give an error if estimated final size or current size falls outside the lower or upper threshold %.
 
-  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins 
+  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins
   that output a file.
 
   Can be placed anywhere before a plugin which outputs a new file.
 
-  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if 
-  {{{args.variables.liveSizeCompare.error}}} is true.
-  ',
+  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if
+  {{{args.variables.liveSizeCompare.error}}} is true. The threshold that triggered the error
+  (either 'upperThreshold' or 'lowerThreshold') is available at {{{args.variables.liveSizeCompare.errorType}}}.
   `,
   style: {
     borderColor: 'orange',
@@ -75,7 +75,7 @@ const details = (): IpluginDetails => ({
       `,
     },
     {
-      label: 'Threshold Size %',
+      label: 'Upper Threshold Size %',
       name: 'thresholdPerc',
       type: 'number',
       defaultValue: '60',
@@ -97,11 +97,51 @@ const details = (): IpluginDetails => ({
           ],
         },
       },
-      tooltip: `Enter the threshold size percentage relative to the input size. 
-      An error will be triggered if the estimated or current size exceeds this percentage.
+      tooltip: `Enter the upper threshold size percentage relative to the input size.
+      An error will be triggered (with errorType set to 'upperThreshold') if the estimated or current size exceeds
+      this percentage.
 
       For example, if the input size is 100MB and the threshold is 60%, the estimated final size or current size
       must not surpass 60MB else an error will be given and processing will stop.
+      `,
+    },
+    {
+      label: 'Lower Threshold Size %',
+      name: 'lowerThresholdPerc',
+      type: 'number',
+      defaultValue: '0',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'enabled',
+                  value: 'true',
+                  condition: '===',
+                },
+                {
+                  name: 'compareMethod',
+                  value: 'estimatedFinalSize',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: `Enter the lower threshold size percentage relative to the input size.
+      An error will be triggered (with errorType set to 'lowerThreshold') if the estimated final size falls below
+      this percentage.
+
+      For example, if the input size is 100MB and the lower threshold is 20%, an error will be given if
+      the estimated final size drops below 20MB.
+
+      Only applies to the 'estimatedFinalSize' compare method, since 'currentSize' starts at zero and
+      would always trip the lower bound. Set to 0 to disable.
       `,
     },
     {
@@ -150,6 +190,7 @@ const plugin = (args: IpluginInputArgs):IpluginOutputArgs => {
   const enabled = Boolean(args.inputs.enabled);
   const compareMethod = String(args.inputs.compareMethod);
   const thresholdPerc = Number(args.inputs.thresholdPerc);
+  const lowerThresholdPerc = Number(args.inputs.lowerThresholdPerc);
   const checkDelaySeconds = Number(args.inputs.checkDelaySeconds);
 
   // eslint-disable-next-line no-param-reassign
@@ -157,8 +198,10 @@ const plugin = (args: IpluginInputArgs):IpluginOutputArgs => {
     enabled,
     compareMethod,
     thresholdPerc,
+    lowerThresholdPerc,
     checkDelaySeconds,
     error: false,
+    errorType: '',
   };
 
   return {

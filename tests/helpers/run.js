@@ -60,7 +60,10 @@ const run = async (tests) => {
         if (test?.error?.shouldThrow) {
           if (errorEncountered !== false) {
             stackLog(errorEncountered);
-            chai.assert.deepEqual(errorEncountered.message, expectedOutput);
+            const actualMessage = test.outputModify
+              ? test.outputModify(errorEncountered.message)
+              : errorEncountered.message;
+            chai.assert.deepEqual(actualMessage, expectedOutput);
           } else {
             throw new Error('Expected plugin error but none was thrown!');
           }

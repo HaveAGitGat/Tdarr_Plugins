@@ -122,14 +122,14 @@ var plugin = function (args) {
     var fallbackBitrate = String(args.inputs.fallbackBitrate);
     var bitrate = String(args.inputs.bitrate);
     args.variables.ffmpegCommand.streams.forEach(function (stream) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c;
         if (stream.codec_type === 'video') {
             var ffType = (0, fileUtils_1.getFfType)(stream.codec_type);
             if (useInputBitrate) {
                 args.jobLog('Attempting to use % of input bitrate as output bitrate');
                 // check if input bitrate is available
-                var mediainfoIndex = stream.index + 1;
-                var inputBitrate = (_d = (_c = (_b = (_a = args === null || args === void 0 ? void 0 : args.inputFileObj) === null || _a === void 0 ? void 0 : _a.mediaInfo) === null || _b === void 0 ? void 0 : _b.track) === null || _c === void 0 ? void 0 : _c[mediainfoIndex]) === null || _d === void 0 ? void 0 : _d.BitRate;
+                var tracks = (_b = (_a = args === null || args === void 0 ? void 0 : args.inputFileObj) === null || _a === void 0 ? void 0 : _a.mediaInfo) === null || _b === void 0 ? void 0 : _b.track;
+                var inputBitrate = (_c = tracks === null || tracks === void 0 ? void 0 : tracks.find(function (x) { return x.StreamOrder === stream.index.toString(); })) === null || _c === void 0 ? void 0 : _c.BitRate;
                 if (inputBitrate) {
                     args.jobLog("Found input bitrate: ".concat(inputBitrate));
                     // @ts-expect-error type

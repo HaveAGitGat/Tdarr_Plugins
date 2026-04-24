@@ -20,6 +20,20 @@ const details = (): IpluginDetails => ({
   icon: 'faQuestion',
   inputs: [
     {
+      label: 'File to check',
+      name: 'fileToCheck',
+      type: 'string',
+      defaultValue: 'workingFile',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'workingFile',
+          'originalFile',
+        ],
+      },
+      tooltip: 'Specify the file name to check.',
+    },
+    {
       label: 'Terms',
       name: 'terms',
       type: 'string',
@@ -62,6 +76,11 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+const processPath = (
+  includeFileDirectory: boolean,
+  input:string,
+) => (includeFileDirectory ? input : `${getFileName(input)}.${getContainer(input)}`);
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
@@ -70,11 +89,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const terms = String(args.inputs.terms);
   const pattern = String(args.inputs.pattern);
-  const { includeFileDirectory } = args.inputs;
+  const fileToCheck = String(args.inputs.fileToCheck);
+  const includeFileDirectory = Boolean(args.inputs.includeFileDirectory);
 
-  const fileName = includeFileDirectory
-    ? args.inputFileObj._id
-    : `${getFileName(args.inputFileObj._id)}.${getContainer(args.inputFileObj._id)}`;
+  const filePathToCheck = fileToCheck === 'originalFile'
+    ? processPath(includeFileDirectory, args.originalLibraryFile._id)
+    : processPath(includeFileDirectory, args.inputFileObj._id);
 
   const searchCriteriasArray = terms.trim().split(',')
     .map((term) => term.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&')); // https://github.com/tc39/proposal-regex-escaping
@@ -84,13 +104,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   const searchCriteriaMatched = searchCriteriasArray
-    .find((searchCriteria) => new RegExp(searchCriteria).test(fileName));
+    .find((searchCriteria) => new RegExp(searchCriteria).test(filePathToCheck));
   const isAMatch = searchCriteriaMatched !== undefined;
 
   if (isAMatch) {
-    args.jobLog(`'${fileName}' includes '${searchCriteriaMatched}'`);
+    args.jobLog(`'${filePathToCheck}' includes '${searchCriteriaMatched}'`);
   } else {
-    args.jobLog(`'${fileName}' does not include any of the terms or patterns`);
+    args.jobLog(`'${filePathToCheck}' does not include any of the terms or patterns`);
   }
 
   return {

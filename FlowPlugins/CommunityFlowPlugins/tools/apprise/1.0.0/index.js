@@ -75,6 +75,17 @@ var details = function () { return ({
             tooltip: "Visit the following for more information on Apprise: https://github.com/caronc/apprise\n      \\nExample\\n\n     -vv -t \"Success\" -b \"File {{{args.inputFileObj._id}}}\" \"discord://xxx/xxxx\"\n\n\n     \\nExample\\n\n     -vv -t \"Processing\" -b \"File {{{args.inputFileObj._id}}}\" "
                 + "\"discord://{{{args.userVariables.global.discord_webhook}}}\"\n      ",
         },
+        {
+            label: 'Apprise Path',
+            name: 'apprisePath',
+            type: 'string',
+            defaultValue: 'apprise',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: 'Specify the path to the Apprise executable.'
+                + 'If the path is not specified, the plugin will use the default path.',
+        },
     ],
     outputs: [
         {
@@ -86,17 +97,18 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, command, cliArgs, cli, res;
+    var lib, command, apprisePath, cliArgs, cli, res;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                command = args.inputs.command;
+                command = String(args.inputs.command);
+                apprisePath = String(args.inputs.apprisePath).trim();
                 cliArgs = __spreadArray([], args.deps.parseArgsStringToArgv(command, '', ''), true);
                 cli = new cliUtils_1.CLI({
-                    cli: 'apprise',
+                    cli: apprisePath,
                     spawnArgs: cliArgs,
                     spawnOpts: {},
                     jobLog: args.jobLog,

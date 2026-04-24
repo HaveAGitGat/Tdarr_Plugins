@@ -133,6 +133,11 @@ var details = function () { return ({
             defaultValue: 'true',
             inputUI: {
                 type: 'switch',
+                onSelect: {
+                    false: {
+                        outputFileBecomesWorkingFile: 'false',
+                    },
+                },
             },
             tooltip: 'Toggle this on if the command creates an output file.',
         },

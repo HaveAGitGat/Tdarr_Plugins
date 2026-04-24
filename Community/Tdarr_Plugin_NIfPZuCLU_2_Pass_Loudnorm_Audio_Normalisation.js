@@ -88,9 +88,9 @@ const parseJobName = (text) => {
   };
 };
 
-const getloudNormValues = async (inputs, response, file) => {
+const getloudNormValues = async (inputs, response, file, otherArguments) => {
   // {
-  // eslint-disable-next-line import/no-unresolved
+  // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const axios = require('axios');
 
   const serverIp = inputs.serverIp ? inputs.serverIp : process.env.serverIp;
@@ -99,6 +99,13 @@ const getloudNormValues = async (inputs, response, file) => {
   let loudNormValues = false;
   let tries = 0;
   let error = false;
+
+  // Prepare headers with API key if available
+  const headers = {};
+  if (otherArguments?.configVars?.config?.apiKey) {
+    headers['x-api-key'] = otherArguments.configVars.config.apiKey;
+  }
+
   while (tries < 15) {
     try {
       tries += 1;
@@ -109,7 +116,7 @@ const getloudNormValues = async (inputs, response, file) => {
         data: {
           footprintId: file.footprintId,
         },
-      });
+      }, { headers });
 
       if (logFilesReq.status !== 200) {
         throw new Error('Failed to get log files, please rerun');
@@ -131,7 +138,7 @@ const getloudNormValues = async (inputs, response, file) => {
           jobId: parseJobName(latestJob).jobId,
           jobFileId: latestJob,
         },
-      });
+      }, { headers });
 
       if (reportReq.status !== 200) {
         throw new Error('Failed to get read latest log file, please rerun');
@@ -227,17 +234,18 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   } if (
     probeData.format.tags.NORMALISATIONSTAGE === 'FirstPassComplete'
   ) {
-    const loudNormValues = await getloudNormValues(inputs, response, file);
+    const loudNormValues = await getloudNormValues(inputs, response, file, otherArguments);
 
     response.infoLog += `Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`;
 
     // use parsed values in second pass
-    response.preset = `-y<io>-af loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
+    response.preset = '-y<io>-map 0'
+      + ` -filter:a:0 loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
       + `measured_i=${loudNormValues.input_i}:`
       + `measured_lra=${loudNormValues.input_lra}:`
       + `measured_tp=${loudNormValues.input_tp}:`
       + `measured_thresh=${loudNormValues.input_thresh}:offset=${loudNormValues.target_offset} `
-      + '-c:a aac -b:a 192k -c:s copy -c:v copy -metadata NORMALISATIONSTAGE=Complete';
+      + '-c:v copy -c:s copy -c:a copy -c:a:0 aac -b:a:0 192k -metadata NORMALISATIONSTAGE=Complete';
     response.FFmpegMode = true;
     response.processFile = true;
     response.infoLog += 'Normalisation pass processing \n';
