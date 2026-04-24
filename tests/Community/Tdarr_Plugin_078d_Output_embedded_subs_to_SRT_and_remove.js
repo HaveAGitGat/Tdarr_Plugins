@@ -2,6 +2,12 @@
 const _ = require('lodash');
 const run = require('../helpers/run');
 
+// Use `echo` as a stand-in for ffmpeg so the plugin's await resolves successfully
+// across Linux, macOS, and Windows CI runners without needing real media files.
+const ffmpegStub = 'echo';
+// A command guaranteed to fail, used to exercise the extraction-error path.
+const ffmpegFailStub = 'this-command-does-not-exist';
+
 const tests = [
   {
     input: {
@@ -9,7 +15,7 @@ const tests = [
       librarySettings: {},
       inputs: {},
       otherArguments: {
-        ffmpegPath: '/usr/bin/ffmpeg',
+        ffmpegPath: ffmpegStub,
         originalLibraryFile: {
           file: require('../sampleData/media/sampleH264_2.json').file,
         },
@@ -42,7 +48,7 @@ const tests = [
       librarySettings: {},
       inputs: {},
       otherArguments: {
-        ffmpegPath: '/usr/bin/ffmpeg',
+        ffmpegPath: ffmpegStub,
         originalLibraryFile: {
           file: require('../sampleData/media/sampleH264_1.json').file,
         },
@@ -64,7 +70,7 @@ const tests = [
       librarySettings: {},
       inputs: {},
       otherArguments: {
-        ffmpegPath: '/usr/bin/ffmpeg',
+        ffmpegPath: ffmpegStub,
         originalLibraryFile: {
           file: require('../sampleData/media/sampleH264_1.json').file,
         },
@@ -78,6 +84,34 @@ const tests = [
       FFmpegMode: false,
       reQueueAfter: true,
       infoLog: 'No subs in file to extract!',
+    },
+  },
+  {
+    input: {
+      file: require('../sampleData/media/sampleH264_2.json'),
+      librarySettings: {},
+      inputs: {},
+      otherArguments: {
+        ffmpegPath: ffmpegFailStub,
+        originalLibraryFile: {
+          file: require('../sampleData/media/sampleH264_2.json').file,
+        },
+      },
+    },
+    outputModify: (output) => ({
+      ...output,
+      infoLog: output.infoLog.startsWith('Sub extraction failed:')
+        ? 'Sub extraction failed'
+        : output.infoLog,
+    }),
+    output: {
+      processFile: true,
+      preset: ', -map 0 -map -0:6 -c copy',
+      container: '.mkv',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Sub extraction failed',
     },
   },
 ];

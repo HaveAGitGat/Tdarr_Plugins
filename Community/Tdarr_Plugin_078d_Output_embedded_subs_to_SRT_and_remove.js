@@ -14,8 +14,8 @@ const details = () => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
-    
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
+
     const lib = require('../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -32,7 +32,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   const ffmpegPath = otherArguments.ffmpegPath
-  const exec = require("child_process").exec;
+  const { promisify } = require("util");
+  const exec = promisify(require("child_process").exec);
 
   let subsArr = file.ffProbeData.streams.filter(row => row.codec_name === 'subrip' || row.codec_name === 'mov_text')
 
@@ -68,7 +69,15 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let codecParam = subStream.codec_name === 'mov_text' ? ' -c:s srt' : ''
   let command = `${ffmpegPath} -i "${file.file}" -map 0:${index}${codecParam} "${subsFile}"`
 
-  exec(command);
+  // Await extraction so it finishes before Tdarr's subtitle-removal transcode starts;
+  // otherwise the two ffmpeg processes race and "replace original file" reports a size mismatch.
+  // Raise maxBuffer so long ffmpeg stderr (progress lines) doesn't trip ERR_CHILD_PROCESS_STDIO_MAXBUFFER.
+  let infoLog = "Found sub to extract!";
+  try {
+    await exec(command, { maxBuffer: 1024 * 1024 * 100 });
+  } catch (err) {
+    infoLog = `Sub extraction failed: ${err.message}`;
+  }
 
   response = {
     processFile: true,
@@ -77,7 +86,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     handBrakeMode: false,
     FFmpegMode: true,
     reQueueAfter: true,
-    infoLog: "Found sub to extract!",
+    infoLog,
   };
 
   return response;
