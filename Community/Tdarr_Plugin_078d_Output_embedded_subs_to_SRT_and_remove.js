@@ -77,7 +77,9 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   try {
     await exec(command, { maxBuffer: 1024 * 1024 * 100 });
   } catch (err) {
-    throw new Error(`Sub extraction failed, keeping embedded subs: ${err.message}`);
+    // Prepend context while keeping the original error (with its stack, code, stderr, stdout, cmd).
+    err.message = `Sub extraction failed, keeping embedded subs: ${err.message}`;
+    throw err;
   }
 
   response = {
