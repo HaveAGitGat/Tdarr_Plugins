@@ -91,7 +91,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 newPath = "".concat(orignalFolder, "/").concat(fileName, ".").concat(container);
                 newPathTmp = "".concat(newPath, ".tmp");
-                originalPathOld = "".concat(originalPath, ".old");
+                originalPathOld = "".concat(originalPath, ".partial.old");
                 args.jobLog(JSON.stringify({
                     currentPath: currentPath,
                     newPath: newPath,

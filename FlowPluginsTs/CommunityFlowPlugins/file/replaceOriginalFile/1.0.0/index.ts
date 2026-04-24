@@ -64,7 +64,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const newPath = `${orignalFolder}/${fileName}.${container}`;
   const newPathTmp = `${newPath}.tmp`;
-  const originalPathOld = `${originalPath}.old`;
+  // Suffix includes `.partial` so Tdarr's folder watcher ignores this sentinel if a crash
+  // between rename-aside and final move leaves it on disk.
+  const originalPathOld = `${originalPath}.partial.old`;
 
   args.jobLog(JSON.stringify({
     currentPath,

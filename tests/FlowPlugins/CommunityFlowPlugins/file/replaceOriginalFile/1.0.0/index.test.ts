@@ -169,9 +169,9 @@ describe('replaceOriginalFile Plugin', () => {
       // Verify safe-swap ordering: tmp staged -> original renamed aside -> tmp into place -> .old deleted
       expect(callOrder).toEqual([
         'move:/working/path/video_transcoded.mkv->/original/path/video_transcoded.mkv.tmp',
-        'rename:/original/path/video.mp4->/original/path/video.mp4.old',
+        'rename:/original/path/video.mp4->/original/path/video.mp4.partial.old',
         'move:/original/path/video_transcoded.mkv.tmp->/original/path/video_transcoded.mkv',
-        'unlink:/original/path/video.mp4.old',
+        'unlink:/original/path/video.mp4.partial.old',
       ]);
 
       expect(result.outputFileObj._id).toBe('/original/path/video_transcoded.mkv');
@@ -185,16 +185,16 @@ describe('replaceOriginalFile Plugin', () => {
       expect(mockFileExists).toHaveBeenCalledWith('/original/path/video.mp4');
       expect(mockFsPromises.rename).toHaveBeenCalledWith(
         '/original/path/video.mp4',
-        '/original/path/video.mp4.old',
+        '/original/path/video.mp4.partial.old',
       );
-      expect(mockFsPromises.unlink).toHaveBeenCalledWith('/original/path/video.mp4.old');
+      expect(mockFsPromises.unlink).toHaveBeenCalledWith('/original/path/video.mp4.partial.old');
       // Original path must never be unlinked directly - only the .old copy
       expect(mockFsPromises.unlink).not.toHaveBeenCalledWith('/original/path/video.mp4');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Renaming original file to: /original/path/video.mp4.old',
+        'Renaming original file to: /original/path/video.mp4.partial.old',
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Deleting renamed original file: /original/path/video.mp4.old',
+        'Deleting renamed original file: /original/path/video.mp4.partial.old',
       );
       expect(result.outputNumber).toBe(1);
     });
@@ -229,7 +229,7 @@ describe('replaceOriginalFile Plugin', () => {
       // fileExists is called for originalPath AND originalPathOld; stub both
       mockFileExists.mockImplementation(async (p: string) => {
         if (p === '/original/path/video.mp4') return true;
-        if (p === '/original/path/video.mp4.old') return true;
+        if (p === '/original/path/video.mp4.partial.old') return true;
         return false;
       });
 
@@ -245,12 +245,12 @@ describe('replaceOriginalFile Plugin', () => {
 
       // Stale .old must be removed BEFORE the rename-aside
       expect(callOrder).toEqual([
-        'unlink:/original/path/video.mp4.old',
-        'rename:/original/path/video.mp4->/original/path/video.mp4.old',
-        'unlink:/original/path/video.mp4.old',
+        'unlink:/original/path/video.mp4.partial.old',
+        'rename:/original/path/video.mp4->/original/path/video.mp4.partial.old',
+        'unlink:/original/path/video.mp4.partial.old',
       ]);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Removing stale file at /original/path/video.mp4.old',
+        'Removing stale file at /original/path/video.mp4.partial.old',
       );
     });
 
@@ -261,7 +261,7 @@ describe('replaceOriginalFile Plugin', () => {
 
       // Only the final cleanup unlink of .old, not a pre-rename one
       expect(mockFsPromises.unlink).toHaveBeenCalledTimes(1);
-      expect(mockFsPromises.unlink).toHaveBeenCalledWith('/original/path/video.mp4.old');
+      expect(mockFsPromises.unlink).toHaveBeenCalledWith('/original/path/video.mp4.partial.old');
       expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
         expect.stringContaining('Removing stale file'),
       );
@@ -280,15 +280,15 @@ describe('replaceOriginalFile Plugin', () => {
       // Original should have been renamed aside
       expect(mockFsPromises.rename).toHaveBeenCalledWith(
         '/original/path/video.mp4',
-        '/original/path/video.mp4.old',
+        '/original/path/video.mp4.partial.old',
       );
       // And restored on failure
       expect(mockFsPromises.rename).toHaveBeenCalledWith(
-        '/original/path/video.mp4.old',
+        '/original/path/video.mp4.partial.old',
         '/original/path/video.mp4',
       );
       // The .old file must NOT be deleted when the swap failed
-      expect(mockFsPromises.unlink).not.toHaveBeenCalledWith('/original/path/video.mp4.old');
+      expect(mockFsPromises.unlink).not.toHaveBeenCalledWith('/original/path/video.mp4.partial.old');
     });
 
     it('should clean up staged .tmp and rethrow if renaming original aside fails', async () => {
@@ -397,10 +397,10 @@ describe('replaceOriginalFile Plugin', () => {
       await plugin(baseArgs);
 
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Renaming original file to: /original/path/video.mp4.old',
+        'Renaming original file to: /original/path/video.mp4.partial.old',
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Deleting renamed original file: /original/path/video.mp4.old',
+        'Deleting renamed original file: /original/path/video.mp4.partial.old',
       );
     });
   });
