@@ -6,8 +6,8 @@ import {
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 const details = (): IpluginDetails => ({
-  name: 'Notify Radarr or Sonarr',
-  description: 'Notify Radarr or Sonarr to refresh after file change. '
+  name: 'Notify Radarr, Sonarr or Lidarr',
+  description: 'Notify Radarr, Sonarr or Lidarr to refresh after file change. '
     + 'Waits for the scan to complete before continuing.',
   style: {
     borderColor: 'green',
@@ -26,7 +26,7 @@ const details = (): IpluginDetails => ({
       defaultValue: 'radarr',
       inputUI: {
         type: 'dropdown',
-        options: ['radarr', 'sonarr'],
+        options: ['radarr', 'sonarr', 'lidarr'],
       },
       tooltip: 'Specify which arr to use',
     },
@@ -52,18 +52,20 @@ const details = (): IpluginDetails => ({
         + '\\nExample:\\n'
         + 'http://192.168.1.1:7878\\n'
         + 'http://192.168.1.1:8989\\n'
+        + 'http://192.168.1.1:8686\\n'
         + 'https://radarr.domain.com\\n'
-        + 'https://sonarr.domain.com\\n',
+        + 'https://sonarr.domain.com\\n'
+        + 'https://lidarr.domain.com\\n',
     },
   ],
   outputs: [
     {
       number: 1,
-      tooltip: 'Radarr or Sonarr notified',
+      tooltip: 'Radarr, Sonarr or Lidarr notified',
     },
     {
       number: 2,
-      tooltip: 'Radarr or Sonarr do not know this file',
+      tooltip: 'Radarr, Sonarr or Lidarr do not know this file',
     },
   ],
 });
@@ -77,11 +79,13 @@ interface IParseResponse {
   data: {
     movie?: { id: number },
     series?: { id: number },
+    artist?: { id: number },
   },
 }
 interface IArrApp {
   name: string,
   host: string,
+  apiVersion: string,
   headers: IHTTPHeaders,
   content: string,
   delegates: {
@@ -127,7 +131,7 @@ const waitForCommand = async (
     // eslint-disable-next-line no-await-in-loop
     const res: ICommandResponse = await args.deps.axios({
       method: 'get',
-      url: `${arrApp.host}/api/v3/command/${commandId}`,
+      url: `${arrApp.host}/api/${arrApp.apiVersion}/command/${commandId}`,
       headers: arrApp.headers,
     });
 
@@ -151,20 +155,24 @@ const getId = async (
   fileName: string,
 )
   : Promise<number> => {
-  const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
-  let id = (imdbId !== '')
-    ? Number((await args.deps.axios({
-      method: 'get',
-      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=imdb:${imdbId}`,
-      headers: arrApp.headers,
-    })).data?.at(0)?.id ?? -1)
-    : -1;
-  args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for imdb '${imdbId}'`);
+  let id = -1;
+  if (arrApp.name === 'radarr' || arrApp.name === 'sonarr') {
+    const imdbId = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.at(0) ?? '';
+    if (imdbId !== '') {
+      id = Number((await args.deps.axios({
+        method: 'get',
+        url: `${arrApp.host}/api/${arrApp.apiVersion}/${arrApp.name === 'radarr' ? 'movie' : 'series'}`
+          + `/lookup?term=imdb:${imdbId}`,
+        headers: arrApp.headers,
+      })).data?.at(0)?.id ?? -1);
+      args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for imdb '${imdbId}'`);
+    }
+  }
   if (id === -1) {
     id = arrApp.delegates.getIdFromParseResponse(
       (await args.deps.axios({
         method: 'get',
-        url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
+        url: `${arrApp.host}/api/${arrApp.apiVersion}/parse?title=${encodeURIComponent(getFileName(fileName))}`,
         headers: arrApp.headers,
       })),
     );
@@ -190,10 +198,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     'X-Api-Key': String(args.inputs.arr_api_key),
     Accept: 'application/json',
   };
-  const arrApp: IArrApp = arr === 'radarr'
-    ? {
+  let arrApp: IArrApp;
+  if (arr === 'radarr') {
+    arrApp = {
       name: arr,
       host: arrHost,
+      apiVersion: 'v3',
       headers,
       content: 'Movie',
       delegates: {
@@ -202,10 +212,26 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         buildRefreshResquestData:
           (id) => JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }),
       },
-    }
-    : {
+    };
+  } else if (arr === 'lidarr') {
+    arrApp = {
       name: arr,
       host: arrHost,
+      apiVersion: 'v1',
+      headers,
+      content: 'Artist',
+      delegates: {
+        getIdFromParseResponse:
+          (parseResponse: IParseResponse) => Number(parseResponse?.data?.artist?.id ?? -1),
+        buildRefreshResquestData:
+          (id) => JSON.stringify({ name: 'RefreshArtist', artistIds: [id] }),
+      },
+    };
+  } else {
+    arrApp = {
+      name: arr,
+      host: arrHost,
+      apiVersion: 'v3',
       headers,
       content: 'Serie',
       delegates: {
@@ -215,6 +241,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           (id) => JSON.stringify({ name: 'RefreshSeries', seriesId: id }),
       },
     };
+  }
 
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
@@ -230,7 +257,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     // Using command endpoint to queue a refresh task
     const commandResponse: ICommandResponse = await args.deps.axios({
       method: 'post',
-      url: `${arrApp.host}/api/v3/command`,
+      url: `${arrApp.host}/api/${arrApp.apiVersion}/command`,
       headers,
       data: arrApp.delegates.buildRefreshResquestData(id),
     });
