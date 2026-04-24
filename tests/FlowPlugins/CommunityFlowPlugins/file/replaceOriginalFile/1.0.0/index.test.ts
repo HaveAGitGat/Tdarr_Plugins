@@ -54,7 +54,7 @@ describe('replaceOriginalFile Plugin', () => {
     // Default: the original file exists, the .old sentinel does not.
     // Individual tests that need different behavior override this.
     mockFileExists.mockImplementation(
-      async (p: string) => p === '/original/path/video.mp4',
+      (p: string) => Promise.resolve(p === '/original/path/video.mp4'),
     );
     mockFsPromises.unlink.mockResolvedValue(undefined);
     mockFsPromises.rename.mockResolvedValue(undefined);
@@ -129,15 +129,17 @@ describe('replaceOriginalFile Plugin', () => {
   describe('File Replacement Process', () => {
     it('should replace original file with working file using safe swap order', async () => {
       const callOrder: string[] = [];
-      mockFileMoveOrCopy.mockImplementation(async ({ sourcePath, destinationPath }) => {
+      mockFileMoveOrCopy.mockImplementation(({ sourcePath, destinationPath }) => {
         callOrder.push(`move:${sourcePath}->${destinationPath}`);
-        return true;
+        return Promise.resolve(true);
       });
-      mockFsPromises.rename.mockImplementation(async (from: string, to: string) => {
+      mockFsPromises.rename.mockImplementation((from: string, to: string) => {
         callOrder.push(`rename:${from}->${to}`);
+        return Promise.resolve();
       });
-      mockFsPromises.unlink.mockImplementation(async (target: string) => {
+      mockFsPromises.unlink.mockImplementation((target: string) => {
         callOrder.push(`unlink:${target}`);
+        return Promise.resolve();
       });
 
       const result = await plugin(baseArgs);
@@ -227,18 +229,20 @@ describe('replaceOriginalFile Plugin', () => {
   describe('Stale .old Cleanup', () => {
     it('should unlink a stale .old file before renaming the original aside', async () => {
       // fileExists is called for originalPath AND originalPathOld; stub both
-      mockFileExists.mockImplementation(async (p: string) => {
-        if (p === '/original/path/video.mp4') return true;
-        if (p === '/original/path/video.mp4.partial.old') return true;
-        return false;
+      mockFileExists.mockImplementation((p: string) => {
+        if (p === '/original/path/video.mp4') return Promise.resolve(true);
+        if (p === '/original/path/video.mp4.partial.old') return Promise.resolve(true);
+        return Promise.resolve(false);
       });
 
       const callOrder: string[] = [];
-      mockFsPromises.unlink.mockImplementation(async (target: string) => {
+      mockFsPromises.unlink.mockImplementation((target: string) => {
         callOrder.push(`unlink:${target}`);
+        return Promise.resolve();
       });
-      mockFsPromises.rename.mockImplementation(async (from: string, to: string) => {
+      mockFsPromises.rename.mockImplementation((from: string, to: string) => {
         callOrder.push(`rename:${from}->${to}`);
+        return Promise.resolve();
       });
 
       await plugin(baseArgs);
@@ -255,7 +259,9 @@ describe('replaceOriginalFile Plugin', () => {
     });
 
     it('should not attempt to unlink .old when it does not exist', async () => {
-      mockFileExists.mockImplementation(async (p: string) => p === '/original/path/video.mp4');
+      mockFileExists.mockImplementation(
+        (p: string) => Promise.resolve(p === '/original/path/video.mp4'),
+      );
 
       await plugin(baseArgs);
 
