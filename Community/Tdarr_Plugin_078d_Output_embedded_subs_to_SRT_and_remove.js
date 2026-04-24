@@ -71,14 +71,15 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Await extraction so it finishes before Tdarr's subtitle-removal transcode starts;
   // otherwise the two ffmpeg processes race and "replace original file" reports a size mismatch.
-  // Raise maxBuffer so long ffmpeg stderr (progress lines) doesn't trip ERR_CHILD_PROCESS_STDIO_MAXBUFFER.
   // Re-throw on failure so Tdarr halts the plugin stack and flags the job as errored,
   // rather than proceeding to strip the embedded subs (which would lose them for good).
   try {
-    await exec(command, { maxBuffer: 1024 * 1024 * 100 });
+    await exec(command, { maxBuffer: 1024 * 1024 });
   } catch (err) {
-    // Prepend context while keeping the original error (with its stack, code, stderr, stdout, cmd).
-    err.message = `Sub extraction failed, keeping embedded subs: ${err.message}`;
+    // Replace err.message with a bounded summary so a verbose ffmpeg stderr
+    // can't bloat Tdarr's job log. Keep err.stderr/stdout/code/cmd intact.
+    const stderrTail = (err.stderr || '').slice(-2048);
+    err.message = `Sub extraction failed, keeping embedded subs (exit ${err.code}): ${stderrTail}`;
     throw err;
   }
 

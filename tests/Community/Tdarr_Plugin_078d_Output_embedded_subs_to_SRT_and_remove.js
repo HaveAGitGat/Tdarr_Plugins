@@ -100,7 +100,7 @@ const tests = [
     },
     error: { shouldThrow: true },
     outputModify: (message) => (
-      typeof message === 'string' && message.startsWith('Sub extraction failed, keeping embedded subs:')
+      typeof message === 'string' && message.startsWith('Sub extraction failed, keeping embedded subs')
         ? 'Sub extraction failed, keeping embedded subs'
         : message
     ),
