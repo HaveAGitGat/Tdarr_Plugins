@@ -1,10 +1,9 @@
 /* eslint-disable */
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_078d_Output_embedded_subs_to_SRT_and_remove",
     Stage: "Pre-processing",
-    Name: "Output embedded subs to SRT and remove",
+    Name: "Output Embedded Subs To SRT And Remove",
     Type: "Video",
     Operation: "Transcode",
     Description: `This plugin outputs embedded subs to SRT and then removes them \n\n`,
@@ -35,7 +34,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   const ffmpegPath = otherArguments.ffmpegPath
   const exec = require("child_process").exec;
 
-  let subsArr = file.ffProbeData.streams.filter(row => row.codec_name === 'subrip')
+  let subsArr = file.ffProbeData.streams.filter(row => row.codec_name === 'subrip' || row.codec_name === 'mov_text')
 
   if (subsArr.length === 0) {
     response.infoLog += "No subs in file to extract!";
@@ -66,7 +65,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   subsFile = subsFile.join('.');
 
   let index = subStream.index
-  let command = `${ffmpegPath} -i "${file.file}" -map 0:${index} "${subsFile}"`
+  let codecParam = subStream.codec_name === 'mov_text' ? ' -c:s srt' : ''
+  let command = `${ffmpegPath} -i "${file.file}" -map 0:${index}${codecParam} "${subsFile}"`
 
   exec(command);
 

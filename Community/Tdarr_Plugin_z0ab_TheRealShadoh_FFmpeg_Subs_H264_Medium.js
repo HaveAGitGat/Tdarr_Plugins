@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_z0ab_TheRealShadoh_FFmpeg_Subs_H264_Medium',
   Stage: 'Pre-processing',
-  Name: 'TheRealShadoh FFmpeg Subs Medium, video MP4, audio AAC, keep subs. ',
+  Name: 'TheRealShadoh FFmpeg Subs Medium, Video MP4, Audio AAC, Keep Subs',
   Type: 'Video',
   Operation: 'Transcode',
   Description: '[Contains built-in filter] This plugin transcodes into H264 using FFmpeg\'s '

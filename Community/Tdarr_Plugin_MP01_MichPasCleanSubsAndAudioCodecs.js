@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_MP01_MichPasCleanSubsAndAudioCodecs",
     Stage: "Pre-processing",
-    Name: "MichPass-Remove subtitle and audio streams with certain codecs",
+    Name: "MichPass Remove Subtitle And Audio Streams With Certain Codecs",
     Type: "Any",
     Operation: 'Transcode',
     Description: `This plugin removed specified codecs from subtitle and audio tracks. Helpful to remove bitmap subtitles (pgs,vobsub) or audio codec (truehd), which can cause Plex to start transcoding. Based on Migz4 Plugin. Thanks \n\n`,

@@ -7,7 +7,7 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
   name: 'Check Audio Codec',
-  description: 'Check if a file has a specific audio codec',
+  description: 'Check if a file has a specific audio codec.',
   style: {
     borderColor: 'orange',
   },

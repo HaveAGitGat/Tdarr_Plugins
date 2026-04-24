@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_tsld_filter_modified_date',
   Stage: 'Pre-processing',
-  Name: 'Filter modified date',
+  Name: 'Filter Modified Date',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'This plugin prevents processing files older than 30 days \n\n',

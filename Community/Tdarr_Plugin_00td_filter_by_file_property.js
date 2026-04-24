@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_file_property',
   Stage: 'Pre-processing',
-  Name: 'Filter by file property',
+  Name: 'Filter By File Property',
   Type: 'Video',
   Operation: 'Filter',
   Description: `Filter by a top level file property.

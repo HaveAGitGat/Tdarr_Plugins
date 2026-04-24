@@ -1,4 +1,3 @@
-import { promises as fs } from 'fs';
 import { getContainer, getFileName } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -6,6 +5,7 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import normJoinPath from '../../../../FlowHelpers/1.0.0/normJoinPath';
+import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -37,7 +37,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const originalFileName = getFileName(args.originalLibraryFile._id);
+  const originalFileName = getFileName(args.inputFileObj._id);
   const newContainer = getContainer(args.inputFileObj._id);
 
   const outputPath = args.workDir;
@@ -67,7 +67,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.deps.fsextra.ensureDirSync(outputPath);
 
-  await fs.copyFile(args.inputFileObj._id, ouputFilePath);
+  await fileMoveOrCopy({
+    operation: 'copy',
+    sourcePath: args.inputFileObj._id,
+    destinationPath: ouputFilePath,
+    args,
+  });
 
   return {
     outputFileObj: {

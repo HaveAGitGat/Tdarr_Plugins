@@ -4,7 +4,7 @@ const details = () => {
   return {
     id: 'Tdarr_Plugin_43az_add_to_radarr',
     Stage: 'Post-processing',
-    Name: 'Add movie to Radarr after processing',
+    Name: 'Add Movie To Radarr After Processing',
     Type: 'Video',
     Operation: 'Transcode',
     Description: 'Add movie to Radarr after processing \n\n',

@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz1FFMPEG',
   Stage: 'Pre-processing',
-  Name: 'Migz-Transcode Using Nvidia GPU & FFMPEG',
+  Name: 'Migz Transcode Using Nvidia GPU & FFMPEG',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Files not in H265 will be transcoded into H265 using Nvidia GPU with ffmpeg.
@@ -179,7 +179,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // If Container .ts or .avi set genpts to fix unknown timestamp
   if (inputs.container.toLowerCase() === 'ts' || inputs.container.toLowerCase() === 'avi') {
-    genpts = '-fflags +genpts';
+    genpts = ' -fflags +genpts';
   }
 
   // If targetBitrate comes out as 0 then something has gone wrong and bitrates could not be calculated.
@@ -345,6 +345,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.preset = '-c:v vc1_cuvid';
   } else if (file.video_codec_name === 'vp8') {
     response.preset = '-c:v vp8_cuvid';
+  } else if (file.video_codec_name === 'msmpeg4v3') {
+    response.preset = '-c:v msmpeg4v3';
   }
 
   response.preset += `${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `

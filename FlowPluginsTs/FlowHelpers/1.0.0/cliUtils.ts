@@ -1,8 +1,10 @@
-import { editreadyParser, ffmpegParser, handbrakeParser } from './cliParsers';
-import { Ilog, IupdateWorker } from './interfaces/interfaces';
+import fs from 'fs';
+import {
+  editreadyParser, ffmpegParser, getFpsFromSpeed, getHandBrakeFps, handbrakeParser,
+} from './cliParsers';
+import { Ilog, IpluginInputArgs, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
-
-const fs = require('fs');
+import { fileExists } from './fileUtils';
 
 const fancyTimeFormat = (time: number) => {
   // Hours, minutes and seconds
@@ -69,6 +71,7 @@ interface Iconfig {
   updateWorker: IupdateWorker,
   logFullCliOutput: boolean,
   inputFileObj: IFileObject,
+  args: IpluginInputArgs,
 }
 
 class CLI {
@@ -87,11 +90,18 @@ class CLI {
 
   hbPass = 0;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
+  thread: any;
+
+  cancelled = false;
+
+  startTime = new Date().getTime();
+
   constructor(config: Iconfig) {
     this.config = config;
   }
 
-  updateETA = (perc: number): void => {
+  updateETA = async (perc: number): Promise<void> => {
     if (perc > 0) {
       if (this.lastProgCheck === 0) {
         this.lastProgCheck = new Date().getTime();
@@ -123,9 +133,11 @@ class CLI {
           let outputFileSizeInGbytes;
 
           try {
-            if (fs.existsSync(this.config.outputFilePath)) {
+            if (await fileExists(this.config.outputFilePath)) {
               let singleFileSize = fs.statSync(this.config.outputFilePath);
+              // @ts-expect-error type
               singleFileSize = singleFileSize.size;
+              // @ts-expect-error type
               outputFileSizeInGbytes = singleFileSize / (1024 * 1024 * 1024);
 
               if (outputFileSizeInGbytes !== this.oldOutSize) {
@@ -152,6 +164,84 @@ class CLI {
 
           this.lastProgCheck = n;
           this.oldProgress = perc;
+
+          const secondsSinceStart = (new Date().getTime() - this.startTime) / 1000;
+
+          // live size compare
+          if (
+            this.config.args.variables.liveSizeCompare?.enabled
+          ) {
+            const {
+              compareMethod,
+              thresholdPerc,
+              lowerThresholdPerc,
+              checkDelaySeconds,
+            } = this.config.args.variables.liveSizeCompare;
+
+            if (secondsSinceStart > checkDelaySeconds) {
+              // MB
+              const inputFileSize = this.config.inputFileObj.file_size;
+              const inputFileSizeInGbytes = inputFileSize / 1024;
+
+              const cancel = (
+                ratio: number,
+                errorType: 'upperThreshold' | 'lowerThreshold',
+                threshold: number,
+              ) => {
+                this.config.jobLog(`Input file size: ${inputFileSizeInGbytes}GB`);
+                this.config.jobLog(`Ratio: ${ratio}%`);
+
+                if (errorType === 'upperThreshold') {
+                  this.config.jobLog(
+                    `Ratio is greater than threshold: ${threshold}%, cancelling job`,
+                  );
+                } else {
+                  this.config.jobLog(
+                    `Ratio is less than lower threshold: ${threshold}%, cancelling job`,
+                  );
+                }
+                this.cancelled = true;
+                // @ts-expect-error must exist to be here
+                this.config.args.variables.liveSizeCompare.error = true;
+                // @ts-expect-error must exist to be here
+                this.config.args.variables.liveSizeCompare.errorType = errorType;
+                this.killThread();
+              };
+
+              const checkRatio = (
+                ratio: number,
+                sizeLabel: string,
+                sizeValue: number,
+                checkLower: boolean,
+              ) => {
+                if (ratio > thresholdPerc) {
+                  this.config.jobLog(`${sizeLabel}: ${sizeValue}GB`);
+                  cancel(ratio, 'upperThreshold', thresholdPerc);
+                } else if (checkLower && lowerThresholdPerc > 0 && ratio < lowerThresholdPerc) {
+                  this.config.jobLog(`${sizeLabel}: ${sizeValue}GB`);
+                  cancel(ratio, 'lowerThreshold', lowerThresholdPerc);
+                }
+              };
+
+              if (
+                compareMethod === 'estimatedFinalSize'
+              && estSize !== undefined
+              && estSize > 0
+              ) {
+                const ratio = (estSize / inputFileSizeInGbytes) * 100;
+                checkRatio(ratio, 'Estimated final size', estSize, true);
+              } else if (
+                compareMethod === 'currentSize'
+              && outputFileSizeInGbytes !== undefined
+              && outputFileSizeInGbytes > 0
+              ) {
+                const ratio = (outputFileSizeInGbytes / inputFileSizeInGbytes) * 100;
+                // Skip the lower-bound check for currentSize: the current output is tiny early
+                // in the encode and would always trip the lower threshold.
+                checkRatio(ratio, 'Current output size', outputFileSizeInGbytes, false);
+              }
+            }
+          }
         }
       }
     }
@@ -177,19 +267,38 @@ class CLI {
       });
 
       if (percentage > 0) {
-        this.updateETA(percentage);
+        void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
         });
       }
-    } else if (this.config.cli.toLowerCase().includes('ffmpeg')) {
-      const n = str.indexOf('fps');
-      const shouldUpdate = str.length >= 6 && n >= 6;
 
-      const fps = parseInt(getFFmpegVar({
+      const fps = getHandBrakeFps({
+        str,
+      });
+
+      if (fps > 0) {
+        this.config.updateWorker({
+          fps,
+        });
+      }
+    } else if (this.config.cli.toLowerCase().includes('ffmpeg')) {
+      const shouldUpdate = str.length >= 6
+        && (str.indexOf('fps') >= 6 || str.indexOf('speed') >= 6);
+
+      let fps = parseInt(getFFmpegVar({
         str,
         variable: 'fps',
       }), 10);
+
+      // FFmpeg 7 omits fps= for non-encoding tasks (remux, stream copy, etc.)
+      // Fall back to computing FPS from speed= and source video frame rate
+      if (!(fps > 0)) {
+        fps = getFpsFromSpeed({
+          str,
+          videoFrameRate: this.config.inputFileObj?.meta?.VideoFrameRate,
+        });
+      }
 
       let frameCount = 0;
 
@@ -223,7 +332,7 @@ class CLI {
       }
 
       if (percentage > 0) {
-        this.updateETA(percentage);
+        void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
         });
@@ -233,7 +342,7 @@ class CLI {
         str,
       });
       if (percentage > 0) {
-        this.updateETA(percentage);
+        void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
         });
@@ -241,8 +350,7 @@ class CLI {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
-  killThread = (thread:any): void => {
+  killThread = (): void => {
     const killArray = [
       'SIGKILL',
       'SIGHUP',
@@ -251,14 +359,14 @@ class CLI {
     ];
 
     try {
-      thread.kill();
+      this.thread.kill();
     } catch (err) {
       // err
     }
 
     killArray.forEach((com: string) => {
       try {
-        thread.kill(com);
+        this.thread.kill(com);
       } catch (err) {
         // err
       }
@@ -275,15 +383,12 @@ class CLI {
 
     this.config.jobLog(`Running ${this.config.cli} ${this.config.spawnArgs.join(' ')}`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types
-    let thread: any;
-
     const exitHandler = () => {
-      if (thread) {
+      if (this.thread) {
         try {
         // eslint-disable-next-line no-console
           console.log('Main thread exiting, cleaning up running CLI');
-          this.killThread(thread);
+          this.killThread();
         } catch (err) {
         // eslint-disable-next-line no-console
           console.log('Error running cliUtils on Exit function');
@@ -295,54 +400,63 @@ class CLI {
 
     process.on('exit', exitHandler);
 
-    const cliExitCode: number = await new Promise((resolve) => {
+    let cliExitCode: number = await new Promise((resolve) => {
       try {
         const opts = this.config.spawnOpts || {};
         const spawnArgs = this.config.spawnArgs.map((row) => row.trim()).filter((row) => row !== '');
-        thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
+        this.thread = childProcess.spawn(this.config.cli, spawnArgs, opts);
 
-        thread.stdout.on('data', (data: string) => {
+        this.thread.stdout.on('data', (data: string) => {
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
 
-        thread.stderr.on('data', (data: string) => {
+        this.thread.stderr.on('data', (data: string) => {
           // eslint-disable-next-line no-console
           errorLogFull.push(data.toString());
           this.parseOutput(data);
         });
 
-        thread.on('error', () => {
+        this.thread.on('error', () => {
           // catches execution error (bad file)
           // eslint-disable-next-line no-console
-          console.log(1, `Error executing binary: ${this.config.cli}`);
+          console.log(`Error executing binary: ${this.config.cli}`);
+          this.config.jobLog(`Error executing binary: ${this.config.cli}`);
           resolve(1);
         });
 
         // thread.stdout.pipe(process.stdout);
         // thread.stderr.pipe(process.stderr);
-        thread.on('close', (code: number) => {
+        this.thread.on('close', (code: number) => {
           if (code !== 0) {
             // eslint-disable-next-line no-console
-            console.log(code, 'CLI error');
+            console.log(`CLI error code: ${code}`);
+            this.config.jobLog(`CLI error code: ${code}`);
           }
           resolve(code);
         });
       } catch (err) {
         // catches execution error (no file)
         // eslint-disable-next-line no-console
-        console.log(1, `Error executing binary: ${this.config.cli}`);
+        console.log(`Error executing binary: ${this.config.cli}: ${err}`);
+        this.config.jobLog(`Error executing binary: ${this.config.cli}: ${err}`);
         resolve(1);
       }
     });
 
     process.removeListener('exit', exitHandler);
 
-    thread = undefined;
+    this.thread = undefined;
 
     if (!this.config.logFullCliOutput) {
       this.config.jobLog(errorLogFull.slice(-1000).join(''));
     }
+
+    if (this.cancelled) {
+      cliExitCode = 1;
+    }
+
+    this.config.jobLog(`CLI ${this.config.cli} exited with code: ${cliExitCode}`);
 
     return {
       cliExitCode,

@@ -4,7 +4,7 @@ const details = () => {
     id: "Tdarr_Plugin_da11_Dallas_FFmpeg_Presets_H264_MP4",
     Stage: "Pre-processing",
     Name:
-      "Dallas FFmpeg h264 mp4. Video: h264/mp4, Subs: Convert to mov_text or drop, Audio: aac",
+      "Dallas FFmpeg H264 MP4. Video: H264/MP4, Subs: Convert To:mov_text Or Drop, Audio:aac",
     Type: "Video",
     Operation: 'Transcode',
     Description: `This plugin transcodes into H264 with an MP4 container using the FFmpeg preset you select (slow,medium,fast,veryfast). It maintains all compatible subtitles and audio tracks. Drops picture tracks such as mjpeg\n\n`,

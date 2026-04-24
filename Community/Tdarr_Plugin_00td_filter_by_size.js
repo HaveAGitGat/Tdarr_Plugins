@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_size',
   Stage: 'Pre-processing',
-  Name: 'Filter by size',
+  Name: 'Filter By Size',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'Only allow files to be transcoded which are within the lower and upper bounds (MB) \n\n',

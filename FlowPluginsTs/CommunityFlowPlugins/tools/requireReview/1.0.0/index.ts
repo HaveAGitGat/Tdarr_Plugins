@@ -9,6 +9,8 @@ const details = (): IpluginDetails => ({
   name: 'Require Review',
   description: `Makes the flow pause.
   The file will stay in the staging section on the Tdarr tab until the user clicks the "Reviewed" button.
+
+  Note: The 'Auto accept successful transcodes' option on the Tdarr tab will cause this plugin to be skipped.
   `,
   style: {
     borderColor: 'yellow',

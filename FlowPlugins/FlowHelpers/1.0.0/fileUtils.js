@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -9,8 +42,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
@@ -35,9 +68,20 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = void 0;
-var fs_1 = require("fs");
+exports.hashFile = exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileAbsoluteDir = exports.getFileName = exports.getContainer = exports.fileExists = void 0;
+var fs_1 = __importStar(require("fs"));
+var crypto_1 = __importDefault(require("crypto"));
+var fileExists = function (path) { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
+    switch (_a.label) {
+        case 0: return [4 /*yield*/, fs_1.promises.stat(path).catch(function () { return false; })];
+        case 1: return [2 /*return*/, !!(_a.sent())];
+    }
+}); }); };
+exports.fileExists = fileExists;
 var getContainer = function (filePath) {
     var parts = filePath.split('.');
     return parts[parts.length - 1];
@@ -51,12 +95,14 @@ var getFileName = function (filePath) {
     return parts2.join('.');
 };
 exports.getFileName = getFileName;
-var getFileAbosluteDir = function (filePath) {
+var getFileAbsoluteDir = function (filePath) {
     var parts = filePath.split('/');
     parts.pop();
     return parts.join('/');
 };
-exports.getFileAbosluteDir = getFileAbosluteDir;
+exports.getFileAbsoluteDir = getFileAbsoluteDir;
+// backwards compatibility for typo
+exports.getFileAbosluteDir = exports.getFileAbsoluteDir;
 var getFfType = function (codecType) { return (codecType === 'video' ? 'v' : 'a'); };
 exports.getFfType = getFfType;
 var getSubStem = function (_a) {
@@ -80,80 +126,78 @@ var getFileSize = function (file) { return __awaiter(void 0, void 0, void 0, fun
     });
 }); };
 exports.getFileSize = getFileSize;
-var moveFileAndValidate = function (_a) {
-    var inputPath = _a.inputPath, outputPath = _a.outputPath, args = _a.args;
-    return __awaiter(void 0, void 0, void 0, function () {
-        var inputSize, res1, outputSize, err_1, res2, errMessage;
-        return __generator(this, function (_b) {
-            switch (_b.label) {
-                case 0: return [4 /*yield*/, (0, exports.getFileSize)(inputPath)];
-                case 1:
-                    inputSize = _b.sent();
-                    args.jobLog("Attempt 1: Moving file from ".concat(inputPath, " to ").concat(outputPath));
-                    return [4 /*yield*/, new Promise(function (resolve) {
-                            args.deps.gracefulfs.rename(inputPath, outputPath, function (err) {
-                                if (err) {
-                                    args.jobLog("Failed to move file from ".concat(inputPath, " to ").concat(outputPath));
-                                    args.jobLog(JSON.stringify(err));
-                                    resolve(false);
-                                }
-                                else {
-                                    resolve(true);
-                                }
-                            });
-                        })];
-                case 2:
-                    res1 = _b.sent();
-                    outputSize = 0;
-                    _b.label = 3;
-                case 3:
-                    _b.trys.push([3, 5, , 6]);
-                    return [4 /*yield*/, (0, exports.getFileSize)(outputPath)];
-                case 4:
-                    outputSize = _b.sent();
-                    return [3 /*break*/, 6];
-                case 5:
-                    err_1 = _b.sent();
-                    args.jobLog(JSON.stringify(err_1));
-                    return [3 /*break*/, 6];
-                case 6:
-                    if (!(!res1 || inputSize !== outputSize)) return [3 /*break*/, 9];
+var moveFileAndValidate = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var inputSize, res1, outputSize, err_1, res2, errMessage;
+    var inputPath = _b.inputPath, outputPath = _b.outputPath, args = _b.args;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0: return [4 /*yield*/, (0, exports.getFileSize)(inputPath)];
+            case 1:
+                inputSize = _c.sent();
+                args.jobLog("Attempt 1: Moving file from ".concat(inputPath, " to ").concat(outputPath));
+                return [4 /*yield*/, new Promise(function (resolve) {
+                        args.deps.gracefulfs.rename(inputPath, outputPath, function (err) {
+                            if (err) {
+                                args.jobLog("Failed to move file from ".concat(inputPath, " to ").concat(outputPath));
+                                args.jobLog(JSON.stringify(err));
+                                resolve(false);
+                            }
+                            else {
+                                resolve(true);
+                            }
+                        });
+                    })];
+            case 2:
+                res1 = _c.sent();
+                outputSize = 0;
+                _c.label = 3;
+            case 3:
+                _c.trys.push([3, 5, , 6]);
+                return [4 /*yield*/, (0, exports.getFileSize)(outputPath)];
+            case 4:
+                outputSize = _c.sent();
+                return [3 /*break*/, 6];
+            case 5:
+                err_1 = _c.sent();
+                args.jobLog(JSON.stringify(err_1));
+                return [3 /*break*/, 6];
+            case 6:
+                if (!(!res1 || inputSize !== outputSize)) return [3 /*break*/, 9];
+                if (inputSize !== outputSize) {
+                    args.jobLog("File sizes do not match, input: ".concat(inputSize, " ")
+                        + "does not equal  output: ".concat(outputSize));
+                }
+                args.jobLog("Attempt 1  failed: Moving file from ".concat(inputPath, " to ").concat(outputPath));
+                args.jobLog("Attempt 2: Moving file from ".concat(inputPath, " to ").concat(outputPath));
+                return [4 /*yield*/, new Promise(function (resolve) {
+                        args.deps.mvdir(inputPath, outputPath, { overwrite: true })
+                            .then(function () {
+                            resolve(true);
+                        }).catch(function (err) {
+                            args.jobLog("Failed to move file from ".concat(inputPath, " to ").concat(outputPath));
+                            args.jobLog(JSON.stringify(err));
+                            resolve(false);
+                        });
+                    })];
+            case 7:
+                res2 = _c.sent();
+                return [4 /*yield*/, (0, exports.getFileSize)(outputPath)];
+            case 8:
+                outputSize = _c.sent();
+                if (!res2 || inputSize !== outputSize) {
                     if (inputSize !== outputSize) {
                         args.jobLog("File sizes do not match, input: ".concat(inputSize, " ")
                             + "does not equal  output: ".concat(outputSize));
                     }
-                    args.jobLog("Attempt 1  failed: Moving file from ".concat(inputPath, " to ").concat(outputPath));
-                    args.jobLog("Attempt 2: Moving file from ".concat(inputPath, " to ").concat(outputPath));
-                    return [4 /*yield*/, new Promise(function (resolve) {
-                            args.deps.mvdir(inputPath, outputPath, { overwrite: true })
-                                .then(function () {
-                                resolve(true);
-                            }).catch(function (err) {
-                                args.jobLog("Failed to move file from ".concat(inputPath, " to ").concat(outputPath));
-                                args.jobLog(JSON.stringify(err));
-                                resolve(false);
-                            });
-                        })];
-                case 7:
-                    res2 = _b.sent();
-                    return [4 /*yield*/, (0, exports.getFileSize)(outputPath)];
-                case 8:
-                    outputSize = _b.sent();
-                    if (!res2 || inputSize !== outputSize) {
-                        if (inputSize !== outputSize) {
-                            args.jobLog("File sizes do not match, input: ".concat(inputSize, " ")
-                                + "does not equal  output: ".concat(outputSize));
-                        }
-                        errMessage = "Failed to move file from ".concat(inputPath, " to ").concat(outputPath, ", check errors above");
-                        args.jobLog(errMessage);
-                        throw new Error(errMessage);
-                    }
-                    _b.label = 9;
-                case 9: return [2 /*return*/];
-            }
-        });
+                    errMessage = "Failed to move file from ".concat(inputPath, " to ").concat(outputPath, ", check errors above");
+                    args.jobLog(errMessage);
+                    throw new Error(errMessage);
+                }
+                _c.label = 9;
+            case 9: return [2 /*return*/];
+        }
     });
-};
+}); };
 exports.moveFileAndValidate = moveFileAndValidate;
 var getPluginWorkDir = function (args) {
     var pluginWorkDir = "".concat(args.workDir, "/").concat(new Date().getTime());
@@ -199,3 +243,27 @@ var getScanTypes = function (pluginsTextRaw) {
     return scanTypes;
 };
 exports.getScanTypes = getScanTypes;
+var hashFile = function (filePath, algorithm) {
+    if (algorithm === void 0) { algorithm = 'sha256'; }
+    return new Promise(function (resolve, reject) {
+        try {
+            var hash_1 = crypto_1.default.createHash(algorithm);
+            var stream = fs_1.default.createReadStream(filePath);
+            stream.on('data', function (data) {
+                hash_1.update(data);
+            });
+            stream.on('end', function () {
+                var hashStr = hash_1.digest('hex');
+                resolve(hashStr);
+            });
+            stream.on('error', function (error) {
+                reject(new Error("Error reading file for hashing: ".concat(error.message)));
+            });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        }
+        catch (error) {
+            reject(new Error("Error setting up file hash: ".concat(error.message)));
+        }
+    });
+};
+exports.hashFile = hashFile;

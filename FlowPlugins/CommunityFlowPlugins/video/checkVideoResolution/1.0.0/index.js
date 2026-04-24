@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check Video Resolution',
-    description: 'Check is video is 480p,576p,720p,1080p,1440p,4KUHD,DCI4K,8KUHD,Other',
+    description: 'Check if video is 480p,576p,720p,1080p,1440p,4KUHD,DCI4K,8KUHD,Other',
     style: {
         borderColor: 'orange',
     },

@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_lmg1_Reorder_Streams",
     Stage: "Pre-processing",
-    Name: "Tdarr_Plugin_lmg1_Reorder_Streams ",
+    Name: "Lmg1 Reorder Streams",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin will move the video stream to the front so Tdarr will recognize the codec correctly.\n\n`,

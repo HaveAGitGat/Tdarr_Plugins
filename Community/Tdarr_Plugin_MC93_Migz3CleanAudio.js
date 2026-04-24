@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz3CleanAudio',
   Stage: 'Pre-processing',
-  Name: 'Migz-Clean audio streams',
+  Name: 'Migz Clean Audio Streams',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'This plugin keeps only specified language tracks & can tags tracks with  an unknown language. \n\n',

@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_076b_re_order_subtitle_streams",
     Stage: "Pre-processing",
-    Name: "Re-order subtitle streams",
+    Name: "Re-order Subtitle Streams",
     Type: "Subtitle",
     Operation: "Transcode",
     Description: `[Contains built-in filter] Specify a language tag for Tdarr to try and put as 1st subtitle track  \n\n`,
@@ -131,7 +131,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  ffmpegCommand += ` -map 0:d? `;
+  ffmpegCommand += ` -map 0:d? -map 0:t? `;
 
   response.processFile = true;
   response.preset = ffmpegCommand;

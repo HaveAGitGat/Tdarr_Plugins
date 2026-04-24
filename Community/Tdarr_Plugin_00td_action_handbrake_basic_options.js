@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_handbrake_basic_options',
   Stage: 'Pre-processing',
-  Name: 'HandBrake basic options',
+  Name: 'HandBrake Basic Options',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

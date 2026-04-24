@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_r002_rootuser_FFMPEG_HQ_HEVC_MKV_Animation",
     Stage: "Pre-processing",
-    Name: "FFMPEG HQ 10-bit HEVC MKV for Animation",
+    Name: "FFMPEG HQ 10-bit HEVC MKV For Animation",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] High Quality FFMPEG transcoding settings for Animation. Converts all audio to AAC 512K. Preserves track names, metadata and attachments/fonts. Proper use of x265-params. CRF 18. Preset medium. 10-Bit Video encoding. Skips h.265 encoded videos. The output container is mkv. \n\n`,

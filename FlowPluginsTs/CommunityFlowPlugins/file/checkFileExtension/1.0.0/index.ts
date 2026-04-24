@@ -49,9 +49,9 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const extensions = String(args.inputs.extensions);
-  const extensionArray = extensions.trim().split(',');
+  const extensionArray = extensions.trim().split(',').map((row) => row.toLowerCase());
 
-  const extension = getContainer(args.inputFileObj._id);
+  const extension = getContainer(args.inputFileObj._id).toLowerCase();
 
   let extensionMatch = false;
 

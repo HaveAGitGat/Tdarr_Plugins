@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_re_order_all_streams_v2',
   Stage: 'Pre-processing',
-  Name: 'Re-order all streams V2',
+  Name: 'Re-order All Streams V2',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

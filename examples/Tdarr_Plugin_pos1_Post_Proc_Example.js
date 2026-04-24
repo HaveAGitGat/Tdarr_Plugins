@@ -8,13 +8,13 @@
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
-  'import-fresh',
+  'import-fresh@3.3.1',
 ];
 
 const details = () => ({
   id: 'Tdarr_Plugin_pos1_Post_Proc_Example',
   Stage: 'Post-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed. This plugin does some stuff after all plugins have been executed
-  Name: 'Post proc ',
+  Name: 'Post Proc',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin does some stuff after all plugins have been executed. \n\n',

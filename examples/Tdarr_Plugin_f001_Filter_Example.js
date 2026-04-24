@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_f001_Filter_Example',
   Stage: 'Pre-processing',
-  Name: 'Filter keywords ',
+  Name: 'Filter Keywords',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'This plugin prevents processing files which contain keywords \n\n',

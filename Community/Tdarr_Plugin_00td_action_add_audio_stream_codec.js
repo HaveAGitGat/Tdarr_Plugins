@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_add_audio_stream_codec',
   Stage: 'Pre-processing',
-  Name: 'Add audio stream codec',
+  Name: 'Add Audio Stream Codec',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

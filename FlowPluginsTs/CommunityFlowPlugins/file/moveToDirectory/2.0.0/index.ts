@@ -42,7 +42,28 @@ const details = ():IpluginDetails => ({
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'Specify whether to keep the relative path',
+      tooltip: `
+      
+Specify whether to keep the relative path.
+
+For example:
+
+\\n Source folder:
+\\n C:/input/
+
+\\n Source file:
+\\n C:/input/test1/test2/qsv_h264.mkv
+
+\\n Move to Directory Output Directory
+\\n C:/output/
+
+\\n Keep Relative Path disabled:
+\\n C:/output/qsv_h264.mkv
+
+\\n Keep Relative Path enabled:
+\\n C:/output/test1/test2/qsv_h264.mkv
+      
+      `,
     },
   ],
   outputs: [
@@ -65,7 +86,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const outputDirectory = String(args.inputs.outputDirectory);
 
-  const originalFileName = getFileName(args.originalLibraryFile._id);
+  const originalFileName = getFileName(args.inputFileObj._id);
   const newContainer = getContainer(args.inputFileObj._id);
 
   let outputPath = '';

@@ -3,7 +3,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_d5d3_iiDrakeii_FFMPEG_NVENC_Tiered_MKV",
     Stage: "Pre-processing",
-    Name: "Tiered FFMPEG NVENC settings depending on resolution",
+    Name: "Tiered FFMPEG NVENC Settings Depending On Resolution",
     Type: "Video",
     Operation: "Transcode",
     Description: `[Contains built-in filter] This plugin uses different FFMPEG NVENC transcoding settings for 480p,576p,720p,1080p and 4KUHD. If files are not in hevc they will be transcoded. The output container is mkv. \n\n`,

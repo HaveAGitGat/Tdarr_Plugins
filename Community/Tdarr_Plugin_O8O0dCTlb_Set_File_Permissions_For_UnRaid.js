@@ -6,7 +6,7 @@ const details = () => {
     return {
         id: "Tdarr_Plugin_O8O0dCTlb_Set_File_Permissions_For_UnRaid",
         Stage: 'Pre-processing',
-        Name: "Set file permissions for UnRaid",
+        Name: "Set File Permissions For UnRaid",
         Type: "Video",
         Operation: "Transcode",
         Description: "Sets file permissions using chown nobody:users to prevent lock from root. Use at end of stack. ",

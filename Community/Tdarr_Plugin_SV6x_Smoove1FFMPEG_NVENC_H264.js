@@ -6,7 +6,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_SV6x_Smoove1FFMPEG_NVENC_H264',
   Stage: 'Pre-processing', // Preprocessing or Post-processing. Determines when the plugin will be executed.
-  Name: 'Smoove-Transcode to H264 using FFMPEG and NVENC ',
+  Name: 'Smoove-Transcode To H264 Using FFMPEG And NVENC',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `Files not in H264 will be transcoded into H264 using Nvidia GPU with ffmpeg.

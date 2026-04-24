@@ -61,6 +61,27 @@ const tests = [
       infoLog: 'File is being transcoded using custom arguments \n',
     },
   },
+  {
+    input: {
+      file: require('../sampleData/media/sampleH264_1.json'),
+      librarySettings: {},
+      inputs: {
+        cli: 'ffmpeg',
+        arguments: '<io>-c:v libx265 -crf 23 -ac 6 -c:a aac -preset veryfast',
+        container: 'original',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '<io>-c:v libx265 -crf 23 -ac 6 -c:a aac -preset veryfast',
+      container: '.mp4',
+      handbrakeMode: false,
+      ffmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'File is being transcoded using custom arguments \n',
+    },
+  },
 ];
 
 void run(tests);

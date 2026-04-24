@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT',
   Stage: 'Pre-processing',
-  Name: 'drpeppershaker Extract embedded subtitles and optionally remove them',
+  Name: 'Drpeppershaker Extract Embedded Subtitles And Optionally Remove Them',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin extracts embedded subs in one pass inside Tdarr and will optionally remove them. \n\n '

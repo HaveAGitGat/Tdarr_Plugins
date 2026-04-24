@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_Migz1Remux',
   Stage: 'Pre-processing',
-  Name: 'Migz-Remux container',
+  Name: 'Migz Remux Container',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Files will be remuxed into either mkv or mp4. \n\n',

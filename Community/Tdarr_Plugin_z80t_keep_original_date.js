@@ -1,12 +1,12 @@
 module.exports.dependencies = [
-  'touch',
+  'touch@3.1.1',
 ];
 
 // tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_z80t_keep_original_date',
   Stage: 'Post-processing',
-  Name: 'Keep original file dates and times after transcoding',
+  Name: 'Keep Original File Dates And Times After Transcoding',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'This plugin copies the original file dates and times to the transcoded file \n\n',
@@ -33,7 +33,7 @@ const details = () => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -41,7 +41,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const touch = require('touch');
   const os = require('os');
-  const fs = require('fs');
+  const { promises: fsp } = require('fs');
 
   const log = (msg) => {
     if (inputs.log === true) {
@@ -62,15 +62,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     const { mtimeMs, ctimeMs } = otherArguments.originalLibraryFile.statSync;
     if (os.platform() === 'win32') {
-      fs.utimes(
+      await fsp.utimes(
         file._id,
         ctimeMs / 1000,
         mtimeMs / 1000,
-        (err) => {
-          if (err) {
-            log('Error updating modified date');
-          }
-        },
       );
     } else {
       touch.sync(file._id, { mtimeMs, force: true });

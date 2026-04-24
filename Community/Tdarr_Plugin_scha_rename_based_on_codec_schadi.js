@@ -4,7 +4,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_scha_rename_based_on_codec_schadi',
   Stage: 'Post-processing',
-  Name: 'Rename based on codec Video and Audio',
+  Name: 'Rename Based On Codec Video And Audio',
   Type: 'Video',
   Operation: 'Transcode',
   Description: `

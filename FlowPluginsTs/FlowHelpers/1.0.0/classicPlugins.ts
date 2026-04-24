@@ -1,8 +1,9 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import {
   getContainer, getFileName, getPluginWorkDir, getScanTypes,
 } from './fileUtils';
 import { IpluginInputArgs } from './interfaces/interfaces';
+import { IFileObject } from './interfaces/synced/IFileObject';
 
 export interface IrunClassicPlugin {
     result:{
@@ -42,7 +43,7 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
   let pluginSrcStr = '';
   if (pluginSource === 'Community') {
     classicPlugin = args.deps.importFresh(relativePluginPath);
-    pluginSrcStr = await fs.readFile(absolutePath, 'utf8');
+    pluginSrcStr = await fsp.readFile(absolutePath, 'utf8');
   } else {
     // eslint-disable-next-line no-await-in-loop
     const res = await args.deps.axiosMiddleware('api/v2/read-plugin', {
@@ -90,25 +91,41 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
 
   const scanTypes = getScanTypes([pluginSrcStr]);
 
-  const pluginInputFileObj = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
-    file: {
-      _id: args.inputFileObj._id,
-      file: args.inputFileObj.file,
-      DB: args.inputFileObj.DB,
-      footprintId: args.inputFileObj.footprintId,
-    },
-    scanTypes,
-  });
+  let pluginInputFileObj:IFileObject;
+  let originalLibraryFile:IFileObject;
 
-  const originalLibraryFile = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
-    file: {
-      _id: args.originalLibraryFile._id,
-      file: args.originalLibraryFile.file,
-      DB: args.originalLibraryFile.DB,
-      footprintId: args.originalLibraryFile.footprintId,
-    },
-    scanTypes,
-  });
+  const inputFileScanArgs = {
+    _id: args.inputFileObj._id,
+    file: args.inputFileObj.file,
+    DB: args.inputFileObj.DB,
+    footprintId: args.inputFileObj.footprintId,
+  };
+
+  const originalLibraryFileScanArgs = {
+    _id: args.originalLibraryFile._id,
+    file: args.originalLibraryFile.file,
+    DB: args.originalLibraryFile.DB,
+    footprintId: args.originalLibraryFile.footprintId,
+  };
+
+  // added in 2.19.01
+  if (typeof args.scanIndividualFile !== 'undefined') {
+    args.jobLog('Scanning files using Node');
+    pluginInputFileObj = await args.scanIndividualFile(inputFileScanArgs, scanTypes);
+    originalLibraryFile = await args.scanIndividualFile(originalLibraryFileScanArgs, scanTypes);
+  } else {
+    args.jobLog('Scanning files using Server API');
+
+    pluginInputFileObj = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
+      file: inputFileScanArgs,
+      scanTypes,
+    });
+
+    originalLibraryFile = await args.deps.axiosMiddleware('api/v2/scan-individual-file', {
+      file: originalLibraryFileScanArgs,
+      scanTypes,
+    });
+  }
 
   const otherArguments = {
     handbrakePath: args.handbrakePath,
@@ -132,11 +149,11 @@ export const runClassicPlugin = async (args:IpluginInputArgs, type:'filter'|'tra
   );
 
   if (result?.file?._id && args.inputFileObj._id !== result.file._id) {
+    args.jobLog(`File ID changed from ${args.inputFileObj._id} to ${result.file._id}`);
     // eslint-disable-next-line no-param-reassign
     args.inputFileObj._id = result.file._id;
     // eslint-disable-next-line no-param-reassign
     args.inputFileObj.file = result.file.file;
-    args.jobLog(`File ID changed from ${args.inputFileObj._id} to ${result.file._id}`);
   }
 
   return {

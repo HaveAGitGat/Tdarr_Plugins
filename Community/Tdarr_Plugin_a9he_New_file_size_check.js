@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_a9he_New_file_size_check',
   Stage: 'Pre-processing',
-  Name: 'New file size check',
+  Name: 'New File Size Check',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Give an error if new file is not within the specified upper and lower bound limits \n\n',

@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_z18t_rename_files_based_on_codec_and_resolution',
   Stage: 'Post-processing',
-  Name: 'Rename based on codec and resolution',
+  Name: 'Rename Based On Codec And Resolution',
   Type: 'Video',
   Operation: 'Transcode',
   Description: '[Contains built-in filter]This plugin renames files depending on codec and resolution\n\n',

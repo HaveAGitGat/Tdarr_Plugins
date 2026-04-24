@@ -1,7 +1,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_filter_by_bitrate',
   Stage: 'Pre-processing',
-  Name: 'Filter by bitrate',
+  Name: 'Filter By Bitrate',
   Type: 'Video',
   Operation: 'Filter',
   Description: 'Only allow files to be transcoded which are within the lower and upper bounds (Kb) \n\n',

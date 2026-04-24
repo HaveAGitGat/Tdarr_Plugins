@@ -63,5 +63,7 @@
   "file": [
     "./node_modules/@types/express/index.d.ts"
   ],
-  "exclude": []
+  "exclude": [
+    "tests/FlowPlugins",
+  ]
 }

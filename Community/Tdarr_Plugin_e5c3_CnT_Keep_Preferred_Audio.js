@@ -4,7 +4,7 @@ const details = () => {
   return {
     id: "Tdarr_Plugin_e5c3_CnT_Keep_Preferred_Audio",
     Stage: "Pre-processing",
-    Name: "Keep Preffered Audio",
+    Name: "Keep Preferred Audio",
     Type: "Audio",
     Operation: 'Transcode',
     Description:

@@ -1,8 +1,8 @@
-module.exports.dependencies = ['import-fresh'];
+module.exports.dependencies = ['import-fresh@3.3.1'];
 const details = () => ({
   id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
   Stage: 'Pre-processing',
-  Name: 'Audio Transcode to MP3 using CPU and FFMPEG',
+  Name: 'Audio Transcode To MP3 Using CPU And FFMPEG',
   Type: 'Audio',
   Operation: 'Transcode',
   Description: '[Contains built-in filter] Convert an audio file to mp3, retaining ID3 tags, '

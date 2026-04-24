@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_MC93_MigzImageRemoval',
   Stage: 'Pre-processing',
-  Name: 'Migz-Remove image formats from file',
+  Name: 'Migz Remove Image Formats From File',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Identify any unwanted image formats in the file and remove those streams. MJPEG, PNG & GIF \n\n',

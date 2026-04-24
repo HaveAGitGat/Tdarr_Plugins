@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { promises as fsp } from 'fs';
 import { CLI } from '../../../../FlowHelpers/1.0.0/cliUtils';
 import {
   IpluginDetails,
@@ -99,7 +99,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   if (presetString.trim() !== '') {
     const preset = JSON.parse(presetString);
-    await fs.writeFile(presetPath, JSON.stringify(preset, null, 2));
+    await fsp.writeFile(presetPath, JSON.stringify(preset, null, 2));
     cliArgs.push('--preset-import-file');
     cliArgs.push(presetPath);
     cliArgs.push('-Z');
@@ -122,6 +122,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     inputFileObj: args.inputFileObj,
     logFullCliOutput: args.logFullCliOutput,
     updateWorker: args.updateWorker,
+    args,
   });
 
   const res = await cli.runCli();

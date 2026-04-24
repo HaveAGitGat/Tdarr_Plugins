@@ -2,7 +2,7 @@
 const details = () => ({
   id: 'Tdarr_Plugin_00td_action_transcode',
   Stage: 'Pre-processing',
-  Name: 'Transcode a video file',
+  Name: 'Transcode A Video File',
   Type: 'Video',
   Operation: 'Transcode',
   Description: 'Transcode a video file using ffmpeg. GPU transcoding will be used if possible.',
@@ -298,6 +298,10 @@ const getEncoder = async ({
         filter: '-vf format=nv12,hwupload',
       },
       {
+        encoder: 'hevc_rkmpp',
+        enabled: false,
+      },
+      {
         encoder: 'hevc_qsv',
         enabled: false,
       },
@@ -308,6 +312,10 @@ const getEncoder = async ({
 
       {
         encoder: 'h264_nvenc',
+        enabled: false,
+      },
+      {
+        encoder: 'h264_rkmpp',
         enabled: false,
       },
       {
