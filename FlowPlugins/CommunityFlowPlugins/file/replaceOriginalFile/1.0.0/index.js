@@ -46,7 +46,7 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Replace Original File',
-    description: "\n  Replace the original file with the 'working' file passed into this plugin. \n  If the file hasn't changed then no action is taken.\n  Note: The 'working' filename and container will replace the original filename and container.\n  ",
+    description: "\n  Replace the original file with the 'working' file passed into this plugin.\n  If the file hasn't changed then no action is taken.\n  Note: The 'working' filename and container will replace the original filename and container.\n  ",
     style: {
         borderColor: 'green',
     },
@@ -67,7 +67,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, currentPath, orignalFolder, fileName, container, newPath, newPathTmp, originalFileExists, currentFileIsNotOriginal;
+    var lib, currentPath, originalPath, orignalFolder, fileName, container, newPath, newPathTmp, originalPathOld, originalFileExists, currentFileIsNotOriginal, shouldRenameOriginal, originalRenamed, staleErr_1, err_1, cleanupErr_1, err_2, restoreErr_1, err_3;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -85,19 +85,23 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 args.jobLog('File has changed, replacing original file');
                 currentPath = args.inputFileObj._id;
-                orignalFolder = (0, fileUtils_1.getFileAbsoluteDir)(args.originalLibraryFile._id);
+                originalPath = args.originalLibraryFile._id;
+                orignalFolder = (0, fileUtils_1.getFileAbsoluteDir)(originalPath);
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 newPath = "".concat(orignalFolder, "/").concat(fileName, ".").concat(container);
                 newPathTmp = "".concat(newPath, ".tmp");
+                originalPathOld = "".concat(originalPath, ".partial.old");
                 args.jobLog(JSON.stringify({
                     currentPath: currentPath,
                     newPath: newPath,
                     newPathTmp: newPathTmp,
+                    originalPathOld: originalPathOld,
                 }));
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 1:
                 _a.sent();
+                // Step 1: move the working/cache file into the original folder as .tmp
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: currentPath,
@@ -105,40 +109,112 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         args: args,
                     })];
             case 2:
+                // Step 1: move the working/cache file into the original folder as .tmp
                 _a.sent();
-                return [4 /*yield*/, (0, fileUtils_1.fileExists)(args.originalLibraryFile._id)];
+                return [4 /*yield*/, (0, fileUtils_1.fileExists)(originalPath)];
             case 3:
                 originalFileExists = _a.sent();
-                currentFileIsNotOriginal = args.originalLibraryFile._id !== currentPath;
+                currentFileIsNotOriginal = originalPath !== currentPath;
+                shouldRenameOriginal = originalFileExists && currentFileIsNotOriginal;
                 args.jobLog(JSON.stringify({
                     originalFileExists: originalFileExists,
                     currentFileIsNotOriginal: currentFileIsNotOriginal,
                 }));
-                if (!(originalFileExists
-                    && currentFileIsNotOriginal)) return [3 /*break*/, 5];
-                args.jobLog("Deleting original file:".concat(args.originalLibraryFile._id));
-                return [4 /*yield*/, fs_1.promises.unlink(args.originalLibraryFile._id)];
+                originalRenamed = false;
+                if (!shouldRenameOriginal) return [3 /*break*/, 16];
+                return [4 /*yield*/, (0, fileUtils_1.fileExists)(originalPathOld)];
             case 4:
-                _a.sent();
+                if (!_a.sent()) return [3 /*break*/, 8];
+                args.jobLog("Removing stale file at ".concat(originalPathOld));
                 _a.label = 5;
-            case 5: return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
+            case 5:
+                _a.trys.push([5, 7, , 8]);
+                return [4 /*yield*/, fs_1.promises.unlink(originalPathOld)];
             case 6:
                 _a.sent();
+                return [3 /*break*/, 8];
+            case 7:
+                staleErr_1 = _a.sent();
+                args.jobLog("Failed to remove stale file ".concat(originalPathOld, ": ").concat(JSON.stringify(staleErr_1)));
+                return [3 /*break*/, 8];
+            case 8:
+                args.jobLog("Renaming original file to: ".concat(originalPathOld));
+                _a.label = 9;
+            case 9:
+                _a.trys.push([9, 11, , 16]);
+                return [4 /*yield*/, fs_1.promises.rename(originalPath, originalPathOld)];
+            case 10:
+                _a.sent();
+                originalRenamed = true;
+                return [3 /*break*/, 16];
+            case 11:
+                err_1 = _a.sent();
+                args.jobLog("Failed to rename original file aside: ".concat(JSON.stringify(err_1)));
+                _a.label = 12;
+            case 12:
+                _a.trys.push([12, 14, , 15]);
+                return [4 /*yield*/, fs_1.promises.unlink(newPathTmp)];
+            case 13:
+                _a.sent();
+                return [3 /*break*/, 15];
+            case 14:
+                cleanupErr_1 = _a.sent();
+                args.jobLog("Failed to clean up temporary file ".concat(newPathTmp, ": ").concat(JSON.stringify(cleanupErr_1)));
+                return [3 /*break*/, 15];
+            case 15: throw err_1;
+            case 16: return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
+            case 17:
+                _a.sent();
+                _a.label = 18;
+            case 18:
+                _a.trys.push([18, 20, , 25]);
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: newPathTmp,
                         destinationPath: newPath,
                         args: args,
                     })];
-            case 7:
+            case 19:
                 _a.sent();
-                return [2 /*return*/, {
-                        outputFileObj: {
-                            _id: newPath,
-                        },
-                        outputNumber: 1,
-                        variables: args.variables,
-                    }];
+                return [3 /*break*/, 25];
+            case 20:
+                err_2 = _a.sent();
+                args.jobLog("Failed to move ".concat(newPathTmp, " to ").concat(newPath, ": ").concat(JSON.stringify(err_2)));
+                if (!originalRenamed) return [3 /*break*/, 24];
+                args.jobLog("Restoring original file from ".concat(originalPathOld));
+                _a.label = 21;
+            case 21:
+                _a.trys.push([21, 23, , 24]);
+                return [4 /*yield*/, fs_1.promises.rename(originalPathOld, originalPath)];
+            case 22:
+                _a.sent();
+                return [3 /*break*/, 24];
+            case 23:
+                restoreErr_1 = _a.sent();
+                args.jobLog("Failed to restore original file: ".concat(JSON.stringify(restoreErr_1)));
+                return [3 /*break*/, 24];
+            case 24: throw err_2;
+            case 25:
+                if (!originalRenamed) return [3 /*break*/, 29];
+                args.jobLog("Deleting renamed original file: ".concat(originalPathOld));
+                _a.label = 26;
+            case 26:
+                _a.trys.push([26, 28, , 29]);
+                return [4 /*yield*/, fs_1.promises.unlink(originalPathOld)];
+            case 27:
+                _a.sent();
+                return [3 /*break*/, 29];
+            case 28:
+                err_3 = _a.sent();
+                args.jobLog("Failed to delete renamed original file ".concat(originalPathOld, ": ").concat(JSON.stringify(err_3)));
+                return [3 /*break*/, 29];
+            case 29: return [2 /*return*/, {
+                    outputFileObj: {
+                        _id: newPath,
+                    },
+                    outputNumber: 1,
+                    variables: args.variables,
+                }];
         }
     });
 }); };
