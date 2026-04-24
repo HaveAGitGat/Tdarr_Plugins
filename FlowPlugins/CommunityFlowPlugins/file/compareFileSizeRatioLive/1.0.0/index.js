@@ -55,7 +55,7 @@ var details = function () { return ({
             tooltip: "Specify the method to compare.\n      Estimated Final Size: Compare the estimated final output size to the input size.\n      Current Size: Compare the current output size to the input size.\n      ",
         },
         {
-            label: 'Threshold Size %',
+            label: 'Upper Threshold Size %',
             name: 'thresholdPerc',
             type: 'number',
             defaultValue: '60',

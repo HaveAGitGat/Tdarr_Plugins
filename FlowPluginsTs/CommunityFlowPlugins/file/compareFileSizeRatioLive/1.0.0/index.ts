@@ -75,7 +75,7 @@ const details = (): IpluginDetails => ({
       `,
     },
     {
-      label: 'Threshold Size %',
+      label: 'Upper Threshold Size %',
       name: 'thresholdPerc',
       type: 'number',
       defaultValue: '60',
