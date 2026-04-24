@@ -104,7 +104,7 @@ export interface IliveSizeCompare {
     lowerThresholdPerc: number,
     checkDelaySeconds: number,
     error: boolean,
-    ratio: '' | 'high' | 'low',
+    errorType: '' | 'upperThreshold' | 'lowerThreshold',
 }
 
 export interface Ivariables {

@@ -106,7 +106,7 @@ describe('removeFromTdarr Plugin', () => {
           lowerThresholdPerc: 0,
           checkDelaySeconds: 30,
           error: false,
-          ratio: '' as const,
+          errorType: '' as const,
         },
       };
 

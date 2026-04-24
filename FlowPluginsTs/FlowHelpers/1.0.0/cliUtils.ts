@@ -183,11 +183,15 @@ class CLI {
               const inputFileSize = this.config.inputFileObj.file_size;
               const inputFileSizeInGbytes = inputFileSize / 1024;
 
-              const cancel = (ratio:number, direction: 'high' | 'low', threshold: number) => {
+              const cancel = (
+                ratio: number,
+                errorType: 'upperThreshold' | 'lowerThreshold',
+                threshold: number,
+              ) => {
                 this.config.jobLog(`Input file size: ${inputFileSizeInGbytes}GB`);
                 this.config.jobLog(`Ratio: ${ratio}%`);
 
-                if (direction === 'high') {
+                if (errorType === 'upperThreshold') {
                   this.config.jobLog(
                     `Ratio is greater than threshold: ${threshold}%, cancelling job`,
                   );
@@ -200,7 +204,7 @@ class CLI {
                 // @ts-expect-error must exist to be here
                 this.config.args.variables.liveSizeCompare.error = true;
                 // @ts-expect-error must exist to be here
-                this.config.args.variables.liveSizeCompare.ratio = direction;
+                this.config.args.variables.liveSizeCompare.errorType = errorType;
                 this.killThread();
               };
 
@@ -212,10 +216,10 @@ class CLI {
               ) => {
                 if (ratio > thresholdPerc) {
                   this.config.jobLog(`${sizeLabel}: ${sizeValue}GB`);
-                  cancel(ratio, 'high', thresholdPerc);
+                  cancel(ratio, 'upperThreshold', thresholdPerc);
                 } else if (checkLower && lowerThresholdPerc > 0 && ratio < lowerThresholdPerc) {
                   this.config.jobLog(`${sizeLabel}: ${sizeValue}GB`);
-                  cancel(ratio, 'low', lowerThresholdPerc);
+                  cancel(ratio, 'lowerThreshold', lowerThresholdPerc);
                 }
               };
 

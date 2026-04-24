@@ -17,8 +17,8 @@ const details = (): IpluginDetails => ({
   Can be placed anywhere before a plugin which outputs a new file.
 
   You can check if this plugin caused an error by using 'Check Flow Variable' and checking if
-  {{{args.variables.liveSizeCompare.error}}} is true. The ratio that triggered the error
-  (either 'high' or 'low') is available at {{{args.variables.liveSizeCompare.ratio}}}.
+  {{{args.variables.liveSizeCompare.error}}} is true. The threshold that triggered the error
+  (either 'upperThreshold' or 'lowerThreshold') is available at {{{args.variables.liveSizeCompare.errorType}}}.
   `,
   style: {
     borderColor: 'orange',
@@ -98,7 +98,7 @@ const details = (): IpluginDetails => ({
         },
       },
       tooltip: `Enter the upper threshold size percentage relative to the input size.
-      An error will be triggered (with ratio set to 'high') if the estimated or current size exceeds
+      An error will be triggered (with errorType set to 'upperThreshold') if the estimated or current size exceeds
       this percentage.
 
       For example, if the input size is 100MB and the threshold is 60%, the estimated final size or current size
@@ -134,7 +134,7 @@ const details = (): IpluginDetails => ({
         },
       },
       tooltip: `Enter the lower threshold size percentage relative to the input size.
-      An error will be triggered (with ratio set to 'low') if the estimated final size falls below
+      An error will be triggered (with errorType set to 'lowerThreshold') if the estimated final size falls below
       this percentage.
 
       For example, if the input size is 100MB and the lower threshold is 20%, an error will be given if
@@ -201,7 +201,7 @@ const plugin = (args: IpluginInputArgs):IpluginOutputArgs => {
     lowerThresholdPerc,
     checkDelaySeconds,
     error: false,
-    ratio: '',
+    errorType: '',
   };
 
   return {

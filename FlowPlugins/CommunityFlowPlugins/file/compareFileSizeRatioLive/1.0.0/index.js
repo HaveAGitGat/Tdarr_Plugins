@@ -4,7 +4,7 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Compare File Size Ratio Live',
-    description: "\n  Compare either the estimated final size or current output size to the input size and\n  give an error if estimated final size or current size falls outside the lower or upper threshold %.\n\n  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins\n  that output a file.\n\n  Can be placed anywhere before a plugin which outputs a new file.\n\n  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if\n  {{{args.variables.liveSizeCompare.error}}} is true. The ratio that triggered the error\n  (either 'high' or 'low') is available at {{{args.variables.liveSizeCompare.ratio}}}.\n  ",
+    description: "\n  Compare either the estimated final size or current output size to the input size and\n  give an error if estimated final size or current size falls outside the lower or upper threshold %.\n\n  Works with 'FfmpegCommand', 'HandBrake Custom Arguments', 'Run Classic Transcode' and other flow plugins\n  that output a file.\n\n  Can be placed anywhere before a plugin which outputs a new file.\n\n  You can check if this plugin caused an error by using 'Check Flow Variable' and checking if\n  {{{args.variables.liveSizeCompare.error}}} is true. The threshold that triggered the error\n  (either 'upperThreshold' or 'lowerThreshold') is available at {{{args.variables.liveSizeCompare.errorType}}}.\n  ",
     style: {
         borderColor: 'orange',
     },
@@ -77,7 +77,7 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: "Enter the upper threshold size percentage relative to the input size.\n      An error will be triggered (with ratio set to 'high') if the estimated or current size exceeds\n      this percentage.\n\n      For example, if the input size is 100MB and the threshold is 60%, the estimated final size or current size\n      must not surpass 60MB else an error will be given and processing will stop.\n      ",
+            tooltip: "Enter the upper threshold size percentage relative to the input size.\n      An error will be triggered (with errorType set to 'upperThreshold') if the estimated or current size exceeds\n      this percentage.\n\n      For example, if the input size is 100MB and the threshold is 60%, the estimated final size or current size\n      must not surpass 60MB else an error will be given and processing will stop.\n      ",
         },
         {
             label: 'Lower Threshold Size %',
@@ -107,7 +107,7 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: "Enter the lower threshold size percentage relative to the input size.\n      An error will be triggered (with ratio set to 'low') if the estimated final size falls below\n      this percentage.\n\n      For example, if the input size is 100MB and the lower threshold is 20%, an error will be given if\n      the estimated final size drops below 20MB.\n\n      Only applies to the 'estimatedFinalSize' compare method, since 'currentSize' starts at zero and\n      would always trip the lower bound. Set to 0 to disable.\n      ",
+            tooltip: "Enter the lower threshold size percentage relative to the input size.\n      An error will be triggered (with errorType set to 'lowerThreshold') if the estimated final size falls below\n      this percentage.\n\n      For example, if the input size is 100MB and the lower threshold is 20%, an error will be given if\n      the estimated final size drops below 20MB.\n\n      Only applies to the 'estimatedFinalSize' compare method, since 'currentSize' starts at zero and\n      would always trip the lower bound. Set to 0 to disable.\n      ",
         },
         {
             label: 'Check Delay (seconds)',
@@ -161,7 +161,7 @@ var plugin = function (args) {
         lowerThresholdPerc: lowerThresholdPerc,
         checkDelaySeconds: checkDelaySeconds,
         error: false,
-        ratio: '',
+        errorType: '',
     };
     return {
         outputFileObj: args.inputFileObj,

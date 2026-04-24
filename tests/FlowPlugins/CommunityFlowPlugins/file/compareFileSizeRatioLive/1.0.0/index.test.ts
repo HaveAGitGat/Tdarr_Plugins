@@ -38,7 +38,7 @@ describe('compareFileSizeRatioLive Plugin', () => {
         lowerThresholdPerc: 0,
         checkDelaySeconds: 20,
         error: false,
-        ratio: '',
+        errorType: '',
       });
     });
 
@@ -55,7 +55,7 @@ describe('compareFileSizeRatioLive Plugin', () => {
         lowerThresholdPerc: 0,
         checkDelaySeconds: 20,
         error: false,
-        ratio: '',
+        errorType: '',
       });
     });
   });
@@ -113,10 +113,10 @@ describe('compareFileSizeRatioLive Plugin', () => {
       expect(result.variables.liveSizeCompare?.lowerThresholdPerc).toBe(15);
     });
 
-    it('should initialise ratio as an empty string', () => {
+    it('should initialise errorType as an empty string', () => {
       const result = plugin(baseArgs);
 
-      expect(result.variables.liveSizeCompare?.ratio).toBe('');
+      expect(result.variables.liveSizeCompare?.errorType).toBe('');
     });
   });
 

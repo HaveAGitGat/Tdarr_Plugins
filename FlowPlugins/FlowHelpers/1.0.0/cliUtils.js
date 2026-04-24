@@ -168,10 +168,10 @@ var CLI = /** @class */ (function () {
                             if (secondsSinceStart > checkDelaySeconds) {
                                 inputFileSize = this.config.inputFileObj.file_size;
                                 inputFileSizeInGbytes_1 = inputFileSize / 1024;
-                                cancel_1 = function (ratio, direction, threshold) {
+                                cancel_1 = function (ratio, errorType, threshold) {
                                     _this.config.jobLog("Input file size: ".concat(inputFileSizeInGbytes_1, "GB"));
                                     _this.config.jobLog("Ratio: ".concat(ratio, "%"));
-                                    if (direction === 'high') {
+                                    if (errorType === 'upperThreshold') {
                                         _this.config.jobLog("Ratio is greater than threshold: ".concat(threshold, "%, cancelling job"));
                                     }
                                     else {
@@ -181,17 +181,17 @@ var CLI = /** @class */ (function () {
                                     // @ts-expect-error must exist to be here
                                     _this.config.args.variables.liveSizeCompare.error = true;
                                     // @ts-expect-error must exist to be here
-                                    _this.config.args.variables.liveSizeCompare.ratio = direction;
+                                    _this.config.args.variables.liveSizeCompare.errorType = errorType;
                                     _this.killThread();
                                 };
                                 checkRatio = function (ratio, sizeLabel, sizeValue, checkLower) {
                                     if (ratio > thresholdPerc_1) {
                                         _this.config.jobLog("".concat(sizeLabel, ": ").concat(sizeValue, "GB"));
-                                        cancel_1(ratio, 'high', thresholdPerc_1);
+                                        cancel_1(ratio, 'upperThreshold', thresholdPerc_1);
                                     }
                                     else if (checkLower && lowerThresholdPerc_1 > 0 && ratio < lowerThresholdPerc_1) {
                                         _this.config.jobLog("".concat(sizeLabel, ": ").concat(sizeValue, "GB"));
-                                        cancel_1(ratio, 'low', lowerThresholdPerc_1);
+                                        cancel_1(ratio, 'lowerThreshold', lowerThresholdPerc_1);
                                     }
                                 };
                                 if (compareMethod === 'estimatedFinalSize'
