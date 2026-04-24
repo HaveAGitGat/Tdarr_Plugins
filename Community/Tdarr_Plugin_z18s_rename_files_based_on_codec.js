@@ -1,6 +1,5 @@
 /* eslint-disable */
 
-// tdarrSkipTest
 const details = () => {
   return {
     id: "Tdarr_Plugin_z18s_rename_files_based_on_codec",
@@ -8,8 +7,8 @@ const details = () => {
     Name: "Rename Based On Codec",
     Type: "Video",
     Operation: "Transcode",
-    Description: `[Contains built-in filter] If the filename contains '264' or '265', this plugin renames 264 files to 265 or vice versa depending on codec. \n\n`,
-    Version: "1.00",
+    Description: `[Contains built-in filter] If the filename contains '264', '265', 'AVC', 'HEVC', or 'AV1', this plugin renames codec tags in filenames to match the detected video codec (h264, hevc, av1). \n\n`,
+    Version: "1.02",
     Tags: "post-processing",
     Inputs:[]
   };
@@ -24,38 +23,48 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   try {
     var fs = require("fs");
     var fileNameOld = file._id;
+    var codecName = file.ffProbeData.streams[0] && file.ffProbeData.streams[0].codec_name;
+    var renameMap = {
+      hevc: [
+        ["264", "265"],
+        ["AVC", "HEVC"],
+        ["avc", "HEVC"],
+        ["AV1", "265"],
+        ["av1", "265"],
+      ],
+      h264: [
+        ["265", "264"],
+        ["hevc", "264"],
+        ["HEVC", "264"],
+        ["AV1", "264"],
+        ["av1", "264"],
+      ],
+      av1: [
+        ["h264", "AV1"],
+        ["H264", "AV1"],
+        ["x264", "AV1"],
+        ["X264", "AV1"],
+        ["h265", "AV1"],
+        ["H265", "AV1"],
+        ["x265", "AV1"],
+        ["X265", "AV1"],
+        ["264", "AV1"],
+        ["265", "AV1"],
+        ["hevc", "AV1"],
+        ["HEVC", "AV1"],
+        ["AVC", "AV1"],
+        ["avc", "AV1"],
+        ["av1", "AV1"],
+      ],
+    };
 
-    if (
-      file.ffProbeData.streams[0].codec_name == "hevc" &&
-      file._id.includes("264")
-    ) {
-      file._id = file._id.replace("264", "265");
-      file.file = file.file.replace("264", "265");
-    }
-    
-    //added handling for files with AVC in the name instead of h264/x264
-    if (
-      file.ffProbeData.streams[0].codec_name == "hevc" &&
-      file._id.includes("AVC")
-    ) {
-      file._id = file._id.replace("AVC", "HEVC");
-      file.file = file.file.replace("AVC", "HEVC");
-    }
-
-    if (
-      file.ffProbeData.streams[0].codec_name == "h264" &&
-      file._id.includes("265")
-    ) {
-      file._id = file._id.replace("265", "264");
-      file.file = file.file.replace("265", "264");
-    }
-
-    if (
-      file.ffProbeData.streams[0].codec_name == "h264" &&
-      file._id.includes("hevc")
-    ) {
-      file._id = file._id.replace("hevc", "264");
-      file.file = file.file.replace("hevc", "264");
+    if (renameMap[codecName]) {
+      renameMap[codecName].forEach(function (rule) {
+        if (file._id.includes(rule[0])) {
+          file._id = file._id.replace(rule[0], rule[1]);
+          file.file = file.file.replace(rule[0], rule[1]);
+        }
+      });
     }
 
     if (fileNameOld != file._id) {
@@ -74,6 +83,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   } catch (err) {
     console.log(err);
   }
+
+  return undefined;
 };
 
 
