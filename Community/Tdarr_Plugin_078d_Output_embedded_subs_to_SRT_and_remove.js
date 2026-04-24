@@ -7,7 +7,7 @@ const details = () => {
     Type: "Video",
     Operation: "Transcode",
     Description: `This plugin outputs embedded subs to SRT and then removes them \n\n`,
-    Version: "1.00",
+    Version: "1.01",
     Tags: "ffmpeg",
     Inputs:[],
   };
