@@ -506,8 +506,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Check if 10bit variable is true.
   if (inputs.enable_10bit === true) {
-    // If set to true then add 10bit argument
-    extraArguments += '-pix_fmt p010le ';
+    // Use scale_cuda when CUDA hwaccel is active (frames live in GPU memory
+    // and `-pix_fmt p010le` fails on hwframes); fall back to `-pix_fmt
+    // p010le` for software decode paths.
+    const { getNvenc10BitFormatArg } = require('../methods/nvdecPreset');
+    extraArguments += getNvenc10BitFormatArg(file);
   }
 
   // Check if b frame variable is true.
