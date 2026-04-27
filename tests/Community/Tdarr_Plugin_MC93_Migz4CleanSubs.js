@@ -68,8 +68,8 @@ const tests = [
     },
   },
   {
-    // SDH track must be kept when sdh option is left at its default (false),
-    // even with commentary removal enabled. Regression test for issue #883.
+    // SDH track is preserved when the user opts out via sdh=false, even
+    // with commentary removal enabled. Fix for issue #883.
     input: {
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
@@ -81,6 +81,7 @@ const tests = [
       inputs: {
         language: 'eng',
         commentary: 'true',
+        sdh: 'false',
         tag_language: '',
       },
       otherArguments: {},
@@ -96,7 +97,8 @@ const tests = [
     },
   },
   {
-    // SDH track is removed when the sdh option is opted into.
+    // Default behaviour preserved: with commentary=true and sdh left at its
+    // default (true), SDH-tagged tracks are still removed (matches pre-fix behaviour).
     input: {
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
@@ -107,8 +109,7 @@ const tests = [
       librarySettings: {},
       inputs: {
         language: 'eng',
-        commentary: 'false',
-        sdh: 'true',
+        commentary: 'true',
         tag_language: '',
       },
       otherArguments: {},

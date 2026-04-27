@@ -44,7 +44,7 @@ const details = () => ({
   {
     name: 'sdh',
     type: 'boolean',
-    defaultValue: false,
+    defaultValue: true,
     inputUI: {
       type: 'dropdown',
       options: [
@@ -53,7 +53,8 @@ const details = () => ({
       ],
     },
     tooltip: `Specify if subtitle tracks tagged as SDH (Subtitles for the Deaf and Hard of hearing) should be removed.
-                    \\nSDH tracks are accessibility subtitles, not commentary, so this is disabled by default.
+                    \\nOnly applies when the commentary option above is also set to true.
+                    \\nSet to false to preserve SDH/accessibility subtitle tracks while still removing commentary.
                \\nExample:\\n
                true
 
@@ -142,30 +143,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     // Catch error here incase the title metadata is completely missing.
     try {
-      // SDH (Subtitles for the Deaf and Hard of hearing) tracks are accessibility
-      // subtitles, not commentary, so they're handled by a separate input below
-      // and removed only when inputs.sdh is set to true.
+      // SDH removal is gated on inputs.sdh so users can keep SDH/accessibility
+      // tracks while still stripping commentary/description (issue #883).
       const titleLower = file.ffProbeData.streams[i].tags.title.toLowerCase();
       const isSubtitle = file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle';
 
-      // Check if inputs.commentary is set to true
-      // AND if stream is subtitle
-      // AND then checks for stream titles with "commentary" or "description".
-      if (
-        inputs.commentary === true
-        && isSubtitle
-        && (titleLower.includes('commentary') || titleLower.includes('description'))
-      ) {
-        ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
-        convert = true;
-      } else if (inputs.sdh === true && isSubtitle && titleLower.includes('sdh')) {
-        // Check if inputs.sdh is set to true
-        // AND if stream is subtitle
-        // AND then checks for stream titles containing "sdh".
-        ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as SDH, removing. \n`;
-        convert = true;
+      if (inputs.commentary === true && isSubtitle) {
+        // Check for stream titles containing "commentary" or "description".
+        if (titleLower.includes('commentary') || titleLower.includes('description')) {
+          ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
+          response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
+          convert = true;
+        } else if (inputs.sdh === true && titleLower.includes('sdh')) {
+          // SDH removal opt-out: only strips when sdh input is true.
+          ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
+          response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as SDH, removing. \n`;
+          convert = true;
+        }
       }
     } catch (err) {
       // Error
