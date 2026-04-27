@@ -32,12 +32,20 @@ const getPrimaryVideoCodec = (file) => {
   return (file && file.video_codec_name) || '';
 };
 
-const getNvdecHwaccelPreset = (file) => {
+const getNvdecHwaccelPreset = (file, options) => {
   const codec = getPrimaryVideoCodec(file);
-  if (NVDEC_SUPPORTED_CODECS.includes(codec)) {
-    return '-hwaccel cuda -hwaccel_output_format cuda';
+  if (!NVDEC_SUPPORTED_CODECS.includes(codec)) {
+    return '';
   }
-  return '';
+  // softwareFrames: omit `-hwaccel_output_format cuda` so decoded frames land
+  // in system memory. Use this for plugins whose filter chain or encoder
+  // pix_fmt expects CPU frames (e.g. software crop/scale filters or
+  // `-pix_fmt p010le`). Slightly slower than full-GPU but compatible with
+  // arbitrary downstream filters.
+  if (options && options.softwareFrames === true) {
+    return '-hwaccel cuda';
+  }
+  return '-hwaccel cuda -hwaccel_output_format cuda';
 };
 
 // Returns the correct 10-bit output argument for the current decode path.
