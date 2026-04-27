@@ -188,7 +188,7 @@ const hasEncoder = async ({
   let isEnabled = false;
   try {
     isEnabled = await new Promise((resolve) => {
-      const command = `${ffmpegPath} ${inputArgs || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
+      const command = `${ffmpegPath} ${inputArgs || ''} -f lavfi -i color=c=black:s=512x512:d=1:r=30`
               + ` ${filter || ''}`
               + ` -c:v ${encoder} -f null /dev/null`;
       exec(command, (

@@ -95,7 +95,7 @@ var hasEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     '-f',
                     'lavfi',
                     '-i',
-                    'color=c=black:s=256x256:d=1:r=30'
+                    'color=c=black:s=512x512:d=1:r=30'
                 ], false), (filter ? filter.split(' ') : []), true), [
                     '-c:v',
                     encoder

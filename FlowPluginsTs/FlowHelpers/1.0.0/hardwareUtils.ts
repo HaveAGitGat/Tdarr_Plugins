@@ -43,7 +43,7 @@ export const hasEncoder = async ({
       '-f',
       'lavfi',
       '-i',
-      'color=c=black:s=256x256:d=1:r=30',
+      'color=c=black:s=512x512:d=1:r=30',
       ...(filter ? filter.split(' ') : []),
       '-c:v',
       encoder,
