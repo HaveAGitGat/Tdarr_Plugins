@@ -88,23 +88,6 @@ var plugin = function (args) {
     var valuesToRemove = String(args.inputs.valuesToRemove).trim().split(',').map(function (item) { return item.trim(); })
         .filter(function (row) { return row.length > 0; });
     var condition = String(args.inputs.condition);
-    // Validation
-    if (!propertyToCheck) {
-        args.jobLog('Error: Property to check cannot be empty');
-        return {
-            outputFileObj: args.inputFileObj,
-            outputNumber: 1,
-            variables: args.variables,
-        };
-    }
-    if (valuesToRemove.length === 0) {
-        args.jobLog('Error: Values to remove cannot be empty');
-        return {
-            outputFileObj: args.inputFileObj,
-            outputNumber: 1,
-            variables: args.variables,
-        };
-    }
     args.variables.ffmpegCommand.streams
         .filter(function (stream) { return codecType === 'any' || stream.codec_type === codecType; })
         .forEach(function (stream) {

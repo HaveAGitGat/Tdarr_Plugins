@@ -142,25 +142,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     .filter((row) => row.length > 0);
   const condition = String(args.inputs.condition);
 
-  // Validation
-  if (!propertyToCheck) {
-    args.jobLog('Error: Property to check cannot be empty');
-    return {
-      outputFileObj: args.inputFileObj,
-      outputNumber: 1,
-      variables: args.variables,
-    };
-  }
-
-  if (valuesToRemove.length === 0) {
-    args.jobLog('Error: Values to remove cannot be empty');
-    return {
-      outputFileObj: args.inputFileObj,
-      outputNumber: 1,
-      variables: args.variables,
-    };
-  }
-
   args.variables.ffmpegCommand.streams
     .filter((stream) => codecType === 'any' || stream.codec_type === codecType)
     .forEach((stream) => {
