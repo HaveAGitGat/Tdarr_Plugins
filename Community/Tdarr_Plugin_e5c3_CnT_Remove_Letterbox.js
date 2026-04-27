@@ -222,8 +222,10 @@ function hevc(file) {
 
 function decoder_string(file) {
   // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
-  // which cause frame-ordering issues (stuttering) with FFmpeg 7+
-  return `-hwaccel cuda -hwaccel_output_format cuda`;
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+  return getNvdecHwaccelPreset(file);
 }
 
 function crop_decider(file, crop_height) {

@@ -57,8 +57,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
-  // which cause frame-ordering issues (stuttering) with FFmpeg 7+
-  response.preset = `-hwaccel cuda -hwaccel_output_format cuda`;
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+  response.preset = getNvdecHwaccelPreset(file);
 
   //Set Subtitle Var before adding encode cli
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {

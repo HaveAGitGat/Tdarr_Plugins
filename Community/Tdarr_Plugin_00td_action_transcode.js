@@ -573,9 +573,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
   // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
-  // which cause frame-ordering issues (stuttering) with FFmpeg 7+
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
   if (encoderProperties.encoder.includes('nvenc')) {
-    response.preset = '-hwaccel cuda -hwaccel_output_format cuda';
+    const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+    response.preset = getNvdecHwaccelPreset(file);
   }
 
   const vEncode = `-cq:v 19 ${bitrateSettings}`;

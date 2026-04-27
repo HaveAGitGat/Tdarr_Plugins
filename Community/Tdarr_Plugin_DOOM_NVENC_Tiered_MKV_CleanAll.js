@@ -399,10 +399,6 @@ function buildVideoConfiguration(inputs, file, logger) {
     }
   };
 
-  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
-  // which cause frame-ordering issues (stuttering) with FFmpeg 7+
-  var inputSettings = {}
-
   function videoProcess(stream, id) {
     if (stream.codec_name === "mjpeg") {
       configuration.AddOutputSetting(`-map -v:${id}`);
@@ -447,7 +443,11 @@ function buildVideoConfiguration(inputs, file, logger) {
         `-c:v hevc_nvenc -qmin 0 -cq:v ${cq} -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset medium -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8`
       );
 
-      configuration.AddInputSetting("-hwaccel cuda -hwaccel_output_format cuda");
+      // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+      // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+      // Helper returns '' for AV1 to keep older GPUs on software decode.
+      const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+      configuration.AddInputSetting(getNvdecHwaccelPreset(file));
 
       logger.AddError("Transcoding to HEVC using NVidia NVENC");
     }
