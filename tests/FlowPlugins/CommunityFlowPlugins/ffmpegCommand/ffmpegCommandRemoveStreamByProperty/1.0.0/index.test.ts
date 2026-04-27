@@ -886,4 +886,178 @@ describe('ffmpegCommandRemoveStreamByProperty Plugin', () => {
       expect(twoChannels?.removed).toBe(false);
     });
   });
+
+  describe('Equals Condition', () => {
+    beforeEach(() => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'h264',
+          codec_type: 'video',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:0'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+        {
+          index: 1,
+          codec_name: 'ac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:1'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+        {
+          index: 2,
+          codec_name: 'eac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:2'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+      ];
+    });
+
+    it('should remove only exact matches and not substring matches (ac3 vs eac3)', () => {
+      baseArgs.inputs.valuesToRemove = 'ac3';
+      baseArgs.inputs.condition = 'equals';
+
+      const result = plugin(baseArgs);
+
+      const ac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'ac3',
+      );
+      const eac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'eac3',
+      );
+      expect(ac3Stream?.removed).toBe(true);
+      expect(eac3Stream?.removed).toBe(false);
+    });
+
+    it('should remove streams matching ANY value for equals with multiple values', () => {
+      baseArgs.inputs.valuesToRemove = 'ac3,h264';
+      baseArgs.inputs.condition = 'equals';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(2);
+      expect(removedStreams.map((s) => s.codec_name).sort()).toEqual(['ac3', 'h264']);
+
+      const eac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'eac3',
+      );
+      expect(eac3Stream?.removed).toBe(false);
+    });
+
+    it('should match case insensitively for equals', () => {
+      baseArgs.inputs.valuesToRemove = 'AC3';
+      baseArgs.inputs.condition = 'equals';
+
+      const result = plugin(baseArgs);
+
+      const ac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'ac3',
+      );
+      expect(ac3Stream?.removed).toBe(true);
+    });
+  });
+
+  describe('Not Equals Condition', () => {
+    beforeEach(() => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'ac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:0'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+        {
+          index: 1,
+          codec_name: 'eac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:1'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+        {
+          index: 2,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:2'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+      ];
+    });
+
+    it('should remove streams that do not exactly equal the value', () => {
+      baseArgs.inputs.valuesToRemove = 'eac3';
+      baseArgs.inputs.condition = 'not_equals';
+
+      const result = plugin(baseArgs);
+
+      const ac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'ac3',
+      );
+      const eac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'eac3',
+      );
+      const aacStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'aac',
+      );
+      expect(ac3Stream?.removed).toBe(true);
+      expect(eac3Stream?.removed).toBe(false);
+      expect(aacStream?.removed).toBe(true);
+    });
+
+    it('should only remove streams equalling NONE of the values (multi-value semantics)', () => {
+      baseArgs.inputs.valuesToRemove = 'eac3,aac';
+      baseArgs.inputs.condition = 'not_equals';
+
+      const result = plugin(baseArgs);
+
+      const removedStreams = result.variables.ffmpegCommand.streams.filter(
+        (stream) => stream.removed,
+      );
+      expect(removedStreams).toHaveLength(1);
+      expect(removedStreams[0].codec_name).toBe('ac3');
+
+      const eac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'eac3',
+      );
+      const aacStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'aac',
+      );
+      expect(eac3Stream?.removed).toBe(false);
+      expect(aacStream?.removed).toBe(false);
+    });
+
+    it('should match case insensitively for not_equals', () => {
+      baseArgs.inputs.valuesToRemove = 'EAC3';
+      baseArgs.inputs.condition = 'not_equals';
+
+      const result = plugin(baseArgs);
+
+      const eac3Stream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.codec_name === 'eac3',
+      );
+      expect(eac3Stream?.removed).toBe(false);
+    });
+  });
 });
