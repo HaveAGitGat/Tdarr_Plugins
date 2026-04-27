@@ -152,32 +152,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     response.infoLog += `☑Preset set as ${inputs.ffmpeg_preset}\n`
   }
 
-  //codec will be checked so it can be transcoded correctly
-  if (file.video_codec_name == 'h263') {
-    response.preset = `-c:v h263_cuvid`
-  } else if (file.video_codec_name == 'h264') {
-    if (file.ffProbeData.streams[0].profile != 'High 10') {
-      //Remove HW Decoding for High 10 Profile
-      response.preset = `-c:v h264_cuvid`
-    }
-  } else if (file.video_codec_name == 'mjpeg') {
-    response.preset = `c:v mjpeg_cuvid`
-  } else if (file.video_codec_name == 'mpeg1') {
-    response.preset = `-c:v mpeg1_cuvid`
-  } else if (file.video_codec_name == 'mpeg2') {
-    response.preset = `-c:v mpeg2_cuvid`
-  }
-  // skipping this one because it's empty
-  //  else if (file.video_codec_name == 'mpeg4') {
-  //    response.preset = ``
-  //  }
-  else if (file.video_codec_name == 'vc1') {
-    response.preset = `-c:v vc1_cuvid`
-  } else if (file.video_codec_name == 'vp8') {
-    response.preset = `-c:v vp8_cuvid`
-  } else if (file.video_codec_name == 'vp9') {
-    response.preset = `-c:v vp9_cuvid`
-  }
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset')
+  response.preset = getNvdecHwaccelPreset(file)
 
   //Set Subtitle Var before adding encode cli
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
