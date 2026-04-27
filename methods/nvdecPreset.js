@@ -49,12 +49,19 @@ const getNvdecHwaccelPreset = (file, options) => {
 };
 
 // Returns the correct 10-bit output argument for the current decode path.
-// When CUDA hwaccel is in use (`-hwaccel_output_format cuda`), frames live in
-// GPU memory and an encoder-side `-pix_fmt p010le` fails with
-// "Function not implemented" because ffmpeg can't apply a CPU pixel format
-// to a hwframe without a `scale_cuda` step. When CUDA hwaccel is not in use
-// (software decode), `-pix_fmt p010le` works as expected.
-const getNvenc10BitFormatArg = (file) => {
+// When `-hwaccel_output_format cuda` is in use, frames live in GPU memory and
+// an encoder-side `-pix_fmt p010le` fails with "Function not implemented"
+// because ffmpeg can't apply a CPU pixel format to a hwframe without a
+// `scale_cuda` step. When the decode path produces system-memory frames
+// (software decode, or `-hwaccel cuda` without the output-format flag),
+// `-pix_fmt p010le` works as expected.
+//
+// Pass the same `options` you pass to `getNvdecHwaccelPreset` so this helper
+// stays consistent with the actual decode path being emitted.
+const getNvenc10BitFormatArg = (file, options) => {
+  if (options && options.softwareFrames === true) {
+    return '-pix_fmt p010le ';
+  }
   if (getNvdecHwaccelPreset(file) !== '') {
     return '-vf scale_cuda=format=p010le ';
   }
