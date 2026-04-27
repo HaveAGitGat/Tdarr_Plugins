@@ -162,15 +162,29 @@ function generate_crop_values(file, otherArguments) {
     log: ``,
   };
 
+  //parse cropdetect output in Node.js instead of awk/tail (cross-platform)
+  const parseCropdetect = function(cmd) {
+    const output = execSync(cmd, { encoding: 'utf-8' });
+    const lines = output.split('\n')
+      .filter(function(line) { return line.includes('crop='); })
+      .map(function(line) {
+        const match = line.match(/crop=\S+/);
+        return match ? match[0] : null;
+      })
+      .filter(Boolean);
+    return lines.slice(-240).join('\n');
+  };
+
   //create crop value
   if (!fs.existsSync(`${cropfile}`)) {
     returns.log += `Creating crop values...\n`;
-    execSync(
-      `${otherArguments.ffmpegPath} -ss 300 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 > \"${cropfile}\"`
+    let cropData = parseCropdetect(
+      `"${otherArguments.ffmpegPath}" -ss 300 -i "${source}" -frames:v 240 -vf cropdetect -f null - 2>&1`
     );
-    execSync(
-      `${otherArguments.ffmpegPath} -ss 1200 -i \"${source}\" -frames:v 240 -vf cropdetect -f null - 2>&1 | awk \'/crop/ { print $NF }\' | tail -240 >> \"${cropfile}\"`
+    cropData += '\n' + parseCropdetect(
+      `"${otherArguments.ffmpegPath}" -ss 1200 -i "${source}" -frames:v 240 -vf cropdetect -f null - 2>&1`
     );
+    fs.writeFileSync(cropfile, cropData);
   } else {
     returns.log += `Crop values already exist\n`;
   }
@@ -207,31 +221,14 @@ function hevc(file) {
 }
 
 function decoder_string(file) {
-  var decoder = ``; //decoder, before the input
-
-  //use the correct decoder
-  if (file.video_codec_name == "h263") {
-    decoder = `-c:v h263_cuvid`;
-  } else if (file.video_codec_name == "h264") {
-    if (file.ffProbeData.streams[0].profile != "High 10") {
-      //Remove HW Decoding for High 10 Profile
-      decoder = `-c:v h264_cuvid`;
-    }
-  } else if (file.video_codec_name == "mjpeg") {
-    decoder = `c:v mjpeg_cuvid`;
-  } else if (file.video_codec_name == "mpeg1") {
-    decoder = `-c:v mpeg1_cuvid`;
-  } else if (file.video_codec_name == "mpeg2") {
-    decoder = `-c:v mpeg2_cuvid`;
-  } else if (file.video_codec_name == "vc1") {
-    decoder = `-c:v vc1_cuvid`;
-  } else if (file.video_codec_name == "vp8") {
-    decoder = `-c:v vp8_cuvid`;
-  } else if (file.video_codec_name == "vp9") {
-    decoder = `-c:v vp9_cuvid`;
-  }
-
-  return decoder;
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Request software frames because this plugin uses software crop/scale
+  // filters and an encoder-side `-pix_fmt p010le`, both of which fail on
+  // the CUDA hwframes produced by `-hwaccel_output_format cuda`.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+  return getNvdecHwaccelPreset(file, { softwareFrames: true });
 }
 
 function crop_decider(file, crop_height) {

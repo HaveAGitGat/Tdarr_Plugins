@@ -16,6 +16,7 @@ describe('compareFileSizeRatioLive Plugin', () => {
         enabled: 'true',
         compareMethod: 'estimatedFinalSize',
         thresholdPerc: '60',
+        lowerThresholdPerc: '0',
         checkDelaySeconds: '20',
       },
       variables: {} as IpluginInputArgs['variables'],
@@ -34,8 +35,10 @@ describe('compareFileSizeRatioLive Plugin', () => {
         enabled: true,
         compareMethod: 'estimatedFinalSize',
         thresholdPerc: 60,
+        lowerThresholdPerc: 0,
         checkDelaySeconds: 20,
         error: false,
+        errorType: '',
       });
     });
 
@@ -49,8 +52,10 @@ describe('compareFileSizeRatioLive Plugin', () => {
         enabled: false,
         compareMethod: 'estimatedFinalSize',
         thresholdPerc: 60,
+        lowerThresholdPerc: 0,
         checkDelaySeconds: 20,
         error: false,
+        errorType: '',
       });
     });
   });
@@ -72,12 +77,14 @@ describe('compareFileSizeRatioLive Plugin', () => {
   });
 
   describe('Threshold Configuration', () => {
-    it('should use default threshold of 60%', () => {
+    it('should use default upper threshold of 60% and lower threshold of 0%', () => {
       delete baseArgs.inputs.thresholdPerc;
+      delete baseArgs.inputs.lowerThresholdPerc;
 
       const result = plugin(baseArgs);
 
       expect(result.variables.liveSizeCompare?.thresholdPerc).toBe(60);
+      expect(result.variables.liveSizeCompare?.lowerThresholdPerc).toBe(0);
     });
 
     it('should handle custom threshold percentage', () => {
@@ -88,12 +95,28 @@ describe('compareFileSizeRatioLive Plugin', () => {
       expect(result.variables.liveSizeCompare?.thresholdPerc).toBe(75);
     });
 
+    it('should handle custom lower threshold percentage', () => {
+      baseArgs.inputs.lowerThresholdPerc = '20';
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.liveSizeCompare?.lowerThresholdPerc).toBe(20);
+    });
+
     it('should handle numeric threshold values', () => {
       baseArgs.inputs.thresholdPerc = 80;
+      baseArgs.inputs.lowerThresholdPerc = 15;
 
       const result = plugin(baseArgs);
 
       expect(result.variables.liveSizeCompare?.thresholdPerc).toBe(80);
+      expect(result.variables.liveSizeCompare?.lowerThresholdPerc).toBe(15);
+    });
+
+    it('should initialise errorType as an empty string', () => {
+      const result = plugin(baseArgs);
+
+      expect(result.variables.liveSizeCompare?.errorType).toBe('');
     });
   });
 

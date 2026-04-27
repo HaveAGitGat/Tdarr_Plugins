@@ -60,7 +60,26 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEncoder = exports.getBestNvencDevice = exports.hasEncoder = void 0;
-var os_1 = __importDefault(require("os"));
+var fs_1 = __importDefault(require("fs"));
+var path_1 = __importDefault(require("path"));
+var getVaapiRenderDevice = function () {
+    var defaultDevice = '/dev/dri/renderD128';
+    try {
+        var driDir_1 = '/dev/dri';
+        if (!fs_1.default.existsSync(driDir_1)) {
+            return defaultDevice;
+        }
+        var files = fs_1.default.readdirSync(driDir_1);
+        var renderDevices = files
+            .filter(function (f) { return f.startsWith('renderD'); })
+            .sort()
+            .map(function (f) { return path_1.default.join(driDir_1, f); });
+        return renderDevices.length > 0 ? renderDevices[0] : defaultDevice;
+    }
+    catch (err) {
+        return defaultDevice;
+    }
+};
 var hasEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
     var spawn, isEnabled, commandArr_1, err_1;
     var ffmpegPath = _b.ffmpegPath, encoder = _b.encoder, inputArgs = _b.inputArgs, outputArgs = _b.outputArgs, filter = _b.filter, args = _b.args;
@@ -76,7 +95,7 @@ var hasEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     '-f',
                     'lavfi',
                     '-i',
-                    'color=c=black:s=256x256:d=1:r=30'
+                    'color=c=black:s=512x512:d=1:r=30'
                 ], false), (filter ? filter.split(' ') : []), true), [
                     '-c:v',
                     encoder
@@ -206,7 +225,7 @@ var encoderFilter = function (encoder, targetCodec) {
     return false;
 };
 var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var supportedGpuEncoders, gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _c, enabledDevices, res;
+    var supportedGpuEncoders, vaapiDevice, vaapiInputArgs, vaapiFilter, gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _c, enabledDevices, res;
     var targetCodec = _b.targetCodec, hardwareEncoding = _b.hardwareEncoding, hardwareType = _b.hardwareType, args = _b.args;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -215,6 +234,16 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                 if (!(args.workerType
                     && args.workerType.includes('gpu')
                     && hardwareEncoding && (supportedGpuEncoders.includes(targetCodec)))) return [3 /*break*/, 5];
+                vaapiDevice = getVaapiRenderDevice();
+                vaapiInputArgs = [
+                    '-hwaccel',
+                    'vaapi',
+                    '-hwaccel_device',
+                    vaapiDevice,
+                    '-hwaccel_output_format',
+                    'vaapi',
+                ];
+                vaapiFilter = '-vf format=nv12,hwupload';
                 gpuEncoders = [
                     {
                         encoder: 'hevc_nvenc',
@@ -249,23 +278,18 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         inputArgs: [
                             '-hwaccel',
                             'qsv',
+                            '-hwaccel_output_format',
+                            'qsv',
                         ],
-                        outputArgs: __spreadArray([], (os_1.default.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []), true),
+                        outputArgs: [],
                         filter: '',
                     },
                     {
                         encoder: 'hevc_vaapi',
-                        inputArgs: [
-                            '-hwaccel',
-                            'vaapi',
-                            '-hwaccel_device',
-                            '/dev/dri/renderD128',
-                            '-hwaccel_output_format',
-                            'vaapi',
-                        ],
+                        inputArgs: vaapiInputArgs,
                         outputArgs: [],
                         enabled: false,
-                        filter: '-vf format=nv12,hwupload',
+                        filter: vaapiFilter,
                     },
                     {
                         encoder: 'hevc_videotoolbox',
@@ -300,6 +324,8 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         enabled: false,
                         inputArgs: [
                             '-hwaccel',
+                            'qsv',
+                            '-hwaccel_output_format',
                             'qsv',
                         ],
                         outputArgs: [],
@@ -350,9 +376,9 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'av1_vaapi',
                         enabled: false,
-                        inputArgs: [],
+                        inputArgs: vaapiInputArgs,
                         outputArgs: [],
-                        filter: '',
+                        filter: vaapiFilter,
                     },
                 ];
                 filteredGpuEncoders = gpuEncoders.filter(function (device) { return encoderFilter(device.encoder, targetCodec); });

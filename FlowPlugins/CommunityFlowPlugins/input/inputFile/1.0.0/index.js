@@ -92,7 +92,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                orignalFolder = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                orignalFolder = (0, fileUtils_1.getFileAbsoluteDir)(args.originalLibraryFile._id);
                 _a = args.inputs, fileAccessChecks = _a.fileAccessChecks, pauseNodeIfAccessChecksFail = _a.pauseNodeIfAccessChecksFail;
                 nodeID = process.argv[8];
                 _b = args.deps.configVars.config, serverIP = _b.serverIP, serverPort = _b.serverPort, apiKey = _b.apiKey;
