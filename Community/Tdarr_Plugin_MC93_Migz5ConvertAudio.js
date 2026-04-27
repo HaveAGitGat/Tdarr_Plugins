@@ -65,6 +65,21 @@ const details = () => ({
   ],
 });
 
+// Build a downmix title that appends the new channel layout, but avoids
+// appending a layout the source title already ends with (e.g. don't turn
+// "Anglais E-AC3 2.0" into "Anglais E-AC3 2.0 - 2.0"). The boundary check
+// uses [^0-9.] so any non-digit/non-dot character (whitespace, paren,
+// bracket, dash, etc.) terminates the layout cleanly without matching
+// substrings of larger numbers like "15.1" or "12.0".
+const buildDownmixTitle = (originalTitle, layout) => {
+  if (!originalTitle) return layout;
+  const escaped = layout.replace(/\./g, '\\.');
+  if (new RegExp(`(?:^|[^0-9.])${escaped}$`).test(originalTitle)) {
+    return originalTitle;
+  }
+  return `${originalTitle} - ${layout}`;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   const lib = require('../methods/lib')();
@@ -129,16 +144,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       // command-line quoting (we wrap titles in double quotes below).
       const originalTitle = (file.ffProbeData.streams[i].tags?.title || '').replace(/["`$\\]/g, '');
       const language = (file.ffProbeData.streams[i].tags?.language || '').replace(/["`$\\]/g, '');
-      // Build a downmix title that appends the new channel layout, but avoids
-      // appending a layout the source title already ends with (e.g. don't turn
-      // "Anglais E-AC3 2.0" into "Anglais E-AC3 2.0 - 2.0").
-      const buildDownmixTitle = (layout) => {
-        if (!originalTitle) return layout;
-        if (new RegExp(`(?:^|\\s)${layout.replace(/\./g, '\\.')}$`).test(originalTitle)) {
-          return originalTitle;
-        }
-        return `${originalTitle} - ${layout}`;
-      };
 
       // Catch error here incase user left inputs.downmix empty.
       try {
@@ -153,7 +158,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
           ) {
             // Create new title preserving original name
-            const newTitle = buildDownmixTitle('5.1');
+            const newTitle = buildDownmixTitle(originalTitle, '5.1');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
               + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
 
@@ -174,7 +179,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is6channelAdded === false))
           ) {
-            const newTitle = buildDownmixTitle('5.1');
+            const newTitle = buildDownmixTitle(originalTitle, '5.1');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
               + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
             if (language) {
@@ -193,7 +198,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
             // Create new title preserving original name
-            const newTitle = buildDownmixTitle('2.0');
+            const newTitle = buildDownmixTitle(originalTitle, '2.0');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
               + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
 
@@ -214,7 +219,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
-            const newTitle = buildDownmixTitle('2.0');
+            const newTitle = buildDownmixTitle(originalTitle, '2.0');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
               + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
             if (language) {
