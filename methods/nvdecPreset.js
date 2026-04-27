@@ -32,10 +32,18 @@ const getPrimaryVideoCodec = (file) => {
   return (file && file.video_codec_name) || '';
 };
 
+// Returns the decode-side hwaccel preset for the input file. We only set
+// `-hwaccel cuda` (without `-hwaccel_output_format cuda`) so decoded frames
+// land in system memory rather than as CUDA hwframes. That keeps NVDEC
+// acceleration but avoids "Function not implemented" failures when the
+// encoder side specifies a pix_fmt incompatible with the GPU's hwframe
+// format (e.g. `-pix_fmt p010le` for 10-bit output on an 8-bit yuv420p
+// source). Returns '' for AV1 and unknown codecs so ffmpeg falls back to
+// software decode on GPUs without the matching NVDEC unit.
 const getNvdecHwaccelPreset = (file) => {
   const codec = getPrimaryVideoCodec(file);
   if (NVDEC_SUPPORTED_CODECS.includes(codec)) {
-    return '-hwaccel cuda -hwaccel_output_format cuda';
+    return '-hwaccel cuda';
   }
   return '';
 };
