@@ -777,4 +777,113 @@ describe('ffmpegCommandRemoveStreamByProperty Plugin', () => {
       expect(itStream?.removed).toBe(false);
     });
   });
+
+  describe('Falsy property values (issue #959)', () => {
+    beforeEach(() => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:0'],
+          inputArgs: [],
+          outputArgs: [],
+          disposition: { forced: 1 },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        {
+          index: 1,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:1'],
+          inputArgs: [],
+          outputArgs: [],
+          disposition: { forced: 0 },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+      ];
+    });
+
+    it('should remove non-forced subtitle when using disposition.forced with not_includes=1', () => {
+      baseArgs.inputs.codecType = 'subtitle';
+      baseArgs.inputs.propertyToCheck = 'disposition.forced';
+      baseArgs.inputs.valuesToRemove = '1';
+      baseArgs.inputs.condition = 'not_includes';
+
+      const result = plugin(baseArgs);
+
+      const forcedStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 0,
+      );
+      const nonForcedStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 1,
+      );
+      expect(forcedStream?.removed).toBe(false);
+      expect(nonForcedStream?.removed).toBe(true);
+    });
+
+    it('should remove forced subtitle when using disposition.forced with includes=1', () => {
+      baseArgs.inputs.codecType = 'subtitle';
+      baseArgs.inputs.propertyToCheck = 'disposition.forced';
+      baseArgs.inputs.valuesToRemove = '1';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const forcedStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 0,
+      );
+      const nonForcedStream = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 1,
+      );
+      expect(forcedStream?.removed).toBe(true);
+      expect(nonForcedStream?.removed).toBe(false);
+    });
+
+    it('should evaluate numeric zero properties instead of skipping them', () => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          channels: 0,
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:0'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+        {
+          index: 1,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          channels: 2,
+          removed: false,
+          forceEncoding: false,
+          mapArgs: ['-map', '0:1'],
+          inputArgs: [],
+          outputArgs: [],
+        },
+      ];
+      baseArgs.inputs.codecType = 'audio';
+      baseArgs.inputs.propertyToCheck = 'channels';
+      baseArgs.inputs.valuesToRemove = '0';
+      baseArgs.inputs.condition = 'includes';
+
+      const result = plugin(baseArgs);
+
+      const zeroChannels = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 0,
+      );
+      const twoChannels = result.variables.ffmpegCommand.streams.find(
+        (stream) => stream.index === 1,
+      );
+      expect(zeroChannels?.removed).toBe(true);
+      expect(twoChannels?.removed).toBe(false);
+    });
+  });
 });

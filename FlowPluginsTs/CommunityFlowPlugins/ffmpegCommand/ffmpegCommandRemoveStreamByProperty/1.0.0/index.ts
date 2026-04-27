@@ -123,7 +123,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         target = stream[propertyToCheck];
       }
 
-      if (!target) {
+      if (target === undefined || target === null) {
         return;
       }
 
