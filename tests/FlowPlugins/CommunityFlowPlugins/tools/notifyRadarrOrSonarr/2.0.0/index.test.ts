@@ -13,6 +13,15 @@ jest.mock('../../../../../../methods/lib', () => () => ({
   loadDefaultValues: jest.fn((inputs) => inputs),
 }));
 
+// Make setTimeout resolve instantly so polling doesn't actually wait
+const originalSetTimeout = global.setTimeout;
+beforeAll(() => {
+  global.setTimeout = ((fn: () => void) => originalSetTimeout(fn, 0)) as unknown as typeof setTimeout;
+});
+afterAll(() => {
+  global.setTimeout = originalSetTimeout;
+});
+
 describe('notifyRadarrOrSonarr Plugin', () => {
   let baseArgs: IpluginInputArgs;
 
@@ -36,13 +45,15 @@ describe('notifyRadarrOrSonarr Plugin', () => {
         axios: mockAxios,
       },
     } as unknown as IpluginInputArgs;
-
-    // Set up default mock responses for successful flow
-    mockAxios.mockResolvedValue({ data: [{ id: 123 }] });
   });
 
   describe('Radarr Integration', () => {
-    it('should successfully notify Radarr when movie found by IMDB ID', async () => {
+    it('should successfully notify Radarr and wait for scan to complete', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
+
       const result = await plugin(baseArgs);
 
       // Check that axios was called for IMDB lookup
@@ -68,18 +79,29 @@ describe('notifyRadarrOrSonarr Plugin', () => {
         data: JSON.stringify({ name: 'RefreshMovie', movieIds: [123] }),
       });
 
+      // Check that it polled for command status
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'get',
+        url: 'http://192.168.1.1:7878/api/v3/command/50',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Api-Key': 'test_api_key_123',
+          Accept: 'application/json',
+        },
+      });
+
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '123' found for imdb 'tt1234567'");
-      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Movie '123' refreshed in radarr.");
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Movie '123' scan completed in radarr.");
     });
 
     it('should fallback to parse API when IMDB lookup fails', async () => {
-      // Mock IMDB lookup to return empty result, then parse API to return movie
       mockAxios
         .mockResolvedValueOnce({ data: [] }) // IMDB lookup fails
         .mockResolvedValueOnce({ data: { movie: { id: 456 } } }) // Parse succeeds
-        .mockResolvedValueOnce({}); // Command succeeds
+        .mockResolvedValueOnce({ data: { id: 60, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 60, status: 'completed' } }); // Poll status
 
       const result = await plugin(baseArgs);
 
@@ -90,6 +112,11 @@ describe('notifyRadarrOrSonarr Plugin', () => {
 
     it('should handle trailing slash in host URL', async () => {
       baseArgs.inputs.arr_host = 'http://192.168.1.1:7878/';
+
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
 
       await plugin(baseArgs);
 
@@ -111,7 +138,12 @@ describe('notifyRadarrOrSonarr Plugin', () => {
       } as IFileObject;
     });
 
-    it('should successfully notify Sonarr when series found by IMDB ID', async () => {
+    it('should successfully notify Sonarr and wait for scan to complete', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 70, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 70, status: 'completed' } }); // Poll status
+
       const result = await plugin(baseArgs);
 
       expect(mockAxios).toHaveBeenCalledWith({
@@ -137,7 +169,48 @@ describe('notifyRadarrOrSonarr Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith("Serie '123' found for imdb 'tt7654321'");
-      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Serie '123' refreshed in sonarr.");
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Serie '123' scan completed in sonarr.");
+    });
+  });
+
+  describe('Wait for command completion', () => {
+    it('should poll until command completes', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'started' } }) // Poll 1
+        .mockResolvedValueOnce({ data: { id: 50, status: 'started' } }) // Poll 2
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll 3
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Command 50 status: started');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Command 50 status: completed');
+    });
+
+    it('should return output 2 when command fails', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'failed' } }); // Poll - failed
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Command 50 ended with status: failed');
+    });
+
+    it('should return output 2 when command is cancelled', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'cancelled' } }); // Poll - cancelled
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Command 50 ended with status: cancelled');
     });
   });
 
@@ -147,6 +220,11 @@ describe('notifyRadarrOrSonarr Plugin', () => {
         ...JSON.parse(JSON.stringify(sampleH264)),
         _id: 'C:/Movies/Movie with tt1234567 ID/movie.mkv',
       } as IFileObject;
+
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
 
       await plugin(baseArgs);
 
@@ -163,8 +241,10 @@ describe('notifyRadarrOrSonarr Plugin', () => {
         _id: 'C:/Movies/Movie without IMDB/movie.mkv',
       } as IFileObject;
 
-      // Mock parse API to return result
-      mockAxios.mockResolvedValueOnce({ data: { movie: { id: 999 } } });
+      mockAxios
+        .mockResolvedValueOnce({ data: { movie: { id: 999 } } }) // Parse API
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
 
       await plugin(baseArgs);
 
@@ -191,7 +271,7 @@ describe('notifyRadarrOrSonarr Plugin', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      mockAxios.mockRejectedValue(new Error('Network error'));
+      mockAxios.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(plugin(baseArgs)).rejects.toThrow('Network error');
     });
@@ -199,8 +279,10 @@ describe('notifyRadarrOrSonarr Plugin', () => {
     it('should handle missing originalLibraryFile', async () => {
       baseArgs.originalLibraryFile = undefined as unknown as IFileObject;
 
-      // Mock parse API to return result
-      mockAxios.mockResolvedValueOnce({ data: { movie: { id: 111 } } });
+      mockAxios
+        .mockResolvedValueOnce({ data: { movie: { id: 111 } } }) // Parse API
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
 
       const result = await plugin(baseArgs);
 
@@ -211,6 +293,11 @@ describe('notifyRadarrOrSonarr Plugin', () => {
   describe('Configuration Validation', () => {
     it('should work with different API key formats', async () => {
       baseArgs.inputs.arr_api_key = 'different-api-key-format-123';
+
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
 
       await plugin(baseArgs);
 
@@ -226,6 +313,11 @@ describe('notifyRadarrOrSonarr Plugin', () => {
     it('should handle HTTPS URLs', async () => {
       baseArgs.inputs.arr_host = 'https://radarr.example.com';
 
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
+
       await plugin(baseArgs);
 
       expect(mockAxios).toHaveBeenCalledWith(
@@ -237,6 +329,11 @@ describe('notifyRadarrOrSonarr Plugin', () => {
 
     it('should trim whitespace from host URL', async () => {
       baseArgs.inputs.arr_host = '  http://192.168.1.1:7878  ';
+
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
 
       await plugin(baseArgs);
 
@@ -250,12 +347,18 @@ describe('notifyRadarrOrSonarr Plugin', () => {
 
   describe('Logging', () => {
     it('should log all steps of the process', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } }) // POST command
+        .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } }); // Poll status
+
       await plugin(baseArgs);
 
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Going to force scan');
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Refreshing radarr...');
       expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '123' found for imdb 'tt1234567'");
-      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Movie '123' refreshed in radarr.");
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '123' refresh queued in radarr (command 50).");
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Movie '123' scan completed in radarr.");
     });
   });
 
@@ -270,9 +373,9 @@ describe('notifyRadarrOrSonarr Plugin', () => {
       expect(result.outputNumber).toBe(2);
     });
 
-    it('should handle malformed API responses', async () => {
+    it('should handle null movie id in parse response', async () => {
       mockAxios
-        .mockResolvedValueOnce({ data: null }) // IMDB lookup returns null
+        .mockResolvedValueOnce({ data: [] }) // IMDB lookup fails
         .mockResolvedValueOnce({ data: { movie: { id: null } } }); // Parse returns null ID
 
       const result = await plugin(baseArgs);

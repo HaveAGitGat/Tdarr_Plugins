@@ -208,26 +208,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
-  // Codec will be checked so it can be transcoded correctly
-  if (file.video_codec_name === 'h263') {
-    response.preset = '-c:v h263_cuvid';
-  } else if (file.video_codec_name === 'hevc') {
-    response.preset = '';
-  } else if (file.video_codec_name === 'av1') {
-    response.preset = '';
-  } else if (file.video_codec_name === 'vp9') {
-    response.preset = '';
-  } else if (file.video_codec_name === 'mjpeg') {
-    response.preset = '-c:v mjpeg_cuvid';
-  } else if (file.video_codec_name === 'mpeg1') {
-    response.preset = '-c:v mpeg1_cuvid';
-  } else if (file.video_codec_name === 'mpeg2') {
-    response.preset = '-c:v mpeg2_cuvid';
-  } else if (file.video_codec_name === 'vc1') {
-    response.preset = '-c:v vc1_cuvid';
-  } else if (file.video_codec_name === 'vp8') {
-    response.preset = '-c:v vp8_cuvid';
-  }
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+  response.preset = getNvdecHwaccelPreset(file);
 
   response.preset += `,-map 0 -c:v h264_nvenc -preset fast -crf 23 ${bitrateSettings} `
   + `-c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt yuv420p ${extraArguments}`;

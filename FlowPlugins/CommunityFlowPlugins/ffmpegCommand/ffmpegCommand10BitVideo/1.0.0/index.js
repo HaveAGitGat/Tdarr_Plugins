@@ -1,10 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-var os_1 = __importDefault(require("os"));
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
@@ -37,9 +33,19 @@ var plugin = function (args) {
     for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
         var stream = args.variables.ffmpegCommand.streams[i];
         if (stream.codec_type === 'video') {
-            stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
-            if (stream.outputArgs.some(function (row) { return row.includes('qsv'); }) && os_1.default.platform() !== 'win32') {
+            var isLibsvtav1 = stream.outputArgs.some(function (row) { return String(row).includes('libsvtav1'); });
+            // SVT-AV1 has no main10 profile; -profile:v main10 is parsed as AV1 Profile 2 (4:2:2)
+            // and rejects 4:2:0 10-bit input. 10-bit is conveyed via pix_fmt alone.
+            if (!isLibsvtav1) {
+                stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
+            }
+            var isQsv = stream.outputArgs.some(function (row) { return row.includes('qsv'); });
+            var hwDecoding = args.variables.ffmpegCommand.hardwareDecoding === true;
+            if (isQsv && hwDecoding) {
                 stream.outputArgs.push('-vf', 'scale_qsv=format=p010le');
+            }
+            else if (isLibsvtav1) {
+                stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');
             }
             else {
                 stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');

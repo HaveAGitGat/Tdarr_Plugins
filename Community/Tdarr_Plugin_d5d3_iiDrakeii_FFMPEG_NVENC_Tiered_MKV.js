@@ -56,32 +56,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  //codec will be checked so it can be transcoded correctly
-  if (file.video_codec_name == "h263") {
-    response.preset = `-c:v h263_cuvid`;
-  } else if (file.video_codec_name == "h264") {
-    if (file.ffProbeData.streams[0].profile != "High 10") {
-      //Remove HW Decoding for High 10 Profile
-      response.preset = `-c:v h264_cuvid`;
-    }
-  } else if (file.video_codec_name == "mjpeg") {
-    response.preset = `c:v mjpeg_cuvid`;
-  } else if (file.video_codec_name == "mpeg1") {
-    response.preset = `-c:v mpeg1_cuvid`;
-  } else if (file.video_codec_name == "mpeg2") {
-    response.preset = `-c:v mpeg2_cuvid`;
-  }
-  // skipping this one because it's empty
-  //  else if (file.video_codec_name == 'mpeg4') {
-  //    response.preset = ``
-  //  }
-  else if (file.video_codec_name == "vc1") {
-    response.preset = `-c:v vc1_cuvid`;
-  } else if (file.video_codec_name == "vp8") {
-    response.preset = `-c:v vp8_cuvid`;
-  } else if (file.video_codec_name == "vp9") {
-    response.preset = `-c:v vp9_cuvid`;
-  }
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+  response.preset = getNvdecHwaccelPreset(file);
 
   //Set Subtitle Var before adding encode cli
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -118,6 +97,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
     } catch (err) {}
   }
+  // Use scale_cuda when CUDA hwaccel is active (frames live in GPU memory and
+  // `-pix_fmt p010le` fails on hwframes); fall back to `-pix_fmt p010le` for
+  // software decode paths.
+  const { getNvenc10BitFormatArg } = require('../methods/nvdecPreset');
+  const tenBit = getNvenc10BitFormatArg(file).trim();
+
   //file will be encoded if the resolution is 480p or 576p
   //codec will be checked so it can be transcoded correctly
   if (file.video_resolution === "480p" || file.video_resolution === "576p") {
@@ -129,7 +114,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 1000;
       bitratemax = 1500;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc ${tenBit} -qmin 0 -cq:v 29 -b:v ${bitratetarget}k -maxrate:v 1500k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
 
@@ -144,7 +129,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 2000;
       bitratemax = 4000;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc ${tenBit} -qmin 0 -cq:v 30 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //file will be encoded if the resolution is 1080p
@@ -158,7 +143,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 2500;
       bitratemax = 5000;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:V 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc ${tenBit} -qmin 0 -cq:V 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //file will be encoded if the resolution is 4K
@@ -172,7 +157,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       bitratetarget = 14000;
       bitratemax = 20000;
     }
-    response.preset += `,${map} -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
+    response.preset += `,${map} -dn -c:v hevc_nvenc ${tenBit} -qmin 0 -cq:v 31 -b:v ${bitratetarget}k -maxrate:v ${bitratemax}k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy ${subcli}${maxmux}`;
     transcode = 1;
   }
   //check if the file is eligible for transcoding

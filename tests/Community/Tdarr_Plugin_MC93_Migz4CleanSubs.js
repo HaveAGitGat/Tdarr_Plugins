@@ -67,6 +67,63 @@ const tests = [
         + '☒Subtitle stream 0:s:1 has no language, tagging as eng. \n',
     },
   },
+  {
+    // SDH track is preserved when the user opts out via sdh=false, even
+    // with commentary removal enabled. Fix for issue #883.
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
+        file.ffProbeData.streams[6].tags.language = 'eng';
+        file.ffProbeData.streams[6].tags.title = 'English (SDH)';
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        language: 'eng',
+        commentary: 'true',
+        sdh: 'false',
+        tag_language: '',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      preset: '',
+      container: '.mkv',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: false,
+      infoLog: "☑File doesn't contain subtitle tracks which are unwanted or that require tagging.\n",
+    },
+  },
+  {
+    // Default behaviour preserved: with commentary=true and sdh left at its
+    // default (true), SDH-tagged tracks are still removed (matches pre-fix behaviour).
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));
+        file.ffProbeData.streams[6].tags.language = 'eng';
+        file.ffProbeData.streams[6].tags.title = 'English (SDH)';
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: {
+        language: 'eng',
+        commentary: 'true',
+        tag_language: '',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: ', -map 0 -map -0:s:0  -c copy -max_muxing_queue_size 9999',
+      container: '.mkv',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: '☒Subtitle stream 0:s:0 detected as SDH, removing. \n',
+    },
+  },
 ];
 
 void run(tests);

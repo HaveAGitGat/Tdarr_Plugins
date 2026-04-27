@@ -188,7 +188,7 @@ const hasEncoder = async ({
   let isEnabled = false;
   try {
     isEnabled = await new Promise((resolve) => {
-      const command = `${ffmpegPath} ${inputArgs || ''} -f lavfi -i color=c=black:s=256x256:d=1:r=30`
+      const command = `${ffmpegPath} ${inputArgs || ''} -f lavfi -i color=c=black:s=512x512:d=1:r=30`
               + ` ${filter || ''}`
               + ` -c:v ${encoder} -f null /dev/null`;
       exec(command, (
@@ -422,7 +422,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Set up required variables.
   let videoIdx = 0;
-  let CPU10 = false;
   let extraArguments = '';
   let genpts = '';
   let bitrateSettings = '';
@@ -507,8 +506,11 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Check if 10bit variable is true.
   if (inputs.enable_10bit === true) {
-    // If set to true then add 10bit argument
-    extraArguments += '-pix_fmt p010le ';
+    // Use scale_cuda when CUDA hwaccel is active (frames live in GPU memory
+    // and `-pix_fmt p010le` fails on hwframes); fall back to `-pix_fmt
+    // p010le` for software decode paths.
+    const { getNvenc10BitFormatArg } = require('../methods/nvdecPreset');
+    extraArguments += getNvenc10BitFormatArg(file);
   }
 
   // Check if b frame variable is true.
@@ -557,15 +559,6 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         return response;
       }
 
-      // Check if video stream is HDR or 10bit
-      if (
-        inputs.target_codec === 'hevc'
-        && (file.ffProbeData.streams[i].profile === 'High 10'
-          || file.ffProbeData.streams[i].bits_per_raw_sample === '10')
-      ) {
-        CPU10 = true;
-      }
-
       // Increment videoIdx.
       videoIdx += 1;
     }
@@ -582,24 +575,12 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
   if (encoderProperties.encoder.includes('nvenc')) {
-    if (file.video_codec_name === 'h263') {
-      response.preset = '-c:v h263_cuvid';
-    } else if (file.video_codec_name === 'h264' && CPU10 === false) {
-      response.preset = '-c:v h264_cuvid';
-    } else if (file.video_codec_name === 'mjpeg') {
-      response.preset = '-c:v mjpeg_cuvid';
-    } else if (file.video_codec_name === 'mpeg1') {
-      response.preset = '-c:v mpeg1_cuvid';
-    } else if (file.video_codec_name === 'mpeg2') {
-      response.preset = '-c:v mpeg2_cuvid';
-    } else if (file.video_codec_name === 'mpeg4') {
-      response.preset = '-c:v mpeg4_cuvid';
-    } else if (file.video_codec_name === 'vc1') {
-      response.preset = '-c:v vc1_cuvid';
-    } else if (file.video_codec_name === 'vp8') {
-      response.preset = '-c:v vp8_cuvid';
-    }
+    const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+    response.preset = getNvdecHwaccelPreset(file);
   }
 
   const vEncode = `-cq:v 19 ${bitrateSettings}`;

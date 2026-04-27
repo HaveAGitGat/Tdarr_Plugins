@@ -1,5 +1,5 @@
 import {
-  fileExists, getContainer, getFileAbosluteDir, getFileName,
+  fileExists, getContainer, getFileAbsoluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -63,7 +63,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const directory = String(args.inputs.directory).trim() || getFileAbosluteDir(args.inputFileObj._id);
+  const directory = String(args.inputs.directory).trim() || getFileAbsoluteDir(args.inputFileObj._id);
 
   const fileName = getFileName(args.inputFileObj._id);
 

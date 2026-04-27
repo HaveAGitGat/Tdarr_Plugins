@@ -41,6 +41,7 @@ describe('copyToWorkDirectory Plugin', () => {
     });
 
     baseArgs = {
+      isAutomation: false,
       inputs: {},
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),

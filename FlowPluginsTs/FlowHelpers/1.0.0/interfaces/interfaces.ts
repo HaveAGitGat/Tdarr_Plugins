@@ -101,8 +101,10 @@ export interface IliveSizeCompare {
     enabled: boolean,
     compareMethod: string,
     thresholdPerc: number,
+    lowerThresholdPerc: number,
     checkDelaySeconds: number,
     error: boolean,
+    errorType: '' | 'upperThreshold' | 'lowerThreshold',
 }
 
 export interface Ivariables {
@@ -113,6 +115,15 @@ export interface Ivariables {
     queueTags?: string,
     liveSizeCompare?: IliveSizeCompare,
     removeFromTdarr?: boolean,
+    automation?: {
+        payload: Record<string, unknown>,
+        flowId: string,
+        configId: string,
+        runId: string,
+        executeImmediately: boolean,
+        bypassStagedFileLimit: boolean,
+        createdAt: number,
+    },
 }
 
 export interface IpluginOutputArgs {
@@ -177,6 +188,7 @@ export interface IpluginInputArgs {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config: any,
     job: Ijob,
+    isAutomation: boolean,
     platform_arch_isdocker: string,
     variables: Ivariables,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
