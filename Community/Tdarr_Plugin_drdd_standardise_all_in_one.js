@@ -362,27 +362,11 @@ function buildVideoConfiguration(inputs, file, logger) {
           `-c:v hevc_nvenc -cq:v 19 ${bitrateSettings} -spatial_aq:v 1 -rc-lookahead:v 32`
         );
 
-        if (file.video_codec_name === "h263") {
-          configuration.AddInputSetting("-c:v h263_cuvid");
-        } else if (file.video_codec_name === "h264") {
-          if (file.ffProbeData.streams[0].profile !== "High 10") {
-            configuration.AddInputSetting("-c:v h264_cuvid");
-          } else if (file.video_codec_name === "mjpeg") {
-            configuration.AddInputSetting("c:v mjpeg_cuvid");
-          } else if (file.video_codec_name == "mpeg1") {
-            configuration.AddInputSetting("-c:v mpeg1_cuvid");
-          } else if (file.video_codec_name == "mpeg2") {
-            configuration.AddInputSetting("-c:v mpeg2_cuvid");
-          } else if (file.video_codec_name == "mpeg4") {
-            configuration.AddInputSetting("-c:v mpeg4_cuvid");
-          } else if (file.video_codec_name == "vc1") {
-            configuration.AddInputSetting("-c:v vc1_cuvid");
-          } else if (file.video_codec_name == "vp8") {
-            configuration.AddInputSetting("-c:v vp8_cuvid");
-          } else if (file.video_codec_name == "vp9") {
-            configuration.AddInputSetting("-c:v vp9_cuvid");
-          }
-        }
+        // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+        // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+        // Helper returns '' for AV1 to keep older GPUs on software decode.
+        const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+        configuration.AddInputSetting(getNvdecHwaccelPreset(file));
 
         logger.AddError("Transcoding to HEVC using NVidia NVENC");
       }

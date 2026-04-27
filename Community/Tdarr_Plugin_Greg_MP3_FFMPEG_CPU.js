@@ -1,4 +1,4 @@
-module.exports.dependencies = ['import-fresh'];
+module.exports.dependencies = ['import-fresh@3.3.1'];
 const details = () => ({
   id: 'Tdarr_Plugin_Greg_MP3_FFMPEG_CPU',
   Stage: 'Pre-processing',

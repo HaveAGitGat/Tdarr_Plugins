@@ -6,7 +6,7 @@ const details = () => ({
   Type: 'Subtitle',
   Operation: 'Transcode',
   Description: 'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',
-  Version: '2.4',
+  Version: '2.5',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [{
     name: 'language',
@@ -35,6 +35,26 @@ const details = () => ({
       ],
     },
     tooltip: `Specify if subtitle tracks that contain commentary/description should be removed.
+               \\nExample:\\n
+               true
+
+               \\nExample:\\n
+               false`,
+  },
+  {
+    name: 'sdh',
+    type: 'boolean',
+    defaultValue: true,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `Specify if subtitle tracks tagged as SDH (Subtitles for the Deaf and Hard of hearing) should be removed.
+                    \\nOnly applies when the commentary option above is also set to true.
+                    \\nSet to false to preserve SDH/accessibility subtitle tracks while still removing commentary.
                \\nExample:\\n
                true
 
@@ -123,24 +143,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     // Catch error here incase the title metadata is completely missing.
     try {
-      // Check if inputs.commentary is set to true
-      // AND if stream is subtitle
-      // AND then checks for stream titles with the following "commentary, description, sdh".
-      // Removing any streams that are applicable.
-      if (
-        inputs.commentary === true
-        && file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
-        && (file.ffProbeData.streams[i].tags.title
-          .toLowerCase()
-          .includes('commentary')
-          || file.ffProbeData.streams[i].tags.title
-            .toLowerCase()
-            .includes('description')
-          || file.ffProbeData.streams[i].tags.title.toLowerCase().includes('sdh'))
-      ) {
-        ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
-        response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
-        convert = true;
+      // SDH removal is gated on inputs.sdh so users can keep SDH/accessibility
+      // tracks while still stripping commentary/description (issue #883).
+      const titleLower = file.ffProbeData.streams[i].tags.title.toLowerCase();
+      const isSubtitle = file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle';
+
+      if (inputs.commentary === true && isSubtitle) {
+        // Check for stream titles containing "commentary" or "description".
+        if (titleLower.includes('commentary') || titleLower.includes('description')) {
+          ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
+          response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as being descriptive, removing. \n`;
+          convert = true;
+        } else if (inputs.sdh === true && titleLower.includes('sdh')) {
+          // SDH removal opt-out: only strips when sdh input is true.
+          ffmpegCommandInsert += `-map -0:s:${subtitleIdx} `;
+          response.infoLog += `☒Subtitle stream 0:s:${subtitleIdx} detected as SDH, removing. \n`;
+          convert = true;
+        }
       }
     } catch (err) {
       // Error
