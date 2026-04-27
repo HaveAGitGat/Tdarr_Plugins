@@ -125,10 +125,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is audio.
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'audio') {
-      // Get original track metadata
-      const originalTitle = file.ffProbeData.streams[i].tags?.title || '';
-      const language = file.ffProbeData.streams[i].tags?.language || '';
-      
+      // Get original track metadata. Strip characters that would break the ffmpeg
+      // command-line quoting (we wrap titles in double quotes below).
+      const originalTitle = (file.ffProbeData.streams[i].tags?.title || '').replace(/["`$\\]/g, '');
+      const language = (file.ffProbeData.streams[i].tags?.language || '').replace(/["`$\\]/g, '');
+
       // Catch error here incase user left inputs.downmix empty.
       try {
         // Check if inputs.downmix is set to true.
@@ -143,14 +144,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           ) {
             // Create new title preserving original name
             const newTitle = originalTitle ? `${originalTitle} - 5.1` : '5.1';
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 -metadata:s:a:${audioIdx} title="${newTitle}" `;
-            
+            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
+              + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
+
             // Preserve language if it exists
             if (language) {
               ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
             }
-            
-            response.infoLog += `☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "${newTitle}" from 8 channel. \n`;
+
+            response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. '
+              + `Creating 6 channel "${newTitle}" from 8 channel. \n`;
             convert = true;
             is6channelAdded = true;
           }
@@ -163,14 +166,16 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           ) {
             // Create new title preserving original name
             const newTitle = originalTitle ? `${originalTitle} - 2.0` : '2.0';
-            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 -metadata:s:a:${audioIdx} title="${newTitle}" `;
-            
+            ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
+              + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
+
             // Preserve language if it exists
             if (language) {
               ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
             }
-            
-            response.infoLog += `☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "${newTitle}" from 6 channel. \n`;
+
+            response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. '
+              + `Creating 2 channel "${newTitle}" from 6 channel. \n`;
             convert = true;
             is2channelAdded = true;
           }
