@@ -14,6 +14,7 @@ var details = function () { return ({
     requiresVersion: '2.11.01',
     sidebarPosition: 1,
     icon: '',
+    skipAutoDownload: true,
     inputs: [
         {
             label: 'Variable',
