@@ -11,7 +11,7 @@ const details = () => ({
       + 'other options.',
   // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
   // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
-  Version: '1.04',
+  Version: '1.05',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -19,18 +19,13 @@ const details = () => ({
       type: 'string',
       defaultValue: 'no',
       inputUI: {
-        type: 'text',
+        type: 'dropdown',
+        options: [
+          'no',
+          'yes',
+        ],
       },
-      tooltip: `Do you want to remove subtitles after they are  extracted?
-        
-        \\nExample:\\n
-        
-        yes
-        
-        \\nExample:\\n
-        
-        no
-        `,
+      tooltip: `Do you want to remove subtitles after they are  extracted?`,
     },
   ],
 });
@@ -70,6 +65,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   for (let i = 0; i < subsArr.length; i += 1) {
     const subStream = subsArr[i];
     let lang = '';
+    let type = '';
     let title = 'none';
 
     if (subStream && subStream.tags && subStream.tags.language) {
@@ -78,6 +74,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
     if (subStream && subStream.tags && subStream.tags.title) {
       title = subStream.tags.title;
+    }
+
+    if (subStream && subStream.disposition.hearing_impaired) {
+      type = '.sdh';
+    } else if (subStream && subStream.disposition.forced) {
+      type = '.forced';
     }
 
     const { originalLibraryFile } = otherArguments;
@@ -92,19 +94,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       subsFile = file.file;
     }
     subsFile = subsFile.split('.');
-    subsFile[subsFile.length - 2] += `.${lang}`;
+    subsFile[subsFile.length - 2] += `.${lang}${type}`;
     subsFile[subsFile.length - 1] = 'srt';
     subsFile = subsFile.join('.');
 
     const { index } = subStream;
     if (fs.existsSync(`${subsFile}`)) {
-      response.infoLog += `${lang}.srt already exists. Skipping!\n`;
+      response.infoLog += `${lang}${type}.srt already exists. Skipping!\n`;
     } else if (typeof title === 'string'
     && (title.toLowerCase().includes('commentary')
     || title.toLowerCase().includes('description'))) {
       response.infoLog += `Stream ${i} ${lang}.srt is a ${title} track. Skipping!\n`;
     } else {
-      response.infoLog += `Extracting ${lang}.srt\n`;
+      response.infoLog += `Extracting ${lang}${type}.srt\n`;
       command += ` -map 0:${index} "${subsFile}"`;
     }
   }
