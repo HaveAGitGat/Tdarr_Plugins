@@ -160,11 +160,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             // Create new title preserving original name
             const newTitle = buildDownmixTitle(originalTitle, '5.1');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
-              + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
+              + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
 
             // Preserve language if it exists
             if (language) {
-              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
+              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} "language=${language}" `;
             }
 
             response.infoLog += '☒Audio track is 8 channel, no 6 channel exists. '
@@ -181,9 +181,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           ) {
             const newTitle = buildDownmixTitle(originalTitle, '5.1');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
-              + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
+              + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
             if (language) {
-              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
+              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} "language=${language}" `;
             }
             response.infoLog += '☒Audio track is 7 channel (6.1), no 6 channel exists. '
               + `Creating 6 channel "${newTitle}" from 7 channel. \n`;
@@ -200,11 +200,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             // Create new title preserving original name
             const newTitle = buildDownmixTitle(originalTitle, '2.0');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
-              + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
+              + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
 
             // Preserve language if it exists
             if (language) {
-              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
+              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} "language=${language}" `;
             }
 
             response.infoLog += '☒Audio track is 6 channel, no 2 channel exists. '
@@ -221,9 +221,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
           ) {
             const newTitle = buildDownmixTitle(originalTitle, '2.0');
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
-              + `-metadata:s:a:${audioIdx} title="${newTitle}" `;
+              + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
             if (language) {
-              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} language="${language}" `;
+              ffmpegCommandInsert += `-metadata:s:a:${audioIdx} "language=${language}" `;
             }
             response.infoLog += '☒Audio track is 7 channel (6.1), no 2 channel exists. '
               + `Creating 2 channel "${newTitle}" from 7 channel. \n`;

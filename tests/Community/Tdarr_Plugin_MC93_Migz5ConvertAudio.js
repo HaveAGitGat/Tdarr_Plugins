@@ -81,7 +81,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 8 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 
@@ -108,7 +108,7 @@ const tests = [
       reQueueAfter: true,
       infoLog: '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 8 channel. \n'
         + '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 8 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 language="eng" -map 0:2 -c:a:1 ac3 -ac 6 -metadata:s:a:1 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:1 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 "language=eng" -map 0:2 -c:a:1 ac3 -ac 6 -metadata:s:a:1 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:1 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 
@@ -139,7 +139,7 @@ const tests = [
       infoLog: '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Anglais E-AC3 2.0" from 6 channel. \n'
       + '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Français E-AC3 2.0" from 6 channel. \n'
       + '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Anglais E-AC3 2.0" from 6 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:3 -c:a:2 aac -ac 2 -metadata:s:a:2 title="Anglais E-AC3 2.0" -metadata:s:a:2 language="eng" -map 0:4 -c:a:3 aac -ac 2 -metadata:s:a:3 title="Français E-AC3 2.0" -metadata:s:a:3 language="fre" -map 0:5 -c:a:4 aac -ac 2 -metadata:s:a:4 title="Anglais E-AC3 2.0" -metadata:s:a:4 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:3 -c:a:2 aac -ac 2 -metadata:s:a:2 "title=Anglais E-AC3 2.0" -metadata:s:a:2 "language=eng" -map 0:4 -c:a:3 aac -ac 2 -metadata:s:a:3 "title=Français E-AC3 2.0" -metadata:s:a:3 "language=fre" -map 0:5 -c:a:4 aac -ac 2 -metadata:s:a:4 "title=Anglais E-AC3 2.0" -metadata:s:a:4 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 
@@ -169,7 +169,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Français E-AC3 2.0" from 6 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:4 -c:a:3 aac -ac 2 -metadata:s:a:3 title="Français E-AC3 2.0" -metadata:s:a:3 language="fre"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:4 -c:a:3 aac -ac 2 -metadata:s:a:3 "title=Français E-AC3 2.0" -metadata:s:a:3 "language=fre"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 
@@ -203,7 +203,7 @@ const tests = [
         + '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 8 channel. \n'
         + '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Français E-AC3 2.0 - 5.1" from 8 channel. \n'
         + '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 8 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 language="eng" -map 0:2 -c:a:1 ac3 -ac 6 -metadata:s:a:1 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:1 language="eng" -map 0:3 -c:a:2 ac3 -ac 6 -metadata:s:a:2 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:2 language="eng" -map 0:4 -c:a:3 ac3 -ac 6 -metadata:s:a:3 title="Français E-AC3 2.0 - 5.1" -metadata:s:a:3 language="fre" -map 0:5 -c:a:4 ac3 -ac 6 -metadata:s:a:4 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:4 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 "language=eng" -map 0:2 -c:a:1 ac3 -ac 6 -metadata:s:a:1 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:1 "language=eng" -map 0:3 -c:a:2 ac3 -ac 6 -metadata:s:a:2 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:2 "language=eng" -map 0:4 -c:a:3 ac3 -ac 6 -metadata:s:a:3 "title=Français E-AC3 2.0 - 5.1" -metadata:s:a:3 "language=fre" -map 0:5 -c:a:4 ac3 -ac 6 -metadata:s:a:4 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:4 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
 
     },
   },
@@ -234,7 +234,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: '☒Audio track is 8 channel, no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 8 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
   // DTS 6.1 (7 channel) - should downmix to 6ch (2ch created on requeue)
@@ -260,7 +260,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: '☒Audio track is 7 channel (6.1), no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 7 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 
@@ -288,7 +288,7 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: '☒Audio track is 7 channel (6.1), no 6 channel exists. Creating 6 channel "Anglais E-AC3 2.0 - 5.1" from 7 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 title="Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 ac3 -ac 6 -metadata:s:a:0 "title=Anglais E-AC3 2.0 - 5.1" -metadata:s:a:0 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 
@@ -323,7 +323,7 @@ const tests = [
         + '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Anglais E-AC3 2.0" from 6 channel. \n'
         + '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Français E-AC3 2.0" from 6 channel. \n'
         + '☒Audio track is 6 channel, no 2 channel exists. Creating 2 channel "Anglais E-AC3 2.0" from 6 channel. \n',
-      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 aac -ac 2 -metadata:s:a:0 title="Anglais E-AC3 2.0" -metadata:s:a:0 language="eng" -map 0:2 -c:a:1 aac -ac 2 -metadata:s:a:1 title="Anglais E-AC3 2.0" -metadata:s:a:1 language="eng" -map 0:3 -c:a:2 aac -ac 2 -metadata:s:a:2 title="Anglais E-AC3 2.0" -metadata:s:a:2 language="eng" -map 0:4 -c:a:3 aac -ac 2 -metadata:s:a:3 title="Français E-AC3 2.0" -metadata:s:a:3 language="fre" -map 0:5 -c:a:4 aac -ac 2 -metadata:s:a:4 title="Anglais E-AC3 2.0" -metadata:s:a:4 language="eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
+      preset: ', -map 0 -c:v copy -c:a copy -map 0:1 -c:a:0 aac -ac 2 -metadata:s:a:0 "title=Anglais E-AC3 2.0" -metadata:s:a:0 "language=eng" -map 0:2 -c:a:1 aac -ac 2 -metadata:s:a:1 "title=Anglais E-AC3 2.0" -metadata:s:a:1 "language=eng" -map 0:3 -c:a:2 aac -ac 2 -metadata:s:a:2 "title=Anglais E-AC3 2.0" -metadata:s:a:2 "language=eng" -map 0:4 -c:a:3 aac -ac 2 -metadata:s:a:3 "title=Français E-AC3 2.0" -metadata:s:a:3 "language=fre" -map 0:5 -c:a:4 aac -ac 2 -metadata:s:a:4 "title=Anglais E-AC3 2.0" -metadata:s:a:4 "language=eng"  -strict -2 -c:s copy -max_muxing_queue_size 9999 ',
     },
   },
 ];
