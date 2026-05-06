@@ -73,14 +73,14 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Specify whether downmixed tracks should preserve the original track title.
-                     \\nWhen false (default), the plugin keeps the pre-#903 behaviour and uses only the new channel layout as the title (e.g. "2.0" or "5.1").
-                     \\nWhen true, the plugin keeps the PR #903 behaviour and appends the new layout to the original title (e.g. "E-AC-3 Atmos 5.1 - 2.0").
-              \\nExample:\\n
-              false
-
-              \\nExample:\\n
-              true`,
+    tooltip: 'Specify whether downmixed tracks should preserve the original track title.'
+      + ' \\nWhen false (default), the plugin keeps the pre-#903 behaviour.'
+      + ' \\nDownmixed tracks use only the new channel layout as the title'
+      + ' (e.g. "2.0" or "5.1").'
+      + ' \\nWhen true, the plugin restores the PR #903 behaviour and appends'
+      + ' the new layout to the original title'
+      + ' (e.g. "E-AC-3 Atmos 5.1 - 2.0").'
+      + ' \\nExample:\\n\nfalse\n\n\\nExample:\\n\ntrue',
   },
   ],
 });
