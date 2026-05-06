@@ -6,7 +6,7 @@ const details = () => ({
   Type: 'Audio',
   Operation: 'Transcode',
   Description: 'This plugin can convert any 2.0 audio track/s to AAC and can create downmixed audio tracks. \n\n',
-  Version: '2.5',
+  Version: '2.6',
   Tags: 'pre-processing,ffmpeg,audio only,configurable',
   Inputs: [{
     name: 'aac_stereo',
@@ -61,6 +61,26 @@ const details = () => ({
     tooltip: 'By default this plugin will downmix each track. '
     + 'So four 6 channel tracks will result in four 2 channel tracks.'
     + ' Enable this option to only downmix a single track.',
+  },
+  {
+    name: 'preserve_channel_title',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `Specify whether downmixed tracks should preserve the original track title.
+                     \\nWhen false (default), the plugin keeps the pre-#903 behaviour and uses only the new channel layout as the title (e.g. "2.0" or "5.1").
+                     \\nWhen true, the plugin keeps the PR #903 behaviour and appends the new layout to the original title (e.g. "E-AC-3 Atmos 5.1 - 2.0").
+              \\nExample:\\n
+              false
+
+              \\nExample:\\n
+              true`,
   },
   ],
 });
@@ -157,8 +177,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
               || (inputs.downmix_single_track === true && is6channelAdded === false))
 
           ) {
-            // Create new title preserving original name
-            const newTitle = buildDownmixTitle(originalTitle, '5.1');
+            const newTitle = inputs.preserve_channel_title
+              ? buildDownmixTitle(originalTitle, '5.1') : '5.1';
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
               + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
 
@@ -179,9 +199,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is6channelAdded === false))
           ) {
-            const newTitle = buildDownmixTitle(originalTitle, '5.1');
+            const newTitle = inputs.preserve_channel_title
+              ? buildDownmixTitle(originalTitle, '5.1') : '5.1';
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} ac3 -ac 6 `
               + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
+            // Preserve language if it exists
             if (language) {
               ffmpegCommandInsert += `-metadata:s:a:${audioIdx} "language=${language}" `;
             }
@@ -197,8 +219,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
-            // Create new title preserving original name
-            const newTitle = buildDownmixTitle(originalTitle, '2.0');
+            const newTitle = inputs.preserve_channel_title
+              ? buildDownmixTitle(originalTitle, '2.0') : '2.0';
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
               + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
 
@@ -219,9 +241,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             && (inputs.downmix_single_track === false
               || (inputs.downmix_single_track === true && is2channelAdded === false))
           ) {
-            const newTitle = buildDownmixTitle(originalTitle, '2.0');
+            const newTitle = inputs.preserve_channel_title
+              ? buildDownmixTitle(originalTitle, '2.0') : '2.0';
             ffmpegCommandInsert += `-map 0:${i} -c:a:${audioIdx} aac -ac 2 `
               + `-metadata:s:a:${audioIdx} "title=${newTitle}" `;
+            // Preserve language if it exists
             if (language) {
               ffmpegCommandInsert += `-metadata:s:a:${audioIdx} "language=${language}" `;
             }
