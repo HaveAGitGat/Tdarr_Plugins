@@ -39,14 +39,19 @@ const parseRunCliArguments = (
   const prefixArgs = prefixArgsString
     ? parseArgsStringToArgv(prefixArgsString, '', '')
     : [];
-  const commandArg = shellCommandArgMatch[4]
-    .trim()
-    .replace(/^(['"])([\s\S]*)\1$/, '$2');
+  const commandArgsString = shellCommandArgMatch[4].trim();
+  let commandArgs: string[] = [];
+
+  if (/^['"]/.test(commandArgsString)) {
+    commandArgs = parseArgsStringToArgv(commandArgsString, '', '');
+  } else if (commandArgsString) {
+    commandArgs = [commandArgsString];
+  }
 
   return [
     ...prefixArgs,
     shellCommandArgMatch[2],
-    ...(commandArg ? [commandArg] : []),
+    ...commandArgs,
   ];
 };
 

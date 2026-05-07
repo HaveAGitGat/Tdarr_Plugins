@@ -347,6 +347,26 @@ describe('parseRunCliArguments', () => {
     ]);
   });
 
+  it('should preserve bash positional arguments after a quoted command string', () => {
+    const result = parseRunCliArguments(
+      '/bin/bash',
+      '-c \'printf "%s" "$1"\' shell-name "two words"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-c',
+      'printf "%s" "$1"',
+      'shell-name',
+      'two words',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith(
+      '\'printf "%s" "$1"\' shell-name "two words"',
+      '',
+      '',
+    );
+  });
+
   it('should not treat bash long options containing c as command switches', () => {
     const result = parseRunCliArguments(
       '/bin/bash',
@@ -375,5 +395,24 @@ describe('parseRunCliArguments', () => {
       'if (Get-Process -Name \'ffmpeg\') { Write-Host \'found process\' }',
     ]);
     expect(mockParseArgsStringToArgv).toHaveBeenCalledWith('-NoProfile', '', '');
+  });
+
+  it('should preserve PowerShell arguments after a quoted command string', () => {
+    const result = parseRunCliArguments(
+      'pwsh',
+      '-Command "Write-Host $args[0]" "two words"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-Command',
+      'Write-Host $args[0]',
+      'two words',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith(
+      '"Write-Host $args[0]" "two words"',
+      '',
+      '',
+    );
   });
 });

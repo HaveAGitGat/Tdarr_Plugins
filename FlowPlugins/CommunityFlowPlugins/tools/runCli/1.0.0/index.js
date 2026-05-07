@@ -68,12 +68,17 @@ var parseRunCliArguments = function (cliPath, cliArguments, parseArgsStringToArg
     var prefixArgs = prefixArgsString
         ? parseArgsStringToArgv(prefixArgsString, '', '')
         : [];
-    var commandArg = shellCommandArgMatch[4]
-        .trim()
-        .replace(/^(['"])([\s\S]*)\1$/, '$2');
+    var commandArgsString = shellCommandArgMatch[4].trim();
+    var commandArgs = [];
+    if (/^['"]/.test(commandArgsString)) {
+        commandArgs = parseArgsStringToArgv(commandArgsString, '', '');
+    }
+    else if (commandArgsString) {
+        commandArgs = [commandArgsString];
+    }
     return __spreadArray(__spreadArray(__spreadArray([], prefixArgs, true), [
         shellCommandArgMatch[2]
-    ], false), (commandArg ? [commandArg] : []), true);
+    ], false), commandArgs, true);
 };
 exports.parseRunCliArguments = parseRunCliArguments;
 var details = function () { return ({
