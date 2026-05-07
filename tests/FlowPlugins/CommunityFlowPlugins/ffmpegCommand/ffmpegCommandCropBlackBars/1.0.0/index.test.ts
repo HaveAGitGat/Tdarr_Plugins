@@ -3,7 +3,7 @@ import { plugin } from
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
 jest.mock('child_process', () => ({
-  execSync: jest.fn(),
+  spawnSync: jest.fn(),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -19,6 +19,20 @@ const makeCropdetectOutput = (w: number, h: number, x: number, y: number, count:
   }
   return output;
 };
+
+const makeSpawnOutput = (output: string, status = 0) => ({
+  stdout: '',
+  stderr: output,
+  status,
+  signal: null,
+});
+
+const makeStdoutSpawnOutput = (output: string) => ({
+  stdout: output,
+  stderr: '',
+  status: 0,
+  signal: null,
+});
 
 describe('ffmpegCommandCropBlackBars Plugin', () => {
   let baseArgs: IpluginInputArgs;
@@ -150,7 +164,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
   describe('Black Bar Detection', () => {
     it('should detect and crop letterbox black bars (top/bottom)', () => {
       const cropOutput = makeCropdetectOutput(1920, 800, 0, 140, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -164,7 +178,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
     it('should detect and crop pillarbox black bars (left/right)', () => {
       const cropOutput = makeCropdetectOutput(1440, 1080, 240, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -175,9 +189,19 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       expect(videoStream.outputArgs).toContain('crop=1440:1080:240:0');
     });
 
+    it('should parse cropdetect output from stdout', () => {
+      const cropOutput = makeCropdetectOutput(1920, 800, 0, 140, 30);
+      childProcess.spawnSync.mockReturnValue(makeStdoutSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toContain('crop=1920:800:0:140');
+    });
+
     it('should not crop when no black bars detected', () => {
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -188,7 +212,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
     it('should skip crop when below minimum percentage threshold', () => {
       const cropOutput = makeCropdetectOutput(1920, 1070, 0, 5, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -198,12 +222,12 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
     it('should use the most common crop value across samples by default', () => {
       let callCount = 0;
-      childProcess.execSync.mockImplementation(() => {
+      childProcess.spawnSync.mockImplementation(() => {
         callCount += 1;
         if (callCount <= 3) {
-          return makeCropdetectOutput(1920, 800, 0, 140, 30);
+          return makeSpawnOutput(makeCropdetectOutput(1920, 800, 0, 140, 30));
         }
-        return makeCropdetectOutput(1920, 810, 0, 135, 30);
+        return makeSpawnOutput(makeCropdetectOutput(1920, 810, 0, 135, 30));
       });
 
       const result = plugin(baseArgs);
@@ -218,14 +242,14 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
     it('should use minimum crop (least aggressive) when cropMode is minimum', () => {
       baseArgs.inputs.cropMode = 'minimum';
       let callCount = 0;
-      childProcess.execSync.mockImplementation(() => {
+      childProcess.spawnSync.mockImplementation(() => {
         callCount += 1;
         if (callCount <= 3) {
           // Smaller content area (more aggressive crop)
-          return makeCropdetectOutput(1920, 800, 0, 140, 30);
+          return makeSpawnOutput(makeCropdetectOutput(1920, 800, 0, 140, 30));
         }
         // Larger content area (less aggressive crop) - this should be picked
-        return makeCropdetectOutput(1920, 900, 0, 90, 30);
+        return makeSpawnOutput(makeCropdetectOutput(1920, 900, 0, 90, 30));
       });
 
       const result = plugin(baseArgs);
@@ -238,14 +262,14 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
     it('should use maximum crop (most aggressive) when cropMode is maximum', () => {
       baseArgs.inputs.cropMode = 'maximum';
       let callCount = 0;
-      childProcess.execSync.mockImplementation(() => {
+      childProcess.spawnSync.mockImplementation(() => {
         callCount += 1;
         if (callCount <= 3) {
           // Smaller content area (more aggressive crop) - this should be picked
-          return makeCropdetectOutput(1920, 800, 0, 140, 30);
+          return makeSpawnOutput(makeCropdetectOutput(1920, 800, 0, 140, 30));
         }
         // Larger content area (less aggressive crop)
-        return makeCropdetectOutput(1920, 900, 0, 90, 30);
+        return makeSpawnOutput(makeCropdetectOutput(1920, 900, 0, 90, 30));
       });
 
       const result = plugin(baseArgs);
@@ -258,8 +282,9 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
   describe('Error Handling', () => {
     it('should handle cropdetect failure gracefully', () => {
-      childProcess.execSync.mockImplementation(() => {
-        throw new Error('ffmpeg not found');
+      childProcess.spawnSync.mockReturnValue({
+        ...makeSpawnOutput(''),
+        error: new Error('ffmpeg not found'),
       });
 
       const result = plugin(baseArgs);
@@ -271,12 +296,12 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
     it('should continue when some samples fail', () => {
       let callCount = 0;
-      childProcess.execSync.mockImplementation(() => {
+      childProcess.spawnSync.mockImplementation(() => {
         callCount += 1;
         if (callCount === 2) {
-          throw new Error('timeout');
+          return makeSpawnOutput('', 1);
         }
-        return makeCropdetectOutput(1920, 800, 0, 140, 30);
+        return makeSpawnOutput(makeCropdetectOutput(1920, 800, 0, 140, 30));
       });
 
       const result = plugin(baseArgs);
@@ -289,7 +314,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
   describe('Audio Stream Handling', () => {
     it('should not modify audio streams', () => {
       const cropOutput = makeCropdetectOutput(1920, 800, 0, 140, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -304,7 +329,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       baseArgs.variables.ffmpegCommand.overallOuputArguments = ['-movflags', '+faststart'];
 
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -317,7 +342,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       baseArgs.variables.ffmpegCommand.shouldProcess = true;
 
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -326,7 +351,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
     it('should return correct output structure and preserve references', () => {
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       const result = plugin(baseArgs);
 
@@ -343,22 +368,22 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
     it('should use custom sample count', () => {
       baseArgs.inputs.sampleCount = '3';
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       plugin(baseArgs);
 
-      expect(childProcess.execSync).toHaveBeenCalledTimes(3);
+      expect(childProcess.spawnSync).toHaveBeenCalledTimes(3);
     });
 
     it('should pass crop threshold to ffmpeg', () => {
       baseArgs.inputs.cropThreshold = '16';
       baseArgs.inputs.sampleCount = '1';
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       plugin(baseArgs);
 
-      const call = childProcess.execSync.mock.calls[0][0] as string;
+      const call = childProcess.spawnSync.mock.calls[0][1] as string[];
       expect(call).toContain('cropdetect=16:2:0');
     });
 
@@ -366,12 +391,27 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       baseArgs.inputs.framesPerSample = '60';
       baseArgs.inputs.sampleCount = '1';
       const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
-      childProcess.execSync.mockReturnValue(cropOutput);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
 
       plugin(baseArgs);
 
-      const call = childProcess.execSync.mock.calls[0][0] as string;
-      expect(call).toContain('-frames:v 60');
+      const call = childProcess.spawnSync.mock.calls[0][1] as string[];
+      expect(call).toEqual(expect.arrayContaining(['-frames:v', '60']));
+    });
+
+    it('should pass ffmpeg path and input file as literal spawn arguments', () => {
+      baseArgs.inputs.sampleCount = '1';
+      baseArgs.ffmpegPath = '/usr/bin/ffmpeg $(echo unsafe)';
+      baseArgs.inputFileObj._id = 'C:\\Media\\100% Real\\movie `test` $(echo unsafe).mkv';
+      const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      plugin(baseArgs);
+
+      const call = childProcess.spawnSync.mock.calls[0];
+      expect(call[0]).toBe(baseArgs.ffmpegPath);
+      expect(call[1]).toEqual(expect.arrayContaining(['-i', baseArgs.inputFileObj._id]));
+      expect(call[2]).toEqual(expect.objectContaining({ shell: false }));
     });
   });
 });

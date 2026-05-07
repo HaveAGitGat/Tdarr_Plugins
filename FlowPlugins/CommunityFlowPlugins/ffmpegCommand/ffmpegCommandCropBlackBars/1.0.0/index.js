@@ -197,13 +197,32 @@ var plugin = function (args) {
         // Sample evenly across the video, avoiding the first and last 10%
         var seekTime = Math.floor(duration * (0.1 + (0.8 * (s + 1)) / (sampleCount + 1)));
         try {
-            var cmd = "\"".concat(args.ffmpegPath, "\" -ss ").concat(seekTime, " -i \"").concat(filePath, "\"")
-                + " -frames:v ".concat(framesPerSample, " -vf cropdetect=").concat(cropThreshold, ":2:0 -f null - 2>&1");
-            var output = childProcess.execSync(cmd, {
+            var ffmpegArgs = [
+                '-ss',
+                String(seekTime),
+                '-i',
+                filePath,
+                '-frames:v',
+                String(framesPerSample),
+                '-vf',
+                "cropdetect=".concat(cropThreshold, ":2:0"),
+                '-f',
+                'null',
+                '-',
+            ];
+            var result = childProcess.spawnSync(args.ffmpegPath, ffmpegArgs, {
                 timeout: 30000,
                 windowsHide: true,
                 encoding: 'utf8',
+                shell: false,
             });
+            if (result.error) {
+                throw result.error;
+            }
+            if (result.status !== 0) {
+                throw new Error("ffmpeg exited with status ".concat(result.status));
+            }
+            var output = "".concat(result.stdout || '').concat(result.stderr || '');
             var crops = parseCropValues(output);
             allCrops.push.apply(allCrops, crops);
             args.jobLog("Sample ".concat(s + 1, "/").concat(sampleCount, " at ").concat(seekTime, "s: ").concat(crops.length, " crop values detected"));

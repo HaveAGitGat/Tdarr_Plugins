@@ -226,15 +226,36 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     const seekTime = Math.floor(duration * (0.1 + (0.8 * (s + 1)) / (sampleCount + 1)));
 
     try {
-      const cmd = `"${args.ffmpegPath}" -ss ${seekTime} -i "${filePath}"`
-        + ` -frames:v ${framesPerSample} -vf cropdetect=${cropThreshold}:2:0 -f null - 2>&1`;
+      const ffmpegArgs = [
+        '-ss',
+        String(seekTime),
+        '-i',
+        filePath,
+        '-frames:v',
+        String(framesPerSample),
+        '-vf',
+        `cropdetect=${cropThreshold}:2:0`,
+        '-f',
+        'null',
+        '-',
+      ];
 
-      const output: string = childProcess.execSync(cmd, {
+      const result = childProcess.spawnSync(args.ffmpegPath, ffmpegArgs, {
         timeout: 30000,
         windowsHide: true,
         encoding: 'utf8',
+        shell: false,
       });
 
+      if (result.error) {
+        throw result.error;
+      }
+
+      if (result.status !== 0) {
+        throw new Error(`ffmpeg exited with status ${result.status}`);
+      }
+
+      const output = `${result.stdout || ''}${result.stderr || ''}`;
       const crops = parseCropValues(output);
       allCrops.push(...crops);
 
