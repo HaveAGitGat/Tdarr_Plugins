@@ -114,7 +114,9 @@ const addCropFilter = (outputArgs: string[], cropFilter: string): void => {
       && !outputArgs[i + 1].startsWith('-')
     ) {
       // cropdetect measures the source frame, so crop before filters that may resize.
+      // eslint-disable-next-line no-param-reassign
       outputArgs[i] = '-filter:v:{outputTypeIndex}';
+      // eslint-disable-next-line no-param-reassign
       outputArgs[i + 1] = `${cropFilter},${outputArgs[i + 1]}`;
       return;
     }
@@ -192,9 +194,33 @@ const selectCrop = (crops: ICropValues[], mode: string): ICropValues | null => {
   return bestCrop;
 };
 
+const parseNumberInput = (value: unknown, defaultValue: number): number => {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : defaultValue;
+  }
+
+  if (typeof value !== 'string') {
+    return defaultValue;
+  }
+
+  const trimmedValue = value.trim();
+  if (trimmedValue === '') {
+    return defaultValue;
+  }
+
+  const parsed = Number(trimmedValue);
+  return Number.isFinite(parsed) ? parsed : defaultValue;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
+  const rawCropThreshold = args.inputs ? args.inputs.cropThreshold : undefined;
+  const rawMinCropPercent = args.inputs ? args.inputs.minCropPercent : undefined;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
@@ -204,10 +230,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const childProcess = require('child_process');
 
   const cropMode = String(args.inputs.cropMode) || 'mostCommon';
-  const cropThreshold = Math.max(0, Math.min(255, Number(args.inputs.cropThreshold) || 24));
+  const cropThreshold = Math.max(0, Math.min(255, parseNumberInput(rawCropThreshold, 24)));
   const sampleCount = Math.max(1, Number(args.inputs.sampleCount) || 5);
   const framesPerSample = Math.max(1, Number(args.inputs.framesPerSample) || 30);
-  const minCropPercent = Math.max(0, Number(args.inputs.minCropPercent) || 2);
+  const minCropPercent = Math.max(0, parseNumberInput(rawMinCropPercent, 2));
 
   const filePath = args.inputFileObj._id;
   const duration = Number(args.inputFileObj.ffProbeData?.format?.duration) || 0;

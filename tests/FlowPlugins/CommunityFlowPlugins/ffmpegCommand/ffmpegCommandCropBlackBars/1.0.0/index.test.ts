@@ -489,6 +489,55 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       expect(call).toContain('cropdetect=16:2:0');
     });
 
+    it('should pass explicit zero crop threshold to ffmpeg', () => {
+      baseArgs.inputs.cropThreshold = '0';
+      baseArgs.inputs.sampleCount = '1';
+      const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      plugin(baseArgs);
+
+      const call = childProcess.spawnSync.mock.calls[0][1] as string[];
+      expect(call).toContain('cropdetect=0:2:0');
+    });
+
+    it('should use default crop threshold for non-numeric input', () => {
+      baseArgs.inputs.cropThreshold = 'not-a-number';
+      baseArgs.inputs.sampleCount = '1';
+      const cropOutput = makeCropdetectOutput(1920, 1080, 0, 0, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      plugin(baseArgs);
+
+      const call = childProcess.spawnSync.mock.calls[0][1] as string[];
+      expect(call).toContain('cropdetect=24:2:0');
+    });
+
+    it('should apply sub-threshold crops when minimum crop percentage is zero', () => {
+      baseArgs.inputs.minCropPercent = '0';
+      baseArgs.inputs.sampleCount = '1';
+      const cropOutput = makeCropdetectOutput(1920, 1070, 0, 5, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toContain('crop=1920:1070:0:5');
+    });
+
+    it('should use default minimum crop percentage for non-numeric input', () => {
+      baseArgs.inputs.minCropPercent = 'not-a-number';
+      baseArgs.inputs.sampleCount = '1';
+      const cropOutput = makeCropdetectOutput(1920, 1070, 0, 5, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Crop too small (0.9% < 2% threshold), skipping');
+    });
+
     it('should pass frames per sample to ffmpeg', () => {
       baseArgs.inputs.framesPerSample = '60';
       baseArgs.inputs.sampleCount = '1';
