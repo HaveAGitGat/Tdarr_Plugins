@@ -147,6 +147,90 @@ describe('ffmpegCommandExecute Plugin', () => {
       expect(spawnArgs.indexOf('-c:1')).toBeLessThan(spawnArgs.indexOf('-disposition:1'));
     });
 
+    it('should mirror issue 793 by copying kept audio with disposition after removed streams', async () => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'av1',
+          codec_type: 'video',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:0'],
+        },
+        {
+          index: 1,
+          codec_name: 'eac3',
+          codec_type: 'audio',
+          removed: true,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:1'],
+        },
+        {
+          index: 2,
+          codec_name: 'eac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: ['-disposition:{outputIndex}', 'default+original'],
+          mapArgs: ['-map', '0:2'],
+        },
+        {
+          index: 3,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: true,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:3'],
+        },
+        {
+          index: 4,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:4'],
+        },
+      ];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      const { spawnArgs } = cliOptions;
+
+      expect(result.outputNumber).toBe(1);
+      expect(spawnArgs.slice(0, -1)).toEqual([
+        '-y',
+        '-i',
+        baseArgs.inputFileObj._id,
+        '-map',
+        '0:0',
+        '-c:0',
+        'copy',
+        '-map',
+        '0:2',
+        '-c:1',
+        'copy',
+        '-disposition:1',
+        'default+original',
+        '-map',
+        '0:4',
+        '-c:2',
+        'copy',
+      ]);
+      expect(spawnArgs[spawnArgs.length - 1]).toContain('.mp4');
+      expect(spawnArgs.indexOf('-c:1')).toBeLessThan(spawnArgs.indexOf('-disposition:1'));
+    });
+
     it('should not add copy codec when output args include a codec arg', async () => {
       baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [
         '-c:{outputIndex}',
