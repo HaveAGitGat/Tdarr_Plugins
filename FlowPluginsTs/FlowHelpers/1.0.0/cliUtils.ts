@@ -174,6 +174,7 @@ class CLI {
             const {
               compareMethod,
               thresholdPerc,
+              lowerThresholdPerc,
               checkDelaySeconds,
             } = this.config.args.variables.liveSizeCompare;
 
@@ -182,15 +183,44 @@ class CLI {
               const inputFileSize = this.config.inputFileObj.file_size;
               const inputFileSizeInGbytes = inputFileSize / 1024;
 
-              const cancel = (ratio:number) => {
+              const cancel = (
+                ratio: number,
+                errorType: 'upperThreshold' | 'lowerThreshold',
+                threshold: number,
+              ) => {
                 this.config.jobLog(`Input file size: ${inputFileSizeInGbytes}GB`);
                 this.config.jobLog(`Ratio: ${ratio}%`);
 
-                this.config.jobLog(`Ratio is greater than threshold: ${thresholdPerc}%, cancelling job`);
+                if (errorType === 'upperThreshold') {
+                  this.config.jobLog(
+                    `Ratio is greater than threshold: ${threshold}%, cancelling job`,
+                  );
+                } else {
+                  this.config.jobLog(
+                    `Ratio is less than lower threshold: ${threshold}%, cancelling job`,
+                  );
+                }
                 this.cancelled = true;
                 // @ts-expect-error must exist to be here
                 this.config.args.variables.liveSizeCompare.error = true;
+                // @ts-expect-error must exist to be here
+                this.config.args.variables.liveSizeCompare.errorType = errorType;
                 this.killThread();
+              };
+
+              const checkRatio = (
+                ratio: number,
+                sizeLabel: string,
+                sizeValue: number,
+                checkLower: boolean,
+              ) => {
+                if (ratio > thresholdPerc) {
+                  this.config.jobLog(`${sizeLabel}: ${sizeValue}GB`);
+                  cancel(ratio, 'upperThreshold', thresholdPerc);
+                } else if (checkLower && lowerThresholdPerc > 0 && ratio < lowerThresholdPerc) {
+                  this.config.jobLog(`${sizeLabel}: ${sizeValue}GB`);
+                  cancel(ratio, 'lowerThreshold', lowerThresholdPerc);
+                }
               };
 
               if (
@@ -199,22 +229,16 @@ class CLI {
               && estSize > 0
               ) {
                 const ratio = (estSize / inputFileSizeInGbytes) * 100;
-
-                if (ratio > thresholdPerc) {
-                  this.config.jobLog(`Estimated final size: ${estSize}GB`);
-                  cancel(ratio);
-                }
+                checkRatio(ratio, 'Estimated final size', estSize, true);
               } else if (
                 compareMethod === 'currentSize'
               && outputFileSizeInGbytes !== undefined
               && outputFileSizeInGbytes > 0
               ) {
                 const ratio = (outputFileSizeInGbytes / inputFileSizeInGbytes) * 100;
-
-                if (ratio > thresholdPerc) {
-                  this.config.jobLog(`Current output size: ${outputFileSizeInGbytes}GB`);
-                  cancel(ratio);
-                }
+                // Skip the lower-bound check for currentSize: the current output is tiny early
+                // in the encode and would always trip the lower threshold.
+                checkRatio(ratio, 'Current output size', outputFileSizeInGbytes, false);
               }
             }
           }

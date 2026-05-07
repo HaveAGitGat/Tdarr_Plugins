@@ -103,8 +103,10 @@ describe('removeFromTdarr Plugin', () => {
           enabled: true,
           compareMethod: 'percentage',
           thresholdPerc: 5,
+          lowerThresholdPerc: 0,
           checkDelaySeconds: 30,
           error: false,
+          errorType: '' as const,
         },
       };
 

@@ -119,15 +119,15 @@ describe('checkNodeHardwareEncoder Plugin', () => {
       baseArgs.inputs.hardwareEncoder = 'hevc_qsv';
       mockGetEncoder.mockResolvedValue({
         encoder: 'hevc_qsv',
-        inputArgs: ['-hwaccel', 'qsv'],
-        outputArgs: ['-load_plugin', 'hevc_hw'],
+        inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+        outputArgs: [],
         isGpu: true,
         enabledDevices: [
           {
             encoder: 'hevc_qsv',
             enabled: true,
-            inputArgs: ['-hwaccel', 'qsv'],
-            outputArgs: ['-load_plugin', 'hevc_hw'],
+            inputArgs: ['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv'],
+            outputArgs: [],
             filter: '',
           },
         ],

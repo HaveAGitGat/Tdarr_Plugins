@@ -128,8 +128,9 @@ describe('ffmpegCommand10BitVideo Plugin', () => {
       expect(videoStream?.outputArgs).toContain('p010le');
     });
 
-    it('should handle QSV-related codecs in outputArgs', () => {
+    it('should use scale_qsv filter when QSV encoder and hardware decoding are both enabled', () => {
       baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-c:v', 'h264_qsv'];
+      baseArgs.variables.ffmpegCommand.hardwareDecoding = true;
 
       const result = plugin(baseArgs);
 
@@ -137,25 +138,37 @@ describe('ffmpegCommand10BitVideo Plugin', () => {
         (stream: IffmpegCommandStream) => stream.codec_type === 'video',
       );
 
-      // The plugin will add the profile arguments
       expect(videoStream?.outputArgs).toContain('-profile:v:{outputTypeIndex}');
       expect(videoStream?.outputArgs).toContain('main10');
-
-      // Platform-specific behavior - either -vf scale_qsv or -pix_fmt should be present
-      const hasScaleQsv = videoStream?.outputArgs.includes('-vf')
-                          && videoStream?.outputArgs.includes('scale_qsv=format=p010le');
-      const hasPixFmt = videoStream?.outputArgs.includes('-pix_fmt:v:{outputTypeIndex}')
-                        && videoStream?.outputArgs.includes('p010le');
-
-      expect(hasScaleQsv || hasPixFmt).toBe(true);
+      expect(videoStream?.outputArgs).toContain('-vf');
+      expect(videoStream?.outputArgs).toContain('scale_qsv=format=p010le');
+      expect(videoStream?.outputArgs).not.toContain('-pix_fmt:v:{outputTypeIndex}');
     });
 
-    it('should handle different hardware encoder names', () => {
+    it('should use pix_fmt when QSV encoder is used but hardware decoding is disabled', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-c:v', 'h264_qsv'];
+      baseArgs.variables.ffmpegCommand.hardwareDecoding = false;
+
+      const result = plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams.find(
+        (stream: IffmpegCommandStream) => stream.codec_type === 'video',
+      );
+
+      expect(videoStream?.outputArgs).toContain('-profile:v:{outputTypeIndex}');
+      expect(videoStream?.outputArgs).toContain('main10');
+      expect(videoStream?.outputArgs).not.toContain('-vf');
+      expect(videoStream?.outputArgs).not.toContain('scale_qsv=format=p010le');
+      expect(videoStream?.outputArgs).toContain('-pix_fmt:v:{outputTypeIndex}');
+      expect(videoStream?.outputArgs).toContain('p010le');
+    });
+
+    it('should use scale_qsv for all QSV encoder variants when hardware decoding is enabled', () => {
       const qsvEncoders = ['h264_qsv', 'hevc_qsv', 'av1_qsv'];
 
       qsvEncoders.forEach((encoder) => {
-        // Reset the streams
         baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-c:v', encoder];
+        baseArgs.variables.ffmpegCommand.hardwareDecoding = true;
 
         const result = plugin(baseArgs);
 
@@ -165,11 +178,8 @@ describe('ffmpegCommand10BitVideo Plugin', () => {
 
         expect(videoStream?.outputArgs).toContain('-profile:v:{outputTypeIndex}');
         expect(videoStream?.outputArgs).toContain('main10');
-
-        // Should have some form of 10-bit pixel format configuration
-        const hasP010le = videoStream?.outputArgs.some((arg) => arg.includes('p010le'));
-        const hasScaleQsv = videoStream?.outputArgs.some((arg) => arg.includes('scale_qsv'));
-        expect(hasP010le || hasScaleQsv).toBe(true);
+        expect(videoStream?.outputArgs).toContain('-vf');
+        expect(videoStream?.outputArgs).toContain('scale_qsv=format=p010le');
       });
     });
   });
