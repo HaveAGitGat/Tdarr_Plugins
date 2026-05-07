@@ -176,6 +176,21 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       expect(videoStream.outputArgs).toContain('crop=1920:800:0:140');
     });
 
+    it('should merge crop into an existing video filter chain', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-vf', 'scale=1920:-2'];
+      const cropOutput = makeCropdetectOutput(1920, 800, 0, 140, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
+      expect(videoStream.outputArgs).toEqual([
+        '-vf',
+        'crop=1920:800:0:140,scale=1920:-2',
+      ]);
+    });
+
     it('should detect and crop pillarbox black bars (left/right)', () => {
       const cropOutput = makeCropdetectOutput(1440, 1080, 240, 0, 30);
       childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));

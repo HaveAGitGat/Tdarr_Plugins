@@ -88,6 +88,22 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var isVideoFilterArg = function (arg) { return (arg === '-vf'
+    || arg.startsWith('-vf:')
+    || arg === '-filter:v'
+    || arg.startsWith('-filter:v:')); };
+var addCropFilter = function (outputArgs, cropFilter) {
+    for (var i = 0; i < outputArgs.length - 1; i += 1) {
+        if (isVideoFilterArg(outputArgs[i])
+            && outputArgs[i + 1] !== ''
+            && !outputArgs[i + 1].startsWith('-')) {
+            // cropdetect measures the source frame, so crop before filters that may resize.
+            outputArgs[i + 1] = "".concat(cropFilter, ",").concat(outputArgs[i + 1]);
+            return;
+        }
+    }
+    outputArgs.push('-vf', cropFilter);
+};
 var parseCropValues = function (output) {
     var results = [];
     var lines = output.split('\n');
@@ -271,7 +287,7 @@ var plugin = function (args) {
         + " (removing ".concat(cropPercent.toFixed(1), "% of image)"));
     args.variables.ffmpegCommand.streams.forEach(function (stream) {
         if (stream.codec_type === 'video') {
-            stream.outputArgs.push('-vf', "crop=".concat(crop.w, ":").concat(crop.h, ":").concat(crop.x, ":").concat(crop.y));
+            addCropFilter(stream.outputArgs, "crop=".concat(crop.w, ":").concat(crop.h, ":").concat(crop.x, ":").concat(crop.y));
         }
     });
     // eslint-disable-next-line no-param-reassign

@@ -98,6 +98,29 @@ interface ICropValues {
   y: number;
 }
 
+const isVideoFilterArg = (arg: string): boolean => (
+  arg === '-vf'
+  || arg.startsWith('-vf:')
+  || arg === '-filter:v'
+  || arg.startsWith('-filter:v:')
+);
+
+const addCropFilter = (outputArgs: string[], cropFilter: string): void => {
+  for (let i = 0; i < outputArgs.length - 1; i += 1) {
+    if (
+      isVideoFilterArg(outputArgs[i])
+      && outputArgs[i + 1] !== ''
+      && !outputArgs[i + 1].startsWith('-')
+    ) {
+      // cropdetect measures the source frame, so crop before filters that may resize.
+      outputArgs[i + 1] = `${cropFilter},${outputArgs[i + 1]}`;
+      return;
+    }
+  }
+
+  outputArgs.push('-vf', cropFilter);
+};
+
 const parseCropValues = (output: string): ICropValues[] => {
   const results: ICropValues[] = [];
   const lines = output.split('\n');
@@ -316,7 +339,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   args.variables.ffmpegCommand.streams.forEach((stream) => {
     if (stream.codec_type === 'video') {
-      stream.outputArgs.push('-vf', `crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
+      addCropFilter(stream.outputArgs, `crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
     }
   });
 
