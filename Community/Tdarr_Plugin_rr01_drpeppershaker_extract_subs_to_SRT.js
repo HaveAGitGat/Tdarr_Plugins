@@ -25,7 +25,7 @@ const details = () => ({
           'yes',
         ],
       },
-      tooltip: `Do you want to remove subtitles after they are  extracted?`,
+      tooltip: 'Do you want to remove subtitles after they are  extracted?',
     },
   ],
 });
