@@ -98,11 +98,12 @@ var addCropFilter = function (outputArgs, cropFilter) {
             && outputArgs[i + 1] !== ''
             && !outputArgs[i + 1].startsWith('-')) {
             // cropdetect measures the source frame, so crop before filters that may resize.
+            outputArgs[i] = '-filter:v:{outputTypeIndex}';
             outputArgs[i + 1] = "".concat(cropFilter, ",").concat(outputArgs[i + 1]);
             return;
         }
     }
-    outputArgs.push('-vf', cropFilter);
+    outputArgs.push('-filter:v:{outputTypeIndex}', cropFilter);
 };
 var parseCropValues = function (output) {
     var results = [];
@@ -189,17 +190,15 @@ var plugin = function (args) {
             variables: args.variables,
         };
     }
-    var videoWidth = 0;
-    var videoHeight = 0;
+    var targetVideoStream = null;
     for (var i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
         var stream = args.variables.ffmpegCommand.streams[i];
-        if (stream.codec_type === 'video' && stream.width && stream.height) {
-            videoWidth = stream.width;
-            videoHeight = stream.height;
+        if (!stream.removed && stream.codec_type === 'video' && stream.width && stream.height) {
+            targetVideoStream = stream;
             break;
         }
     }
-    if (videoWidth === 0 || videoHeight === 0) {
+    if (!targetVideoStream) {
         args.jobLog('Cannot detect crop: video dimensions unknown');
         return {
             outputFileObj: args.inputFileObj,
@@ -207,7 +206,10 @@ var plugin = function (args) {
             variables: args.variables,
         };
     }
-    args.jobLog("Detecting black bars on ".concat(videoWidth, "x").concat(videoHeight, " video (duration: ").concat(duration, "s)"));
+    var videoWidth = targetVideoStream.width || 0;
+    var videoHeight = targetVideoStream.height || 0;
+    args.jobLog("Detecting black bars on stream ".concat(targetVideoStream.index, " ")
+        + "(".concat(videoWidth, "x").concat(videoHeight, ", duration: ").concat(duration, "s)"));
     var allCrops = [];
     for (var s = 0; s < sampleCount; s += 1) {
         // Sample evenly across the video, avoiding the first and last 10%
@@ -218,6 +220,8 @@ var plugin = function (args) {
                 String(seekTime),
                 '-i',
                 filePath,
+                '-map',
+                "0:".concat(targetVideoStream.index),
                 '-frames:v',
                 String(framesPerSample),
                 '-vf',
@@ -283,13 +287,9 @@ var plugin = function (args) {
             variables: args.variables,
         };
     }
-    args.jobLog("Cropping from ".concat(videoWidth, "x").concat(videoHeight, " to ").concat(crop.w, "x").concat(crop.h)
+    args.jobLog("Cropping stream ".concat(targetVideoStream.index, " from ").concat(videoWidth, "x").concat(videoHeight, " to ").concat(crop.w, "x").concat(crop.h)
         + " (removing ".concat(cropPercent.toFixed(1), "% of image)"));
-    args.variables.ffmpegCommand.streams.forEach(function (stream) {
-        if (stream.codec_type === 'video') {
-            addCropFilter(stream.outputArgs, "crop=".concat(crop.w, ":").concat(crop.h, ":").concat(crop.x, ":").concat(crop.y));
-        }
-    });
+    addCropFilter(targetVideoStream.outputArgs, "crop=".concat(crop.w, ":").concat(crop.h, ":").concat(crop.x, ":").concat(crop.y));
     // eslint-disable-next-line no-param-reassign
     args.variables.ffmpegCommand.shouldProcess = true;
     return {

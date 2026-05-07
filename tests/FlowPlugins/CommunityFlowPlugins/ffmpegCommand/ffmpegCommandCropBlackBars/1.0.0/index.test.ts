@@ -172,7 +172,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
 
       const videoStream = result.variables.ffmpegCommand.streams[0];
-      expect(videoStream.outputArgs).toContain('-vf');
+      expect(videoStream.outputArgs).toContain('-filter:v:{outputTypeIndex}');
       expect(videoStream.outputArgs).toContain('crop=1920:800:0:140');
     });
 
@@ -186,7 +186,7 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
       const videoStream = result.variables.ffmpegCommand.streams[0];
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
       expect(videoStream.outputArgs).toEqual([
-        '-vf',
+        '-filter:v:{outputTypeIndex}',
         'crop=1920:800:0:140,scale=1920:-2',
       ]);
     });
@@ -202,6 +202,93 @@ describe('ffmpegCommandCropBlackBars Plugin', () => {
 
       const videoStream = result.variables.ffmpegCommand.streams[0];
       expect(videoStream.outputArgs).toContain('crop=1440:1080:240:0');
+    });
+
+    it('should crop only the detected video stream when other video streams have different dimensions', () => {
+      baseArgs.variables.ffmpegCommand.streams.push({
+        index: 2,
+        codec_name: 'h264',
+        codec_type: 'video',
+        width: 320,
+        height: 180,
+        removed: false,
+        forceEncoding: false,
+        mapArgs: ['-map', '0:2'],
+        inputArgs: [],
+        outputArgs: [],
+      });
+
+      const cropOutput = makeCropdetectOutput(1920, 800, 0, 140, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      const mainVideoStream = result.variables.ffmpegCommand.streams[0];
+      const secondaryVideoStream = result.variables.ffmpegCommand.streams[2];
+      expect(mainVideoStream.outputArgs).toContain('crop=1920:800:0:140');
+      expect(secondaryVideoStream.outputArgs).toEqual([]);
+
+      const call = childProcess.spawnSync.mock.calls[0][1] as string[];
+      const mapIndex = call.indexOf('-map');
+      expect(call.slice(mapIndex, mapIndex + 2)).toEqual(['-map', '0:0']);
+    });
+
+    it('should scope merged crop filters when other video streams are present', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-vf', 'scale=1920:-2'];
+      baseArgs.variables.ffmpegCommand.streams.push({
+        index: 2,
+        codec_name: 'h264',
+        codec_type: 'video',
+        width: 320,
+        height: 180,
+        removed: false,
+        forceEncoding: false,
+        mapArgs: ['-map', '0:2'],
+        inputArgs: [],
+        outputArgs: [],
+      });
+
+      const cropOutput = makeCropdetectOutput(1920, 800, 0, 140, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
+        '-filter:v:{outputTypeIndex}',
+        'crop=1920:800:0:140,scale=1920:-2',
+      ]);
+      expect(result.variables.ffmpegCommand.streams[2].outputArgs).toEqual([]);
+    });
+
+    it('should detect and crop the next active video stream when an earlier video stream is removed', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].removed = true;
+      baseArgs.variables.ffmpegCommand.streams.push({
+        index: 2,
+        codec_name: 'h264',
+        codec_type: 'video',
+        width: 320,
+        height: 180,
+        removed: false,
+        forceEncoding: false,
+        mapArgs: ['-map', '0:2'],
+        inputArgs: [],
+        outputArgs: [],
+      });
+
+      const cropOutput = makeCropdetectOutput(320, 100, 0, 40, 30);
+      childProcess.spawnSync.mockReturnValue(makeSpawnOutput(cropOutput));
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
+      expect(result.variables.ffmpegCommand.streams[2].outputArgs).toEqual([
+        '-filter:v:{outputTypeIndex}',
+        'crop=320:100:0:40',
+      ]);
+
+      const call = childProcess.spawnSync.mock.calls[0][1] as string[];
+      const mapIndex = call.indexOf('-map');
+      expect(call.slice(mapIndex, mapIndex + 2)).toEqual(['-map', '0:2']);
     });
 
     it('should parse cropdetect output from stdout', () => {

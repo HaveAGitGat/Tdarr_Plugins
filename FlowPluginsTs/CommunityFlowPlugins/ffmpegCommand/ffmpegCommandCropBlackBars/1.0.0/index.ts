@@ -1,5 +1,6 @@
 import { checkFfmpegCommandInit } from '../../../../FlowHelpers/1.0.0/interfaces/flowUtils';
 import {
+  IffmpegCommandStream,
   IpluginDetails,
   IpluginInputArgs,
   IpluginOutputArgs,
@@ -113,12 +114,13 @@ const addCropFilter = (outputArgs: string[], cropFilter: string): void => {
       && !outputArgs[i + 1].startsWith('-')
     ) {
       // cropdetect measures the source frame, so crop before filters that may resize.
+      outputArgs[i] = '-filter:v:{outputTypeIndex}';
       outputArgs[i + 1] = `${cropFilter},${outputArgs[i + 1]}`;
       return;
     }
   }
 
-  outputArgs.push('-vf', cropFilter);
+  outputArgs.push('-filter:v:{outputTypeIndex}', cropFilter);
 };
 
 const parseCropValues = (output: string): ICropValues[] => {
@@ -219,19 +221,17 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     };
   }
 
-  let videoWidth = 0;
-  let videoHeight = 0;
+  let targetVideoStream: IffmpegCommandStream | null = null;
 
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
     const stream = args.variables.ffmpegCommand.streams[i];
-    if (stream.codec_type === 'video' && stream.width && stream.height) {
-      videoWidth = stream.width;
-      videoHeight = stream.height;
+    if (!stream.removed && stream.codec_type === 'video' && stream.width && stream.height) {
+      targetVideoStream = stream;
       break;
     }
   }
 
-  if (videoWidth === 0 || videoHeight === 0) {
+  if (!targetVideoStream) {
     args.jobLog('Cannot detect crop: video dimensions unknown');
     return {
       outputFileObj: args.inputFileObj,
@@ -240,7 +240,13 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     };
   }
 
-  args.jobLog(`Detecting black bars on ${videoWidth}x${videoHeight} video (duration: ${duration}s)`);
+  const videoWidth = targetVideoStream.width || 0;
+  const videoHeight = targetVideoStream.height || 0;
+
+  args.jobLog(
+    `Detecting black bars on stream ${targetVideoStream.index} `
+    + `(${videoWidth}x${videoHeight}, duration: ${duration}s)`,
+  );
 
   const allCrops: ICropValues[] = [];
 
@@ -254,6 +260,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
         String(seekTime),
         '-i',
         filePath,
+        '-map',
+        `0:${targetVideoStream.index}`,
         '-frames:v',
         String(framesPerSample),
         '-vf',
@@ -333,15 +341,11 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   }
 
   args.jobLog(
-    `Cropping from ${videoWidth}x${videoHeight} to ${crop.w}x${crop.h}`
+    `Cropping stream ${targetVideoStream.index} from ${videoWidth}x${videoHeight} to ${crop.w}x${crop.h}`
     + ` (removing ${cropPercent.toFixed(1)}% of image)`,
   );
 
-  args.variables.ffmpegCommand.streams.forEach((stream) => {
-    if (stream.codec_type === 'video') {
-      addCropFilter(stream.outputArgs, `crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
-    }
-  });
+  addCropFilter(targetVideoStream.outputArgs, `crop=${crop.w}:${crop.h}:${crop.x}:${crop.y}`);
 
   // eslint-disable-next-line no-param-reassign
   args.variables.ffmpegCommand.shouldProcess = true;
