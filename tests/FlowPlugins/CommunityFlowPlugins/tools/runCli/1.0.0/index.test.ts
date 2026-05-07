@@ -347,6 +347,21 @@ describe('parseRunCliArguments', () => {
     ]);
   });
 
+  it('should not treat bash long options containing c as command switches', () => {
+    const result = parseRunCliArguments(
+      '/bin/bash',
+      '--norc -c echo hi',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '--norc',
+      '-c',
+      'echo hi',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith('--norc', '', '');
+  });
+
   it('should parse PowerShell options before -Command and keep the command string intact', () => {
     const result = parseRunCliArguments(
       'powershell.exe',

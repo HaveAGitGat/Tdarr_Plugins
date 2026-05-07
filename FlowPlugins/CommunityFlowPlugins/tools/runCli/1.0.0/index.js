@@ -56,7 +56,7 @@ var parseRunCliArguments = function (cliPath, cliArguments, parseArgsStringToArg
         .replace(/\.exe$/i, '');
     var shellCommandArgMatch = null;
     if (cliName === 'bash' || cliName === 'sh') {
-        shellCommandArgMatch = cliArguments.match(/(^|\s)(-[^\s]*c[^\s]*)(\s+)([\s\S]*)$/);
+        shellCommandArgMatch = cliArguments.match(/(^|\s)(-[^-\s]*c[^\s]*)(\s+)([\s\S]*)$/);
     }
     else if (cliName === 'powershell' || cliName === 'pwsh') {
         shellCommandArgMatch = cliArguments.match(/(^|\s)(-command|-c)(\s+)([\s\S]*)$/i);
