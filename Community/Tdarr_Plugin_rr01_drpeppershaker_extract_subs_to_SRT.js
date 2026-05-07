@@ -76,9 +76,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       title = subStream.tags.title;
     }
 
-    if (subStream && subStream.disposition.hearing_impaired) {
+    if (subStream?.disposition?.hearing_impaired) {
       type = '.sdh';
-    } else if (subStream && subStream.disposition.forced) {
+    } else if (subStream?.disposition?.forced) {
       type = '.forced';
     }
 
