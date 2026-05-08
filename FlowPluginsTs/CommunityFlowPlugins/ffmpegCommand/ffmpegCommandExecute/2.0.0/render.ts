@@ -22,6 +22,14 @@ interface IworkingStream extends Istreams {
 
 export type IffmpegCommandV2WorkingStream = IworkingStream;
 
+interface IresolutionBoundary {
+  resolution: string,
+  widthMin: number,
+  widthMax: number,
+  heightMin: number,
+  heightMax: number,
+}
+
 export interface IffmpegCommandV2RenderResult {
   spawnArgs: string[],
   shouldProcess: boolean,
@@ -245,6 +253,82 @@ const getFixedResolutionDimensions = (targetResolution: string): { width: number
     default:
       return { width: 1920, height: 1080 };
   }
+};
+
+// Keep in sync with Tdarr's default scanner resolution boundaries.
+const defaultResolutionBoundaries: IresolutionBoundary[] = [
+  {
+    resolution: '480p', widthMin: 100, widthMax: 792, heightMin: 100, heightMax: 528,
+  },
+  {
+    resolution: '576p', widthMin: 100, widthMax: 792, heightMin: 100, heightMax: 634,
+  },
+  {
+    resolution: '720p', widthMin: 100, widthMax: 1408, heightMin: 100, heightMax: 792,
+  },
+  {
+    resolution: '1080p', widthMin: 100, widthMax: 2112, heightMin: 100, heightMax: 1188,
+  },
+  {
+    resolution: '1440p', widthMin: 100, widthMax: 2816, heightMin: 100, heightMax: 1584,
+  },
+  {
+    resolution: '4KUHD', widthMin: 100, widthMax: 4224, heightMin: 100, heightMax: 2376,
+  },
+  {
+    resolution: 'DCI4K', widthMin: 100, widthMax: 4506, heightMin: 100, heightMax: 2376,
+  },
+  {
+    resolution: '8KUHD', widthMin: 100, widthMax: 8448, heightMin: 100, heightMax: 4752,
+  },
+];
+
+const getStreamResolution = (stream: IworkingStream): string | undefined => {
+  const widthIn = Number(stream.width);
+  const heightIn = Number(stream.height);
+
+  if (!widthIn || !heightIn || Number.isNaN(widthIn) || Number.isNaN(heightIn)) {
+    return undefined;
+  }
+
+  let width = widthIn;
+  let height = heightIn;
+  if (height > width) {
+    width = heightIn;
+    height = widthIn;
+  }
+
+  const boundary = defaultResolutionBoundaries.find((row) => (
+    width >= row.widthMin
+    && width <= row.widthMax
+    && height >= row.heightMin
+    && height <= row.heightMax
+  ));
+
+  if (boundary) {
+    return boundary.resolution;
+  }
+
+  return 'Other';
+};
+
+const shouldScaleVideoStream = (
+  args: IpluginInputArgs,
+  stream: IworkingStream,
+  resolutionInputs?: Record<string, unknown>,
+): boolean => {
+  if (!resolutionInputs) {
+    return false;
+  }
+
+  const targetResolution = String(resolutionInputs.targetResolution);
+  const streamResolution = getStreamResolution(stream);
+
+  if (streamResolution) {
+    return streamResolution !== targetResolution;
+  }
+
+  return targetResolution !== args.inputFileObj.video_resolution;
 };
 
 const getQsvScaleFilter = (targetResolution: string, format?: string): string => {
@@ -710,11 +794,13 @@ const applyReorderStreams = (
 const applyVideoEncoder = async ({
   args,
   streams,
+  requests,
   inputs,
   overallInputArguments,
 }: {
   args: IpluginInputArgs,
   streams: IworkingStream[],
+  requests: IffmpegCommandV2Request[],
   inputs: Record<string, unknown>,
   overallInputArguments: string[],
 }): Promise<boolean> => {
@@ -729,14 +815,31 @@ const applyVideoEncoder = async ({
   const hardwareDecoding = inputs.hardwareDecoding === true;
   const forceEncoding = inputs.forceEncoding === true;
   let encoderProperties: IgetEncoder | undefined;
+  const resolutionInputs = getLastRequestInputs(requests, 'setVideoResolution');
+  const frameRateInputs = getLastRequestInputs(requests, 'setVideoFramerate');
+  const videoBitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');
+  const has10BitRequest = hasRequest(requests, 'set10BitVideo');
+  const hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
+  const videoStreams = streams.filter((stream) => (
+    !stream.removed
+    && stream.codec_type === 'video'
+    && stream.codec_name !== 'mjpeg'
+  ));
 
-  for (let i = 0; i < streams.length; i += 1) {
-    const stream = streams[i];
+  for (let i = 0; i < videoStreams.length; i += 1) {
+    const stream = videoStreams[i];
+    const videoRequestRequiresEncoding = (
+      shouldScaleVideoStream(args, stream, resolutionInputs)
+      || Boolean(frameRateInputs)
+      || Boolean(videoBitrateInputs)
+      || has10BitRequest
+      || hasHdrToSdrRequest
+    );
 
     if (
-      stream.codec_type === 'video'
-      && stream.codec_name !== 'mjpeg'
-      && (forceEncoding || stream.codec_name !== targetCodec)
+      forceEncoding
+      || stream.codec_name !== targetCodec
+      || videoRequestRequiresEncoding
     ) {
       shouldProcess = true;
 
@@ -807,7 +910,7 @@ const applyVideoBitrate = (
   let shouldProcess = false;
 
   streams.forEach((stream) => {
-    if (stream.codec_type === 'video') {
+    if (!stream.removed && stream.codec_type === 'video') {
       const ffType = getFfType(stream.codec_type);
       shouldProcess = true;
 
@@ -849,7 +952,7 @@ const applyVideoFilters = (
   let shouldProcess = false;
 
   streams.forEach((stream) => {
-    if (stream.codec_type !== 'video') {
+    if (stream.removed || stream.codec_type !== 'video') {
       return;
     }
 
@@ -861,10 +964,8 @@ const applyVideoFilters = (
     const hardwareDecodedQsv = usesQsv && hardwareDecoding;
     const hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
     const needsSoftwareOnlyFilter = hasHdrToSdrRequest || Boolean(frameRateInputs);
-    const shouldScale = (
-      resolutionInputs
-      && String(resolutionInputs.targetResolution) !== args.inputFileObj.video_resolution
-    );
+    const shouldScale = shouldScaleVideoStream(args, stream, resolutionInputs);
+    const targetResolution = resolutionInputs ? String(resolutionInputs.targetResolution) : '';
 
     if (
       usesQsv
@@ -874,7 +975,7 @@ const applyVideoFilters = (
       && !frameRateInputs
     ) {
       filterChain.push(getQsvScaleFilter(
-        String(resolutionInputs.targetResolution),
+        targetResolution,
         has10BitRequest ? 'p010le' : undefined,
       ));
     } else if (
@@ -895,7 +996,7 @@ const applyVideoFilters = (
         }
 
         filterChain.push(getVaapiScaleFilter(
-          shouldScale && resolutionInputs ? String(resolutionInputs.targetResolution) : undefined,
+          shouldScale ? targetResolution : undefined,
           vaapiFormat,
         ));
       } else {
@@ -908,7 +1009,7 @@ const applyVideoFilters = (
         }
 
         if (shouldScale && resolutionInputs) {
-          filterChain.push(getSoftwareScaleFilter(String(resolutionInputs.targetResolution)));
+          filterChain.push(getSoftwareScaleFilter(targetResolution));
         }
 
         if (frameRateInputs) {
@@ -929,7 +1030,7 @@ const applyVideoFilters = (
       }
 
       if (shouldScale && resolutionInputs) {
-        filterChain.push(getSoftwareScaleFilter(String(resolutionInputs.targetResolution)));
+        filterChain.push(getSoftwareScaleFilter(targetResolution));
       }
 
       if (frameRateInputs) {
@@ -1125,6 +1226,7 @@ export const renderFfmpegCommandV2 = async (
     shouldProcess = await applyVideoEncoder({
       args,
       streams,
+      requests,
       inputs: encoderInputs,
       overallInputArguments,
     }) || shouldProcess;

@@ -222,6 +222,65 @@ var getFixedResolutionDimensions = function (targetResolution) {
             return { width: 1920, height: 1080 };
     }
 };
+// Keep in sync with Tdarr's default scanner resolution boundaries.
+var defaultResolutionBoundaries = [
+    {
+        resolution: '480p', widthMin: 100, widthMax: 792, heightMin: 100, heightMax: 528,
+    },
+    {
+        resolution: '576p', widthMin: 100, widthMax: 792, heightMin: 100, heightMax: 634,
+    },
+    {
+        resolution: '720p', widthMin: 100, widthMax: 1408, heightMin: 100, heightMax: 792,
+    },
+    {
+        resolution: '1080p', widthMin: 100, widthMax: 2112, heightMin: 100, heightMax: 1188,
+    },
+    {
+        resolution: '1440p', widthMin: 100, widthMax: 2816, heightMin: 100, heightMax: 1584,
+    },
+    {
+        resolution: '4KUHD', widthMin: 100, widthMax: 4224, heightMin: 100, heightMax: 2376,
+    },
+    {
+        resolution: 'DCI4K', widthMin: 100, widthMax: 4506, heightMin: 100, heightMax: 2376,
+    },
+    {
+        resolution: '8KUHD', widthMin: 100, widthMax: 8448, heightMin: 100, heightMax: 4752,
+    },
+];
+var getStreamResolution = function (stream) {
+    var widthIn = Number(stream.width);
+    var heightIn = Number(stream.height);
+    if (!widthIn || !heightIn || Number.isNaN(widthIn) || Number.isNaN(heightIn)) {
+        return undefined;
+    }
+    var width = widthIn;
+    var height = heightIn;
+    if (height > width) {
+        width = heightIn;
+        height = widthIn;
+    }
+    var boundary = defaultResolutionBoundaries.find(function (row) { return (width >= row.widthMin
+        && width <= row.widthMax
+        && height >= row.heightMin
+        && height <= row.heightMax); });
+    if (boundary) {
+        return boundary.resolution;
+    }
+    return 'Other';
+};
+var shouldScaleVideoStream = function (args, stream, resolutionInputs) {
+    if (!resolutionInputs) {
+        return false;
+    }
+    var targetResolution = String(resolutionInputs.targetResolution);
+    var streamResolution = getStreamResolution(stream);
+    if (streamResolution) {
+        return streamResolution !== targetResolution;
+    }
+    return targetResolution !== args.inputFileObj.video_resolution;
+};
 var getQsvScaleFilter = function (targetResolution, format) {
     var formatSuffix = format ? ":format=".concat(format) : '';
     var _a = getFixedResolutionDimensions(targetResolution), width = _a.width, height = _a.height;
@@ -570,8 +629,8 @@ var applyReorderStreams = function (streams, inputs) {
     return reorderedStreams;
 };
 var applyVideoEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var shouldProcess, targetCodec, ffmpegPresetEnabled, ffmpegPreset, ffmpegQualityEnabled, ffmpegQuality, hardwareEncoding, hardwareType, hardwareDecoding, forceEncoding, encoderProperties, i, stream, presetToUse;
-    var args = _b.args, streams = _b.streams, inputs = _b.inputs, overallInputArguments = _b.overallInputArguments;
+    var shouldProcess, targetCodec, ffmpegPresetEnabled, ffmpegPreset, ffmpegQualityEnabled, ffmpegQuality, hardwareEncoding, hardwareType, hardwareDecoding, forceEncoding, encoderProperties, resolutionInputs, frameRateInputs, videoBitrateInputs, has10BitRequest, hasHdrToSdrRequest, videoStreams, i, stream, videoRequestRequiresEncoding, presetToUse;
+    var args = _b.args, streams = _b.streams, requests = _b.requests, inputs = _b.inputs, overallInputArguments = _b.overallInputArguments;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
@@ -585,14 +644,27 @@ var applyVideoEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, f
                 hardwareType = String(inputs.hardwareType);
                 hardwareDecoding = inputs.hardwareDecoding === true;
                 forceEncoding = inputs.forceEncoding === true;
+                resolutionInputs = getLastRequestInputs(requests, 'setVideoResolution');
+                frameRateInputs = getLastRequestInputs(requests, 'setVideoFramerate');
+                videoBitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');
+                has10BitRequest = hasRequest(requests, 'set10BitVideo');
+                hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
+                videoStreams = streams.filter(function (stream) { return (!stream.removed
+                    && stream.codec_type === 'video'
+                    && stream.codec_name !== 'mjpeg'); });
                 i = 0;
                 _c.label = 1;
             case 1:
-                if (!(i < streams.length)) return [3 /*break*/, 5];
-                stream = streams[i];
-                if (!(stream.codec_type === 'video'
-                    && stream.codec_name !== 'mjpeg'
-                    && (forceEncoding || stream.codec_name !== targetCodec))) return [3 /*break*/, 4];
+                if (!(i < videoStreams.length)) return [3 /*break*/, 5];
+                stream = videoStreams[i];
+                videoRequestRequiresEncoding = (shouldScaleVideoStream(args, stream, resolutionInputs)
+                    || Boolean(frameRateInputs)
+                    || Boolean(videoBitrateInputs)
+                    || has10BitRequest
+                    || hasHdrToSdrRequest);
+                if (!(forceEncoding
+                    || stream.codec_name !== targetCodec
+                    || videoRequestRequiresEncoding)) return [3 /*break*/, 4];
                 shouldProcess = true;
                 if (!!encoderProperties) return [3 /*break*/, 3];
                 return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
@@ -657,7 +729,7 @@ var applyVideoBitrate = function (args, streams, inputs) {
     var shouldProcess = false;
     streams.forEach(function (stream) {
         var _a, _b, _c;
-        if (stream.codec_type === 'video') {
+        if (!stream.removed && stream.codec_type === 'video') {
             var ffType = (0, fileUtils_1.getFfType)(stream.codec_type);
             shouldProcess = true;
             if (useInputBitrate) {
@@ -693,7 +765,7 @@ var applyVideoFilters = function (args, streams, requests) {
     var shouldProcess = false;
     streams.forEach(function (stream) {
         var _a, _b;
-        if (stream.codec_type !== 'video') {
+        if (stream.removed || stream.codec_type !== 'video') {
             return;
         }
         var filterChain = [];
@@ -704,14 +776,14 @@ var applyVideoFilters = function (args, streams, requests) {
         var hardwareDecodedQsv = usesQsv && hardwareDecoding;
         var hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
         var needsSoftwareOnlyFilter = hasHdrToSdrRequest || Boolean(frameRateInputs);
-        var shouldScale = (resolutionInputs
-            && String(resolutionInputs.targetResolution) !== args.inputFileObj.video_resolution);
+        var shouldScale = shouldScaleVideoStream(args, stream, resolutionInputs);
+        var targetResolution = resolutionInputs ? String(resolutionInputs.targetResolution) : '';
         if (usesQsv
             && hardwareDecodedQsv
             && shouldScale
             && !hasHdrToSdrRequest
             && !frameRateInputs) {
-            filterChain.push(getQsvScaleFilter(String(resolutionInputs.targetResolution), has10BitRequest ? 'p010le' : undefined));
+            filterChain.push(getQsvScaleFilter(targetResolution, has10BitRequest ? 'p010le' : undefined));
         }
         else if (usesQsv
             && hardwareDecodedQsv
@@ -727,7 +799,7 @@ var applyVideoFilters = function (args, streams, requests) {
                 if (!hardwareDecodedVaapi) {
                     filterChain.push('format=nv12', 'hwupload');
                 }
-                filterChain.push(getVaapiScaleFilter(shouldScale && resolutionInputs ? String(resolutionInputs.targetResolution) : undefined, vaapiFormat));
+                filterChain.push(getVaapiScaleFilter(shouldScale ? targetResolution : undefined, vaapiFormat));
             }
             else {
                 if (hardwareDecodedVaapi && needsSoftwareOnlyFilter) {
@@ -737,7 +809,7 @@ var applyVideoFilters = function (args, streams, requests) {
                     filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
                 }
                 if (shouldScale && resolutionInputs) {
-                    filterChain.push(getSoftwareScaleFilter(String(resolutionInputs.targetResolution)));
+                    filterChain.push(getSoftwareScaleFilter(targetResolution));
                 }
                 if (frameRateInputs) {
                     filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
@@ -755,7 +827,7 @@ var applyVideoFilters = function (args, streams, requests) {
                 filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
             }
             if (shouldScale && resolutionInputs) {
-                filterChain.push(getSoftwareScaleFilter(String(resolutionInputs.targetResolution)));
+                filterChain.push(getSoftwareScaleFilter(targetResolution));
             }
             if (frameRateInputs) {
                 filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
@@ -914,6 +986,7 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                 return [4 /*yield*/, applyVideoEncoder({
                         args: args,
                         streams: streams,
+                        requests: requests,
                         inputs: encoderInputs,
                         overallInputArguments: overallInputArguments,
                     })];

@@ -343,6 +343,183 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]));
   });
 
+  it('uses the requested encoder when force encoding is disabled but filters require transcoding', async () => {
+    const streams = [
+      {
+        ...createDefaultV2Streams()[0],
+        codec_name: 'hevc',
+      },
+      createDefaultV2Streams()[1],
+    ];
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      streams,
+      requests: [
+        createEncoderRequest({
+          forceEncoding: false,
+        }),
+        createResolutionRequest(),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-hwaccel',
+      'qsv',
+      '-hwaccel_output_format',
+      'qsv',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'hevc_qsv',
+      '-global_quality',
+      '25',
+      '-preset',
+      'fast',
+      '-filter:v:0',
+      'vpp_qsv=w=1920:h=1080',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+  });
+
+  it('uses stream dimensions for resolution decisions when file-level resolution is stale', async () => {
+    const args = createV2Args({
+      requests: [
+        createResolutionRequest(),
+      ],
+    });
+    args.inputFileObj.video_resolution = '1080p';
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(true);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-filter:v:0',
+      'scale=1920:-2',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+  });
+
+  it('does not scale video streams whose own dimensions already match the target', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      {
+        ...createDefaultV2Streams()[0],
+        index: 1,
+        width: 1920,
+        height: 1080,
+      },
+      {
+        ...createDefaultV2Streams()[1],
+        index: 2,
+      },
+    ];
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      streams,
+      requests: [
+        createResolutionRequest(),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-filter:v:0',
+      'scale=1920:-2',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+      '-map',
+      '0:2',
+      '-c:2',
+      'copy',
+    ]);
+    expect(renderResult.spawnArgs).not.toContain('-filter:v:1');
+  });
+
+  it('classifies portrait stream dimensions the same way as Tdarr file scanning', async () => {
+    const streams = [
+      {
+        ...createDefaultV2Streams()[0],
+        width: 720,
+        height: 1280,
+      },
+      createDefaultV2Streams()[1],
+    ];
+    const args = createV2Args({
+      streams,
+      requests: [
+        createResolutionRequest('720p'),
+      ],
+    });
+    args.inputFileObj.video_resolution = '1080p';
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+  });
+
+  it('skips removed video streams during later encoder and filter phases', async () => {
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      requests: [
+        {
+          pluginName: 'ffmpegCommandRemoveStreamByProperty',
+          pluginVersion: '2.0.0',
+          requestType: 'removeStreamByProperty',
+          inputs: {
+            codecType: 'video',
+            propertyToCheck: 'codec_name',
+            valuesToRemove: 'h264',
+            condition: 'equals',
+          },
+        },
+        createEncoderRequest(),
+      ],
+    }));
+
+    expect(mockGetEncoder).not.toHaveBeenCalled();
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:1',
+      '-c:0',
+      'copy',
+    ]);
+  });
+
   it('removes and reorders streams while keeping output indexes deterministic', async () => {
     const streams = [
       createDefaultV2Streams()[0],
