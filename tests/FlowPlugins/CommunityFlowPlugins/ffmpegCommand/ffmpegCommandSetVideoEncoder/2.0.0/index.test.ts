@@ -17,12 +17,10 @@ describe('ffmpegCommandSetVideoEncoder v2 Plugin', () => {
         forceEncoding: true,
       },
     });
-    const streamsBefore = JSON.stringify(args.variables.ffmpegCommandV2?.streams);
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expect(JSON.stringify(args.variables.ffmpegCommandV2?.streams)).toBe(streamsBefore);
     expectV2Request(args, 'setVideoEncoder', 'ffmpegCommandSetVideoEncoder', {
       outputCodec: 'h264',
       ffmpegPresetEnabled: true,

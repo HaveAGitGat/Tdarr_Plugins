@@ -61,6 +61,27 @@ var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 var clone = function (value) { return JSON.parse(JSON.stringify(value)); };
+var createInitialWorkingStreams = function (args) {
+    try {
+        var streams = clone(args.inputFileObj.ffProbeData.streams);
+        if (!Array.isArray(streams)) {
+            throw new Error('FFprobe streams is not an array');
+        }
+        return streams.map(function (stream) {
+            var _a;
+            var normalizedStream = __assign({}, stream);
+            if (Number((_a = stream === null || stream === void 0 ? void 0 : stream.disposition) === null || _a === void 0 ? void 0 : _a.attached_pic) === 1) {
+                normalizedStream.codec_type = 'attachment';
+            }
+            return __assign(__assign({}, normalizedStream), { removed: false, sourceIndex: stream.index, outputArgs: [] });
+        });
+    }
+    catch (err) {
+        var message = "Error parsing FFprobe streams, it seems FFprobe could not scan the file: ".concat(JSON.stringify(err));
+        args.jobLog(message);
+        throw new Error(message);
+    }
+};
 var splitArgs = function (args, value) {
     var _a;
     var rawValue = String(value || '').trim();
@@ -751,16 +772,19 @@ var logNoopRequests = function (args, requests) {
     });
 };
 var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var requests, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, containerInputs, requestedContainer, currentContainer, fileContainer, reorderInputs, originalStreams, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
-    var _a, _b, _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var commandState, requests, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, containerInputs, requestedContainer, currentContainer, fileContainer, reorderInputs, originalStreams, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 (0, flowUtils_1.checkFfmpegCommandV2Init)(args);
-                requests = ((_a = args.variables.ffmpegCommandV2) === null || _a === void 0 ? void 0 : _a.requests) || [];
-                streams = clone(((_b = args.variables.ffmpegCommandV2) === null || _b === void 0 ? void 0 : _b.streams) || []).map(function (stream) { return (__assign(__assign({}, stream), { outputArgs: [] })); });
+                commandState = args.variables.ffmpegCommandV2;
+                if ((commandState === null || commandState === void 0 ? void 0 : commandState.sourceFileId) && commandState.sourceFileId !== args.inputFileObj._id) {
+                    args.jobLog('FFmpeg command v2 input changed between Begin Command and Execute; rendering from current input file.');
+                }
+                requests = (commandState === null || commandState === void 0 ? void 0 : commandState.requests) || [];
+                streams = createInitialWorkingStreams(args);
                 shouldProcess = false;
-                container = ((_c = args.variables.ffmpegCommandV2) === null || _c === void 0 ? void 0 : _c.container) || (0, fileUtils_1.getContainer)(args.inputFileObj._id);
+                container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 overallInputArguments = [];
                 overallOutputArguments = [];
                 getRequests(requests, 'customArguments').forEach(function (request) {
@@ -835,8 +859,8 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                         overallInputArguments: overallInputArguments,
                     })];
             case 1:
-                shouldProcess = (_d.sent()) || shouldProcess;
-                _d.label = 2;
+                shouldProcess = (_a.sent()) || shouldProcess;
+                _a.label = 2;
             case 2:
                 shouldProcess = applyVideoFilters(args, streams, requests) || shouldProcess;
                 bitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');

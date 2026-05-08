@@ -12,12 +12,10 @@ describe('ffmpegCommandRemoveStreamByProperty v2 Plugin', () => {
         condition: 'includes',
       },
     });
-    const streamsBefore = JSON.stringify(args.variables.ffmpegCommandV2?.streams);
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expect(JSON.stringify(args.variables.ffmpegCommandV2?.streams)).toBe(streamsBefore);
     expectV2Request(args, 'removeStreamByProperty', 'ffmpegCommandRemoveStreamByProperty', {
       codecType: 'audio',
       propertyToCheck: 'tags.language',

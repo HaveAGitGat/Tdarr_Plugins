@@ -13,12 +13,10 @@ describe('ffmpegCommandRorderStreams v2 Plugin', () => {
         streamTypes: 'audio,video',
       },
     });
-    const streamsBefore = JSON.stringify(args.variables.ffmpegCommandV2?.streams);
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expect(JSON.stringify(args.variables.ffmpegCommandV2?.streams)).toBe(streamsBefore);
     expectV2Request(args, 'reorderStreams', 'ffmpegCommandRorderStreams', {
       processOrder: 'streamTypes,languages',
       languages: 'eng,fre',

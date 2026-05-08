@@ -34,41 +34,44 @@ describe('ffmpegCommandStart v2 Plugin', () => {
     expect(result.variables.ffmpegCommandV2).toMatchObject({
       version: 2,
       init: true,
-      container: 'mp4',
+      sourceFileId: baseArgs.inputFileObj._id,
       requests: [],
     });
-    expect(result.variables.ffmpegCommandV2?.streams[0]).toMatchObject({
-      index: 0,
-      sourceIndex: 0,
-      codec_name: 'h264',
-      codec_type: 'video',
-      removed: false,
-    });
+    expect(result.variables.ffmpegCommandV2).not.toHaveProperty('streams');
+    expect(result.variables.ffmpegCommandV2).not.toHaveProperty('container');
   });
 
-  it('treats attached picture video streams as attachments', () => {
-    baseArgs.inputFileObj.ffProbeData.streams?.push({
-      index: 2,
-      codec_name: 'mjpeg',
-      codec_type: 'video',
-      disposition: {
-        attached_pic: 1,
-      },
-    });
+  it('resets any previous v2 request context', () => {
+    baseArgs.variables.ffmpegCommandV2 = {
+      version: 2,
+      init: true,
+      sourceFileId: '/tmp/old.mp4',
+      requests: [
+        {
+          pluginName: 'ffmpegCommandCustomArguments',
+          pluginVersion: '2.0.0',
+          requestType: 'customArguments',
+          inputs: {
+            outputArguments: '-movflags +faststart',
+          },
+        },
+      ],
+    };
 
     const result = plugin(baseArgs);
 
-    expect(result.variables.ffmpegCommandV2?.streams[2]).toMatchObject({
-      index: 2,
-      sourceIndex: 2,
-      codec_type: 'attachment',
-      removed: false,
+    expect(result.variables.ffmpegCommandV2).toEqual({
+      version: 2,
+      init: true,
+      sourceFileId: baseArgs.inputFileObj._id,
+      requests: [],
     });
   });
 
-  it('throws when FFprobe streams are not available', () => {
+  it('does not inspect FFprobe streams', () => {
     delete baseArgs.inputFileObj.ffProbeData.streams;
 
-    expect(() => plugin(baseArgs)).toThrow('Error parsing FFprobe streams');
+    expect(() => plugin(baseArgs)).not.toThrow();
+    expect(baseArgs.variables.ffmpegCommandV2?.requests).toEqual([]);
   });
 });

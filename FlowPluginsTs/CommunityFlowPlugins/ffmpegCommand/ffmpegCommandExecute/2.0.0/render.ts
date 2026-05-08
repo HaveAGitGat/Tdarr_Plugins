@@ -1,8 +1,8 @@
 import {
   IffmpegCommandV2Request,
-  IffmpegCommandV2Stream,
   IpluginInputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
+import { Istreams } from '../../../../FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 import {
   getContainer,
   getFfType,
@@ -12,7 +12,9 @@ import { checkFfmpegCommandV2Init } from '../../../../FlowHelpers/1.0.0/interfac
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
-interface IworkingStream extends IffmpegCommandV2Stream {
+interface IworkingStream extends Istreams {
+  removed: boolean,
+  sourceIndex: number,
   outputArgs: string[],
   encoder?: IgetEncoder,
   hardwareDecoding?: boolean,
@@ -28,6 +30,36 @@ export interface IffmpegCommandV2RenderResult {
 }
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+
+const createInitialWorkingStreams = (args: IpluginInputArgs): IworkingStream[] => {
+  try {
+    const streams = clone(args.inputFileObj.ffProbeData.streams);
+    if (!Array.isArray(streams)) {
+      throw new Error('FFprobe streams is not an array');
+    }
+
+    return streams.map((stream: Istreams) => {
+      const normalizedStream = {
+        ...stream,
+      };
+
+      if (Number(stream?.disposition?.attached_pic) === 1) {
+        normalizedStream.codec_type = 'attachment';
+      }
+
+      return {
+        ...normalizedStream,
+        removed: false,
+        sourceIndex: stream.index,
+        outputArgs: [],
+      };
+    });
+  } catch (err) {
+    const message = `Error parsing FFprobe streams, it seems FFprobe could not scan the file: ${JSON.stringify(err)}`;
+    args.jobLog(message);
+    throw new Error(message);
+  }
+};
 
 const splitArgs = (args: IpluginInputArgs, value: unknown): string[] => {
   const rawValue = String(value || '').trim();
@@ -923,15 +955,17 @@ export const renderFfmpegCommandV2 = async (
 ): Promise<IffmpegCommandV2RenderResult> => {
   checkFfmpegCommandV2Init(args);
 
-  const requests = args.variables.ffmpegCommandV2?.requests || [];
-  let streams: IworkingStream[] = clone(args.variables.ffmpegCommandV2?.streams || []).map((
-    stream: IffmpegCommandV2Stream,
-  ) => ({
-    ...stream,
-    outputArgs: [],
-  }));
+  const commandState = args.variables.ffmpegCommandV2;
+  if (commandState?.sourceFileId && commandState.sourceFileId !== args.inputFileObj._id) {
+    args.jobLog(
+      'FFmpeg command v2 input changed between Begin Command and Execute; rendering from current input file.',
+    );
+  }
+
+  const requests = commandState?.requests || [];
+  let streams = createInitialWorkingStreams(args);
   let shouldProcess = false;
-  let container = args.variables.ffmpegCommandV2?.container || getContainer(args.inputFileObj._id);
+  let container = getContainer(args.inputFileObj._id);
   const overallInputArguments: string[] = [];
   const overallOutputArguments: string[] = [];
 

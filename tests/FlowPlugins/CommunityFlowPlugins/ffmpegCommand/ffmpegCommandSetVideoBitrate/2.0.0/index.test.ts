@@ -12,12 +12,10 @@ describe('ffmpegCommandSetVideoBitrate v2 Plugin', () => {
         bitrate: '3000',
       },
     });
-    const streamsBefore = JSON.stringify(args.variables.ffmpegCommandV2?.streams);
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expect(JSON.stringify(args.variables.ffmpegCommandV2?.streams)).toBe(streamsBefore);
     expectV2Request(args, 'setVideoBitrate', 'ffmpegCommandSetVideoBitrate', {
       useInputBitrate: true,
       targetBitratePercent: '60',

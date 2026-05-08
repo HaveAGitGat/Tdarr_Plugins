@@ -15,12 +15,10 @@ describe('ffmpegCommandEnsureAudioStream v2 Plugin', () => {
         samplerate: '48k',
       },
     });
-    const streamsBefore = JSON.stringify(args.variables.ffmpegCommandV2?.streams);
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expect(JSON.stringify(args.variables.ffmpegCommandV2?.streams)).toBe(streamsBefore);
     expectV2Request(args, 'ensureAudioStream', 'ffmpegCommandEnsureAudioStream', {
       audioEncoder: 'ac3',
       language: 'en',

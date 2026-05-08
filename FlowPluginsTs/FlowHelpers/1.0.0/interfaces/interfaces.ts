@@ -97,11 +97,6 @@ export interface IffmpegCommand {
     overallOuputArguments: string[],
 }
 
-export interface IffmpegCommandV2Stream extends Istreams {
-    removed: boolean,
-    sourceIndex: number,
-}
-
 export interface IffmpegCommandV2Request {
     pluginName: string,
     pluginVersion: string,
@@ -113,8 +108,7 @@ export interface IffmpegCommandV2Request {
 export interface IffmpegCommandV2 {
     version: 2,
     init: boolean,
-    container: string,
-    streams: IffmpegCommandV2Stream[],
+    sourceFileId?: string,
     requests: IffmpegCommandV2Request[],
 }
 

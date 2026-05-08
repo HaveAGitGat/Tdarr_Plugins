@@ -10,12 +10,10 @@ describe('ffmpegCommandCustomArguments v2 Plugin', () => {
         outputArguments: '-movflags +faststart',
       },
     });
-    const streamsBefore = JSON.stringify(args.variables.ffmpegCommandV2?.streams);
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expect(JSON.stringify(args.variables.ffmpegCommandV2?.streams)).toBe(streamsBefore);
     expectV2Request(args, 'customArguments', 'ffmpegCommandCustomArguments', {
       inputArguments: '-threads 2',
       outputArguments: '-movflags +faststart',

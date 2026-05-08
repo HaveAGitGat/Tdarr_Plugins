@@ -182,13 +182,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       {
         ...createDefaultV2Streams()[0],
         index: 1,
-        sourceIndex: 1,
         codec_name: 'hevc',
       },
       {
         ...createDefaultV2Streams()[1],
         index: 2,
-        sourceIndex: 2,
       },
     ];
 
@@ -228,21 +226,17 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       createDefaultV2Streams()[1],
       {
         index: 2,
-        sourceIndex: 2,
         codec_name: 'subrip',
         codec_type: 'subtitle',
-        removed: false,
       },
       {
         index: 3,
-        sourceIndex: 3,
         codec_name: 'ac3',
         codec_type: 'audio',
         channels: 6,
         tags: {
           language: 'fre',
         },
-        removed: false,
       },
     ];
     const renderResult = await renderFfmpegCommandV2(createV2Args({
@@ -337,6 +331,57 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
     expect(args.deps.parseArgsStringToArgv).toHaveBeenCalledWith('-metadata title="My Movie"', '', '');
     expect(renderResult.spawnArgs.slice(-2)).toEqual(['-metadata', 'title=My Movie']);
+  });
+
+  it('derives and normalizes streams from the current input file at render time', async () => {
+    const streams = [
+      ...createDefaultV2Streams(),
+      {
+        index: 2,
+        codec_name: 'mjpeg',
+        codec_type: 'video',
+        disposition: {
+          attached_pic: 1,
+        },
+      },
+    ];
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({ streams }));
+
+    expect(renderResult.streams[2]).toMatchObject({
+      index: 2,
+      sourceIndex: 2,
+      codec_type: 'attachment',
+      removed: false,
+    });
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-map',
+      '0:2',
+      '-c:2',
+      'copy',
+    ]));
+  });
+
+  it('throws when FFprobe streams are not available during render', async () => {
+    const args = createV2Args();
+    delete args.inputFileObj.ffProbeData.streams;
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow('Error parsing FFprobe streams');
+    expect(args.jobLog).toHaveBeenCalledWith(expect.stringContaining('Error parsing FFprobe streams'));
+  });
+
+  it('logs when the input file changed between v2 Begin and Execute', async () => {
+    const args = createV2Args();
+    if (!args.variables.ffmpegCommandV2) {
+      throw new Error('Expected v2 state');
+    }
+    args.variables.ffmpegCommandV2.sourceFileId = '/tmp/old-source.mp4';
+
+    await renderFfmpegCommandV2(args);
+
+    expect(args.jobLog).toHaveBeenCalledWith(
+      'FFmpeg command v2 input changed between Begin Command and Execute; rendering from current input file.',
+    );
   });
 
   it('consumes currently no-op requests explicitly without processing', async () => {
