@@ -181,6 +181,13 @@ var replaceOutputPlaceholders = function (outputArgs, streams, stream) { return 
     }
     return nextArg;
 }); };
+var getVaapiDeviceArgs = function (inputArgs) {
+    var deviceArgIndex = inputArgs.indexOf('-hwaccel_device');
+    if (deviceArgIndex === -1 || !inputArgs[deviceArgIndex + 1]) {
+        return [];
+    }
+    return ['-vaapi_device', inputArgs[deviceArgIndex + 1]];
+};
 var getNestedProperty = function (stream, propertyToCheck) {
     var _a;
     if (propertyToCheck.includes('.')) {
@@ -197,24 +204,39 @@ var markRemoved = function (stream) {
     }
     return false;
 };
-var getQsvScaleFilter = function (targetResolution, format) {
-    var formatSuffix = format ? ":format=".concat(format) : '';
+var getFixedResolutionDimensions = function (targetResolution) {
     switch (targetResolution) {
         case '480p':
-            return "vpp_qsv=w=720:h=480".concat(formatSuffix);
+            return { width: 720, height: 480 };
         case '576p':
-            return "vpp_qsv=w=720:h=576".concat(formatSuffix);
+            return { width: 720, height: 576 };
         case '720p':
-            return "vpp_qsv=w=1280:h=720".concat(formatSuffix);
+            return { width: 1280, height: 720 };
         case '1080p':
-            return "vpp_qsv=w=1920:h=1080".concat(formatSuffix);
+            return { width: 1920, height: 1080 };
         case '1440p':
-            return "vpp_qsv=w=2560:h=1440".concat(formatSuffix);
+            return { width: 2560, height: 1440 };
         case '4KUHD':
-            return "vpp_qsv=w=3840:h=2160".concat(formatSuffix);
+            return { width: 3840, height: 2160 };
         default:
-            return "vpp_qsv=w=1920:h=1080".concat(formatSuffix);
+            return { width: 1920, height: 1080 };
     }
+};
+var getQsvScaleFilter = function (targetResolution, format) {
+    var formatSuffix = format ? ":format=".concat(format) : '';
+    var _a = getFixedResolutionDimensions(targetResolution), width = _a.width, height = _a.height;
+    return "vpp_qsv=w=".concat(width, ":h=").concat(height).concat(formatSuffix);
+};
+var getVaapiScaleFilter = function (targetResolution, format) {
+    var scaleArgs = [];
+    if (targetResolution) {
+        var _a = getFixedResolutionDimensions(targetResolution), width = _a.width, height = _a.height;
+        scaleArgs.push("w=".concat(width), "h=".concat(height));
+    }
+    if (format) {
+        scaleArgs.push("format=".concat(format));
+    }
+    return scaleArgs.length > 0 ? "scale_vaapi=".concat(scaleArgs.join(':')) : 'scale_vaapi';
 };
 var getSoftwareScaleFilter = function (targetResolution) {
     switch (targetResolution) {
@@ -610,6 +632,9 @@ var applyVideoEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, f
                         stream.outputArgs.push('-preset', presetToUse);
                     }
                 }
+                if (encoderProperties.encoder.includes('vaapi')) {
+                    appendArgsOnce(overallInputArguments, getVaapiDeviceArgs(encoderProperties.inputArgs));
+                }
                 if (hardwareDecoding) {
                     appendArgsOnce(overallInputArguments, encoderProperties.inputArgs);
                 }
@@ -672,27 +697,58 @@ var applyVideoFilters = function (args, streams, requests) {
             return;
         }
         var filterChain = [];
-        var usesQsv = ((_a = stream.encoder) === null || _a === void 0 ? void 0 : _a.encoder.includes('qsv')) === true;
-        var hardwareDecoding = usesQsv && stream.hardwareDecoding === true;
+        var encoderName = ((_a = stream.encoder) === null || _a === void 0 ? void 0 : _a.encoder) || '';
+        var usesQsv = encoderName.includes('qsv');
+        var usesVaapi = encoderName.includes('vaapi');
+        var hardwareDecoding = stream.hardwareDecoding === true;
+        var hardwareDecodedQsv = usesQsv && hardwareDecoding;
+        var hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
+        var needsSoftwareOnlyFilter = hasHdrToSdrRequest || Boolean(frameRateInputs);
         var shouldScale = (resolutionInputs
             && String(resolutionInputs.targetResolution) !== args.inputFileObj.video_resolution);
         if (usesQsv
-            && hardwareDecoding
+            && hardwareDecodedQsv
             && shouldScale
             && !hasHdrToSdrRequest
             && !frameRateInputs) {
             filterChain.push(getQsvScaleFilter(String(resolutionInputs.targetResolution), has10BitRequest ? 'p010le' : undefined));
         }
         else if (usesQsv
-            && hardwareDecoding
+            && hardwareDecodedQsv
             && has10BitRequest
             && !shouldScale
             && !hasHdrToSdrRequest
             && !frameRateInputs) {
             filterChain.push('scale_qsv=format=p010le');
         }
+        else if (usesVaapi) {
+            var vaapiFormat = has10BitRequest ? 'p010' : undefined;
+            if (!needsSoftwareOnlyFilter && (shouldScale || has10BitRequest)) {
+                if (!hardwareDecodedVaapi) {
+                    filterChain.push('format=nv12', 'hwupload');
+                }
+                filterChain.push(getVaapiScaleFilter(shouldScale && resolutionInputs ? String(resolutionInputs.targetResolution) : undefined, vaapiFormat));
+            }
+            else {
+                if (hardwareDecodedVaapi && needsSoftwareOnlyFilter) {
+                    filterChain.push('hwdownload', 'format=nv12');
+                }
+                if (hasHdrToSdrRequest) {
+                    filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
+                }
+                if (shouldScale && resolutionInputs) {
+                    filterChain.push(getSoftwareScaleFilter(String(resolutionInputs.targetResolution)));
+                }
+                if (frameRateInputs) {
+                    filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
+                }
+                if (!hardwareDecodedVaapi || filterChain.length > 0) {
+                    filterChain.push("format=".concat(has10BitRequest ? 'p010' : 'nv12'), 'hwupload');
+                }
+            }
+        }
         else {
-            if (usesQsv && hardwareDecoding && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
+            if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
                 filterChain.push('hwdownload', 'format=nv12');
             }
             if (hasHdrToSdrRequest) {
@@ -707,7 +763,7 @@ var applyVideoFilters = function (args, streams, requests) {
             if (usesQsv && has10BitRequest) {
                 filterChain.push('format=p010le');
             }
-            if (usesQsv && hardwareDecoding && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
+            if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
                 filterChain.push('hwupload=extra_hw_frames=64', 'format=qsv');
             }
             else if (usesQsv && has10BitRequest && filterChain.length === 0) {
@@ -724,10 +780,13 @@ var applyVideoFilters = function (args, streams, requests) {
             if (!isLibsvtav1) {
                 stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
             }
-            if (usesQsv && hardwareDecoding) {
+            if (usesQsv && hardwareDecodedQsv) {
                 if (filterChain.length === 0) {
                     stream.outputArgs.push('-filter:v:{outputTypeIndex}', 'scale_qsv=format=p010le');
                 }
+            }
+            else if (usesVaapi) {
+                // VAAPI bit depth is handled inside the upload/scale_vaapi filter chain.
             }
             else if (isLibsvtav1) {
                 stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');

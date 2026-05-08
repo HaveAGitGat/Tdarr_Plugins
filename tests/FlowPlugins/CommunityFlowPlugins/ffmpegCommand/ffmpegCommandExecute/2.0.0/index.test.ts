@@ -40,8 +40,27 @@ const createResolutionRequest = (targetResolution = '1080p'): IffmpegCommandV2Re
   },
 });
 
+const vaapiInputArgs = [
+  '-hwaccel',
+  'vaapi',
+  '-hwaccel_device',
+  '/dev/dri/renderD128',
+  '-hwaccel_output_format',
+  'vaapi',
+];
+
 describe('ffmpegCommandExecute v2 Plugin', () => {
   let mockGetEncoder: jest.Mock;
+
+  const mockVaapiEncoder = () => {
+    mockGetEncoder.mockResolvedValue({
+      encoder: 'hevc_vaapi',
+      inputArgs: vaapiInputArgs,
+      outputArgs: [],
+      isGpu: true,
+      enabledDevices: [],
+    });
+  };
 
   beforeEach(() => {
     const { getEncoder } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils');
@@ -117,6 +136,110 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       'scale=1920:-2',
     ]));
     expect(renderResult.spawnArgs).not.toContain('vpp_qsv=w=1920:h=1080');
+  });
+
+  it('uses a VAAPI scale filter when VAAPI hardware decoding and resolution are requested', async () => {
+    mockVaapiEncoder();
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      requests: [
+        createEncoderRequest({
+          ffmpegQualityEnabled: false,
+          hardwareType: 'vaapi',
+          hardwareDecoding: true,
+        }),
+        createResolutionRequest(),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-vaapi_device',
+      '/dev/dri/renderD128',
+      '-hwaccel',
+      'vaapi',
+      '-hwaccel_device',
+      '/dev/dri/renderD128',
+      '-hwaccel_output_format',
+      'vaapi',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'hevc_vaapi',
+      '-filter:v:0',
+      'scale_vaapi=w=1920:h=1080',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(renderResult.spawnArgs).not.toContain('scale=1920:-2');
+  });
+
+  it('initializes VAAPI and uploads frames when VAAPI hardware decoding is disabled', async () => {
+    mockVaapiEncoder();
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      requests: [
+        createEncoderRequest({
+          ffmpegQualityEnabled: false,
+          hardwareType: 'vaapi',
+          hardwareDecoding: false,
+        }),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-vaapi_device',
+      '/dev/dri/renderD128',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'hevc_vaapi',
+      '-filter:v:0',
+      'format=nv12,hwupload',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(renderResult.spawnArgs).not.toContain('-hwaccel');
+  });
+
+  it('downloads and uploads VAAPI frames when software filters are needed', async () => {
+    mockVaapiEncoder();
+    const hdrRequest: IffmpegCommandV2Request = {
+      pluginName: 'ffmpegCommandHdrToSdr',
+      pluginVersion: '2.0.0',
+      requestType: 'hdrToSdr',
+      inputs: {},
+    };
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      requests: [
+        createEncoderRequest({
+          ffmpegQualityEnabled: false,
+          hardwareType: 'vaapi',
+          hardwareDecoding: true,
+        }),
+        hdrRequest,
+        createResolutionRequest(),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-vaapi_device',
+      '/dev/dri/renderD128',
+    ]));
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-filter:v:0',
+      'hwdownload,format=nv12,zscale=t=linear:npl=100,format=yuv420p,scale=1920:-2,format=nv12,hwupload',
+    ]));
   });
 
   it('renders stable 10-bit args regardless of request order', async () => {

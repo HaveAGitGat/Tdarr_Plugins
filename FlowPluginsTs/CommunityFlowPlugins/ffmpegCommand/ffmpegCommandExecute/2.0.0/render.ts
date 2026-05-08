@@ -200,6 +200,15 @@ const replaceOutputPlaceholders = (
   return nextArg;
 });
 
+const getVaapiDeviceArgs = (inputArgs: string[]): string[] => {
+  const deviceArgIndex = inputArgs.indexOf('-hwaccel_device');
+  if (deviceArgIndex === -1 || !inputArgs[deviceArgIndex + 1]) {
+    return [];
+  }
+
+  return ['-vaapi_device', inputArgs[deviceArgIndex + 1]];
+};
+
 const getNestedProperty = (stream: IworkingStream, propertyToCheck: string): unknown => {
   if (propertyToCheck.includes('.')) {
     const parts = propertyToCheck.split('.');
@@ -219,25 +228,44 @@ const markRemoved = (stream: IworkingStream): boolean => {
   return false;
 };
 
-const getQsvScaleFilter = (targetResolution: string, format?: string): string => {
-  const formatSuffix = format ? `:format=${format}` : '';
-
+const getFixedResolutionDimensions = (targetResolution: string): { width: number, height: number } => {
   switch (targetResolution) {
     case '480p':
-      return `vpp_qsv=w=720:h=480${formatSuffix}`;
+      return { width: 720, height: 480 };
     case '576p':
-      return `vpp_qsv=w=720:h=576${formatSuffix}`;
+      return { width: 720, height: 576 };
     case '720p':
-      return `vpp_qsv=w=1280:h=720${formatSuffix}`;
+      return { width: 1280, height: 720 };
     case '1080p':
-      return `vpp_qsv=w=1920:h=1080${formatSuffix}`;
+      return { width: 1920, height: 1080 };
     case '1440p':
-      return `vpp_qsv=w=2560:h=1440${formatSuffix}`;
+      return { width: 2560, height: 1440 };
     case '4KUHD':
-      return `vpp_qsv=w=3840:h=2160${formatSuffix}`;
+      return { width: 3840, height: 2160 };
     default:
-      return `vpp_qsv=w=1920:h=1080${formatSuffix}`;
+      return { width: 1920, height: 1080 };
   }
+};
+
+const getQsvScaleFilter = (targetResolution: string, format?: string): string => {
+  const formatSuffix = format ? `:format=${format}` : '';
+  const { width, height } = getFixedResolutionDimensions(targetResolution);
+  return `vpp_qsv=w=${width}:h=${height}${formatSuffix}`;
+};
+
+const getVaapiScaleFilter = (targetResolution?: string, format?: string): string => {
+  const scaleArgs: string[] = [];
+
+  if (targetResolution) {
+    const { width, height } = getFixedResolutionDimensions(targetResolution);
+    scaleArgs.push(`w=${width}`, `h=${height}`);
+  }
+
+  if (format) {
+    scaleArgs.push(`format=${format}`);
+  }
+
+  return scaleArgs.length > 0 ? `scale_vaapi=${scaleArgs.join(':')}` : 'scale_vaapi';
 };
 
 const getSoftwareScaleFilter = (targetResolution: string): string => {
@@ -750,6 +778,10 @@ const applyVideoEncoder = async ({
         }
       }
 
+      if (encoderProperties.encoder.includes('vaapi')) {
+        appendArgsOnce(overallInputArguments, getVaapiDeviceArgs(encoderProperties.inputArgs));
+      }
+
       if (hardwareDecoding) {
         appendArgsOnce(overallInputArguments, encoderProperties.inputArgs);
       }
@@ -822,8 +854,13 @@ const applyVideoFilters = (
     }
 
     const filterChain: string[] = [];
-    const usesQsv = stream.encoder?.encoder.includes('qsv') === true;
-    const hardwareDecoding = usesQsv && stream.hardwareDecoding === true;
+    const encoderName = stream.encoder?.encoder || '';
+    const usesQsv = encoderName.includes('qsv');
+    const usesVaapi = encoderName.includes('vaapi');
+    const hardwareDecoding = stream.hardwareDecoding === true;
+    const hardwareDecodedQsv = usesQsv && hardwareDecoding;
+    const hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
+    const needsSoftwareOnlyFilter = hasHdrToSdrRequest || Boolean(frameRateInputs);
     const shouldScale = (
       resolutionInputs
       && String(resolutionInputs.targetResolution) !== args.inputFileObj.video_resolution
@@ -831,7 +868,7 @@ const applyVideoFilters = (
 
     if (
       usesQsv
-      && hardwareDecoding
+      && hardwareDecodedQsv
       && shouldScale
       && !hasHdrToSdrRequest
       && !frameRateInputs
@@ -842,15 +879,48 @@ const applyVideoFilters = (
       ));
     } else if (
       usesQsv
-      && hardwareDecoding
+      && hardwareDecodedQsv
       && has10BitRequest
       && !shouldScale
       && !hasHdrToSdrRequest
       && !frameRateInputs
     ) {
       filterChain.push('scale_qsv=format=p010le');
+    } else if (usesVaapi) {
+      const vaapiFormat = has10BitRequest ? 'p010' : undefined;
+
+      if (!needsSoftwareOnlyFilter && (shouldScale || has10BitRequest)) {
+        if (!hardwareDecodedVaapi) {
+          filterChain.push('format=nv12', 'hwupload');
+        }
+
+        filterChain.push(getVaapiScaleFilter(
+          shouldScale && resolutionInputs ? String(resolutionInputs.targetResolution) : undefined,
+          vaapiFormat,
+        ));
+      } else {
+        if (hardwareDecodedVaapi && needsSoftwareOnlyFilter) {
+          filterChain.push('hwdownload', 'format=nv12');
+        }
+
+        if (hasHdrToSdrRequest) {
+          filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
+        }
+
+        if (shouldScale && resolutionInputs) {
+          filterChain.push(getSoftwareScaleFilter(String(resolutionInputs.targetResolution)));
+        }
+
+        if (frameRateInputs) {
+          filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
+        }
+
+        if (!hardwareDecodedVaapi || filterChain.length > 0) {
+          filterChain.push(`format=${has10BitRequest ? 'p010' : 'nv12'}`, 'hwupload');
+        }
+      }
     } else {
-      if (usesQsv && hardwareDecoding && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
+      if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
         filterChain.push('hwdownload', 'format=nv12');
       }
 
@@ -870,7 +940,7 @@ const applyVideoFilters = (
         filterChain.push('format=p010le');
       }
 
-      if (usesQsv && hardwareDecoding && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
+      if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
         filterChain.push('hwupload=extra_hw_frames=64', 'format=qsv');
       } else if (usesQsv && has10BitRequest && filterChain.length === 0) {
         filterChain.push('scale_qsv=format=p010le');
@@ -890,10 +960,12 @@ const applyVideoFilters = (
         stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
       }
 
-      if (usesQsv && hardwareDecoding) {
+      if (usesQsv && hardwareDecodedQsv) {
         if (filterChain.length === 0) {
           stream.outputArgs.push('-filter:v:{outputTypeIndex}', 'scale_qsv=format=p010le');
         }
+      } else if (usesVaapi) {
+        // VAAPI bit depth is handled inside the upload/scale_vaapi filter chain.
       } else if (isLibsvtav1) {
         stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');
       } else {
