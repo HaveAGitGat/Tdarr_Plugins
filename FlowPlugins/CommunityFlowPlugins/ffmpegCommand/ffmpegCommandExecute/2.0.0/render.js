@@ -139,6 +139,14 @@ var getStringInput = function (value, defaultValue) {
     var trimmedValue = String(value).trim();
     return trimmedValue === '' ? defaultValue : trimmedValue;
 };
+var getAudioCodecName = function (audioEncoder) {
+    var codecNameByEncoder = {
+        dca: 'dts',
+        libmp3lame: 'mp3',
+        libopus: 'opus',
+    };
+    return codecNameByEncoder[audioEncoder] || audioEncoder;
+};
 var parseCropValues = function (output) {
     var results = [];
     var lines = output.split('\n');
@@ -591,16 +599,7 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
     var bitrate = String(inputs.bitrate);
     var enableSamplerate = inputs.enableSamplerate === true;
     var samplerate = String(inputs.samplerate);
-    var audioCodec = audioEncoder;
-    if (audioEncoder === 'dca') {
-        audioCodec = 'dts';
-    }
-    if (audioEncoder === 'libmp3lame') {
-        audioCodec = 'mp3';
-    }
-    if (audioEncoder === 'libopus') {
-        audioCodec = 'opus';
-    }
+    var audioCodec = getAudioCodecName(audioEncoder);
     var getHighest = function (first, second) {
         if (((first === null || first === void 0 ? void 0 : first.channels) || 0) > ((second === null || second === void 0 ? void 0 : second.channels) || 0)) {
             return first;
@@ -614,8 +613,7 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
             || (((_a = stream === null || stream === void 0 ? void 0 : stream.tags) === null || _a === void 0 ? void 0 : _a.language) && stream.tags.language.toLowerCase().includes(targetLangTag)));
     };
     var attemptMakeStream = function (targetLangTag) {
-        var streamsWithLangTag = streams.filter(function (stream) { return (!stream.removed
-            && stream.codec_type === 'audio'
+        var streamsWithLangTag = streams.filter(function (stream) { return (stream.codec_type === 'audio'
             && langMatch(stream, targetLangTag)); });
         if (streamsWithLangTag.length === 0) {
             args.jobLog("No streams with language tag ".concat(targetLangTag, " found. Skipping \n"));
@@ -643,6 +641,11 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
             && stream.codec_name === audioCodec
             && stream.channels === targetChannels); });
         if (hasStreamAlready.length > 0) {
+            hasStreamAlready.forEach(function (stream) {
+                // Preserve the codec selected by Ensure Audio Stream if a later filter needs to re-encode.
+                // eslint-disable-next-line no-param-reassign
+                stream.normalizeAudioEncoder = audioEncoder;
+            });
             args.jobLog("File already has ".concat(targetLangTag, " stream in ").concat(audioEncoder, ", ").concat(targetChannels, " channels \n"));
             return {
                 handled: true,
@@ -650,10 +653,10 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
             };
         }
         args.jobLog("Adding ".concat(targetLangTag, " stream in ").concat(audioEncoder, ", ").concat(targetChannels, " channels \n"));
-        var streamCopy = __assign(__assign({}, clone(streamWithHighestChannel)), { removed: false, index: streams.length, sourceIndex: streamWithHighestChannel.sourceIndex, outputArgs: [
+        var streamCopy = __assign(__assign({}, clone(streamWithHighestChannel)), { removed: false, index: streams.length, sourceIndex: streamWithHighestChannel.sourceIndex, codec_name: audioCodec, channels: targetChannels, outputArgs: [
                 '-c:{outputIndex}',
                 audioEncoder,
-                '-ac',
+                '-ac:a:{outputTypeIndex}',
                 "".concat(targetChannels),
             ] });
         if (enableBitrate) {
@@ -661,7 +664,7 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
             streamCopy.outputArgs.push("-b:".concat(ffType, ":{outputTypeIndex}"), "".concat(bitrate));
         }
         if (enableSamplerate) {
-            streamCopy.outputArgs.push('-ar', "".concat(samplerate));
+            streamCopy.outputArgs.push('-ar:a:{outputTypeIndex}', "".concat(samplerate));
         }
         streams.push(streamCopy);
         return {
@@ -740,6 +743,7 @@ var detectLoudnormValues = function (args, stream, settings) {
         windowsHide: true,
         encoding: 'utf8',
         shell: false,
+        maxBuffer: 50 * 1024 * 1024,
     });
     if (result.error) {
         args.jobLog('Running FFmpeg failed');
@@ -768,7 +772,11 @@ var getLoudnormValuesIfGainAllowed = function (args, stream, settings) {
 };
 var appendNormalizeAudioOutputArgs = function (stream, settings, loudnormValues) {
     if (!hasCodecOutputArg(stream.outputArgs)) {
-        stream.outputArgs.push('-c:{outputIndex}', 'aac', '-b:a:{outputTypeIndex}', '192k');
+        var audioEncoder = stream.normalizeAudioEncoder || 'aac';
+        stream.outputArgs.push('-c:{outputIndex}', audioEncoder);
+        if (audioEncoder === 'aac') {
+            stream.outputArgs.push('-b:a:{outputTypeIndex}', '192k');
+        }
     }
     stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));
 };

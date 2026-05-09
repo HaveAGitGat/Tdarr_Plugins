@@ -147,6 +147,25 @@ const createNormalizeAudioOperation = (
   ...inputs,
 });
 
+const createEnsureAudioOperation = (
+  inputs: Record<string, unknown> = {},
+): IffmpegCommandV2Operation => createOperation('ffmpegCommandEnsureAudioStream', 'ensureAudioStream', {
+  audioEncoder: 'ac3',
+  language: 'eng',
+  channels: '2',
+  enableBitrate: false,
+  bitrate: '640k',
+  enableSamplerate: false,
+  samplerate: '48000',
+  ...inputs,
+});
+
+const createDtsAudioStream = () => ({
+  ...createDefaultV2Streams()[1],
+  codec_name: 'dts',
+  channels: 6,
+});
+
 const createConflictMessage = (operationType: string): string => (
   `Conflicting FFmpeg command v2 ${operationType} operations found.`
   + ` Use one ${operationType} operation.`
@@ -1154,6 +1173,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       windowsHide: true,
       encoding: 'utf8',
       shell: false,
+      maxBuffer: 50 * 1024 * 1024,
     });
     expect(renderResult.spawnArgs).toEqual([
       '-y',
@@ -1328,13 +1348,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
   it('reuses loudnorm analysis for derived audio streams without overriding their encoder args', async () => {
     const args = createV2Args({
       operations: [
-        createOperation('ffmpegCommandEnsureAudioStream', 'ensureAudioStream', {
-          audioEncoder: 'ac3',
-          language: 'eng',
-          channels: '2',
-          enableBitrate: false,
-          bitrate: '640k',
-          enableSamplerate: false,
+        createEnsureAudioOperation({
+          enableSamplerate: true,
           samplerate: '48000',
         }),
         createNormalizeAudioOperation(),
@@ -1365,9 +1380,175 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '0:1',
       '-c:2',
       'ac3',
-      '-ac',
+      '-ac:a:1',
       '2',
+      '-ar:a:1',
+      '48000',
       '-filter:a:1',
+      makeExpectedLoudnormFilter(),
+    ]);
+  });
+
+  it('can derive replacement audio from a stream removed from the output', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      createDtsAudioStream(),
+    ];
+    const removeDts = createOperation('ffmpegCommandRemoveStreamByProperty', 'removeStreamByProperty', {
+      codecType: 'audio',
+      propertyToCheck: 'codec_name',
+      valuesToRemove: 'dts',
+      condition: 'equals',
+    });
+    const ensureAc3 = createEnsureAudioOperation();
+
+    const removeThenEnsure = await renderFfmpegCommandV2(createV2Args({
+      streams,
+      operations: [
+        removeDts,
+        ensureAc3,
+      ],
+    }));
+    const ensureThenRemove = await renderFfmpegCommandV2(createV2Args({
+      streams,
+      operations: [
+        ensureAc3,
+        removeDts,
+      ],
+    }));
+
+    expect(removeThenEnsure.spawnArgs).toEqual(ensureThenRemove.spawnArgs);
+    expect(removeThenEnsure.streams.map((stream) => stream.codec_name)).toEqual(['h264', 'ac3']);
+    expect(removeThenEnsure.streams.map((stream) => stream.channels)).toEqual([undefined, 2]);
+    expect(removeThenEnsure.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'ac3',
+      '-ac:a:0',
+      '2',
+    ]);
+  });
+
+  it('does not duplicate an ensured derived audio stream', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      createDtsAudioStream(),
+    ];
+    const ensureAc3 = createEnsureAudioOperation();
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      streams,
+      operations: [
+        ensureAc3,
+        ensureAc3,
+      ],
+    }));
+
+    expect(renderResult.streams.map((stream) => stream.codec_name)).toEqual(['h264', 'dts', 'ac3']);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:2',
+      'ac3',
+      '-ac:a:1',
+      '2',
+    ]);
+  });
+
+  it('uses derived audio output metadata for later codec reordering', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      createDtsAudioStream(),
+    ];
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      streams,
+      operations: [
+        createEnsureAudioOperation(),
+        createOperation('ffmpegCommandRorderStreams', 'reorderStreams', {
+          processOrder: 'codecs',
+          languages: '',
+          channels: '',
+          codecs: 'ac3,dts,h264',
+          streamTypes: '',
+        }),
+      ],
+    }));
+
+    expect(renderResult.streams.map((stream) => stream.codec_name)).toEqual(['ac3', 'dts', 'h264']);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:1',
+      '-c:0',
+      'ac3',
+      '-ac:a:0',
+      '2',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+      '-map',
+      '0:0',
+      '-c:2',
+      'copy',
+    ]);
+  });
+
+  it('keeps an existing ensured audio codec when normalize audio later encodes it', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      {
+        ...createDefaultV2Streams()[1],
+        codec_name: 'ac3',
+        channels: 2,
+      },
+    ];
+    const args = createV2Args({
+      streams,
+      operations: [
+        createEnsureAudioOperation(),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput()));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'ac3',
+      '-filter:a:0',
       makeExpectedLoudnormFilter(),
     ]);
   });

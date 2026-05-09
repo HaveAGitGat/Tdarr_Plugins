@@ -19,6 +19,7 @@ interface IworkingStream extends Istreams {
   encoder?: IgetEncoder,
   hardwareDecoding?: boolean,
   cropFilter?: string,
+  normalizeAudioEncoder?: string,
 }
 
 export type IffmpegCommandV2WorkingStream = IworkingStream;
@@ -175,6 +176,16 @@ const getStringInput = (value: unknown, defaultValue: string): string => {
 
   const trimmedValue = String(value).trim();
   return trimmedValue === '' ? defaultValue : trimmedValue;
+};
+
+const getAudioCodecName = (audioEncoder: string): string => {
+  const codecNameByEncoder: Record<string, string> = {
+    dca: 'dts',
+    libmp3lame: 'mp3',
+    libopus: 'opus',
+  };
+
+  return codecNameByEncoder[audioEncoder] || audioEncoder;
 };
 
 const parseCropValues = (output: string): ICropValues[] => {
@@ -777,20 +788,7 @@ const applyEnsureAudioStream = (
   const bitrate = String(inputs.bitrate);
   const enableSamplerate = inputs.enableSamplerate === true;
   const samplerate = String(inputs.samplerate);
-
-  let audioCodec = audioEncoder;
-
-  if (audioEncoder === 'dca') {
-    audioCodec = 'dts';
-  }
-
-  if (audioEncoder === 'libmp3lame') {
-    audioCodec = 'mp3';
-  }
-
-  if (audioEncoder === 'libopus') {
-    audioCodec = 'opus';
-  }
+  const audioCodec = getAudioCodecName(audioEncoder);
 
   const getHighest = (first: IworkingStream, second: IworkingStream) => {
     if ((first?.channels || 0) > (second?.channels || 0)) {
@@ -807,8 +805,7 @@ const applyEnsureAudioStream = (
 
   const attemptMakeStream = (targetLangTag: string): { handled: boolean, changed: boolean } => {
     const streamsWithLangTag = streams.filter((stream) => (
-      !stream.removed
-      && stream.codec_type === 'audio'
+      stream.codec_type === 'audio'
       && langMatch(stream, targetLangTag)
     ));
 
@@ -843,6 +840,12 @@ const applyEnsureAudioStream = (
     ));
 
     if (hasStreamAlready.length > 0) {
+      hasStreamAlready.forEach((stream) => {
+        // Preserve the codec selected by Ensure Audio Stream if a later filter needs to re-encode.
+        // eslint-disable-next-line no-param-reassign
+        stream.normalizeAudioEncoder = audioEncoder;
+      });
+
       args.jobLog(`File already has ${targetLangTag} stream in ${audioEncoder}, ${targetChannels} channels \n`);
       return {
         handled: true,
@@ -857,10 +860,12 @@ const applyEnsureAudioStream = (
       removed: false,
       index: streams.length,
       sourceIndex: streamWithHighestChannel.sourceIndex,
+      codec_name: audioCodec,
+      channels: targetChannels,
       outputArgs: [
         '-c:{outputIndex}',
         audioEncoder,
-        '-ac',
+        '-ac:a:{outputTypeIndex}',
         `${targetChannels}`,
       ],
     };
@@ -871,7 +876,7 @@ const applyEnsureAudioStream = (
     }
 
     if (enableSamplerate) {
-      streamCopy.outputArgs.push('-ar', `${samplerate}`);
+      streamCopy.outputArgs.push('-ar:a:{outputTypeIndex}', `${samplerate}`);
     }
 
     streams.push(streamCopy);
@@ -980,6 +985,7 @@ const detectLoudnormValues = (
     windowsHide: true,
     encoding: 'utf8',
     shell: false,
+    maxBuffer: 50 * 1024 * 1024,
   });
 
   if (result.error) {
@@ -1031,7 +1037,12 @@ const appendNormalizeAudioOutputArgs = (
   loudnormValues: ILoudnormValues,
 ): void => {
   if (!hasCodecOutputArg(stream.outputArgs)) {
-    stream.outputArgs.push('-c:{outputIndex}', 'aac', '-b:a:{outputTypeIndex}', '192k');
+    const audioEncoder = stream.normalizeAudioEncoder || 'aac';
+    stream.outputArgs.push('-c:{outputIndex}', audioEncoder);
+
+    if (audioEncoder === 'aac') {
+      stream.outputArgs.push('-b:a:{outputTypeIndex}', '192k');
+    }
   }
 
   stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));
