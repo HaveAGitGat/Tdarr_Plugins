@@ -12,11 +12,19 @@ const details = (): IpluginDetails => ({
   Check if node hardware encoder is available. Can also be used to check for specific hardware.
   For example:
 
+  HEVC encoders:
   hevc_nvenc = Nvidia
   hevc_amf = AMD
   hevc_vaapi = Intel
   hevc_qsv = Intel
   hevc_videotoolbox = Apple
+  
+  AV1 encoders:
+  av1_nvenc = Nvidia
+  av1_amf = AMD
+  av1_vaapi = Intel
+  av1_qsv = Intel
+  av1_videotoolbox = Apple
   `,
   style: {
     borderColor: 'orange',
@@ -42,6 +50,11 @@ const details = (): IpluginDetails => ({
           'hevc_vaapi',
           'hevc_qsv',
           'hevc_videotoolbox',
+          'av1_nvenc',
+          'av1_amf',
+          'av1_vaapi',
+          'av1_qsv',
+          'av1_videotoolbox',
         ],
       },
       tooltip: 'Specify hardware (based on encoder) to check for',
@@ -67,17 +80,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const { hardwareEncoder } = args.inputs;
 
+  // Ensure hardwareEncoder is a string
+  const encoderString = String(hardwareEncoder);
+
+  // Determine target codec based on encoder selection
+  const targetCodec = encoderString.startsWith('av1_') ? 'av1' : 'hevc';
+
   // eslint-disable-next-line no-await-in-loop
   const encoderProperties = await getEncoder({
-    targetCodec: 'hevc',
+    targetCodec,
     hardwareEncoding: true,
     hardwareType: 'auto',
     args,
   });
 
-  const nodeHasHardware = encoderProperties.enabledDevices.some((row) => row.encoder === hardwareEncoder);
+  const nodeHasHardware = encoderProperties.enabledDevices.some((row) => row.encoder === encoderString);
 
-  args.jobLog(`Node has hardwareEncoder ${hardwareEncoder}: ${nodeHasHardware}`);
+  args.jobLog(`Node has hardwareEncoder ${encoderString}: ${nodeHasHardware}`);
 
   return {
     outputFileObj: args.inputFileObj,

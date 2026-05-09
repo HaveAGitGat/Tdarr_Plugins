@@ -1,6 +1,6 @@
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileAbosluteDir, getFileName,
+  getContainer, getFileAbsoluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -232,9 +232,13 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           }),
         buildPreviewRenameResquestUrl:
           (fInfo) => `${arrHost}/api/v3/rename?seriesId=${fInfo.id}&seasonNumber=${fInfo.seasonNumber}`,
-        getFileToRenameFromPreviewRenameResponse:
-          (previewRenameResponse, fInfo) => previewRenameResponse.data
-            ?.find((episodeFile) => episodeFile.episodeNumbers?.at(0) === fInfo.episodeNumber),
+        getFileToRenameFromPreviewRenameResponse: (previewRenameResponse, fInfo) => {
+          const fileToRename = previewRenameResponse.data
+            ?.find((episodeFile) => episodeFile.episodeNumbers?.at(0) === fInfo.episodeNumber);
+          return fileToRename
+            ? { ...fileToRename, newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }
+            : undefined;
+        },
       },
     };
 
@@ -261,7 +265,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     // Only if there is a rename to execute
     if (fileToRename !== undefined) {
-      newPath = `${getFileAbosluteDir(currentFileName)
+      newPath = `${getFileAbsoluteDir(currentFileName)
       }/${getFileName(fileToRename.newPath)
       }.${getContainer(fileToRename.newPath)}`;
 

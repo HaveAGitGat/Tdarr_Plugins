@@ -54,34 +54,44 @@ var details = function () { return ({
     icon: '',
     inputs: [
         {
-            label: 'i',
+            label: 'Target Integrated Loudness (LUFS)',
             name: 'i',
             type: 'string',
             defaultValue: '-23.0',
             inputUI: {
                 type: 'text',
             },
-            tooltip: "\"i\" value used in loudnorm pass \\n\n              defaults to -23.0",
+            tooltip: "Target integrated loudness in LUFS (Loudness Units relative to Full Scale). \\n\n              This is the average perceptual loudness the output file will be normalized to. \\n\n              Common values: \\n\n              -14.0 = Spotify / YouTube streaming standard \\n\n              -16.0 = Apple Music / AES streaming recommendation \\n\n              -23.0 = EBU R128 broadcast standard (default) \\n",
         },
         {
-            label: 'lra',
+            label: 'Target Loudness Range (LU)',
             name: 'lra',
             type: 'string',
             defaultValue: '7.0',
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Desired lra value. \\n Defaults to 7.0  \n            ",
+            tooltip: "Target loudness range in LU (Loudness Units). \\n\n              Controls how much dynamic variation is allowed between quiet and loud sections. \\n\n              A lower value produces more consistent loudness throughout the file. \\n\n              A higher value preserves more of the original dynamic range. \\n\n              Typical values: \\n\n              3.0-7.0 = Compressed / consistent (speech, podcasts) \\n\n              7.0-15.0 = Moderate dynamics (most music, TV) \\n\n              15.0-20.0 = Wide dynamics (classical, film) \\n\n              Defaults to 7.0",
         },
         {
-            label: 'tp',
+            label: 'Target True Peak (dBTP)',
             name: 'tp',
             type: 'string',
             defaultValue: '-2.0',
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Desired \"tp\" value. \\n Defaults to -2.0 \n              ",
+            tooltip: "Maximum true peak level in dBTP (decibels True Peak). \\n\n              True peak accounts for inter-sample peaks that occur after digital-to-analogue \\n\n              conversion or codec processing, and should be kept below 0 dBTP to prevent clipping. \\n\n              Common values: \\n\n              -1.0 = EBU R128 / streaming platform recommended ceiling \\n\n              -2.0 = Conservative headroom for lossy codec safety (default) \\n",
+        },
+        {
+            label: 'Max Gain (LU)',
+            name: 'maxGain',
+            type: 'string',
+            defaultValue: '15',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: "Maximum gain in Loudness Units that will be applied. \\n\n              If the required gain exceeds this value, normalization is skipped \\n\n              to avoid amplifying noise in mostly-quiet files. \\n\n              Defaults to 15",
         },
     ],
     outputs: [
@@ -94,30 +104,25 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, loudNorm_i, lra, tp, container, outputFilePath, normArgs1, cli, res, lines, idx, parts, infoLine, loudNormValues, normArgs2, cli2, res2;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, _a, inputs_i, inputs_lra, inputs_tp, maxGain, container, outputFilePath, normArgs1, cli, res, lines, idx, fullTail, targetOffsetIdx, closingBraceIdx, openingBraceIdx, loudNormValues, gainNeeded, normArgs2, cli2, res2;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                loudNorm_i = args.inputs.i;
-                lra = args.inputs.lra;
-                tp = args.inputs.tp;
+                _a = args.inputs, inputs_i = _a.i, inputs_lra = _a.lra, inputs_tp = _a.tp;
+                maxGain = parseFloat(args.inputs.maxGain);
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/").concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat(container);
                 normArgs1 = [
                     '-i',
                     args.inputFileObj._id,
                     '-af',
-                    "loudnorm=I=".concat(loudNorm_i, ":LRA=").concat(lra, ":TP=").concat(tp, ":print_format=json"),
+                    "loudnorm=I=".concat(inputs_i, ":LRA=").concat(inputs_lra, ":TP=").concat(inputs_tp, ":print_format=json"),
                     '-f',
                     'null',
-                    'NUL',
-                    '-map',
-                    '0',
-                    '-c',
-                    'copy',
+                    (args.platform === 'win32' ? 'NUL' : '/dev/null'),
                 ];
                 cli = new cliUtils_1.CLI({
                     cli: args.ffmpegPath,
@@ -132,7 +137,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
-                res = _a.sent();
+                res = _b.sent();
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running FFmpeg failed');
                     throw new Error('FFmpeg failed');
@@ -148,12 +153,32 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 if (idx === -1) {
                     throw new Error('Failed to find loudnorm in report, please rerun');
                 }
-                parts = lines[idx].split(']');
-                parts.shift();
-                infoLine = parts.join(']');
-                infoLine = infoLine.split('\r\n').join('').split('\t').join('');
-                loudNormValues = JSON.parse(infoLine);
+                fullTail = res.errorLogFull.slice(idx).join('');
+                targetOffsetIdx = fullTail.lastIndexOf('target_offset');
+                if (targetOffsetIdx === -1) {
+                    throw new Error('Failed to find target_offset in loudnorm output, please rerun');
+                }
+                closingBraceIdx = fullTail.indexOf('}', targetOffsetIdx);
+                if (closingBraceIdx === -1) {
+                    throw new Error('Failed to find closing brace in loudnorm output, please rerun');
+                }
+                openingBraceIdx = fullTail.lastIndexOf('{', targetOffsetIdx);
+                if (openingBraceIdx === -1) {
+                    throw new Error('Failed to find opening brace in loudnorm output, please rerun');
+                }
+                loudNormValues = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1));
                 args.jobLog("Loudnorm first pass values returned:  \n".concat(JSON.stringify(loudNormValues)));
+                gainNeeded = parseFloat(inputs_i) - parseFloat(loudNormValues.input_i);
+                args.jobLog("Gain required: ".concat(gainNeeded.toFixed(2), " LU (max allowed: ").concat(maxGain, " LU)"));
+                if (gainNeeded > maxGain) {
+                    args.jobLog("Skipping normalization: required gain of ".concat(gainNeeded.toFixed(2), " LU exceeds ")
+                        + "max allowed gain of ".concat(maxGain, " LU. File may be mostly quiet or noise."));
+                    return [2 /*return*/, {
+                            outputFileObj: args.inputFileObj,
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
                 normArgs2 = [
                     '-i',
                     args.inputFileObj._id,
@@ -166,11 +191,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     '-b:a',
                     '192k',
                     '-af',
-                    "loudnorm=print_format=summary:linear=true:I=".concat(loudNorm_i, ":LRA=").concat(lra, ":TP=").concat(tp, ":")
+                    "loudnorm=print_format=summary:linear=true:I=".concat(inputs_i, ":LRA=").concat(inputs_lra, ":TP=").concat(inputs_tp, ":")
                         + "measured_i=".concat(loudNormValues.input_i, ":")
                         + "measured_lra=".concat(loudNormValues.input_lra, ":")
                         + "measured_tp=".concat(loudNormValues.input_tp, ":")
-                        + "measured_thresh=".concat(loudNormValues.input_thresh, ":offset=").concat(loudNormValues.target_offset, " "),
+                        + "measured_thresh=".concat(loudNormValues.input_thresh, ":offset=").concat(loudNormValues.target_offset),
                     outputFilePath,
                 ];
                 cli2 = new cliUtils_1.CLI({
@@ -186,7 +211,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 return [4 /*yield*/, cli2.runCli()];
             case 2:
-                res2 = _a.sent();
+                res2 = _b.sent();
                 if (res2.cliExitCode !== 0) {
                     args.jobLog('Running FFmpeg failed');
                     throw new Error('FFmpeg failed');
