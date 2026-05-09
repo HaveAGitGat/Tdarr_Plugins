@@ -7,11 +7,11 @@ import {
   createResolutionOperation,
   createSoftwareEncoderOperation,
   createV2Args,
-  plugin,
-  renderFfmpegCommandV2,
   setupFfmpegCommandExecuteMocks,
   singletonConflictCases,
 } from './testFixtures';
+import { plugin, renderFfmpegCommandV2 } from
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandExecute/2.0.0/index';
 
 describe('ffmpegCommandExecute v2 Plugin', () => {
   const mocks = setupFfmpegCommandExecuteMocks();
