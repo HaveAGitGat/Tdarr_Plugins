@@ -48,7 +48,7 @@ const details = (): IpluginDetails => ({
       },
       tooltip: `
 Specify if you want to force conform the file to the new container,
-This is useful if not all streams are supported by the new container. 
+This is useful if not all streams are supported by the new container.
 For example mkv does not support data streams.
       `,
     },

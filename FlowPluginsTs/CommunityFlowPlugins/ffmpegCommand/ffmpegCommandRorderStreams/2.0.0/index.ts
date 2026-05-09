@@ -64,7 +64,7 @@ The default order is suitable for most people.
       },
       tooltip:
         `Specify the channels order, separated by commas. Leave blank to disable.
-          
+
           \\nExample:\\n
           7.1,5.1,2,1`,
     },
@@ -78,7 +78,7 @@ The default order is suitable for most people.
       },
       tooltip:
         `Specify the codec order, separated by commas. Leave blank to disable.
-          
+
           \\nExample:\\n
           aac,ac3`,
     },

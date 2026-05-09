@@ -52,7 +52,7 @@ const details = (): IpluginDetails => ({
       tooltip:
         `
         What characteristic of your media file do you want to check?
-        
+
         Common examples:
         - codec_name - What audio/video format is used (like aac, mp3, h264, etc.)
         - width - Video width in pixels
@@ -62,7 +62,7 @@ const details = (): IpluginDetails => ({
         - bit_rate - Quality/file size (higher = better quality, larger file)
         - tags.language - Audio/subtitle language (like eng, spa, fre)
         - codec_type - Whether it's "video", "audio", or "subtitle"
-        
+
         Enter the exact property name you want to check.
         `,
     },
@@ -77,7 +77,7 @@ const details = (): IpluginDetails => ({
       tooltip:
         `
         What values are you looking to remove? Separate multiple values with commas.
-        
+
         Examples based on what you're checking:
         - For audio formats: aac,mp3,ac3
         - For video formats: h264,h265,hevc
@@ -85,7 +85,7 @@ const details = (): IpluginDetails => ({
         - For video sizes: 1920 (for width) or 1080 (for height)
         - For audio channels: 2,6,8
         - For stream types: audio,video,subtitle
-        
+
         The plugin will look for files that have any of these values.
         `,
     },
@@ -105,19 +105,19 @@ const details = (): IpluginDetails => ({
       },
       tooltip: `
       How should the plugin match your values?
-      
+
       - "includes" - Find streams that HAVE any of your values
         Example: If checking for "aac,mp3" audio, streams with aac OR mp3 will match
-        
+
       - "not_includes" - Find streams that DON'T have any of your values
         Example: If checking for "aac,mp3" audio, only streams with neither aac nor mp3 will match
-        
+
       - "equals" - Find streams where the property exactly matches your values
         Example: If checking width for "1920", only streams that are exactly 1920 pixels wide will match
-        
+
       - "not_equals" - Find streams where the property doesn't exactly match any of your values
         Example: If checking width for "1920", streams that are NOT exactly 1920 pixels wide will match
-        
+
       Most users want "includes" to find streams that have what they're looking for.
       `,
     },
