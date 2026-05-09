@@ -44,7 +44,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Specify the channels order, separated by commas. Leave blank to disable.\n          \n          \\nExample:\\n\n          7.1,5.1,2,1",
+            tooltip: "Specify the channels order, separated by commas. Leave blank to disable.\n\n          \\nExample:\\n\n          7.1,5.1,2,1",
         },
         {
             label: 'Codecs',
@@ -54,7 +54,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Specify the codec order, separated by commas. Leave blank to disable.\n          \n          \\nExample:\\n\n          aac,ac3",
+            tooltip: "Specify the codec order, separated by commas. Leave blank to disable.\n\n          \\nExample:\\n\n          aac,ac3",
         },
         {
             label: 'Stream Types',
