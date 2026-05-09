@@ -279,7 +279,7 @@ describe('renameFile Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      // getFileAbosluteDir splits by '/', so Windows backslashes cause issues
+      // getFileAbsoluteDir splits by '/', so Windows backslashes cause issues
       // The path becomes a single component without directory separation
       expect(mockFileMoveOrCopy).toHaveBeenCalledWith({
         operation: 'move',

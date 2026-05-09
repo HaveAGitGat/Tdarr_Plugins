@@ -90,7 +90,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 newName = String(args.inputs.fileRename).trim();
                 newName = newName.replace(/\${fileName}/g, fileName);
                 newName = newName.replace(/\${container}/g, (0, fileUtils_1.getContainer)(args.inputFileObj._id));
-                fileDir = (0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id);
+                fileDir = (0, fileUtils_1.getFileAbsoluteDir)(args.inputFileObj._id);
                 newPath = "".concat(fileDir, "/").concat(newName);
                 if (args.inputFileObj._id === newPath) {
                     args.jobLog('Input and output path are the same, skipping rename.');

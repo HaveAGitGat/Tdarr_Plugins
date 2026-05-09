@@ -6,8 +6,8 @@ import {
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
-  name: 'Set Original File',
-  description: 'Set the working file to the original file path at the very start of the flow.',
+  name: 'Set Original File (Deprecated)',
+  description: 'Deprecated: use Set Working File instead. Sets the working file to the original file path.',
   style: {
     borderColor: 'green',
   },

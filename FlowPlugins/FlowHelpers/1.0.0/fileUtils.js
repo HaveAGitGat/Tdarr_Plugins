@@ -72,7 +72,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hashFile = exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileName = exports.getContainer = exports.fileExists = void 0;
+exports.hashFile = exports.getScanTypes = exports.getPluginWorkDir = exports.moveFileAndValidate = exports.getFileSize = exports.getSubStem = exports.getFfType = exports.getFileAbosluteDir = exports.getFileAbsoluteDir = exports.getFileName = exports.getContainer = exports.fileExists = void 0;
 var fs_1 = __importStar(require("fs"));
 var crypto_1 = __importDefault(require("crypto"));
 var fileExists = function (path) { return __awaiter(void 0, void 0, void 0, function () { return __generator(this, function (_a) {
@@ -95,12 +95,14 @@ var getFileName = function (filePath) {
     return parts2.join('.');
 };
 exports.getFileName = getFileName;
-var getFileAbosluteDir = function (filePath) {
+var getFileAbsoluteDir = function (filePath) {
     var parts = filePath.split('/');
     parts.pop();
     return parts.join('/');
 };
-exports.getFileAbosluteDir = getFileAbosluteDir;
+exports.getFileAbsoluteDir = getFileAbsoluteDir;
+// backwards compatibility for typo
+exports.getFileAbosluteDir = exports.getFileAbsoluteDir;
 var getFfType = function (codecType) { return (codecType === 'video' ? 'v' : 'a'); };
 exports.getFfType = getFfType;
 var getSubStem = function (_a) {

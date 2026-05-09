@@ -12,7 +12,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -dn -c:v hevc_nvenc -pix_fmt p010le -qmin 0 -cq:v 30 -b:v 964k -maxrate:v 2964k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -dn -c:v hevc_nvenc -vf scale_cuda=format=p010le -qmin 0 -cq:v 30 -b:v 964k -maxrate:v 2964k -preset slow -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,

@@ -1,5 +1,5 @@
 import { plugin } from
-  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/file/setOriginalFile/1.0.0/index';
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/deprecated/setOriginalFile/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 

@@ -18,11 +18,14 @@ export const getFileName = (filePath: string): string => {
   return parts2.join('.');
 };
 
-export const getFileAbosluteDir = (filePath: string):string => {
+export const getFileAbsoluteDir = (filePath: string):string => {
   const parts = filePath.split('/');
   parts.pop();
   return parts.join('/');
 };
+
+// backwards compatibility for typo
+export const getFileAbosluteDir = getFileAbsoluteDir;
 
 export const getFfType = (codecType: string): string => (codecType === 'video' ? 'v' : 'a');
 

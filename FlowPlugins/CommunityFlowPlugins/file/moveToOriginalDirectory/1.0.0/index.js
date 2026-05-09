@@ -75,7 +75,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
-                outputDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                outputDir = (0, fileUtils_1.getFileAbsoluteDir)(args.originalLibraryFile._id);
                 ouputFilePath = "".concat(outputDir, "/").concat(fileName, ".").concat(container);
                 if (args.inputFileObj._id === ouputFilePath) {
                     args.jobLog('Input and output path are the same, skipping move.');

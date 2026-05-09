@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Set Original File',
-    description: 'Set the working file to the original file path at the very start of the flow.',
+    name: 'Set Original File (Deprecated)',
+    description: 'Deprecated: use Set Working File instead. Sets the working file to the original file path.',
     style: {
         borderColor: 'green',
     },

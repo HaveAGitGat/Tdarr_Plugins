@@ -23,6 +23,7 @@ describe('basicVideoOrAudio Plugin', () => {
     const configVars = getConfigVars();
 
     baseArgs = {
+      isAutomation: false,
       inputs: {
         basicSettingsType: 'video',
         outputFileContainer: 'mkv',
