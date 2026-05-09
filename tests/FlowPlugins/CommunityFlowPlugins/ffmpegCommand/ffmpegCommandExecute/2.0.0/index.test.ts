@@ -196,6 +196,17 @@ const createDtsAudioStream = () => ({
   channels: 6,
 });
 
+const createRemoveDtsAudioOperation = (): IffmpegCommandV2Operation => createOperation(
+  'ffmpegCommandRemoveStreamByProperty',
+  'removeStreamByProperty',
+  {
+    codecType: 'audio',
+    propertyToCheck: 'codec_name',
+    valuesToRemove: 'dts',
+    condition: 'equals',
+  },
+);
+
 const createConflictMessage = (operationType: string): string => (
   `Conflicting FFmpeg command v2 ${operationType} operations found.`
   + ` Use one ${operationType} operation.`
@@ -1620,17 +1631,64 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]);
   });
 
+  it('normalizes a replacement audio stream that already has an explicit encoder', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      createDtsAudioStream(),
+    ];
+    const args = createV2Args({
+      streams,
+      operations: [
+        createRemoveDtsAudioOperation(),
+        createEnsureAudioOperation(),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput()));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(mockSpawnSync).toHaveBeenCalledTimes(1);
+    expect(mockSpawnSync.mock.calls[0][1]).toEqual(expect.arrayContaining(['-map', '0:1']));
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'ac3',
+      '-ac:a:0',
+      '2',
+      '-filter:a:0',
+      makeExpectedLoudnormFilter(),
+    ]);
+  });
+
+  it('still rejects normalize audio when another active audio stream lacks an encoder', async () => {
+    const args = createV2Args({
+      operations: [
+        createEnsureAudioOperation(),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    const message = createImplicitEncoderMessage('audio', 1);
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow(message);
+    expect(mockSpawnSync).not.toHaveBeenCalled();
+    expect(args.jobLog).toHaveBeenCalledWith(message);
+  });
+
   it('can derive replacement audio from a stream removed from the output', async () => {
     const streams = [
       createDefaultV2Streams()[0],
       createDtsAudioStream(),
     ];
-    const removeDts = createOperation('ffmpegCommandRemoveStreamByProperty', 'removeStreamByProperty', {
-      codecType: 'audio',
-      propertyToCheck: 'codec_name',
-      valuesToRemove: 'dts',
-      condition: 'equals',
-    });
+    const removeDts = createRemoveDtsAudioOperation();
     const ensureAc3 = createEnsureAudioOperation();
 
     const removeThenEnsure = await renderFfmpegCommandV2(createV2Args({

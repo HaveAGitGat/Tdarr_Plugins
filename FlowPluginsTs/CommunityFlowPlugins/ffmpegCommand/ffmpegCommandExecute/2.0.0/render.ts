@@ -1274,7 +1274,7 @@ const applyReorderStreams = (
   streams: IworkingStream[],
   inputs: Record<string, unknown>,
 ): IworkingStream[] => {
-  let reorderedStreams = clone(streams);
+  let reorderedStreams = [...streams];
 
   const sortStreams = (sortType: {
     inputs: string,
@@ -1525,6 +1525,42 @@ const applyVideoBitrate = (
   return shouldProcess;
 };
 
+const appendSoftwareVideoFilters = ({
+  args,
+  stream,
+  filterChain,
+  hasHdrToSdrOperation,
+  shouldScale,
+  resolutionInputs,
+  targetResolution,
+  frameRateInputs,
+}: {
+  args: IpluginInputArgs,
+  stream: IworkingStream,
+  filterChain: string[],
+  hasHdrToSdrOperation: boolean,
+  shouldScale: boolean,
+  resolutionInputs?: Record<string, unknown>,
+  targetResolution: string,
+  frameRateInputs?: Record<string, unknown>,
+}): void => {
+  if (stream.cropFilter) {
+    filterChain.push(stream.cropFilter);
+  }
+
+  if (hasHdrToSdrOperation) {
+    filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
+  }
+
+  if (shouldScale && resolutionInputs) {
+    filterChain.push(getSoftwareScaleFilter(targetResolution));
+  }
+
+  if (frameRateInputs) {
+    filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
+  }
+};
+
 const applyVideoFilters = (
   args: IpluginInputArgs,
   streams: IworkingStream[],
@@ -1553,10 +1589,10 @@ const applyVideoFilters = (
     const needsSoftwareOnlyFilter = hasCropFilter || hasHdrToSdrOperation || Boolean(frameRateInputs);
     const shouldScale = shouldScaleVideoStream(args, stream, resolutionInputs);
     const targetResolution = resolutionInputs ? String(resolutionInputs.targetResolution) : '';
+    const qsvNeedsSoftwareRoundTrip = hardwareDecodedQsv && (needsSoftwareOnlyFilter || shouldScale);
 
     if (
-      usesQsv
-      && hardwareDecodedQsv
+      hardwareDecodedQsv
       && shouldScale
       && !hasCropFilter
       && !hasHdrToSdrOperation
@@ -1567,8 +1603,7 @@ const applyVideoFilters = (
         has10BitOperation ? 'p010le' : undefined,
       ));
     } else if (
-      usesQsv
-      && hardwareDecodedQsv
+      hardwareDecodedQsv
       && has10BitOperation
       && !shouldScale
       && !hasCropFilter
@@ -1593,55 +1628,43 @@ const applyVideoFilters = (
           filterChain.push('hwdownload', 'format=nv12');
         }
 
-        if (stream.cropFilter) {
-          filterChain.push(stream.cropFilter);
-        }
-
-        if (hasHdrToSdrOperation) {
-          filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
-        }
-
-        if (shouldScale && resolutionInputs) {
-          filterChain.push(getSoftwareScaleFilter(targetResolution));
-        }
-
-        if (frameRateInputs) {
-          filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
-        }
+        appendSoftwareVideoFilters({
+          args,
+          stream,
+          filterChain,
+          hasHdrToSdrOperation,
+          shouldScale,
+          resolutionInputs,
+          targetResolution,
+          frameRateInputs,
+        });
 
         if (!hardwareDecodedVaapi || filterChain.length > 0) {
           filterChain.push(`format=${has10BitOperation ? 'p010' : 'nv12'}`, 'hwupload');
         }
       }
     } else {
-      if (usesQsv && hardwareDecodedQsv && (needsSoftwareOnlyFilter || shouldScale)) {
+      if (qsvNeedsSoftwareRoundTrip) {
         filterChain.push('hwdownload', 'format=nv12');
       }
 
-      if (stream.cropFilter) {
-        filterChain.push(stream.cropFilter);
-      }
-
-      if (hasHdrToSdrOperation) {
-        filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
-      }
-
-      if (shouldScale && resolutionInputs) {
-        filterChain.push(getSoftwareScaleFilter(targetResolution));
-      }
-
-      if (frameRateInputs) {
-        filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
-      }
+      appendSoftwareVideoFilters({
+        args,
+        stream,
+        filterChain,
+        hasHdrToSdrOperation,
+        shouldScale,
+        resolutionInputs,
+        targetResolution,
+        frameRateInputs,
+      });
 
       if (usesQsv && has10BitOperation) {
         filterChain.push('format=p010le');
       }
 
-      if (usesQsv && hardwareDecodedQsv && (needsSoftwareOnlyFilter || shouldScale)) {
+      if (qsvNeedsSoftwareRoundTrip) {
         filterChain.push('hwupload=extra_hw_frames=64', 'format=qsv');
-      } else if (usesQsv && has10BitOperation && filterChain.length === 0) {
-        filterChain.push('scale_qsv=format=p010le');
       }
     }
 
@@ -1658,16 +1681,12 @@ const applyVideoFilters = (
         stream.outputArgs.push('-profile:v:{outputTypeIndex}', 'main10');
       }
 
-      if (usesQsv && hardwareDecodedQsv) {
-        if (filterChain.length === 0) {
-          stream.outputArgs.push('-filter:v:{outputTypeIndex}', 'scale_qsv=format=p010le');
-        }
-      } else if (usesVaapi) {
-        // VAAPI bit depth is handled inside the upload/scale_vaapi filter chain.
-      } else if (isLibsvtav1) {
-        stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'yuv420p10le');
-      } else {
-        stream.outputArgs.push('-pix_fmt:v:{outputTypeIndex}', 'p010le');
+      const hardwareBitDepthHandledByFilterChain = usesVaapi || hardwareDecodedQsv;
+      if (!hardwareBitDepthHandledByFilterChain) {
+        stream.outputArgs.push(
+          '-pix_fmt:v:{outputTypeIndex}',
+          isLibsvtav1 ? 'yuv420p10le' : 'p010le',
+        );
       }
 
       shouldProcess = true;
@@ -1752,7 +1771,11 @@ const assertAudioEncoderConfiguredForNormalize = (
     return;
   }
 
-  const audioStream = streams.find((stream) => !stream.removed && stream.codec_type === 'audio');
+  const audioStream = streams.find((stream) => (
+    !stream.removed
+    && stream.codec_type === 'audio'
+    && !hasCodecOutputArg(stream.outputArgs)
+  ));
   if (audioStream) {
     throwImplicitEncoderError(args, audioStream);
   }
