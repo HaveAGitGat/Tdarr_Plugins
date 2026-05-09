@@ -23,7 +23,7 @@ var details = function () { return ({
             "name": "Begin Command",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandStart",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "MttLdH9JH",
             "position": {
                 "x": 656.7168106666427,
@@ -34,7 +34,7 @@ var details = function () { return ({
             "name": "Execute",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandExecute",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "SUV-PcTXK",
             "position": {
                 "x": 656.3361499796371,
@@ -45,7 +45,7 @@ var details = function () { return ({
             "name": "Set Video Encoder",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandSetVideoEncoder",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "OZTQfLxQU",
             "position": {
                 "x": 657.071898477293,
