@@ -33,11 +33,11 @@ var details = function () { return ({
     outputs: [
         {
             number: 1,
-            tooltip: 'The number of audio streams is equal',
+            tooltip: 'The number of audio streams is less',
         },
         {
             number: 2,
-            tooltip: 'The number of audio streams is less',
+            tooltip: 'The number of audio streams is equal',
         },
         {
             number: 3,
@@ -64,9 +64,9 @@ var plugin = function (args) {
     var audioStreamsCount = streams.reduce(function (count, stream) { return (stream.codec_type === 'audio' ? count + 1 : count); }, 0);
     args.jobLog("".concat(audioStreamsCount, " audio streams found"));
     var getOutputNumber = function (count, target) {
-        if (count === target)
-            return 1;
         if (count < target)
+            return 1;
+        if (count === target)
             return 2;
         return 3;
     };

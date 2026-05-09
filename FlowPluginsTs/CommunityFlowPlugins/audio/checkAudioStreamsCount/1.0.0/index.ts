@@ -37,11 +37,11 @@ const details = (): IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'The number of audio streams is equal',
+      tooltip: 'The number of audio streams is less',
     },
     {
       number: 2,
-      tooltip: 'The number of audio streams is less',
+      tooltip: 'The number of audio streams is equal',
     },
     {
       number: 3,
@@ -74,8 +74,8 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   args.jobLog(`${audioStreamsCount} audio streams found`);
 
   const getOutputNumber = (count: number, target: number): number => {
-    if (count === target) return 1;
-    if (count < target) return 2;
+    if (count < target) return 1;
+    if (count === target) return 2;
     return 3;
   };
 

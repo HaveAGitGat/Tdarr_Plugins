@@ -18,21 +18,21 @@ describe('checkAudioStreamsCount Plugin', () => {
   });
 
   describe('Audio Stream Count Detection', () => {
-    it('should route to output 1 when the audio stream count equals the target', () => {
+    it('should route to output 2 when the audio stream count equals the target', () => {
       const result = plugin(baseArgs);
 
-      expect(result.outputNumber).toBe(1);
+      expect(result.outputNumber).toBe(2);
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Checking for 1 audio streams');
       expect(baseArgs.jobLog).toHaveBeenCalledWith('1 audio streams found');
     });
 
-    it('should route to output 2 when the audio stream count is less than the target', () => {
+    it('should route to output 1 when the audio stream count is less than the target', () => {
       baseArgs.inputs.audioStreamsTarget = '2';
 
       const result = plugin(baseArgs);
 
-      expect(result.outputNumber).toBe(2);
+      expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Checking for 2 audio streams');
       expect(baseArgs.jobLog).toHaveBeenCalledWith('1 audio streams found');
     });
@@ -86,7 +86,7 @@ describe('checkAudioStreamsCount Plugin', () => {
 
       const result = plugin(baseArgs);
 
-      expect(result.outputNumber).toBe(1);
+      expect(result.outputNumber).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('2 audio streams found');
     });
 
@@ -102,7 +102,7 @@ describe('checkAudioStreamsCount Plugin', () => {
 
       const result = plugin(baseArgs);
 
-      expect(result.outputNumber).toBe(1);
+      expect(result.outputNumber).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('0 audio streams found');
     });
 
@@ -112,7 +112,7 @@ describe('checkAudioStreamsCount Plugin', () => {
 
       const result = plugin(baseArgs);
 
-      expect(result.outputNumber).toBe(2);
+      expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('0 audio streams found');
     });
   });
@@ -123,7 +123,7 @@ describe('checkAudioStreamsCount Plugin', () => {
 
       const result = plugin(baseArgs);
 
-      expect(result.outputNumber).toBe(1);
+      expect(result.outputNumber).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Checking for 1 audio streams');
     });
   });
