@@ -1,6 +1,5 @@
 import {
   createDefaultV2Streams,
-  createV2CropBlackBarsOperation,
   createV2CustomArgumentsOperation,
   createV2NormalizeAudioOperation,
   createV2VideoBitrateOperation,
@@ -52,7 +51,6 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
     description: 'Currently no-op v2 operations are consumed explicitly without processing',
     streams: createDefaultV2Streams(),
     operations: [
-      createV2CropBlackBarsOperation(),
       createV2NormalizeAudioOperation(),
     ],
     expected: {
@@ -61,7 +59,6 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
       sourceIndexes: [0, 1],
       codecTypes: ['video', 'audio'],
       jobLogs: [
-        'Crop Black Bars v2 operation has no render action yet; leaving streams unchanged.',
         'Normalize Audio v2 operation has no render action yet; leaving streams unchanged.',
       ],
       spawnArgs: [

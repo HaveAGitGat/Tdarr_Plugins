@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process';
 import { plugin, renderFfmpegCommandV2 } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandExecute/2.0.0/index';
 import { IffmpegCommandV2Operation } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
@@ -12,6 +13,35 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils', () => ({
 jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils', () => ({
   getEncoder: jest.fn(),
 }));
+
+jest.mock('child_process', () => ({
+  spawnSync: jest.fn(),
+}));
+
+const makeCropdetectOutput = (w: number, h: number, x: number, y: number, count: number): string => {
+  let output = '';
+
+  for (let i = 0; i < count; i += 1) {
+    output += `[Parsed_cropdetect_0 @ 0x0] x1:0 x2:${w - 1} y1:${y} y2:${y + h - 1}`
+      + ` w:${w} h:${h} x:${x} y:${y} pts:${i * 40} t:${(i * 40) / 1000} crop=${w}:${h}:${x}:${y}\n`;
+  }
+
+  return output;
+};
+
+const makeSpawnOutput = (output: string, status = 0) => ({
+  stdout: '',
+  stderr: output,
+  status,
+  signal: null,
+});
+
+const makeStdoutSpawnOutput = (output: string) => ({
+  stdout: output,
+  stderr: '',
+  status: 0,
+  signal: null,
+});
 
 const createEncoderOperation = (inputs: Record<string, unknown> = {}): IffmpegCommandV2Operation => ({
   pluginName: 'ffmpegCommandSetVideoEncoder',
@@ -49,6 +79,17 @@ const createOperation = (
   pluginVersion: '2.0.0',
   operationType,
   inputs,
+});
+
+const createCropBlackBarsOperation = (
+  inputs: Record<string, unknown> = {},
+): IffmpegCommandV2Operation => createOperation('ffmpegCommandCropBlackBars', 'cropBlackBars', {
+  cropMode: 'mostCommon',
+  cropThreshold: '24',
+  sampleCount: '5',
+  framesPerSample: '30',
+  minCropPercent: '2',
+  ...inputs,
 });
 
 const createConflictMessage = (operationType: string): string => (
@@ -117,6 +158,11 @@ const singletonConflictCases: SingletonConflictCase[] = [
       streamTypes: 'video,audio',
     }),
   ],
+  [
+    'cropBlackBars',
+    createCropBlackBarsOperation({ cropMode: 'minimum' }),
+    createCropBlackBarsOperation({ cropMode: 'maximum' }),
+  ],
 ];
 
 const vaapiInputArgs = [
@@ -130,6 +176,7 @@ const vaapiInputArgs = [
 
 describe('ffmpegCommandExecute v2 Plugin', () => {
   let mockGetEncoder: jest.Mock;
+  let mockSpawnSync: jest.Mock;
 
   const mockVaapiEncoder = () => {
     mockGetEncoder.mockResolvedValue({
@@ -156,6 +203,9 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     CLI.mockImplementation(() => ({
       runCli: jest.fn().mockResolvedValue({ cliExitCode: 0 }),
     }));
+
+    mockSpawnSync = spawnSync as jest.Mock;
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(''));
   });
 
   afterEach(() => {
@@ -360,6 +410,61 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
       '-filter:v:0',
       'hwdownload,format=nv12,zscale=t=linear:npl=100,format=yuv420p,scale=1920:-2,format=nv12,hwupload',
+    ]));
+  });
+
+  it('downloads, crops, scales, and reuploads QSV frames when crop is combined with hardware decoding', async () => {
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      operations: [
+        createCropBlackBarsOperation({
+          sampleCount: '1',
+        }),
+        createEncoderOperation(),
+        createResolutionOperation(),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-hwaccel',
+      'qsv',
+      '-hwaccel_output_format',
+      'qsv',
+      '-filter:v:0',
+      'hwdownload,format=nv12,crop=1280:600:0:60,scale=1920:-2,hwupload=extra_hw_frames=64,format=qsv',
+    ]));
+  });
+
+  it('downloads, crops, applies software filters, and reuploads VAAPI frames', async () => {
+    mockVaapiEncoder();
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
+    const hdrOperation: IffmpegCommandV2Operation = {
+      pluginName: 'ffmpegCommandHdrToSdr',
+      pluginVersion: '2.0.0',
+      operationType: 'hdrToSdr',
+      inputs: {},
+    };
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      operations: [
+        createEncoderOperation({
+          ffmpegQualityEnabled: false,
+          hardwareType: 'vaapi',
+          hardwareDecoding: true,
+        }),
+        createCropBlackBarsOperation({
+          sampleCount: '1',
+        }),
+        hdrOperation,
+        createResolutionOperation(),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-filter:v:0',
+      'hwdownload,format=nv12,crop=1280:600:0:60,zscale=t=linear:npl=100,format=yuv420p,'
+      + 'scale=1920:-2,format=nv12,hwupload',
     ]));
   });
 
@@ -805,15 +910,167 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     );
   });
 
+  it('detects crop black bars and emits a scoped crop filter', async () => {
+    const args = createV2Args({
+      operations: [
+        createCropBlackBarsOperation({
+          sampleCount: '1',
+        }),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(true);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-filter:v:0',
+      'crop=1280:600:0:60',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(mockSpawnSync).toHaveBeenCalledWith('/usr/bin/ffmpeg', expect.arrayContaining([
+      '-map',
+      '0:0',
+      '-frames:v',
+      '30',
+      'cropdetect=24:2:0',
+    ]), expect.objectContaining({ shell: false }));
+  });
+
+  it('prepends crop before generated video filters independent of operation order', async () => {
+    const cropOperation = createCropBlackBarsOperation({
+      sampleCount: '1',
+    });
+    const resolutionOperation = createResolutionOperation('1080p');
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
+
+    const cropThenScale = await renderFfmpegCommandV2(createV2Args({
+      operations: [cropOperation, resolutionOperation],
+    }));
+
+    mockSpawnSync.mockClear();
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
+
+    const scaleThenCrop = await renderFfmpegCommandV2(createV2Args({
+      operations: [resolutionOperation, cropOperation],
+    }));
+
+    expect(cropThenScale.spawnArgs).toEqual(scaleThenCrop.spawnArgs);
+    expect(cropThenScale.spawnArgs).toEqual(expect.arrayContaining([
+      '-filter:v:0',
+      'crop=1280:600:0:60,scale=1920:-2',
+    ]));
+  });
+
+  it('does not process when cropdetect returns the full frame', async () => {
+    const args = createV2Args({
+      operations: [
+        createCropBlackBarsOperation({
+          sampleCount: '1',
+        }),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 720, 0, 0, 30)));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(args.jobLog).toHaveBeenCalledWith('No black bars detected, no cropping needed');
+  });
+
+  it('selects the minimum crop when requested', async () => {
+    const args = createV2Args({
+      operations: [
+        createCropBlackBarsOperation({
+          cropMode: 'minimum',
+          sampleCount: '2',
+        }),
+      ],
+    });
+    let callCount = 0;
+    mockSpawnSync.mockImplementation(() => {
+      callCount += 1;
+      if (callCount === 1) {
+        return makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30));
+      }
+
+      return makeStdoutSpawnOutput(makeCropdetectOutput(1280, 680, 0, 20, 30));
+    });
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(true);
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-filter:v:0',
+      'crop=1280:680:0:20',
+    ]));
+  });
+
+  it('detects crop on the next active video stream when an earlier video stream is removed first', async () => {
+    const streams = [
+      createDefaultV2Streams()[0],
+      createDefaultV2Streams()[1],
+      {
+        ...createDefaultV2Streams()[0],
+        index: 2,
+        codec_name: 'hevc',
+        width: 640,
+        height: 360,
+      },
+    ];
+    const args = createV2Args({
+      streams,
+      operations: [
+        createOperation('ffmpegCommandRemoveStreamByProperty', 'removeStreamByProperty', {
+          codecType: 'video',
+          propertyToCheck: 'codec_name',
+          valuesToRemove: 'h264',
+          condition: 'equals',
+        }),
+        createCropBlackBarsOperation({
+          sampleCount: '1',
+        }),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(640, 300, 0, 30, 30)));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+    const cropdetectArgs = mockSpawnSync.mock.calls[0][1] as string[];
+
+    expect(cropdetectArgs).toEqual(expect.arrayContaining(['-map', '0:2']));
+    expect(renderResult.streams.map((stream) => stream.sourceIndex)).toEqual([1, 2]);
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-map',
+      '0:2',
+      '-filter:v:0',
+      'crop=640:300:0:30',
+    ]));
+  });
+
   it('consumes currently no-op operations explicitly without processing', async () => {
     const args = createV2Args({
       operations: [
-        {
-          pluginName: 'ffmpegCommandCropBlackBars',
-          pluginVersion: '2.0.0',
-          operationType: 'cropBlackBars',
-          inputs: {},
-        },
         {
           pluginName: 'ffmpegCommandNormalizeAudio',
           pluginVersion: '2.0.0',
@@ -826,9 +1083,6 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     const renderResult = await renderFfmpegCommandV2(args);
 
     expect(renderResult.shouldProcess).toBe(false);
-    expect(args.jobLog).toHaveBeenCalledWith(
-      'Crop Black Bars v2 operation has no render action yet; leaving streams unchanged.',
-    );
     expect(args.jobLog).toHaveBeenCalledWith(
       'Normalize Audio v2 operation has no render action yet; leaving streams unchanged.',
     );

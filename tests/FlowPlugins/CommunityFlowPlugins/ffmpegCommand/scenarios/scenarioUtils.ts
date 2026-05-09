@@ -165,11 +165,6 @@ export const createV2HdrToSdrOperation = (): IffmpegCommandV2Operation => create
   operationType: 'hdrToSdr',
 });
 
-export const createV2CropBlackBarsOperation = (): IffmpegCommandV2Operation => createV2Operation({
-  pluginName: 'ffmpegCommandCropBlackBars',
-  operationType: 'cropBlackBars',
-});
-
 export const createV2NormalizeAudioOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandNormalizeAudio',
   operationType: 'normalizeAudio',
