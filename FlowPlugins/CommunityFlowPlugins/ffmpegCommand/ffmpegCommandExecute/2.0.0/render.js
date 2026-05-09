@@ -60,6 +60,14 @@ exports.renderFfmpegCommandV2 = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
+var singletonRequestTypes = [
+    'setVideoEncoder',
+    'setVideoResolution',
+    'setVideoFramerate',
+    'setVideoBitrate',
+    'setContainer',
+    'reorderStreams',
+];
 var clone = function (value) { return JSON.parse(JSON.stringify(value)); };
 var createInitialWorkingStreams = function (args) {
     try {
@@ -106,9 +114,43 @@ var splitArgs = function (args, value) {
         .filter(function (row) { return row !== ''; });
 };
 var getRequests = function (requests, requestType) { return requests.filter(function (request) { return request.requestType === requestType; }); };
-var getLastRequestInputs = function (requests, requestType) {
+var stableStringify = function (value) {
+    if (Array.isArray(value)) {
+        return "[".concat(value.map(function (row) { return stableStringify(row); }).join(','), "]");
+    }
+    if (value && typeof value === 'object') {
+        var record_1 = value;
+        var keys = Object.keys(record_1).sort();
+        return "{".concat(keys.map(function (key) { return "".concat(JSON.stringify(key), ":").concat(stableStringify(record_1[key])); }).join(','), "}");
+    }
+    var primitiveValue = JSON.stringify(value);
+    return primitiveValue === undefined ? String(value) : primitiveValue;
+};
+var getSingletonRequestInputs = function (args, requests, requestType) {
     var matches = getRequests(requests, requestType);
-    return matches.length > 0 ? matches[matches.length - 1].inputs : undefined;
+    if (matches.length === 0) {
+        return undefined;
+    }
+    var firstInputs = matches[0].inputs || {};
+    var firstInputsKey = stableStringify(firstInputs);
+    var hasConflict = matches.some(function (request) { return stableStringify(request.inputs || {}) !== firstInputsKey; });
+    if (hasConflict) {
+        var message = "Conflicting FFmpeg command v2 ".concat(requestType, " requests found.")
+            + " Use one ".concat(requestType, " request.");
+        args.jobLog(message);
+        throw new Error(message);
+    }
+    return firstInputs;
+};
+var resolveSingletonRequestInputs = function (args, requests) {
+    var resolvedInputs = {};
+    singletonRequestTypes.forEach(function (requestType) {
+        var inputs = getSingletonRequestInputs(args, requests, requestType);
+        if (inputs) {
+            resolvedInputs[requestType] = inputs;
+        }
+    });
+    return resolvedInputs;
 };
 var hasRequest = function (requests, requestType) { return (getRequests(requests, requestType).length > 0); };
 var getOutputStreamIndex = function (streams, stream) {
@@ -630,7 +672,7 @@ var applyReorderStreams = function (streams, inputs) {
 };
 var applyVideoEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
     var shouldProcess, targetCodec, ffmpegPresetEnabled, ffmpegPreset, ffmpegQualityEnabled, ffmpegQuality, hardwareEncoding, hardwareType, hardwareDecoding, forceEncoding, encoderProperties, resolutionInputs, frameRateInputs, videoBitrateInputs, has10BitRequest, hasHdrToSdrRequest, videoStreams, i, stream, videoRequestRequiresEncoding, presetToUse;
-    var args = _b.args, streams = _b.streams, requests = _b.requests, inputs = _b.inputs, overallInputArguments = _b.overallInputArguments;
+    var args = _b.args, streams = _b.streams, requests = _b.requests, inputs = _b.inputs, singletonInputs = _b.singletonInputs, overallInputArguments = _b.overallInputArguments;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
@@ -644,9 +686,9 @@ var applyVideoEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, f
                 hardwareType = String(inputs.hardwareType);
                 hardwareDecoding = inputs.hardwareDecoding === true;
                 forceEncoding = inputs.forceEncoding === true;
-                resolutionInputs = getLastRequestInputs(requests, 'setVideoResolution');
-                frameRateInputs = getLastRequestInputs(requests, 'setVideoFramerate');
-                videoBitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');
+                resolutionInputs = singletonInputs.setVideoResolution;
+                frameRateInputs = singletonInputs.setVideoFramerate;
+                videoBitrateInputs = singletonInputs.setVideoBitrate;
                 has10BitRequest = hasRequest(requests, 'set10BitVideo');
                 hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
                 videoStreams = streams.filter(function (stream) { return (!stream.removed
@@ -757,9 +799,9 @@ var applyVideoBitrate = function (args, streams, inputs) {
     });
     return shouldProcess;
 };
-var applyVideoFilters = function (args, streams, requests) {
-    var resolutionInputs = getLastRequestInputs(requests, 'setVideoResolution');
-    var frameRateInputs = getLastRequestInputs(requests, 'setVideoFramerate');
+var applyVideoFilters = function (args, streams, requests, singletonInputs) {
+    var resolutionInputs = singletonInputs.setVideoResolution;
+    var frameRateInputs = singletonInputs.setVideoFramerate;
     var has10BitRequest = hasRequest(requests, 'set10BitVideo');
     var hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
     var shouldProcess = false;
@@ -903,7 +945,7 @@ var logNoopRequests = function (args, requests) {
     });
 };
 var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var commandState, requests, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, containerInputs, requestedContainer, currentContainer, fileContainer, reorderInputs, originalStreams, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
+    var commandState, requests, singletonInputs, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, containerInputs, requestedContainer, currentContainer, fileContainer, reorderInputs, originalStreams, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -913,6 +955,7 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                     args.jobLog('FFmpeg command v2 input changed between Begin Command and Execute; rendering from current input file.');
                 }
                 requests = (commandState === null || commandState === void 0 ? void 0 : commandState.requests) || [];
+                singletonInputs = resolveSingletonRequestInputs(args, requests);
                 streams = createInitialWorkingStreams(args);
                 shouldProcess = false;
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
@@ -949,7 +992,7 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                     shouldProcess = applyRemoveStreamByProperty(args, streams, request.inputs) || shouldProcess;
                 });
                 logNoopRequests(args, requests);
-                containerInputs = getLastRequestInputs(requests, 'setContainer');
+                containerInputs = singletonInputs.setContainer;
                 if (containerInputs) {
                     requestedContainer = String(containerInputs.container);
                     currentContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
@@ -973,7 +1016,7 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                 getRequests(requests, 'ensureAudioStream').forEach(function (request) {
                     shouldProcess = applyEnsureAudioStream(args, streams, request.inputs) || shouldProcess;
                 });
-                reorderInputs = getLastRequestInputs(requests, 'reorderStreams');
+                reorderInputs = singletonInputs.reorderStreams;
                 if (reorderInputs) {
                     originalStreams = JSON.stringify(streams);
                     streams = applyReorderStreams(streams, reorderInputs);
@@ -981,21 +1024,22 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                         shouldProcess = true;
                     }
                 }
-                encoderInputs = getLastRequestInputs(requests, 'setVideoEncoder');
+                encoderInputs = singletonInputs.setVideoEncoder;
                 if (!encoderInputs) return [3 /*break*/, 2];
                 return [4 /*yield*/, applyVideoEncoder({
                         args: args,
                         streams: streams,
                         requests: requests,
                         inputs: encoderInputs,
+                        singletonInputs: singletonInputs,
                         overallInputArguments: overallInputArguments,
                     })];
             case 1:
                 shouldProcess = (_a.sent()) || shouldProcess;
                 _a.label = 2;
             case 2:
-                shouldProcess = applyVideoFilters(args, streams, requests) || shouldProcess;
-                bitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');
+                shouldProcess = applyVideoFilters(args, streams, requests, singletonInputs) || shouldProcess;
+                bitrateInputs = singletonInputs.setVideoBitrate;
                 if (bitrateInputs) {
                     shouldProcess = applyVideoBitrate(args, streams, bitrateInputs) || shouldProcess;
                 }

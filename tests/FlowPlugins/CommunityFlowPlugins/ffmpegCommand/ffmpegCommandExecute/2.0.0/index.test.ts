@@ -40,6 +40,85 @@ const createResolutionRequest = (targetResolution = '1080p'): IffmpegCommandV2Re
   },
 });
 
+const createRequest = (
+  pluginName: string,
+  requestType: string,
+  inputs: Record<string, unknown>,
+): IffmpegCommandV2Request => ({
+  pluginName,
+  pluginVersion: '2.0.0',
+  requestType,
+  inputs,
+});
+
+const createConflictMessage = (requestType: string): string => (
+  `Conflicting FFmpeg command v2 ${requestType} requests found.`
+  + ` Use one ${requestType} request.`
+);
+
+type SingletonConflictCase = [string, IffmpegCommandV2Request, IffmpegCommandV2Request];
+
+const singletonConflictCases: SingletonConflictCase[] = [
+  [
+    'setVideoEncoder',
+    createEncoderRequest({ outputCodec: 'hevc' }),
+    createEncoderRequest({ outputCodec: 'h264' }),
+  ],
+  [
+    'setVideoResolution',
+    createResolutionRequest('720p'),
+    createResolutionRequest('1080p'),
+  ],
+  [
+    'setVideoFramerate',
+    createRequest('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 24 }),
+    createRequest('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 30 }),
+  ],
+  [
+    'setVideoBitrate',
+    createRequest('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
+      useInputBitrate: false,
+      targetBitratePercent: '50',
+      fallbackBitrate: '5000',
+      bitrate: '3000',
+    }),
+    createRequest('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
+      useInputBitrate: false,
+      targetBitratePercent: '50',
+      fallbackBitrate: '5000',
+      bitrate: '5000',
+    }),
+  ],
+  [
+    'setContainer',
+    createRequest('ffmpegCommandSetContainer', 'setContainer', {
+      container: 'mkv',
+      forceConform: false,
+    }),
+    createRequest('ffmpegCommandSetContainer', 'setContainer', {
+      container: 'mp4',
+      forceConform: false,
+    }),
+  ],
+  [
+    'reorderStreams',
+    createRequest('ffmpegCommandRorderStreams', 'reorderStreams', {
+      processOrder: 'streamTypes',
+      languages: '',
+      channels: '',
+      codecs: '',
+      streamTypes: 'audio,video',
+    }),
+    createRequest('ffmpegCommandRorderStreams', 'reorderStreams', {
+      processOrder: 'streamTypes',
+      languages: '',
+      channels: '',
+      codecs: '',
+      streamTypes: 'video,audio',
+    }),
+  ],
+];
+
 const vaapiInputArgs = [
   '-hwaccel',
   'vaapi',
@@ -118,6 +197,48 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '-c:1',
       'copy',
     ]);
+  });
+
+  it('allows duplicate singleton requests when their inputs are identical', async () => {
+    const resolutionRequest = createResolutionRequest();
+
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      requests: [resolutionRequest, resolutionRequest],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-filter:v:0',
+      'scale=1920:-2',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+  });
+
+  it.each(singletonConflictCases)('rejects conflicting duplicate %s requests independent of order', async (
+    requestType,
+    firstRequest,
+    secondRequest,
+  ) => {
+    const message = createConflictMessage(requestType);
+
+    const firstThenSecond = createV2Args({
+      requests: [firstRequest, secondRequest],
+    });
+    await expect(renderFfmpegCommandV2(firstThenSecond)).rejects.toThrow(message);
+    expect(firstThenSecond.jobLog).toHaveBeenCalledWith(message);
+
+    const secondThenFirst = createV2Args({
+      requests: [secondRequest, firstRequest],
+    });
+    await expect(renderFfmpegCommandV2(secondThenFirst)).rejects.toThrow(message);
+    expect(secondThenFirst.jobLog).toHaveBeenCalledWith(message);
   });
 
   it('uses software scale for QSV encoding when hardware decoding is disabled', async () => {

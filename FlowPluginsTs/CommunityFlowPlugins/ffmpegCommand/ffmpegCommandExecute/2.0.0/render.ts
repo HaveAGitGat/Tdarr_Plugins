@@ -37,6 +37,18 @@ export interface IffmpegCommandV2RenderResult {
   streams: IffmpegCommandV2WorkingStream[],
 }
 
+const singletonRequestTypes = [
+  'setVideoEncoder',
+  'setVideoResolution',
+  'setVideoFramerate',
+  'setVideoBitrate',
+  'setContainer',
+  'reorderStreams',
+] as const;
+
+type SingletonRequestType = typeof singletonRequestTypes[number];
+type ISingletonRequestInputs = Partial<Record<SingletonRequestType, Record<string, unknown>>>;
+
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 
 const createInitialWorkingStreams = (args: IpluginInputArgs): IworkingStream[] => {
@@ -100,12 +112,59 @@ const getRequests = (
   requestType: string,
 ): IffmpegCommandV2Request[] => requests.filter((request) => request.requestType === requestType);
 
-const getLastRequestInputs = (
+const stableStringify = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return `[${value.map((row) => stableStringify(row)).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(',')}}`;
+  }
+
+  const primitiveValue = JSON.stringify(value);
+  return primitiveValue === undefined ? String(value) : primitiveValue;
+};
+
+const getSingletonRequestInputs = (
+  args: IpluginInputArgs,
   requests: IffmpegCommandV2Request[],
-  requestType: string,
+  requestType: SingletonRequestType,
 ): Record<string, unknown> | undefined => {
   const matches = getRequests(requests, requestType);
-  return matches.length > 0 ? matches[matches.length - 1].inputs : undefined;
+  if (matches.length === 0) {
+    return undefined;
+  }
+
+  const firstInputs = matches[0].inputs || {};
+  const firstInputsKey = stableStringify(firstInputs);
+  const hasConflict = matches.some((request) => stableStringify(request.inputs || {}) !== firstInputsKey);
+
+  if (hasConflict) {
+    const message = `Conflicting FFmpeg command v2 ${requestType} requests found.`
+      + ` Use one ${requestType} request.`;
+    args.jobLog(message);
+    throw new Error(message);
+  }
+
+  return firstInputs;
+};
+
+const resolveSingletonRequestInputs = (
+  args: IpluginInputArgs,
+  requests: IffmpegCommandV2Request[],
+): ISingletonRequestInputs => {
+  const resolvedInputs: ISingletonRequestInputs = {};
+
+  singletonRequestTypes.forEach((requestType) => {
+    const inputs = getSingletonRequestInputs(args, requests, requestType);
+    if (inputs) {
+      resolvedInputs[requestType] = inputs;
+    }
+  });
+
+  return resolvedInputs;
 };
 
 const hasRequest = (requests: IffmpegCommandV2Request[], requestType: string): boolean => (
@@ -796,12 +855,14 @@ const applyVideoEncoder = async ({
   streams,
   requests,
   inputs,
+  singletonInputs,
   overallInputArguments,
 }: {
   args: IpluginInputArgs,
   streams: IworkingStream[],
   requests: IffmpegCommandV2Request[],
   inputs: Record<string, unknown>,
+  singletonInputs: ISingletonRequestInputs,
   overallInputArguments: string[],
 }): Promise<boolean> => {
   let shouldProcess = false;
@@ -815,9 +876,9 @@ const applyVideoEncoder = async ({
   const hardwareDecoding = inputs.hardwareDecoding === true;
   const forceEncoding = inputs.forceEncoding === true;
   let encoderProperties: IgetEncoder | undefined;
-  const resolutionInputs = getLastRequestInputs(requests, 'setVideoResolution');
-  const frameRateInputs = getLastRequestInputs(requests, 'setVideoFramerate');
-  const videoBitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');
+  const resolutionInputs = singletonInputs.setVideoResolution;
+  const frameRateInputs = singletonInputs.setVideoFramerate;
+  const videoBitrateInputs = singletonInputs.setVideoBitrate;
   const has10BitRequest = hasRequest(requests, 'set10BitVideo');
   const hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
   const videoStreams = streams.filter((stream) => (
@@ -944,9 +1005,10 @@ const applyVideoFilters = (
   args: IpluginInputArgs,
   streams: IworkingStream[],
   requests: IffmpegCommandV2Request[],
+  singletonInputs: ISingletonRequestInputs,
 ): boolean => {
-  const resolutionInputs = getLastRequestInputs(requests, 'setVideoResolution');
-  const frameRateInputs = getLastRequestInputs(requests, 'setVideoFramerate');
+  const resolutionInputs = singletonInputs.setVideoResolution;
+  const frameRateInputs = singletonInputs.setVideoFramerate;
   const has10BitRequest = hasRequest(requests, 'set10BitVideo');
   const hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
   let shouldProcess = false;
@@ -1136,6 +1198,7 @@ export const renderFfmpegCommandV2 = async (
   }
 
   const requests = commandState?.requests || [];
+  const singletonInputs = resolveSingletonRequestInputs(args, requests);
   let streams = createInitialWorkingStreams(args);
   let shouldProcess = false;
   let container = getContainer(args.inputFileObj._id);
@@ -1180,7 +1243,7 @@ export const renderFfmpegCommandV2 = async (
 
   logNoopRequests(args, requests);
 
-  const containerInputs = getLastRequestInputs(requests, 'setContainer');
+  const containerInputs = singletonInputs.setContainer;
   if (containerInputs) {
     const requestedContainer = String(containerInputs.container);
     const currentContainer = getContainer(args.inputFileObj._id);
@@ -1211,7 +1274,7 @@ export const renderFfmpegCommandV2 = async (
     shouldProcess = applyEnsureAudioStream(args, streams, request.inputs) || shouldProcess;
   });
 
-  const reorderInputs = getLastRequestInputs(requests, 'reorderStreams');
+  const reorderInputs = singletonInputs.reorderStreams;
   if (reorderInputs) {
     const originalStreams = JSON.stringify(streams);
     streams = applyReorderStreams(streams, reorderInputs);
@@ -1221,20 +1284,21 @@ export const renderFfmpegCommandV2 = async (
     }
   }
 
-  const encoderInputs = getLastRequestInputs(requests, 'setVideoEncoder');
+  const encoderInputs = singletonInputs.setVideoEncoder;
   if (encoderInputs) {
     shouldProcess = await applyVideoEncoder({
       args,
       streams,
       requests,
       inputs: encoderInputs,
+      singletonInputs,
       overallInputArguments,
     }) || shouldProcess;
   }
 
-  shouldProcess = applyVideoFilters(args, streams, requests) || shouldProcess;
+  shouldProcess = applyVideoFilters(args, streams, requests, singletonInputs) || shouldProcess;
 
-  const bitrateInputs = getLastRequestInputs(requests, 'setVideoBitrate');
+  const bitrateInputs = singletonInputs.setVideoBitrate;
   if (bitrateInputs) {
     shouldProcess = applyVideoBitrate(args, streams, bitrateInputs) || shouldProcess;
   }
