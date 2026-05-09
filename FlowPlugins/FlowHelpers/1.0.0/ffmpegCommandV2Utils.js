@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.appendFfmpegCommandV2Operation = exports.ffmpegCommandV2RequiresVersion = exports.ffmpegCommandV2PluginVersion = void 0;
 var flowUtils_1 = require("./interfaces/flowUtils");
 exports.ffmpegCommandV2PluginVersion = '2.0.0';
-exports.ffmpegCommandV2RequiresVersion = '2.73.01';
+exports.ffmpegCommandV2RequiresVersion = '2.72.01';
 var appendFfmpegCommandV2Operation = function (_a) {
     var _b, _c;
     var args = _a.args, pluginName = _a.pluginName, operationType = _a.operationType, inputs = _a.inputs;

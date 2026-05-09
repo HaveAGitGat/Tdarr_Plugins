@@ -2,7 +2,7 @@ import { checkFfmpegCommandV2Init } from './interfaces/flowUtils';
 import { IpluginInputArgs } from './interfaces/interfaces';
 
 export const ffmpegCommandV2PluginVersion = '2.0.0';
-export const ffmpegCommandV2RequiresVersion = '2.73.01';
+export const ffmpegCommandV2RequiresVersion = '2.72.01';
 
 export const appendFfmpegCommandV2Operation = ({
   args,

@@ -27,7 +27,7 @@ describe('ffmpegCommandStart v2 Plugin', () => {
 
     const result = plugin(baseArgs);
 
-    expect(details().requiresVersion).toBe('2.73.01');
+    expect(details().requiresVersion).toBe('2.72.01');
     expect(result.outputNumber).toBe(1);
     expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
     expect(result.variables.ffmpegCommand).toBe(v1State);
