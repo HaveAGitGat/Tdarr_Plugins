@@ -1,7 +1,7 @@
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
 import {
-  appendFfmpegCommandV2Request,
+  appendFfmpegCommandV2Operation,
   ffmpegCommandV2RequiresVersion,
 } from '../../../../FlowHelpers/1.0.0/ffmpegCommandV2Utils';
 import {
@@ -39,10 +39,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  appendFfmpegCommandV2Request({
+  appendFfmpegCommandV2Operation({
     args,
     pluginName: 'ffmpegCommandRemoveDataStreams',
-    requestType: 'removeDataStreams',
+    operationType: 'removeDataStreams',
     inputs: {},
   });
 

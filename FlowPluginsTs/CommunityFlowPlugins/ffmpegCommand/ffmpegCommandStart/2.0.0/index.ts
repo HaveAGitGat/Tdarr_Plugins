@@ -38,7 +38,7 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     version: 2,
     init: true,
     sourceFileId: args.inputFileObj._id,
-    requests: [],
+    operations: [],
   };
 
   return {

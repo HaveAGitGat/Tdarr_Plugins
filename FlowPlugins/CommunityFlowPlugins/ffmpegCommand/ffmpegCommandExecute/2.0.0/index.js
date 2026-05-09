@@ -53,7 +53,7 @@ var render_1 = require("./render");
 Object.defineProperty(exports, "renderFfmpegCommandV2", { enumerable: true, get: function () { return render_1.renderFfmpegCommandV2; } });
 var details = function () { return ({
     name: 'Execute',
-    description: 'Execute the order-independent FFmpeg command built from v2 plugin requests',
+    description: 'Execute the order-independent FFmpeg command built from v2 plugin operations',
     style: {
         borderColor: 'green',
     },

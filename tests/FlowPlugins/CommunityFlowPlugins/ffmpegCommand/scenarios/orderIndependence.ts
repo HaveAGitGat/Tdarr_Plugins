@@ -1,19 +1,19 @@
 import {
-  createV2HdrToSdrRequest,
+  createV2HdrToSdrOperation,
   createV2MockEncoder,
-  createV2Set10BitRequest,
-  createV2VideoEncoderRequest,
-  createV2VideoFramerateRequest,
-  createV2VideoResolutionRequest,
+  createV2Set10BitOperation,
+  createV2VideoEncoderOperation,
+  createV2VideoFramerateOperation,
+  createV2VideoResolutionOperation,
 } from './scenarioUtils';
 import type { IffmpegCommandV2Scenario } from './scenarioUtils';
 
-const qsvEncoderRequest = createV2VideoEncoderRequest();
-const resolution1080Request = createV2VideoResolutionRequest('1080p');
-const hdrToSdrRequest = createV2HdrToSdrRequest();
-const framerate24Request = createV2VideoFramerateRequest('24');
-const tenBitRequest = createV2Set10BitRequest();
-const av1EncoderRequest = createV2VideoEncoderRequest({
+const qsvEncoderOperation = createV2VideoEncoderOperation();
+const resolution1080Operation = createV2VideoResolutionOperation('1080p');
+const hdrToSdrOperation = createV2HdrToSdrOperation();
+const framerate24Operation = createV2VideoFramerateOperation('24');
+const tenBitOperation = createV2Set10BitOperation();
+const av1EncoderOperation = createV2VideoEncoderOperation({
   outputCodec: 'av1',
   hardwareEncoding: false,
   hardwareType: 'auto',
@@ -23,11 +23,11 @@ const av1EncoderRequest = createV2VideoEncoderRequest({
 const orderIndependenceScenarios: IffmpegCommandV2Scenario[] = [
   {
     id: 'qsv-encoder-resolution',
-    description: 'QSV encoder and resolution render the same command regardless of request order',
-    requests: [qsvEncoderRequest, resolution1080Request],
-    requestVariants: [
-      [qsvEncoderRequest, resolution1080Request],
-      [resolution1080Request, qsvEncoderRequest],
+    description: 'QSV encoder and resolution render the same command regardless of operation order',
+    operations: [qsvEncoderOperation, resolution1080Operation],
+    operationVariants: [
+      [qsvEncoderOperation, resolution1080Operation],
+      [resolution1080Operation, qsvEncoderOperation],
     ],
     encoder: createV2MockEncoder(),
     expected: {
@@ -62,12 +62,12 @@ const orderIndependenceScenarios: IffmpegCommandV2Scenario[] = [
   },
   {
     id: 'software-filter-chain-order',
-    description: 'HDR, resolution, and framerate requests produce one stable video filter chain',
-    requests: [hdrToSdrRequest, resolution1080Request, framerate24Request],
-    requestVariants: [
-      [hdrToSdrRequest, resolution1080Request, framerate24Request],
-      [framerate24Request, resolution1080Request, hdrToSdrRequest],
-      [resolution1080Request, hdrToSdrRequest, framerate24Request],
+    description: 'HDR, resolution, and framerate operations produce one stable video filter chain',
+    operations: [hdrToSdrOperation, resolution1080Operation, framerate24Operation],
+    operationVariants: [
+      [hdrToSdrOperation, resolution1080Operation, framerate24Operation],
+      [framerate24Operation, resolution1080Operation, hdrToSdrOperation],
+      [resolution1080Operation, hdrToSdrOperation, framerate24Operation],
     ],
     expected: {
       shouldProcess: true,
@@ -91,11 +91,11 @@ const orderIndependenceScenarios: IffmpegCommandV2Scenario[] = [
   },
   {
     id: 'av1-10bit-order',
-    description: 'AV1 encoder and 10-bit request keep stable libsvtav1 args regardless of order',
-    requests: [av1EncoderRequest, tenBitRequest],
-    requestVariants: [
-      [av1EncoderRequest, tenBitRequest],
-      [tenBitRequest, av1EncoderRequest],
+    description: 'AV1 encoder and 10-bit operation keep stable libsvtav1 args regardless of order',
+    operations: [av1EncoderOperation, tenBitOperation],
+    operationVariants: [
+      [av1EncoderOperation, tenBitOperation],
+      [tenBitOperation, av1EncoderOperation],
     ],
     encoder: createV2MockEncoder({
       encoder: 'libsvtav1',

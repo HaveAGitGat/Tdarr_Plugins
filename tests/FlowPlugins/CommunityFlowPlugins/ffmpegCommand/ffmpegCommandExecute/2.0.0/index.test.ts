@@ -1,6 +1,6 @@
 import { plugin, renderFfmpegCommandV2 } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandExecute/2.0.0/index';
-import { IffmpegCommandV2Request } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
+import { IffmpegCommandV2Operation } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { createDefaultV2Streams, createV2Args } from '../../v2TestUtils';
 
 jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils', () => ({
@@ -13,10 +13,10 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils', () 
   getEncoder: jest.fn(),
 }));
 
-const createEncoderRequest = (inputs: Record<string, unknown> = {}): IffmpegCommandV2Request => ({
+const createEncoderOperation = (inputs: Record<string, unknown> = {}): IffmpegCommandV2Operation => ({
   pluginName: 'ffmpegCommandSetVideoEncoder',
   pluginVersion: '2.0.0',
-  requestType: 'setVideoEncoder',
+  operationType: 'setVideoEncoder',
   inputs: {
     outputCodec: 'hevc',
     ffmpegPresetEnabled: true,
@@ -31,58 +31,58 @@ const createEncoderRequest = (inputs: Record<string, unknown> = {}): IffmpegComm
   },
 });
 
-const createResolutionRequest = (targetResolution = '1080p'): IffmpegCommandV2Request => ({
+const createResolutionOperation = (targetResolution = '1080p'): IffmpegCommandV2Operation => ({
   pluginName: 'ffmpegCommandSetVdeoResolution',
   pluginVersion: '2.0.0',
-  requestType: 'setVideoResolution',
+  operationType: 'setVideoResolution',
   inputs: {
     targetResolution,
   },
 });
 
-const createRequest = (
+const createOperation = (
   pluginName: string,
-  requestType: string,
+  operationType: string,
   inputs: Record<string, unknown>,
-): IffmpegCommandV2Request => ({
+): IffmpegCommandV2Operation => ({
   pluginName,
   pluginVersion: '2.0.0',
-  requestType,
+  operationType,
   inputs,
 });
 
-const createConflictMessage = (requestType: string): string => (
-  `Conflicting FFmpeg command v2 ${requestType} requests found.`
-  + ` Use one ${requestType} request.`
+const createConflictMessage = (operationType: string): string => (
+  `Conflicting FFmpeg command v2 ${operationType} operations found.`
+  + ` Use one ${operationType} operation.`
 );
 
-type SingletonConflictCase = [string, IffmpegCommandV2Request, IffmpegCommandV2Request];
+type SingletonConflictCase = [string, IffmpegCommandV2Operation, IffmpegCommandV2Operation];
 
 const singletonConflictCases: SingletonConflictCase[] = [
   [
     'setVideoEncoder',
-    createEncoderRequest({ outputCodec: 'hevc' }),
-    createEncoderRequest({ outputCodec: 'h264' }),
+    createEncoderOperation({ outputCodec: 'hevc' }),
+    createEncoderOperation({ outputCodec: 'h264' }),
   ],
   [
     'setVideoResolution',
-    createResolutionRequest('720p'),
-    createResolutionRequest('1080p'),
+    createResolutionOperation('720p'),
+    createResolutionOperation('1080p'),
   ],
   [
     'setVideoFramerate',
-    createRequest('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 24 }),
-    createRequest('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 30 }),
+    createOperation('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 24 }),
+    createOperation('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 30 }),
   ],
   [
     'setVideoBitrate',
-    createRequest('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
+    createOperation('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
       useInputBitrate: false,
       targetBitratePercent: '50',
       fallbackBitrate: '5000',
       bitrate: '3000',
     }),
-    createRequest('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
+    createOperation('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
       useInputBitrate: false,
       targetBitratePercent: '50',
       fallbackBitrate: '5000',
@@ -91,25 +91,25 @@ const singletonConflictCases: SingletonConflictCase[] = [
   ],
   [
     'setContainer',
-    createRequest('ffmpegCommandSetContainer', 'setContainer', {
+    createOperation('ffmpegCommandSetContainer', 'setContainer', {
       container: 'mkv',
       forceConform: false,
     }),
-    createRequest('ffmpegCommandSetContainer', 'setContainer', {
+    createOperation('ffmpegCommandSetContainer', 'setContainer', {
       container: 'mp4',
       forceConform: false,
     }),
   ],
   [
     'reorderStreams',
-    createRequest('ffmpegCommandRorderStreams', 'reorderStreams', {
+    createOperation('ffmpegCommandRorderStreams', 'reorderStreams', {
       processOrder: 'streamTypes',
       languages: '',
       channels: '',
       codecs: '',
       streamTypes: 'audio,video',
     }),
-    createRequest('ffmpegCommandRorderStreams', 'reorderStreams', {
+    createOperation('ffmpegCommandRorderStreams', 'reorderStreams', {
       processOrder: 'streamTypes',
       languages: '',
       channels: '',
@@ -162,15 +162,15 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     jest.clearAllMocks();
   });
 
-  it('renders identical QSV args when encoder and resolution request order changes', async () => {
-    const encoderRequest = createEncoderRequest();
-    const resolutionRequest = createResolutionRequest();
+  it('renders identical QSV args when encoder and resolution operation order changes', async () => {
+    const encoderOperation = createEncoderOperation();
+    const resolutionOperation = createResolutionOperation();
 
     const encoderThenResolution = await renderFfmpegCommandV2(createV2Args({
-      requests: [encoderRequest, resolutionRequest],
+      operations: [encoderOperation, resolutionOperation],
     }));
     const resolutionThenEncoder = await renderFfmpegCommandV2(createV2Args({
-      requests: [resolutionRequest, encoderRequest],
+      operations: [resolutionOperation, encoderOperation],
     }));
 
     expect(encoderThenResolution.spawnArgs).toEqual(resolutionThenEncoder.spawnArgs);
@@ -199,11 +199,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]);
   });
 
-  it('allows duplicate singleton requests when their inputs are identical', async () => {
-    const resolutionRequest = createResolutionRequest();
+  it('allows duplicate singleton operations when their inputs are identical', async () => {
+    const resolutionOperation = createResolutionOperation();
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [resolutionRequest, resolutionRequest],
+      operations: [resolutionOperation, resolutionOperation],
     }));
 
     expect(renderResult.spawnArgs).toEqual([
@@ -221,21 +221,21 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]);
   });
 
-  it.each(singletonConflictCases)('rejects conflicting duplicate %s requests independent of order', async (
-    requestType,
-    firstRequest,
-    secondRequest,
+  it.each(singletonConflictCases)('rejects conflicting duplicate %s operations independent of order', async (
+    operationType,
+    firstOperation,
+    secondOperation,
   ) => {
-    const message = createConflictMessage(requestType);
+    const message = createConflictMessage(operationType);
 
     const firstThenSecond = createV2Args({
-      requests: [firstRequest, secondRequest],
+      operations: [firstOperation, secondOperation],
     });
     await expect(renderFfmpegCommandV2(firstThenSecond)).rejects.toThrow(message);
     expect(firstThenSecond.jobLog).toHaveBeenCalledWith(message);
 
     const secondThenFirst = createV2Args({
-      requests: [secondRequest, firstRequest],
+      operations: [secondOperation, firstOperation],
     });
     await expect(renderFfmpegCommandV2(secondThenFirst)).rejects.toThrow(message);
     expect(secondThenFirst.jobLog).toHaveBeenCalledWith(message);
@@ -243,11 +243,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('uses software scale for QSV encoding when hardware decoding is disabled', async () => {
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [
-        createEncoderRequest({
+      operations: [
+        createEncoderOperation({
           hardwareDecoding: false,
         }),
-        createResolutionRequest(),
+        createResolutionOperation(),
       ],
     }));
 
@@ -259,17 +259,17 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     expect(renderResult.spawnArgs).not.toContain('vpp_qsv=w=1920:h=1080');
   });
 
-  it('uses a VAAPI scale filter when VAAPI hardware decoding and resolution are requested', async () => {
+  it('uses a VAAPI scale filter when VAAPI hardware decoding and a resolution operation are present', async () => {
     mockVaapiEncoder();
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [
-        createEncoderRequest({
+      operations: [
+        createEncoderOperation({
           ffmpegQualityEnabled: false,
           hardwareType: 'vaapi',
           hardwareDecoding: true,
         }),
-        createResolutionRequest(),
+        createResolutionOperation(),
       ],
     }));
 
@@ -303,8 +303,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     mockVaapiEncoder();
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [
-        createEncoderRequest({
+      operations: [
+        createEncoderOperation({
           ffmpegQualityEnabled: false,
           hardwareType: 'vaapi',
           hardwareDecoding: false,
@@ -334,22 +334,22 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('downloads and uploads VAAPI frames when software filters are needed', async () => {
     mockVaapiEncoder();
-    const hdrRequest: IffmpegCommandV2Request = {
+    const hdrOperation: IffmpegCommandV2Operation = {
       pluginName: 'ffmpegCommandHdrToSdr',
       pluginVersion: '2.0.0',
-      requestType: 'hdrToSdr',
+      operationType: 'hdrToSdr',
       inputs: {},
     };
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [
-        createEncoderRequest({
+      operations: [
+        createEncoderOperation({
           ffmpegQualityEnabled: false,
           hardwareType: 'vaapi',
           hardwareDecoding: true,
         }),
-        hdrRequest,
-        createResolutionRequest(),
+        hdrOperation,
+        createResolutionOperation(),
       ],
     }));
 
@@ -363,7 +363,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]));
   });
 
-  it('renders stable 10-bit args regardless of request order', async () => {
+  it('renders stable 10-bit args regardless of operation order', async () => {
     mockGetEncoder.mockResolvedValue({
       encoder: 'libsvtav1',
       inputArgs: [],
@@ -371,24 +371,24 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       isGpu: false,
       enabledDevices: [],
     });
-    const encoderRequest = createEncoderRequest({
+    const encoderOperation = createEncoderOperation({
       outputCodec: 'av1',
       hardwareEncoding: false,
       hardwareType: 'auto',
       hardwareDecoding: false,
     });
-    const tenBitRequest: IffmpegCommandV2Request = {
+    const tenBitOperation: IffmpegCommandV2Operation = {
       pluginName: 'ffmpegCommand10BitVideo',
       pluginVersion: '2.0.0',
-      requestType: 'set10BitVideo',
+      operationType: 'set10BitVideo',
       inputs: {},
     };
 
     const tenBitThenEncoder = await renderFfmpegCommandV2(createV2Args({
-      requests: [tenBitRequest, encoderRequest],
+      operations: [tenBitOperation, encoderOperation],
     }));
     const encoderThenTenBit = await renderFfmpegCommandV2(createV2Args({
-      requests: [encoderRequest, tenBitRequest],
+      operations: [encoderOperation, tenBitOperation],
     }));
 
     expect(tenBitThenEncoder.spawnArgs).toEqual(encoderThenTenBit.spawnArgs);
@@ -404,15 +404,15 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
   });
 
   it('combines HDR and resolution into one scoped video filter chain', async () => {
-    const hdrRequest: IffmpegCommandV2Request = {
+    const hdrOperation: IffmpegCommandV2Operation = {
       pluginName: 'ffmpegCommandHdrToSdr',
       pluginVersion: '2.0.0',
-      requestType: 'hdrToSdr',
+      operationType: 'hdrToSdr',
       inputs: {},
     };
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [hdrRequest, createResolutionRequest()],
+      operations: [hdrOperation, createResolutionOperation()],
     }));
     const filterOptions = renderResult.spawnArgs.filter((arg) => arg === '-vf' || arg.startsWith('-filter'));
 
@@ -436,11 +436,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
       streams,
-      requests: [
-        createEncoderRequest({
+      operations: [
+        createEncoderOperation({
           hardwareDecoding: false,
         }),
-        createResolutionRequest(),
+        createResolutionOperation(),
       ],
     }));
 
@@ -464,7 +464,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]));
   });
 
-  it('uses the requested encoder when force encoding is disabled but filters require transcoding', async () => {
+  it('uses the selected encoder when force encoding is disabled but filters require transcoding', async () => {
     const streams = [
       {
         ...createDefaultV2Streams()[0],
@@ -475,11 +475,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
       streams,
-      requests: [
-        createEncoderRequest({
+      operations: [
+        createEncoderOperation({
           forceEncoding: false,
         }),
-        createResolutionRequest(),
+        createResolutionOperation(),
       ],
     }));
 
@@ -510,8 +510,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('uses stream dimensions for resolution decisions when file-level resolution is stale', async () => {
     const args = createV2Args({
-      requests: [
-        createResolutionRequest(),
+      operations: [
+        createResolutionOperation(),
       ],
     });
     args.inputFileObj.video_resolution = '1080p';
@@ -551,8 +551,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
       streams,
-      requests: [
-        createResolutionRequest(),
+      operations: [
+        createResolutionOperation(),
       ],
     }));
 
@@ -587,8 +587,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ];
     const args = createV2Args({
       streams,
-      requests: [
-        createResolutionRequest('720p'),
+      operations: [
+        createResolutionOperation('720p'),
       ],
     });
     args.inputFileObj.video_resolution = '1080p';
@@ -613,11 +613,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('skips removed video streams during later encoder and filter phases', async () => {
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandRemoveStreamByProperty',
           pluginVersion: '2.0.0',
-          requestType: 'removeStreamByProperty',
+          operationType: 'removeStreamByProperty',
           inputs: {
             codecType: 'video',
             propertyToCheck: 'codec_name',
@@ -625,7 +625,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
             condition: 'equals',
           },
         },
-        createEncoderRequest(),
+        createEncoderOperation(),
       ],
     }));
 
@@ -662,17 +662,17 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ];
     const renderResult = await renderFfmpegCommandV2(createV2Args({
       streams,
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandRemoveSubtitles',
           pluginVersion: '2.0.0',
-          requestType: 'removeSubtitles',
+          operationType: 'removeSubtitles',
           inputs: {},
         },
         {
           pluginName: 'ffmpegCommandRorderStreams',
           pluginVersion: '2.0.0',
-          requestType: 'reorderStreams',
+          operationType: 'reorderStreams',
           inputs: {
             processOrder: 'streamTypes',
             languages: '',
@@ -705,11 +705,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('preserves custom args and logs obvious output conflicts', async () => {
     const args = createV2Args({
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandCustomArguments',
           pluginVersion: '2.0.0',
-          requestType: 'customArguments',
+          operationType: 'customArguments',
           inputs: {
             inputArguments: '-threads 2',
             outputArguments: '-vf scale=1280:-2 -movflags +faststart',
@@ -729,11 +729,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('parses quoted custom args with the injected argument parser', async () => {
     const args = createV2Args({
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandCustomArguments',
           pluginVersion: '2.0.0',
-          requestType: 'customArguments',
+          operationType: 'customArguments',
           inputs: {
             inputArguments: '-threads 2',
             outputArguments: '-metadata title="My Movie"',
@@ -805,19 +805,19 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     );
   });
 
-  it('consumes currently no-op requests explicitly without processing', async () => {
+  it('consumes currently no-op operations explicitly without processing', async () => {
     const args = createV2Args({
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandCropBlackBars',
           pluginVersion: '2.0.0',
-          requestType: 'cropBlackBars',
+          operationType: 'cropBlackBars',
           inputs: {},
         },
         {
           pluginName: 'ffmpegCommandNormalizeAudio',
           pluginVersion: '2.0.0',
-          requestType: 'normalizeAudio',
+          operationType: 'normalizeAudio',
           inputs: {},
         },
       ],
@@ -827,20 +827,20 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
     expect(renderResult.shouldProcess).toBe(false);
     expect(args.jobLog).toHaveBeenCalledWith(
-      'Crop Black Bars v2 request has no render action yet; leaving streams unchanged.',
+      'Crop Black Bars v2 operation has no render action yet; leaving streams unchanged.',
     );
     expect(args.jobLog).toHaveBeenCalledWith(
-      'Normalize Audio v2 request has no render action yet; leaving streams unchanged.',
+      'Normalize Audio v2 operation has no render action yet; leaving streams unchanged.',
     );
   });
 
   it('executes rendered args through CLI and closes v2 state after success', async () => {
     const args = createV2Args({
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandCustomArguments',
           pluginVersion: '2.0.0',
-          requestType: 'customArguments',
+          operationType: 'customArguments',
           inputs: {
             inputArguments: '',
             outputArguments: '-movflags +faststart',

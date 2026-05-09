@@ -1,4 +1,4 @@
-import type { IffmpegCommandV2Request, IpluginInputArgs } from
+import type { IffmpegCommandV2Operation, IpluginInputArgs } from
   '../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import type { IgetEncoder } from '../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils';
 import type { Istreams } from '../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -23,8 +23,8 @@ export interface IffmpegCommandV2Scenario {
   id: string,
   description: string,
   streams?: Istreams[],
-  requests: IffmpegCommandV2Request[],
-  requestVariants?: IffmpegCommandV2Request[][],
+  operations: IffmpegCommandV2Operation[],
+  operationVariants?: IffmpegCommandV2Operation[][],
   encoder?: IgetEncoder,
   inputFile?: {
     id?: string,
@@ -87,26 +87,26 @@ export const createV2AttachmentStream = (overrides: Partial<Istreams> = {}): Ist
   ...overrides,
 });
 
-const createV2Request = ({
+const createV2Operation = ({
   pluginName,
-  requestType,
+  operationType,
   inputs = {},
 }: {
   pluginName: string,
-  requestType: string,
+  operationType: string,
   inputs?: Record<string, unknown>,
-}): IffmpegCommandV2Request => ({
+}): IffmpegCommandV2Operation => ({
   pluginName,
   pluginVersion: '2.0.0',
-  requestType,
+  operationType,
   inputs,
 });
 
-export const createV2VideoEncoderRequest = (
+export const createV2VideoEncoderOperation = (
   inputs: Record<string, unknown> = {},
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandSetVideoEncoder',
-  requestType: 'setVideoEncoder',
+  operationType: 'setVideoEncoder',
   inputs: {
     outputCodec: 'hevc',
     ffmpegPresetEnabled: true,
@@ -121,31 +121,31 @@ export const createV2VideoEncoderRequest = (
   },
 });
 
-export const createV2VideoResolutionRequest = (
+export const createV2VideoResolutionOperation = (
   targetResolution = '1080p',
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandSetVdeoResolution',
-  requestType: 'setVideoResolution',
+  operationType: 'setVideoResolution',
   inputs: {
     targetResolution,
   },
 });
 
-export const createV2VideoFramerateRequest = (
+export const createV2VideoFramerateOperation = (
   framerate = '24',
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandSetVdeoFramerate',
-  requestType: 'setVideoFramerate',
+  operationType: 'setVideoFramerate',
   inputs: {
     framerate,
   },
 });
 
-export const createV2VideoBitrateRequest = (
+export const createV2VideoBitrateOperation = (
   inputs: Record<string, unknown> = {},
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandSetVideoBitrate',
-  requestType: 'setVideoBitrate',
+  operationType: 'setVideoBitrate',
   inputs: {
     useInputBitrate: false,
     bitrate: '5000',
@@ -155,73 +155,73 @@ export const createV2VideoBitrateRequest = (
   },
 });
 
-export const createV2Set10BitRequest = (): IffmpegCommandV2Request => createV2Request({
+export const createV2Set10BitOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommand10BitVideo',
-  requestType: 'set10BitVideo',
+  operationType: 'set10BitVideo',
 });
 
-export const createV2HdrToSdrRequest = (): IffmpegCommandV2Request => createV2Request({
+export const createV2HdrToSdrOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandHdrToSdr',
-  requestType: 'hdrToSdr',
+  operationType: 'hdrToSdr',
 });
 
-export const createV2CropBlackBarsRequest = (): IffmpegCommandV2Request => createV2Request({
+export const createV2CropBlackBarsOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandCropBlackBars',
-  requestType: 'cropBlackBars',
+  operationType: 'cropBlackBars',
 });
 
-export const createV2NormalizeAudioRequest = (): IffmpegCommandV2Request => createV2Request({
+export const createV2NormalizeAudioOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandNormalizeAudio',
-  requestType: 'normalizeAudio',
+  operationType: 'normalizeAudio',
 });
 
-export const createV2RemoveDataStreamsRequest = (): IffmpegCommandV2Request => createV2Request({
+export const createV2RemoveDataStreamsOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandRemoveDataStreams',
-  requestType: 'removeDataStreams',
+  operationType: 'removeDataStreams',
 });
 
-export const createV2RemoveSubtitlesRequest = (): IffmpegCommandV2Request => createV2Request({
+export const createV2RemoveSubtitlesOperation = (): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandRemoveSubtitles',
-  requestType: 'removeSubtitles',
+  operationType: 'removeSubtitles',
 });
 
-export const createV2RemoveStreamByPropertyRequest = (
+export const createV2RemoveStreamByPropertyOperation = (
   inputs: Record<string, unknown>,
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandRemoveStreamByProperty',
-  requestType: 'removeStreamByProperty',
+  operationType: 'removeStreamByProperty',
   inputs,
 });
 
-export const createV2SetContainerRequest = (
+export const createV2SetContainerOperation = (
   inputs: Record<string, unknown>,
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandSetContainer',
-  requestType: 'setContainer',
+  operationType: 'setContainer',
   inputs,
 });
 
-export const createV2EnsureAudioStreamRequest = (
+export const createV2EnsureAudioStreamOperation = (
   inputs: Record<string, unknown>,
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandEnsureAudioStream',
-  requestType: 'ensureAudioStream',
+  operationType: 'ensureAudioStream',
   inputs,
 });
 
-export const createV2ReorderStreamsRequest = (
+export const createV2ReorderStreamsOperation = (
   inputs: Record<string, unknown>,
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandRorderStreams',
-  requestType: 'reorderStreams',
+  operationType: 'reorderStreams',
   inputs,
 });
 
-export const createV2CustomArgumentsRequest = (
+export const createV2CustomArgumentsOperation = (
   inputs: Record<string, unknown>,
-): IffmpegCommandV2Request => createV2Request({
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandCustomArguments',
-  requestType: 'customArguments',
+  operationType: 'customArguments',
   inputs,
 });
 
@@ -236,11 +236,11 @@ export const createV2MockEncoder = (overrides: Partial<IgetEncoder> = {}): IgetE
 
 export const createV2ScenarioArgs = (
   scenario: IffmpegCommandV2Scenario,
-  requests: IffmpegCommandV2Request[] = scenario.requests,
+  operations: IffmpegCommandV2Operation[] = scenario.operations,
 ): IpluginInputArgs => {
   const args = createV2Args({
     streams: scenario.streams,
-    requests,
+    operations,
   });
 
   if (scenario.inputFile?.id) {

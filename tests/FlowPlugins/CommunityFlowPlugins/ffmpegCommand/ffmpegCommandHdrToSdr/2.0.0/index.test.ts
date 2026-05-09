@@ -1,14 +1,14 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandHdrToSdr/2.0.0/index';
-import { createV2Args, expectV2Request } from '../../v2TestUtils';
+import { createV2Args, expectV2Operation } from '../../v2TestUtils';
 
 describe('ffmpegCommandHdrToSdr v2 Plugin', () => {
-  it('appends an hdrToSdr request only', () => {
+  it('appends an hdrToSdr operation only', () => {
     const args = createV2Args();
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expectV2Request(args, 'hdrToSdr', 'ffmpegCommandHdrToSdr', {});
+    expectV2Operation(args, 'hdrToSdr', 'ffmpegCommandHdrToSdr', {});
   });
 });

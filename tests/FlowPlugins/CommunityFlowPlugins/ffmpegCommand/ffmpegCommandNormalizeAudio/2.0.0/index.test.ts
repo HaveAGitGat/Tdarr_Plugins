@@ -1,14 +1,14 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandNormalizeAudio/2.0.0/index';
-import { createV2Args, expectV2Request } from '../../v2TestUtils';
+import { createV2Args, expectV2Operation } from '../../v2TestUtils';
 
 describe('ffmpegCommandNormalizeAudio v2 Plugin', () => {
-  it('appends a normalizeAudio request only', () => {
+  it('appends a normalizeAudio operation only', () => {
     const args = createV2Args();
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expectV2Request(args, 'normalizeAudio', 'ffmpegCommandNormalizeAudio', {});
+    expectV2Operation(args, 'normalizeAudio', 'ffmpegCommandNormalizeAudio', {});
   });
 });

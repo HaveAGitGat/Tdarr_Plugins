@@ -19,10 +19,10 @@ const mockGetEncoder = getEncoder as jest.MockedFunction<typeof getEncoder>;
 
 const renderScenario = async (
   scenario: IffmpegCommandV2Scenario,
-  requestIndex: number,
+  operationIndex: number,
 ): Promise<IffmpegCommandV2ScenarioRun> => {
-  const requestVariants = scenario.requestVariants || [scenario.requests];
-  const args = createV2ScenarioArgs(scenario, requestVariants[requestIndex]);
+  const operationVariants = scenario.operationVariants || [scenario.operations];
+  const args = createV2ScenarioArgs(scenario, operationVariants[operationIndex]);
 
   mockGetEncoder.mockResolvedValue(scenario.encoder || createV2MockEncoder());
 
@@ -82,10 +82,10 @@ describe('FFmpeg command v2 scenario rendering', () => {
   ] as const))(
     '%s: %s',
     async (_id, _description, scenario) => {
-      const requestVariants = scenario.requestVariants || [scenario.requests];
+      const operationVariants = scenario.operationVariants || [scenario.operations];
 
       if (scenario.expected.errorMessage) {
-        const argsByVariant = requestVariants.map((requests) => createV2ScenarioArgs(scenario, requests));
+        const argsByVariant = operationVariants.map((operations) => createV2ScenarioArgs(scenario, operations));
 
         await Promise.all(argsByVariant.map(async (args) => {
           mockGetEncoder.mockResolvedValue(scenario.encoder || createV2MockEncoder());
@@ -105,7 +105,7 @@ describe('FFmpeg command v2 scenario rendering', () => {
       let canonicalSourceIndexes: number[] | undefined;
       let canonicalCodecTypes: string[] | undefined;
 
-      const runs = await Promise.all(requestVariants.map((_requests, index) => renderScenario(scenario, index)));
+      const runs = await Promise.all(operationVariants.map((_operations, index) => renderScenario(scenario, index)));
 
       runs.forEach((run) => {
         expectScenarioResult(scenario, run);

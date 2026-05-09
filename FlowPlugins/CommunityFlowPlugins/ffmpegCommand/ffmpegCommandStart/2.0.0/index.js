@@ -34,7 +34,7 @@ var plugin = function (args) {
         version: 2,
         init: true,
         sourceFileId: args.inputFileObj._id,
-        requests: [],
+        operations: [],
     };
     return {
         outputFileObj: args.inputFileObj,

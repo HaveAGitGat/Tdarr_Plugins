@@ -115,10 +115,10 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    (0, ffmpegCommandV2Utils_1.appendFfmpegCommandV2Request)({
+    (0, ffmpegCommandV2Utils_1.appendFfmpegCommandV2Operation)({
         args: args,
         pluginName: 'ffmpegCommandSetVideoBitrate',
-        requestType: 'setVideoBitrate',
+        operationType: 'setVideoBitrate',
         inputs: {
             useInputBitrate: args.inputs.useInputBitrate === true,
             targetBitratePercent: String(args.inputs.targetBitratePercent),

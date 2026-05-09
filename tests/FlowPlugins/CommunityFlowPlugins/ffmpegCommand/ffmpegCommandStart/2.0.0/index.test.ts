@@ -35,22 +35,22 @@ describe('ffmpegCommandStart v2 Plugin', () => {
       version: 2,
       init: true,
       sourceFileId: baseArgs.inputFileObj._id,
-      requests: [],
+      operations: [],
     });
     expect(result.variables.ffmpegCommandV2).not.toHaveProperty('streams');
     expect(result.variables.ffmpegCommandV2).not.toHaveProperty('container');
   });
 
-  it('resets any previous v2 request context', () => {
+  it('resets any previous v2 operation context', () => {
     baseArgs.variables.ffmpegCommandV2 = {
       version: 2,
       init: true,
       sourceFileId: '/tmp/old.mp4',
-      requests: [
+      operations: [
         {
           pluginName: 'ffmpegCommandCustomArguments',
           pluginVersion: '2.0.0',
-          requestType: 'customArguments',
+          operationType: 'customArguments',
           inputs: {
             outputArguments: '-movflags +faststart',
           },
@@ -64,7 +64,7 @@ describe('ffmpegCommandStart v2 Plugin', () => {
       version: 2,
       init: true,
       sourceFileId: baseArgs.inputFileObj._id,
-      requests: [],
+      operations: [],
     });
   });
 
@@ -72,6 +72,6 @@ describe('ffmpegCommandStart v2 Plugin', () => {
     delete baseArgs.inputFileObj.ffProbeData.streams;
 
     expect(() => plugin(baseArgs)).not.toThrow();
-    expect(baseArgs.variables.ffmpegCommandV2?.requests).toEqual([]);
+    expect(baseArgs.variables.ffmpegCommandV2?.operations).toEqual([]);
   });
 });

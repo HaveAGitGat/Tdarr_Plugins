@@ -15,7 +15,7 @@ import { renderFfmpegCommandV2 } from './render';
 
 const details = (): IpluginDetails => ({
   name: 'Execute',
-  description: 'Execute the order-independent FFmpeg command built from v2 plugin requests',
+  description: 'Execute the order-independent FFmpeg command built from v2 plugin operations',
   style: {
     borderColor: 'green',
   },

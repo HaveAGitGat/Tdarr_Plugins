@@ -177,10 +177,10 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    (0, ffmpegCommandV2Utils_1.appendFfmpegCommandV2Request)({
+    (0, ffmpegCommandV2Utils_1.appendFfmpegCommandV2Operation)({
         args: args,
         pluginName: 'ffmpegCommandSetVideoEncoder',
-        requestType: 'setVideoEncoder',
+        operationType: 'setVideoEncoder',
         inputs: {
             outputCodec: String(args.inputs.outputCodec),
             ffmpegPresetEnabled: args.inputs.ffmpegPresetEnabled === true,

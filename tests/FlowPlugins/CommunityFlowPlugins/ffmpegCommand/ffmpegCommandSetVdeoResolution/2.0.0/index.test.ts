@@ -1,15 +1,15 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetVdeoResolution/2.0.0/index';
-import { createV2Args, expectV2Request } from '../../v2TestUtils';
+import { createV2Args, expectV2Operation } from '../../v2TestUtils';
 
 describe('ffmpegCommandSetVdeoResolution v2 Plugin', () => {
-  it('appends a setVideoResolution request only', () => {
+  it('appends a setVideoResolution operation only', () => {
     const args = createV2Args({ inputs: { targetResolution: '4KUHD' } });
 
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expectV2Request(args, 'setVideoResolution', 'ffmpegCommandSetVdeoResolution', {
+    expectV2Operation(args, 'setVideoResolution', 'ffmpegCommandSetVdeoResolution', {
       targetResolution: '4KUHD',
     });
   });

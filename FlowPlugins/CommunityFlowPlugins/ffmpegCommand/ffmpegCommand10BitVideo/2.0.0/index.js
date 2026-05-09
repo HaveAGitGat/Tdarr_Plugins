@@ -29,10 +29,10 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    (0, ffmpegCommandV2Utils_1.appendFfmpegCommandV2Request)({
+    (0, ffmpegCommandV2Utils_1.appendFfmpegCommandV2Operation)({
         args: args,
         pluginName: 'ffmpegCommand10BitVideo',
-        requestType: 'set10BitVideo',
+        operationType: 'set10BitVideo',
         inputs: {},
     });
     return {

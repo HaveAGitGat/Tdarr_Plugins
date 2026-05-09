@@ -1,8 +1,8 @@
 import {
-  createV2HdrToSdrRequest,
+  createV2HdrToSdrOperation,
   createV2MockEncoder,
-  createV2VideoEncoderRequest,
-  createV2VideoResolutionRequest,
+  createV2VideoEncoderOperation,
+  createV2VideoResolutionOperation,
 } from './scenarioUtils';
 import type { IffmpegCommandV2Scenario } from './scenarioUtils';
 
@@ -19,14 +19,14 @@ const hardwareScenarios: IffmpegCommandV2Scenario[] = [
   {
     id: 'vaapi-hdr-resolution-bridge',
     description: 'VAAPI hardware decoding downloads for software filters and uploads before encoding',
-    requests: [
-      createV2VideoEncoderRequest({
+    operations: [
+      createV2VideoEncoderOperation({
         ffmpegQualityEnabled: false,
         hardwareType: 'vaapi',
         hardwareDecoding: true,
       }),
-      createV2HdrToSdrRequest(),
-      createV2VideoResolutionRequest('1080p'),
+      createV2HdrToSdrOperation(),
+      createV2VideoResolutionOperation('1080p'),
     ],
     encoder: createV2MockEncoder({
       encoder: 'hevc_vaapi',

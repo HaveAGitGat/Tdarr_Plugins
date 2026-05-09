@@ -1,9 +1,9 @@
 import {
   createDefaultV2Streams,
-  createV2CropBlackBarsRequest,
-  createV2CustomArgumentsRequest,
-  createV2NormalizeAudioRequest,
-  createV2VideoBitrateRequest,
+  createV2CropBlackBarsOperation,
+  createV2CustomArgumentsOperation,
+  createV2NormalizeAudioOperation,
+  createV2VideoBitrateOperation,
 } from './scenarioUtils';
 import type { IffmpegCommandV2Scenario } from './scenarioUtils';
 
@@ -12,8 +12,8 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
     id: 'custom-arguments-conflict-warning',
     description: 'Custom args are preserved and command-shaping output args are logged',
     streams: createDefaultV2Streams(),
-    requests: [
-      createV2CustomArgumentsRequest({
+    operations: [
+      createV2CustomArgumentsOperation({
         inputArguments: '-threads 2',
         outputArguments: '-vf scale=1280:-2 -movflags +faststart',
       }),
@@ -48,12 +48,12 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
     },
   },
   {
-    id: 'noop-requests-are-logged',
-    description: 'Currently no-op v2 requests are consumed explicitly without processing',
+    id: 'noop-operations-are-logged',
+    description: 'Currently no-op v2 operations are consumed explicitly without processing',
     streams: createDefaultV2Streams(),
-    requests: [
-      createV2CropBlackBarsRequest(),
-      createV2NormalizeAudioRequest(),
+    operations: [
+      createV2CropBlackBarsOperation(),
+      createV2NormalizeAudioOperation(),
     ],
     expected: {
       shouldProcess: false,
@@ -61,8 +61,8 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
       sourceIndexes: [0, 1],
       codecTypes: ['video', 'audio'],
       jobLogs: [
-        'Crop Black Bars v2 request has no render action yet; leaving streams unchanged.',
-        'Normalize Audio v2 request has no render action yet; leaving streams unchanged.',
+        'Crop Black Bars v2 operation has no render action yet; leaving streams unchanged.',
+        'Normalize Audio v2 operation has no render action yet; leaving streams unchanged.',
       ],
       spawnArgs: [
         '-y',
@@ -81,10 +81,10 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
   },
   {
     id: 'fixed-video-bitrate',
-    description: 'Video bitrate requests scope bitrate args to video output stream indexes',
+    description: 'Video bitrate operations scope bitrate args to video output stream indexes',
     streams: createDefaultV2Streams(),
-    requests: [
-      createV2VideoBitrateRequest({
+    operations: [
+      createV2VideoBitrateOperation({
         bitrate: '3000',
       }),
     ],

@@ -1,5 +1,5 @@
 import {
-  IffmpegCommandV2Request,
+  IffmpegCommandV2Operation,
   IpluginInputArgs,
 } from '../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject, Istreams } from '../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -29,11 +29,11 @@ export const createDefaultV2Streams = (): Istreams[] => [
 export const createV2Args = ({
   inputs = {},
   streams = createDefaultV2Streams(),
-  requests = [],
+  operations = [],
 }: {
   inputs?: Record<string, unknown>,
   streams?: Istreams[],
-  requests?: IffmpegCommandV2Request[],
+  operations?: IffmpegCommandV2Operation[],
 } = {}): IpluginInputArgs => {
   const inputFileObj = JSON.parse(JSON.stringify(sampleH264)) as IFileObject;
   inputFileObj._id = '/tmp/source.mp4';
@@ -50,7 +50,7 @@ export const createV2Args = ({
         version: 2,
         init: true,
         sourceFileId: inputFileObj._id,
-        requests: JSON.parse(JSON.stringify(requests)),
+        operations: JSON.parse(JSON.stringify(operations)),
       },
       flowFailed: false,
       user: {},
@@ -90,9 +90,9 @@ export const createV2Args = ({
   } as Partial<IpluginInputArgs> as IpluginInputArgs;
 };
 
-export const expectV2Request = (
+export const expectV2Operation = (
   args: IpluginInputArgs,
-  requestType: string,
+  operationType: string,
   pluginName: string,
   inputs: Record<string, unknown>,
 ): void => {
@@ -103,11 +103,11 @@ export const expectV2Request = (
   });
   expect(args.variables.ffmpegCommandV2).not.toHaveProperty('streams');
   expect(args.variables.ffmpegCommandV2).not.toHaveProperty('container');
-  expect(args.variables.ffmpegCommandV2?.requests).toHaveLength(1);
-  expect(args.variables.ffmpegCommandV2?.requests[0]).toEqual({
+  expect(args.variables.ffmpegCommandV2?.operations).toHaveLength(1);
+  expect(args.variables.ffmpegCommandV2?.operations[0]).toEqual({
     pluginName,
     pluginVersion: '2.0.0',
-    requestType,
+    operationType,
     inputs,
   });
 };

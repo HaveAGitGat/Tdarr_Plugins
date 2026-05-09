@@ -97,11 +97,11 @@ export interface IffmpegCommand {
     overallOuputArguments: string[],
 }
 
-export interface IffmpegCommandV2Request {
+export interface IffmpegCommandV2Operation {
     pluginName: string,
     pluginVersion: string,
     pluginId?: string,
-    requestType: string,
+    operationType: string,
     inputs: Record<string, unknown>,
 }
 
@@ -109,7 +109,7 @@ export interface IffmpegCommandV2 {
     version: 2,
     init: boolean,
     sourceFileId?: string,
-    requests: IffmpegCommandV2Request[],
+    operations: IffmpegCommandV2Operation[],
 }
 
 export interface IliveSizeCompare {

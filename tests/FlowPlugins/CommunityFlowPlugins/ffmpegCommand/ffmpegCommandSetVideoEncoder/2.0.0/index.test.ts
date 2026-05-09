@@ -1,9 +1,9 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandSetVideoEncoder/2.0.0/index';
-import { createV2Args, expectV2Request } from '../../v2TestUtils';
+import { createV2Args, expectV2Operation } from '../../v2TestUtils';
 
 describe('ffmpegCommandSetVideoEncoder v2 Plugin', () => {
-  it('appends a setVideoEncoder request without mutating streams', () => {
+  it('appends a setVideoEncoder operation without mutating streams', () => {
     const args = createV2Args({
       inputs: {
         outputCodec: 'h264',
@@ -21,7 +21,7 @@ describe('ffmpegCommandSetVideoEncoder v2 Plugin', () => {
     const result = plugin(args);
 
     expect(result.outputFileObj).toBe(args.inputFileObj);
-    expectV2Request(args, 'setVideoEncoder', 'ffmpegCommandSetVideoEncoder', {
+    expectV2Operation(args, 'setVideoEncoder', 'ffmpegCommandSetVideoEncoder', {
       outputCodec: 'h264',
       ffmpegPresetEnabled: true,
       ffmpegPreset: 'slow',

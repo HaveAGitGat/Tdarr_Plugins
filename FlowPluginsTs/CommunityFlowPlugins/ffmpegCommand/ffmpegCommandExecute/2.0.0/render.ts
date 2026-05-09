@@ -1,5 +1,5 @@
 import {
-  IffmpegCommandV2Request,
+  IffmpegCommandV2Operation,
   IpluginInputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 import { Istreams } from '../../../../FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -37,7 +37,7 @@ export interface IffmpegCommandV2RenderResult {
   streams: IffmpegCommandV2WorkingStream[],
 }
 
-const singletonRequestTypes = [
+const singletonOperationTypes = [
   'setVideoEncoder',
   'setVideoResolution',
   'setVideoFramerate',
@@ -46,8 +46,8 @@ const singletonRequestTypes = [
   'reorderStreams',
 ] as const;
 
-type SingletonRequestType = typeof singletonRequestTypes[number];
-type ISingletonRequestInputs = Partial<Record<SingletonRequestType, Record<string, unknown>>>;
+type SingletonOperationType = typeof singletonOperationTypes[number];
+type ISingletonOperationInputs = Partial<Record<SingletonOperationType, Record<string, unknown>>>;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 
@@ -107,10 +107,10 @@ const splitArgs = (args: IpluginInputArgs, value: unknown): string[] => {
     .filter((row) => row !== '');
 };
 
-const getRequests = (
-  requests: IffmpegCommandV2Request[],
-  requestType: string,
-): IffmpegCommandV2Request[] => requests.filter((request) => request.requestType === requestType);
+const getOperations = (
+  operations: IffmpegCommandV2Operation[],
+  operationType: string,
+): IffmpegCommandV2Operation[] => operations.filter((operation) => operation.operationType === operationType);
 
 const stableStringify = (value: unknown): string => {
   if (Array.isArray(value)) {
@@ -127,23 +127,23 @@ const stableStringify = (value: unknown): string => {
   return primitiveValue === undefined ? String(value) : primitiveValue;
 };
 
-const getSingletonRequestInputs = (
+const getSingletonOperationInputs = (
   args: IpluginInputArgs,
-  requests: IffmpegCommandV2Request[],
-  requestType: SingletonRequestType,
+  operations: IffmpegCommandV2Operation[],
+  operationType: SingletonOperationType,
 ): Record<string, unknown> | undefined => {
-  const matches = getRequests(requests, requestType);
+  const matches = getOperations(operations, operationType);
   if (matches.length === 0) {
     return undefined;
   }
 
   const firstInputs = matches[0].inputs || {};
   const firstInputsKey = stableStringify(firstInputs);
-  const hasConflict = matches.some((request) => stableStringify(request.inputs || {}) !== firstInputsKey);
+  const hasConflict = matches.some((operation) => stableStringify(operation.inputs || {}) !== firstInputsKey);
 
   if (hasConflict) {
-    const message = `Conflicting FFmpeg command v2 ${requestType} requests found.`
-      + ` Use one ${requestType} request.`;
+    const message = `Conflicting FFmpeg command v2 ${operationType} operations found.`
+      + ` Use one ${operationType} operation.`;
     args.jobLog(message);
     throw new Error(message);
   }
@@ -151,24 +151,24 @@ const getSingletonRequestInputs = (
   return firstInputs;
 };
 
-const resolveSingletonRequestInputs = (
+const resolveSingletonOperationInputs = (
   args: IpluginInputArgs,
-  requests: IffmpegCommandV2Request[],
-): ISingletonRequestInputs => {
-  const resolvedInputs: ISingletonRequestInputs = {};
+  operations: IffmpegCommandV2Operation[],
+): ISingletonOperationInputs => {
+  const resolvedInputs: ISingletonOperationInputs = {};
 
-  singletonRequestTypes.forEach((requestType) => {
-    const inputs = getSingletonRequestInputs(args, requests, requestType);
+  singletonOperationTypes.forEach((operationType) => {
+    const inputs = getSingletonOperationInputs(args, operations, operationType);
     if (inputs) {
-      resolvedInputs[requestType] = inputs;
+      resolvedInputs[operationType] = inputs;
     }
   });
 
   return resolvedInputs;
 };
 
-const hasRequest = (requests: IffmpegCommandV2Request[], requestType: string): boolean => (
-  getRequests(requests, requestType).length > 0
+const hasOperation = (operations: IffmpegCommandV2Operation[], operationType: string): boolean => (
+  getOperations(operations, operationType).length > 0
 );
 
 const getOutputStreamIndex = (streams: IworkingStream[], stream: IworkingStream): number => {
@@ -853,16 +853,16 @@ const applyReorderStreams = (
 const applyVideoEncoder = async ({
   args,
   streams,
-  requests,
+  operations,
   inputs,
   singletonInputs,
   overallInputArguments,
 }: {
   args: IpluginInputArgs,
   streams: IworkingStream[],
-  requests: IffmpegCommandV2Request[],
+  operations: IffmpegCommandV2Operation[],
   inputs: Record<string, unknown>,
-  singletonInputs: ISingletonRequestInputs,
+  singletonInputs: ISingletonOperationInputs,
   overallInputArguments: string[],
 }): Promise<boolean> => {
   let shouldProcess = false;
@@ -879,8 +879,8 @@ const applyVideoEncoder = async ({
   const resolutionInputs = singletonInputs.setVideoResolution;
   const frameRateInputs = singletonInputs.setVideoFramerate;
   const videoBitrateInputs = singletonInputs.setVideoBitrate;
-  const has10BitRequest = hasRequest(requests, 'set10BitVideo');
-  const hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
+  const has10BitOperation = hasOperation(operations, 'set10BitVideo');
+  const hasHdrToSdrOperation = hasOperation(operations, 'hdrToSdr');
   const videoStreams = streams.filter((stream) => (
     !stream.removed
     && stream.codec_type === 'video'
@@ -889,18 +889,18 @@ const applyVideoEncoder = async ({
 
   for (let i = 0; i < videoStreams.length; i += 1) {
     const stream = videoStreams[i];
-    const videoRequestRequiresEncoding = (
+    const videoOperationRequiresEncoding = (
       shouldScaleVideoStream(args, stream, resolutionInputs)
       || Boolean(frameRateInputs)
       || Boolean(videoBitrateInputs)
-      || has10BitRequest
-      || hasHdrToSdrRequest
+      || has10BitOperation
+      || hasHdrToSdrOperation
     );
 
     if (
       forceEncoding
       || stream.codec_name !== targetCodec
-      || videoRequestRequiresEncoding
+      || videoOperationRequiresEncoding
     ) {
       shouldProcess = true;
 
@@ -1004,13 +1004,13 @@ const applyVideoBitrate = (
 const applyVideoFilters = (
   args: IpluginInputArgs,
   streams: IworkingStream[],
-  requests: IffmpegCommandV2Request[],
-  singletonInputs: ISingletonRequestInputs,
+  operations: IffmpegCommandV2Operation[],
+  singletonInputs: ISingletonOperationInputs,
 ): boolean => {
   const resolutionInputs = singletonInputs.setVideoResolution;
   const frameRateInputs = singletonInputs.setVideoFramerate;
-  const has10BitRequest = hasRequest(requests, 'set10BitVideo');
-  const hasHdrToSdrRequest = hasRequest(requests, 'hdrToSdr');
+  const has10BitOperation = hasOperation(operations, 'set10BitVideo');
+  const hasHdrToSdrOperation = hasOperation(operations, 'hdrToSdr');
   let shouldProcess = false;
 
   streams.forEach((stream) => {
@@ -1025,7 +1025,7 @@ const applyVideoFilters = (
     const hardwareDecoding = stream.hardwareDecoding === true;
     const hardwareDecodedQsv = usesQsv && hardwareDecoding;
     const hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
-    const needsSoftwareOnlyFilter = hasHdrToSdrRequest || Boolean(frameRateInputs);
+    const needsSoftwareOnlyFilter = hasHdrToSdrOperation || Boolean(frameRateInputs);
     const shouldScale = shouldScaleVideoStream(args, stream, resolutionInputs);
     const targetResolution = resolutionInputs ? String(resolutionInputs.targetResolution) : '';
 
@@ -1033,26 +1033,26 @@ const applyVideoFilters = (
       usesQsv
       && hardwareDecodedQsv
       && shouldScale
-      && !hasHdrToSdrRequest
+      && !hasHdrToSdrOperation
       && !frameRateInputs
     ) {
       filterChain.push(getQsvScaleFilter(
         targetResolution,
-        has10BitRequest ? 'p010le' : undefined,
+        has10BitOperation ? 'p010le' : undefined,
       ));
     } else if (
       usesQsv
       && hardwareDecodedQsv
-      && has10BitRequest
+      && has10BitOperation
       && !shouldScale
-      && !hasHdrToSdrRequest
+      && !hasHdrToSdrOperation
       && !frameRateInputs
     ) {
       filterChain.push('scale_qsv=format=p010le');
     } else if (usesVaapi) {
-      const vaapiFormat = has10BitRequest ? 'p010' : undefined;
+      const vaapiFormat = has10BitOperation ? 'p010' : undefined;
 
-      if (!needsSoftwareOnlyFilter && (shouldScale || has10BitRequest)) {
+      if (!needsSoftwareOnlyFilter && (shouldScale || has10BitOperation)) {
         if (!hardwareDecodedVaapi) {
           filterChain.push('format=nv12', 'hwupload');
         }
@@ -1066,7 +1066,7 @@ const applyVideoFilters = (
           filterChain.push('hwdownload', 'format=nv12');
         }
 
-        if (hasHdrToSdrRequest) {
+        if (hasHdrToSdrOperation) {
           filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
         }
 
@@ -1079,15 +1079,15 @@ const applyVideoFilters = (
         }
 
         if (!hardwareDecodedVaapi || filterChain.length > 0) {
-          filterChain.push(`format=${has10BitRequest ? 'p010' : 'nv12'}`, 'hwupload');
+          filterChain.push(`format=${has10BitOperation ? 'p010' : 'nv12'}`, 'hwupload');
         }
       }
     } else {
-      if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
+      if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrOperation || shouldScale || frameRateInputs)) {
         filterChain.push('hwdownload', 'format=nv12');
       }
 
-      if (hasHdrToSdrRequest) {
+      if (hasHdrToSdrOperation) {
         filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
       }
 
@@ -1099,13 +1099,13 @@ const applyVideoFilters = (
         filterChain.push(getFrameRateFilter(args, stream, Number(frameRateInputs.framerate)));
       }
 
-      if (usesQsv && has10BitRequest) {
+      if (usesQsv && has10BitOperation) {
         filterChain.push('format=p010le');
       }
 
-      if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrRequest || shouldScale || frameRateInputs)) {
+      if (usesQsv && hardwareDecodedQsv && (hasHdrToSdrOperation || shouldScale || frameRateInputs)) {
         filterChain.push('hwupload=extra_hw_frames=64', 'format=qsv');
-      } else if (usesQsv && has10BitRequest && filterChain.length === 0) {
+      } else if (usesQsv && has10BitOperation && filterChain.length === 0) {
         filterChain.push('scale_qsv=format=p010le');
       }
     }
@@ -1115,7 +1115,7 @@ const applyVideoFilters = (
       shouldProcess = true;
     }
 
-    if (has10BitRequest) {
+    if (has10BitOperation) {
       const isLibsvtav1 = stream.encoder?.encoder === 'libsvtav1'
         || stream.outputArgs.some((row) => String(row).includes('libsvtav1'));
 
@@ -1138,7 +1138,7 @@ const applyVideoFilters = (
       shouldProcess = true;
     }
 
-    if (hasHdrToSdrRequest) {
+    if (hasHdrToSdrOperation) {
       shouldProcess = true;
     }
 
@@ -1172,16 +1172,16 @@ const warnForCustomOutputConflicts = (args: IpluginInputArgs, outputArguments: s
   }
 };
 
-const logNoopRequests = (
+const logNoopOperations = (
   args: IpluginInputArgs,
-  requests: IffmpegCommandV2Request[],
+  operations: IffmpegCommandV2Operation[],
 ): void => {
-  getRequests(requests, 'cropBlackBars').forEach(() => {
-    args.jobLog('Crop Black Bars v2 request has no render action yet; leaving streams unchanged.');
+  getOperations(operations, 'cropBlackBars').forEach(() => {
+    args.jobLog('Crop Black Bars v2 operation has no render action yet; leaving streams unchanged.');
   });
 
-  getRequests(requests, 'normalizeAudio').forEach(() => {
-    args.jobLog('Normalize Audio v2 request has no render action yet; leaving streams unchanged.');
+  getOperations(operations, 'normalizeAudio').forEach(() => {
+    args.jobLog('Normalize Audio v2 operation has no render action yet; leaving streams unchanged.');
   });
 };
 
@@ -1197,17 +1197,17 @@ export const renderFfmpegCommandV2 = async (
     );
   }
 
-  const requests = commandState?.requests || [];
-  const singletonInputs = resolveSingletonRequestInputs(args, requests);
+  const operations = commandState?.operations || [];
+  const singletonInputs = resolveSingletonOperationInputs(args, operations);
   let streams = createInitialWorkingStreams(args);
   let shouldProcess = false;
   let container = getContainer(args.inputFileObj._id);
   const overallInputArguments: string[] = [];
   const overallOutputArguments: string[] = [];
 
-  getRequests(requests, 'customArguments').forEach((request) => {
-    const inputArguments = splitArgs(args, request.inputs.inputArguments);
-    const outputArguments = splitArgs(args, request.inputs.outputArguments);
+  getOperations(operations, 'customArguments').forEach((operation) => {
+    const inputArguments = splitArgs(args, operation.inputs.inputArguments);
+    const outputArguments = splitArgs(args, operation.inputs.outputArguments);
 
     if (inputArguments.length > 0) {
       appendArgs(overallInputArguments, inputArguments);
@@ -1221,7 +1221,7 @@ export const renderFfmpegCommandV2 = async (
     }
   });
 
-  getRequests(requests, 'removeDataStreams').forEach(() => {
+  getOperations(operations, 'removeDataStreams').forEach(() => {
     streams.forEach((stream) => {
       if (stream.codec_type === 'data') {
         shouldProcess = markRemoved(stream) || shouldProcess;
@@ -1229,7 +1229,7 @@ export const renderFfmpegCommandV2 = async (
     });
   });
 
-  getRequests(requests, 'removeSubtitles').forEach(() => {
+  getOperations(operations, 'removeSubtitles').forEach(() => {
     streams.forEach((stream) => {
       if (stream.codec_type === 'subtitle') {
         shouldProcess = markRemoved(stream) || shouldProcess;
@@ -1237,23 +1237,23 @@ export const renderFfmpegCommandV2 = async (
     });
   });
 
-  getRequests(requests, 'removeStreamByProperty').forEach((request) => {
-    shouldProcess = applyRemoveStreamByProperty(args, streams, request.inputs) || shouldProcess;
+  getOperations(operations, 'removeStreamByProperty').forEach((operation) => {
+    shouldProcess = applyRemoveStreamByProperty(args, streams, operation.inputs) || shouldProcess;
   });
 
-  logNoopRequests(args, requests);
+  logNoopOperations(args, operations);
 
   const containerInputs = singletonInputs.setContainer;
   if (containerInputs) {
-    const requestedContainer = String(containerInputs.container);
+    const targetContainer = String(containerInputs.container);
     const currentContainer = getContainer(args.inputFileObj._id);
-    container = requestedContainer;
+    container = targetContainer;
 
-    if (currentContainer !== requestedContainer) {
+    if (currentContainer !== targetContainer) {
       shouldProcess = true;
 
       if (containerInputs.forceConform === true) {
-        shouldProcess = applyContainerConform(streams, requestedContainer) || shouldProcess;
+        shouldProcess = applyContainerConform(streams, targetContainer) || shouldProcess;
       }
 
       const fileContainer = String(args.inputFileObj.container || '').toLowerCase();
@@ -1270,8 +1270,8 @@ export const renderFfmpegCommandV2 = async (
     }
   }
 
-  getRequests(requests, 'ensureAudioStream').forEach((request) => {
-    shouldProcess = applyEnsureAudioStream(args, streams, request.inputs) || shouldProcess;
+  getOperations(operations, 'ensureAudioStream').forEach((operation) => {
+    shouldProcess = applyEnsureAudioStream(args, streams, operation.inputs) || shouldProcess;
   });
 
   const reorderInputs = singletonInputs.reorderStreams;
@@ -1289,14 +1289,14 @@ export const renderFfmpegCommandV2 = async (
     shouldProcess = await applyVideoEncoder({
       args,
       streams,
-      requests,
+      operations,
       inputs: encoderInputs,
       singletonInputs,
       overallInputArguments,
     }) || shouldProcess;
   }
 
-  shouldProcess = applyVideoFilters(args, streams, requests, singletonInputs) || shouldProcess;
+  shouldProcess = applyVideoFilters(args, streams, operations, singletonInputs) || shouldProcess;
 
   const bitrateInputs = singletonInputs.setVideoBitrate;
   if (bitrateInputs) {

@@ -3,26 +3,26 @@ import {
   createV2AudioStream,
   createV2AttachmentStream,
   createV2DataStream,
-  createV2EnsureAudioStreamRequest,
-  createV2RemoveDataStreamsRequest,
-  createV2RemoveStreamByPropertyRequest,
-  createV2RemoveSubtitlesRequest,
-  createV2ReorderStreamsRequest,
-  createV2SetContainerRequest,
+  createV2EnsureAudioStreamOperation,
+  createV2RemoveDataStreamsOperation,
+  createV2RemoveStreamByPropertyOperation,
+  createV2RemoveSubtitlesOperation,
+  createV2ReorderStreamsOperation,
+  createV2SetContainerOperation,
   createV2SubtitleStream,
-  createV2VideoEncoderRequest,
+  createV2VideoEncoderOperation,
   createV2VideoStream,
   createV2MockEncoder,
-  createV2VideoResolutionRequest,
+  createV2VideoResolutionOperation,
 } from './scenarioUtils';
 import type { IffmpegCommandV2Scenario } from './scenarioUtils';
 
 const streamScenarios: IffmpegCommandV2Scenario[] = [
   {
     id: 'copy-passthrough',
-    description: 'No v2 render requests copies every stream without processing',
+    description: 'No v2 render operations copy every stream without processing',
     streams: createDefaultV2Streams(),
-    requests: [],
+    operations: [],
     expected: {
       shouldProcess: false,
       container: 'mp4',
@@ -51,13 +51,13 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
       createV2AudioStream({ index: 1 }),
       createV2AttachmentStream({ index: 2 }),
     ],
-    requests: [
-      createV2VideoEncoderRequest({
+    operations: [
+      createV2VideoEncoderOperation({
         hardwareEncoding: false,
         hardwareType: 'auto',
         hardwareDecoding: false,
       }),
-      createV2VideoResolutionRequest('1080p'),
+      createV2VideoResolutionOperation('1080p'),
     ],
     encoder: createV2MockEncoder({
       encoder: 'libx265',
@@ -110,9 +110,9 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
         },
       }),
     ],
-    requests: [
-      createV2RemoveSubtitlesRequest(),
-      createV2ReorderStreamsRequest({
+    operations: [
+      createV2RemoveSubtitlesOperation(),
+      createV2ReorderStreamsOperation({
         processOrder: 'streamTypes',
         languages: '',
         channels: '',
@@ -160,8 +160,8 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
       }),
       createV2SubtitleStream({ index: 3 }),
     ],
-    requests: [
-      createV2RemoveStreamByPropertyRequest({
+    operations: [
+      createV2RemoveStreamByPropertyOperation({
         codecType: 'audio',
         propertyToCheck: 'tags.language',
         valuesToRemove: 'fre',
@@ -208,8 +208,8 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
         channels: 6,
       }),
     ],
-    requests: [
-      createV2EnsureAudioStreamRequest({
+    operations: [
+      createV2EnsureAudioStreamOperation({
         audioEncoder: 'ac3',
         language: 'eng',
         channels: '2',
@@ -268,8 +268,8 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
       }),
       createV2DataStream({ index: 3 }),
     ],
-    requests: [
-      createV2SetContainerRequest({
+    operations: [
+      createV2SetContainerOperation({
         container: 'mkv',
         forceConform: true,
       }),
@@ -302,8 +302,8 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
       id: '/tmp/source.ts',
       container: 'ts',
     },
-    requests: [
-      createV2SetContainerRequest({
+    operations: [
+      createV2SetContainerOperation({
         container: 'mkv',
         forceConform: false,
       }),
@@ -334,7 +334,7 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
     id: 'changed-input-file-log',
     description: 'Execute logs when the current input changed after Begin Command',
     streams: createDefaultV2Streams(),
-    requests: [],
+    operations: [],
     sourceFileId: '/tmp/old-source.mp4',
     expected: {
       shouldProcess: false,
@@ -370,9 +370,9 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
         index: 1,
       }),
     ],
-    requests: [
-      createV2RemoveSubtitlesRequest(),
-      createV2RemoveDataStreamsRequest(),
+    operations: [
+      createV2RemoveSubtitlesOperation(),
+      createV2RemoveDataStreamsOperation(),
     ],
     expected: {
       errorMessage: 'No streams mapped for new file',
