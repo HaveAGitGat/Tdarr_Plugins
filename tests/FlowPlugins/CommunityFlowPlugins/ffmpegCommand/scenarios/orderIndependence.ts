@@ -13,6 +13,12 @@ const resolution1080Operation = createV2VideoResolutionOperation('1080p');
 const hdrToSdrOperation = createV2HdrToSdrOperation();
 const framerate24Operation = createV2VideoFramerateOperation('24');
 const tenBitOperation = createV2Set10BitOperation();
+const softwareEncoderOperation = createV2VideoEncoderOperation({
+  outputCodec: 'h264',
+  hardwareEncoding: false,
+  hardwareType: 'auto',
+  hardwareDecoding: false,
+});
 const av1EncoderOperation = createV2VideoEncoderOperation({
   outputCodec: 'av1',
   hardwareEncoding: false,
@@ -63,12 +69,17 @@ const orderIndependenceScenarios: IffmpegCommandV2Scenario[] = [
   {
     id: 'software-filter-chain-order',
     description: 'HDR, resolution, and framerate operations produce one stable video filter chain',
-    operations: [hdrToSdrOperation, resolution1080Operation, framerate24Operation],
+    operations: [softwareEncoderOperation, hdrToSdrOperation, resolution1080Operation, framerate24Operation],
     operationVariants: [
-      [hdrToSdrOperation, resolution1080Operation, framerate24Operation],
-      [framerate24Operation, resolution1080Operation, hdrToSdrOperation],
-      [resolution1080Operation, hdrToSdrOperation, framerate24Operation],
+      [softwareEncoderOperation, hdrToSdrOperation, resolution1080Operation, framerate24Operation],
+      [framerate24Operation, resolution1080Operation, softwareEncoderOperation, hdrToSdrOperation],
+      [resolution1080Operation, hdrToSdrOperation, framerate24Operation, softwareEncoderOperation],
     ],
+    encoder: createV2MockEncoder({
+      encoder: 'libx264',
+      inputArgs: [],
+      isGpu: false,
+    }),
     expected: {
       shouldProcess: true,
       container: 'mp4',
@@ -80,6 +91,12 @@ const orderIndependenceScenarios: IffmpegCommandV2Scenario[] = [
         '/tmp/source.mp4',
         '-map',
         '0:0',
+        '-c:0',
+        'libx264',
+        '-crf',
+        '25',
+        '-preset',
+        'fast',
         '-filter:v:0',
         'zscale=t=linear:npl=100,format=yuv420p,scale=1920:-2,fps=24',
         '-map',

@@ -109,6 +109,36 @@ const createEncoderOperation = (inputs: Record<string, unknown> = {}): IffmpegCo
   },
 });
 
+const createSoftwareEncoderOperation = (
+  inputs: Record<string, unknown> = {},
+): IffmpegCommandV2Operation => createEncoderOperation({
+  outputCodec: 'h264',
+  ffmpegPresetEnabled: false,
+  ffmpegQualityEnabled: false,
+  hardwareEncoding: false,
+  hardwareType: 'auto',
+  hardwareDecoding: false,
+  forceEncoding: false,
+  ...inputs,
+});
+
+const createAudioEncoderOperation = (
+  inputs: Record<string, unknown> = {},
+): IffmpegCommandV2Operation => ({
+  pluginName: 'ffmpegCommandSetAudioEncoder',
+  pluginVersion: '2.0.0',
+  operationType: 'setAudioEncoder',
+  inputs: {
+    audioEncoder: 'aac',
+    forceEncoding: true,
+    enableBitrate: false,
+    bitrate: '192k',
+    enableSamplerate: false,
+    samplerate: '48000',
+    ...inputs,
+  },
+});
+
 const createResolutionOperation = (targetResolution = '1080p'): IffmpegCommandV2Operation => ({
   pluginName: 'ffmpegCommandSetVdeoResolution',
   pluginVersion: '2.0.0',
@@ -171,6 +201,15 @@ const createConflictMessage = (operationType: string): string => (
   + ` Use one ${operationType} operation.`
 );
 
+const createImplicitEncoderMessage = (codecType: string, sourceIndex: number): string => {
+  const guidance = codecType === 'audio'
+    ? 'Add Set Audio Encoder before audio operations that require encoding.'
+    : 'Add Set Video Encoder when using video operations that require encoding.';
+
+  return `FFmpeg command v2 ${codecType} stream ${sourceIndex} requires encoding`
+    + ` but does not have an explicit encoder. ${guidance}`;
+};
+
 type SingletonConflictCase = [string, IffmpegCommandV2Operation, IffmpegCommandV2Operation];
 
 const singletonConflictCases: SingletonConflictCase[] = [
@@ -178,6 +217,11 @@ const singletonConflictCases: SingletonConflictCase[] = [
     'setVideoEncoder',
     createEncoderOperation({ outputCodec: 'hevc' }),
     createEncoderOperation({ outputCodec: 'h264' }),
+  ],
+  [
+    'setAudioEncoder',
+    createAudioEncoderOperation({ audioEncoder: 'aac' }),
+    createAudioEncoderOperation({ audioEncoder: 'ac3' }),
   ],
   [
     'setVideoResolution',
@@ -267,6 +311,16 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     });
   };
 
+  const mockSoftwareEncoder = () => {
+    mockGetEncoder.mockResolvedValue({
+      encoder: 'libx264',
+      inputArgs: [],
+      outputArgs: [],
+      isGpu: false,
+      enabledDevices: [],
+    });
+  };
+
   beforeEach(() => {
     const { getEncoder } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils');
     mockGetEncoder = getEncoder;
@@ -330,9 +384,10 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
   it('allows duplicate singleton operations when their inputs are identical', async () => {
     const resolutionOperation = createResolutionOperation();
+    mockSoftwareEncoder();
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      operations: [resolutionOperation, resolutionOperation],
+      operations: [resolutionOperation, resolutionOperation, createSoftwareEncoderOperation()],
     }));
 
     expect(renderResult.spawnArgs).toEqual([
@@ -341,6 +396,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '/tmp/source.mp4',
       '-map',
       '0:0',
+      '-c:0',
+      'libx264',
       '-filter:v:0',
       'scale=1920:-2',
       '-map',
@@ -368,6 +425,42 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     });
     await expect(renderFfmpegCommandV2(secondThenFirst)).rejects.toThrow(message);
     expect(secondThenFirst.jobLog).toHaveBeenCalledWith(message);
+  });
+
+  it.each([
+    [
+      'resolution',
+      [createResolutionOperation()],
+    ],
+    [
+      'framerate',
+      [createOperation('ffmpegCommandSetVdeoFramerate', 'setVideoFramerate', { framerate: 24 })],
+    ],
+    [
+      'video bitrate',
+      [createOperation('ffmpegCommandSetVideoBitrate', 'setVideoBitrate', {
+        useInputBitrate: false,
+        targetBitratePercent: '50',
+        fallbackBitrate: '5000',
+        bitrate: '3000',
+      })],
+    ],
+    [
+      '10-bit',
+      [createOperation('ffmpegCommand10BitVideo', 'set10BitVideo', {})],
+    ],
+    [
+      'HDR to SDR',
+      [createOperation('ffmpegCommandHdrToSdr', 'hdrToSdr', {})],
+    ],
+  ])('rejects %s without an explicit video encoder', async (_name, operations) => {
+    const args = createV2Args({
+      operations,
+    });
+    const message = createImplicitEncoderMessage('video', 0);
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow(message);
+    expect(args.jobLog).toHaveBeenCalledWith(message);
   });
 
   it('uses software scale for QSV encoding when hardware decoding is disabled', async () => {
@@ -594,9 +687,10 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       operationType: 'hdrToSdr',
       inputs: {},
     };
+    mockSoftwareEncoder();
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      operations: [hdrOperation, createResolutionOperation()],
+      operations: [hdrOperation, createResolutionOperation(), createSoftwareEncoderOperation()],
     }));
     const filterOptions = renderResult.spawnArgs.filter((arg) => arg === '-vf' || arg.startsWith('-filter'));
 
@@ -696,9 +790,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     const args = createV2Args({
       operations: [
         createResolutionOperation(),
+        createSoftwareEncoderOperation(),
       ],
     });
     args.inputFileObj.video_resolution = '1080p';
+    mockSoftwareEncoder();
 
     const renderResult = await renderFfmpegCommandV2(args);
 
@@ -709,6 +805,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '/tmp/source.mp4',
       '-map',
       '0:0',
+      '-c:0',
+      'libx264',
       '-filter:v:0',
       'scale=1920:-2',
       '-map',
@@ -733,10 +831,13 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       },
     ];
 
+    mockSoftwareEncoder();
+
     const renderResult = await renderFfmpegCommandV2(createV2Args({
       streams,
       operations: [
         createResolutionOperation(),
+        createSoftwareEncoderOperation(),
       ],
     }));
 
@@ -746,6 +847,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '/tmp/source.mp4',
       '-map',
       '0:0',
+      '-c:0',
+      'libx264',
       '-filter:v:0',
       'scale=1920:-2',
       '-map',
@@ -821,6 +924,63 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '-map',
       '0:1',
       '-c:0',
+      'copy',
+    ]);
+  });
+
+  it('sets audio encoder args on active audio streams', async () => {
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          audioEncoder: 'libopus',
+          enableBitrate: true,
+          bitrate: '128k',
+          enableSamplerate: true,
+          samplerate: '48000',
+        }),
+      ],
+    }));
+
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'libopus',
+      '-b:a:0',
+      '128k',
+      '-ar:a:0',
+      '48000',
+    ]);
+  });
+
+  it('does not encode matching audio when Set Audio Encoder force encoding is disabled', async () => {
+    const renderResult = await renderFfmpegCommandV2(createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
+      ],
+    }));
+
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
       'copy',
     ]);
   });
@@ -989,12 +1149,31 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     );
   });
 
-  it('detects crop black bars and emits a scoped crop filter', async () => {
+  it('throws when crop black bars detects a crop without Set Video Encoder', async () => {
     const args = createV2Args({
       operations: [
         createCropBlackBarsOperation({
           sampleCount: '1',
         }),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
+
+    const message = createImplicitEncoderMessage('video', 0);
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow(message);
+    expect(args.jobLog).toHaveBeenCalledWith(message);
+  });
+
+  it('detects crop black bars and emits a scoped crop filter when Set Video Encoder is configured', async () => {
+    mockSoftwareEncoder();
+
+    const args = createV2Args({
+      operations: [
+        createCropBlackBarsOperation({
+          sampleCount: '1',
+        }),
+        createSoftwareEncoderOperation(),
       ],
     });
     mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
@@ -1008,6 +1187,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '/tmp/source.mp4',
       '-map',
       '0:0',
+      '-c:0',
+      'libx264',
       '-filter:v:0',
       'crop=1280:600:0:60',
       '-map',
@@ -1029,17 +1210,20 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       sampleCount: '1',
     });
     const resolutionOperation = createResolutionOperation('1080p');
+    const encoderOperation = createSoftwareEncoderOperation();
+    mockSoftwareEncoder();
     mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
 
     const cropThenScale = await renderFfmpegCommandV2(createV2Args({
-      operations: [cropOperation, resolutionOperation],
+      operations: [cropOperation, resolutionOperation, encoderOperation],
     }));
 
     mockSpawnSync.mockClear();
+    mockSoftwareEncoder();
     mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
 
     const scaleThenCrop = await renderFfmpegCommandV2(createV2Args({
-      operations: [resolutionOperation, cropOperation],
+      operations: [resolutionOperation, cropOperation, encoderOperation],
     }));
 
     expect(cropThenScale.spawnArgs).toEqual(scaleThenCrop.spawnArgs);
@@ -1085,9 +1269,11 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
           cropMode: 'minimum',
           sampleCount: '2',
         }),
+        createSoftwareEncoderOperation(),
       ],
     });
     let callCount = 0;
+    mockSoftwareEncoder();
     mockSpawnSync.mockImplementation(() => {
       callCount += 1;
       if (callCount === 1) {
@@ -1130,8 +1316,10 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
         createCropBlackBarsOperation({
           sampleCount: '1',
         }),
+        createSoftwareEncoderOperation(),
       ],
     });
+    mockSoftwareEncoder();
     mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(640, 300, 0, 30, 30)));
 
     const renderResult = await renderFfmpegCommandV2(args);
@@ -1147,9 +1335,43 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]));
   });
 
-  it('runs loudnorm first pass and scopes the second pass filter to the audio stream', async () => {
+  it('throws when normalize audio has no explicit audio encoder', async () => {
     const args = createV2Args({
       operations: [
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput()));
+    const message = createImplicitEncoderMessage('audio', 1);
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow(message);
+    expect(mockSpawnSync).not.toHaveBeenCalled();
+    expect(args.jobLog).toHaveBeenCalledWith(message);
+  });
+
+  it('throws when normalize audio has an empty audio encoder', async () => {
+    const args = createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          audioEncoder: '',
+        }),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput()));
+    const message = createImplicitEncoderMessage('audio', 1);
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow(message);
+    expect(mockSpawnSync).not.toHaveBeenCalled();
+    expect(args.jobLog).toHaveBeenCalledWith(message);
+  });
+
+  it('encodes normalized audio with Set Audio Encoder when force encoding is disabled', async () => {
+    const args = createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
         createNormalizeAudioOperation(),
       ],
     });
@@ -1187,8 +1409,6 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '0:1',
       '-c:1',
       'aac',
-      '-b:a:0',
-      '192k',
       '-filter:a:0',
       makeExpectedLoudnormFilter(),
     ]);
@@ -1213,6 +1433,9 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     };
     const args = createV2Args({
       operations: [
+        createAudioEncoderOperation({
+          audioEncoder: 'libopus',
+        }),
         createNormalizeAudioOperation(inputs),
       ],
     });
@@ -1223,6 +1446,8 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
 
     expect(loudnormFirstPassArgs).toContain('loudnorm=I=-16.0:LRA=11.0:TP=-1.5:print_format=json');
     expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-c:1',
+      'libopus',
       '-filter:a:0',
       makeExpectedLoudnormFilter(values, inputs),
     ]));
@@ -1231,6 +1456,9 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
   it('skips normalize audio when required gain exceeds maxGain', async () => {
     const args = createV2Args({
       operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
         createNormalizeAudioOperation({
           maxGain: '15',
         }),
@@ -1291,6 +1519,9 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
   it('throws when normalize audio first pass fails', async () => {
     const args = createV2Args({
       operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
         createNormalizeAudioOperation(),
       ],
     });
@@ -1325,6 +1556,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     const args = createV2Args({
       streams,
       operations: [
+        createAudioEncoderOperation(),
         createNormalizeAudioOperation(),
       ],
     });
@@ -1352,6 +1584,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
           enableSamplerate: true,
           samplerate: '48000',
         }),
+        createAudioEncoderOperation(),
         createNormalizeAudioOperation(),
       ],
     });
@@ -1372,8 +1605,6 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '0:1',
       '-c:1',
       'aac',
-      '-b:a:0',
-      '192k',
       '-filter:a:0',
       makeExpectedLoudnormFilter(),
       '-map',
@@ -1516,7 +1747,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
     ]);
   });
 
-  it('keeps an existing ensured audio codec when normalize audio later encodes it', async () => {
+  it('uses Set Audio Encoder when an existing Ensure Audio match is normalized', async () => {
     const streams = [
       createDefaultV2Streams()[0],
       {
@@ -1529,6 +1760,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       streams,
       operations: [
         createEnsureAudioOperation(),
+        createAudioEncoderOperation(),
         createNormalizeAudioOperation(),
       ],
     });
@@ -1547,7 +1779,7 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '-map',
       '0:1',
       '-c:1',
-      'ac3',
+      'aac',
       '-filter:a:0',
       makeExpectedLoudnormFilter(),
     ]);

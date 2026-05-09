@@ -19,7 +19,6 @@ interface IworkingStream extends Istreams {
   encoder?: IgetEncoder,
   hardwareDecoding?: boolean,
   cropFilter?: string,
-  normalizeAudioEncoder?: string,
 }
 
 export type IffmpegCommandV2WorkingStream = IworkingStream;
@@ -77,6 +76,7 @@ export interface IffmpegCommandV2RenderResult {
 
 const singletonOperationTypes = [
   'setVideoEncoder',
+  'setAudioEncoder',
   'setVideoResolution',
   'setVideoFramerate',
   'setVideoBitrate',
@@ -840,12 +840,6 @@ const applyEnsureAudioStream = (
     ));
 
     if (hasStreamAlready.length > 0) {
-      hasStreamAlready.forEach((stream) => {
-        // Preserve the codec selected by Ensure Audio Stream if a later filter needs to re-encode.
-        // eslint-disable-next-line no-param-reassign
-        stream.normalizeAudioEncoder = audioEncoder;
-      });
-
       args.jobLog(`File already has ${targetLangTag} stream in ${audioEncoder}, ${targetChannels} channels \n`);
       return {
         handled: true,
@@ -1036,15 +1030,6 @@ const appendNormalizeAudioOutputArgs = (
   settings: INormalizeAudioSettings,
   loudnormValues: ILoudnormValues,
 ): void => {
-  if (!hasCodecOutputArg(stream.outputArgs)) {
-    const audioEncoder = stream.normalizeAudioEncoder || 'aac';
-    stream.outputArgs.push('-c:{outputIndex}', audioEncoder);
-
-    if (audioEncoder === 'aac') {
-      stream.outputArgs.push('-b:a:{outputTypeIndex}', '192k');
-    }
-  }
-
   stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));
 };
 
@@ -1078,6 +1063,58 @@ const applyNormalizeAudio = (
       shouldProcess = true;
     }
   }
+
+  return shouldProcess;
+};
+
+const applyAudioEncoder = (
+  streams: IworkingStream[],
+  inputs: Record<string, unknown>,
+): boolean => {
+  const audioEncoder = getStringInput(inputs.audioEncoder, '');
+  if (audioEncoder === '') {
+    return false;
+  }
+
+  const audioCodec = getAudioCodecName(audioEncoder);
+  const forceEncoding = inputs.forceEncoding === true;
+  const enableBitrate = inputs.enableBitrate === true;
+  const bitrate = String(inputs.bitrate);
+  const enableSamplerate = inputs.enableSamplerate === true;
+  const samplerate = String(inputs.samplerate);
+  let shouldProcess = false;
+
+  streams.forEach((stream) => {
+    if (stream.removed || stream.codec_type !== 'audio' || hasCodecOutputArg(stream.outputArgs)) {
+      return;
+    }
+
+    const streamRequiresExplicitEncoder = !shouldAddCopyCodec(stream.outputArgs);
+
+    if (
+      forceEncoding
+      || stream.codec_name !== audioCodec
+      || streamRequiresExplicitEncoder
+      || enableBitrate
+      || enableSamplerate
+    ) {
+      const outputArgs = [
+        '-c:{outputIndex}',
+        audioEncoder,
+      ];
+
+      if (enableBitrate) {
+        outputArgs.push('-b:a:{outputTypeIndex}', `${bitrate}`);
+      }
+
+      if (enableSamplerate) {
+        outputArgs.push('-ar:a:{outputTypeIndex}', `${samplerate}`);
+      }
+
+      stream.outputArgs.unshift(...outputArgs);
+      shouldProcess = true;
+    }
+  });
 
   return shouldProcess;
 };
@@ -1672,6 +1709,68 @@ const warnForCustomOutputConflicts = (args: IpluginInputArgs, outputArguments: s
   }
 };
 
+const getExplicitEncoderGuidance = (codecType: string): string => {
+  if (codecType === 'video') {
+    return 'Add Set Video Encoder when using video operations that require encoding.';
+  }
+
+  if (codecType === 'audio') {
+    return 'Add Set Audio Encoder before audio operations that require encoding.';
+  }
+
+  return 'Add an explicit encoder before operations that require encoding.';
+};
+
+const getImplicitEncoderMessage = (stream: IworkingStream): string => {
+  const codecType = String(stream.codec_type || 'unknown');
+  return `FFmpeg command v2 ${codecType} stream ${stream.sourceIndex} requires encoding`
+    + ` but does not have an explicit encoder. ${getExplicitEncoderGuidance(codecType)}`;
+};
+
+const throwImplicitEncoderError = (
+  args: IpluginInputArgs,
+  stream: IworkingStream,
+): never => {
+  const message = getImplicitEncoderMessage(stream);
+  args.jobLog(message);
+  throw new Error(message);
+};
+
+const hasConfiguredAudioEncoder = (
+  audioEncoderInputs: Record<string, unknown> | undefined,
+): audioEncoderInputs is Record<string, unknown> => (
+  audioEncoderInputs !== undefined
+  && getStringInput(audioEncoderInputs.audioEncoder, '') !== ''
+);
+
+const assertAudioEncoderConfiguredForNormalize = (
+  args: IpluginInputArgs,
+  streams: IworkingStream[],
+  audioEncoderInputs: Record<string, unknown> | undefined,
+): void => {
+  if (hasConfiguredAudioEncoder(audioEncoderInputs)) {
+    return;
+  }
+
+  const audioStream = streams.find((stream) => !stream.removed && stream.codec_type === 'audio');
+  if (audioStream) {
+    throwImplicitEncoderError(args, audioStream);
+  }
+};
+
+const assertNoImplicitEncoder = (
+  args: IpluginInputArgs,
+  streams: IworkingStream[],
+): void => {
+  streams.forEach((stream) => {
+    if (shouldAddCopyCodec(stream.outputArgs) || hasCodecOutputArg(stream.outputArgs)) {
+      return;
+    }
+
+    throwImplicitEncoderError(args, stream);
+  });
+};
+
 export const renderFfmpegCommandV2 = async (
   args: IpluginInputArgs,
 ): Promise<IffmpegCommandV2RenderResult> => {
@@ -1774,9 +1873,15 @@ export const renderFfmpegCommandV2 = async (
     }
   }
 
+  const audioEncoderInputs = singletonInputs.setAudioEncoder;
   const normalizeAudioInputs = singletonInputs.normalizeAudio;
   if (normalizeAudioInputs) {
+    assertAudioEncoderConfiguredForNormalize(args, streams, audioEncoderInputs);
     shouldProcess = applyNormalizeAudio(args, streams, normalizeAudioInputs) || shouldProcess;
+  }
+
+  if (hasConfiguredAudioEncoder(audioEncoderInputs)) {
+    shouldProcess = applyAudioEncoder(streams, audioEncoderInputs) || shouldProcess;
   }
 
   const encoderInputs = singletonInputs.setVideoEncoder;
@@ -1804,6 +1909,8 @@ export const renderFfmpegCommandV2 = async (
     args.jobLog('No streams mapped for new file');
     throw new Error('No streams mapped for new file');
   }
+
+  assertNoImplicitEncoder(args, filteredStreams);
 
   const spawnArgs: string[] = [
     '-y',

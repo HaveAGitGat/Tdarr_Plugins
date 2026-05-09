@@ -62,6 +62,7 @@ var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
 var flowUtils_1 = require("../../../../FlowHelpers/1.0.0/interfaces/flowUtils");
 var singletonOperationTypes = [
     'setVideoEncoder',
+    'setAudioEncoder',
     'setVideoResolution',
     'setVideoFramerate',
     'setVideoBitrate',
@@ -641,11 +642,6 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
             && stream.codec_name === audioCodec
             && stream.channels === targetChannels); });
         if (hasStreamAlready.length > 0) {
-            hasStreamAlready.forEach(function (stream) {
-                // Preserve the codec selected by Ensure Audio Stream if a later filter needs to re-encode.
-                // eslint-disable-next-line no-param-reassign
-                stream.normalizeAudioEncoder = audioEncoder;
-            });
             args.jobLog("File already has ".concat(targetLangTag, " stream in ").concat(audioEncoder, ", ").concat(targetChannels, " channels \n"));
             return {
                 handled: true,
@@ -771,13 +767,6 @@ var getLoudnormValuesIfGainAllowed = function (args, stream, settings) {
     return loudnormValues;
 };
 var appendNormalizeAudioOutputArgs = function (stream, settings, loudnormValues) {
-    if (!hasCodecOutputArg(stream.outputArgs)) {
-        var audioEncoder = stream.normalizeAudioEncoder || 'aac';
-        stream.outputArgs.push('-c:{outputIndex}', audioEncoder);
-        if (audioEncoder === 'aac') {
-            stream.outputArgs.push('-b:a:{outputTypeIndex}', '192k');
-        }
-    }
     stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));
 };
 var applyNormalizeAudio = function (args, streams, inputs) {
@@ -802,6 +791,45 @@ var applyNormalizeAudio = function (args, streams, inputs) {
             shouldProcess = true;
         }
     }
+    return shouldProcess;
+};
+var applyAudioEncoder = function (streams, inputs) {
+    var audioEncoder = getStringInput(inputs.audioEncoder, '');
+    if (audioEncoder === '') {
+        return false;
+    }
+    var audioCodec = getAudioCodecName(audioEncoder);
+    var forceEncoding = inputs.forceEncoding === true;
+    var enableBitrate = inputs.enableBitrate === true;
+    var bitrate = String(inputs.bitrate);
+    var enableSamplerate = inputs.enableSamplerate === true;
+    var samplerate = String(inputs.samplerate);
+    var shouldProcess = false;
+    streams.forEach(function (stream) {
+        var _a;
+        if (stream.removed || stream.codec_type !== 'audio' || hasCodecOutputArg(stream.outputArgs)) {
+            return;
+        }
+        var streamRequiresExplicitEncoder = !shouldAddCopyCodec(stream.outputArgs);
+        if (forceEncoding
+            || stream.codec_name !== audioCodec
+            || streamRequiresExplicitEncoder
+            || enableBitrate
+            || enableSamplerate) {
+            var outputArgs = [
+                '-c:{outputIndex}',
+                audioEncoder,
+            ];
+            if (enableBitrate) {
+                outputArgs.push('-b:a:{outputTypeIndex}', "".concat(bitrate));
+            }
+            if (enableSamplerate) {
+                outputArgs.push('-ar:a:{outputTypeIndex}', "".concat(samplerate));
+            }
+            (_a = stream.outputArgs).unshift.apply(_a, outputArgs);
+            shouldProcess = true;
+        }
+    });
     return shouldProcess;
 };
 var getCropDetectionSettings = function (inputs) { return ({
@@ -1275,8 +1303,46 @@ var warnForCustomOutputConflicts = function (args, outputArguments) {
         args.jobLog('Custom FFmpeg output arguments include command-shaping options that may conflict with v2 rendering.');
     }
 };
+var getExplicitEncoderGuidance = function (codecType) {
+    if (codecType === 'video') {
+        return 'Add Set Video Encoder when using video operations that require encoding.';
+    }
+    if (codecType === 'audio') {
+        return 'Add Set Audio Encoder before audio operations that require encoding.';
+    }
+    return 'Add an explicit encoder before operations that require encoding.';
+};
+var getImplicitEncoderMessage = function (stream) {
+    var codecType = String(stream.codec_type || 'unknown');
+    return "FFmpeg command v2 ".concat(codecType, " stream ").concat(stream.sourceIndex, " requires encoding")
+        + " but does not have an explicit encoder. ".concat(getExplicitEncoderGuidance(codecType));
+};
+var throwImplicitEncoderError = function (args, stream) {
+    var message = getImplicitEncoderMessage(stream);
+    args.jobLog(message);
+    throw new Error(message);
+};
+var hasConfiguredAudioEncoder = function (audioEncoderInputs) { return (audioEncoderInputs !== undefined
+    && getStringInput(audioEncoderInputs.audioEncoder, '') !== ''); };
+var assertAudioEncoderConfiguredForNormalize = function (args, streams, audioEncoderInputs) {
+    if (hasConfiguredAudioEncoder(audioEncoderInputs)) {
+        return;
+    }
+    var audioStream = streams.find(function (stream) { return !stream.removed && stream.codec_type === 'audio'; });
+    if (audioStream) {
+        throwImplicitEncoderError(args, audioStream);
+    }
+};
+var assertNoImplicitEncoder = function (args, streams) {
+    streams.forEach(function (stream) {
+        if (shouldAddCopyCodec(stream.outputArgs) || hasCodecOutputArg(stream.outputArgs)) {
+            return;
+        }
+        throwImplicitEncoderError(args, stream);
+    });
+};
 var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var commandState, operations, singletonInputs, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, cropBlackBarsInputs, containerInputs, targetContainer, currentContainer, fileContainer, reorderInputs, originalStreams, normalizeAudioInputs, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
+    var commandState, operations, singletonInputs, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, cropBlackBarsInputs, containerInputs, targetContainer, currentContainer, fileContainer, reorderInputs, originalStreams, audioEncoderInputs, normalizeAudioInputs, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -1358,9 +1424,14 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                         shouldProcess = true;
                     }
                 }
+                audioEncoderInputs = singletonInputs.setAudioEncoder;
                 normalizeAudioInputs = singletonInputs.normalizeAudio;
                 if (normalizeAudioInputs) {
+                    assertAudioEncoderConfiguredForNormalize(args, streams, audioEncoderInputs);
                     shouldProcess = applyNormalizeAudio(args, streams, normalizeAudioInputs) || shouldProcess;
+                }
+                if (hasConfiguredAudioEncoder(audioEncoderInputs)) {
+                    shouldProcess = applyAudioEncoder(streams, audioEncoderInputs) || shouldProcess;
                 }
                 encoderInputs = singletonInputs.setVideoEncoder;
                 if (!encoderInputs) return [3 /*break*/, 2];
@@ -1386,6 +1457,7 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                     args.jobLog('No streams mapped for new file');
                     throw new Error('No streams mapped for new file');
                 }
+                assertNoImplicitEncoder(args, filteredStreams);
                 spawnArgs = __spreadArray(__spreadArray([
                     '-y'
                 ], overallInputArguments, true), [

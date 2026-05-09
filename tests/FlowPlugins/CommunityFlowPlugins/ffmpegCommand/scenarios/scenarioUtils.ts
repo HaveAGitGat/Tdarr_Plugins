@@ -121,6 +121,22 @@ export const createV2VideoEncoderOperation = (
   },
 });
 
+export const createV2AudioEncoderOperation = (
+  inputs: Record<string, unknown> = {},
+): IffmpegCommandV2Operation => createV2Operation({
+  pluginName: 'ffmpegCommandSetAudioEncoder',
+  operationType: 'setAudioEncoder',
+  inputs: {
+    audioEncoder: 'aac',
+    forceEncoding: true,
+    enableBitrate: false,
+    bitrate: '192k',
+    enableSamplerate: false,
+    samplerate: '48000',
+    ...inputs,
+  },
+});
+
 export const createV2VideoResolutionOperation = (
   targetResolution = '1080p',
 ): IffmpegCommandV2Operation => createV2Operation({

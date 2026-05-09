@@ -1,8 +1,11 @@
 import {
   createDefaultV2Streams,
+  createV2AudioEncoderOperation,
   createV2CustomArgumentsOperation,
+  createV2MockEncoder,
   createV2NormalizeAudioOperation,
   createV2VideoBitrateOperation,
+  createV2VideoEncoderOperation,
 } from './scenarioUtils';
 import type { IffmpegCommandV2Scenario } from './scenarioUtils';
 
@@ -48,9 +51,10 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
   },
   {
     id: 'normalize-audio',
-    description: 'Normalize audio scopes loudnorm and audio encode args to audio streams',
+    description: 'Normalize audio with Set Audio Encoder scopes loudnorm and audio encode args to audio streams',
     streams: createDefaultV2Streams(),
     operations: [
+      createV2AudioEncoderOperation(),
       createV2NormalizeAudioOperation(),
     ],
     expected: {
@@ -70,8 +74,6 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
         '0:1',
         '-c:1',
         'aac',
-        '-b:a:0',
-        '192k',
         '-filter:a:0',
         'loudnorm=print_format=summary:linear=true:I=-23.0:LRA=7.0:TP=-2.0:'
         + 'measured_i=-16.42:measured_lra=11.32:measured_tp=-0.23:'
@@ -84,10 +86,12 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
     description: 'Video bitrate operations scope bitrate args to video output stream indexes',
     streams: createDefaultV2Streams(),
     operations: [
+      createV2VideoEncoderOperation(),
       createV2VideoBitrateOperation({
         bitrate: '3000',
       }),
     ],
+    encoder: createV2MockEncoder(),
     expected: {
       shouldProcess: true,
       container: 'mp4',
@@ -98,10 +102,20 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
       ],
       spawnArgs: [
         '-y',
+        '-hwaccel',
+        'qsv',
+        '-hwaccel_output_format',
+        'qsv',
         '-i',
         '/tmp/source.mp4',
         '-map',
         '0:0',
+        '-c:0',
+        'hevc_qsv',
+        '-global_quality',
+        '25',
+        '-preset',
+        'fast',
         '-b:v:0',
         '3000k',
         '-map',
