@@ -14,7 +14,6 @@ const details = (): IpluginDetails => ({
   description: 'Normalize Audio',
   style: {
     borderColor: '#6efefc',
-    opacity: 0.5,
   },
   tags: 'video',
   isStartPlugin: false,
@@ -22,7 +21,69 @@ const details = (): IpluginDetails => ({
   requiresVersion: ffmpegCommandV2RequiresVersion,
   sidebarPosition: -1,
   icon: '',
-  inputs: [],
+  inputs: [
+    {
+      label: 'Target Integrated Loudness (LUFS)',
+      name: 'i',
+      type: 'string',
+      defaultValue: '-23.0',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Target integrated loudness in LUFS (Loudness Units relative to Full Scale). \\n
+              This is the average perceptual loudness the output file will be normalized to. \\n
+              Common values: \\n
+              -14.0 = Spotify / YouTube streaming standard \\n
+              -16.0 = Apple Music / AES streaming recommendation \\n
+              -23.0 = EBU R128 broadcast standard (default) \\n`,
+    },
+    {
+      label: 'Target Loudness Range (LU)',
+      name: 'lra',
+      type: 'string',
+      defaultValue: '7.0',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Target loudness range in LU (Loudness Units). \\n
+              Controls how much dynamic variation is allowed between quiet and loud sections. \\n
+              A lower value produces more consistent loudness throughout the file. \\n
+              A higher value preserves more of the original dynamic range. \\n
+              Typical values: \\n
+              3.0-7.0 = Compressed / consistent (speech, podcasts) \\n
+              7.0-15.0 = Moderate dynamics (most music, TV) \\n
+              15.0-20.0 = Wide dynamics (classical, film) \\n
+              Defaults to 7.0`,
+    },
+    {
+      label: 'Target True Peak (dBTP)',
+      name: 'tp',
+      type: 'string',
+      defaultValue: '-2.0',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Maximum true peak level in dBTP (decibels True Peak). \\n
+              True peak accounts for inter-sample peaks that occur after digital-to-analogue \\n
+              conversion or codec processing, and should be kept below 0 dBTP to prevent clipping. \\n
+              Common values: \\n
+              -1.0 = EBU R128 / streaming platform recommended ceiling \\n
+              -2.0 = Conservative headroom for lossy codec safety (default) \\n`,
+    },
+    {
+      label: 'Max Gain (LU)',
+      name: 'maxGain',
+      type: 'string',
+      defaultValue: '15',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Maximum gain in Loudness Units that will be applied. \\n
+              If the required gain exceeds this value, normalization is skipped \\n
+              to avoid amplifying noise in mostly-quiet files. \\n
+              Defaults to 15`,
+    },
+  ],
   outputs: [
     {
       number: 1,
@@ -41,7 +102,12 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
     args,
     pluginName: 'ffmpegCommandNormalizeAudio',
     operationType: 'normalizeAudio',
-    inputs: {},
+    inputs: {
+      i: String(args.inputs.i),
+      lra: String(args.inputs.lra),
+      tp: String(args.inputs.tp),
+      maxGain: String(args.inputs.maxGain),
+    },
   });
 
   return {

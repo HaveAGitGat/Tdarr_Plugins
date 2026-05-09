@@ -165,9 +165,18 @@ export const createV2HdrToSdrOperation = (): IffmpegCommandV2Operation => create
   operationType: 'hdrToSdr',
 });
 
-export const createV2NormalizeAudioOperation = (): IffmpegCommandV2Operation => createV2Operation({
+export const createV2NormalizeAudioOperation = (
+  inputs: Record<string, unknown> = {},
+): IffmpegCommandV2Operation => createV2Operation({
   pluginName: 'ffmpegCommandNormalizeAudio',
   operationType: 'normalizeAudio',
+  inputs: {
+    i: '-23.0',
+    lra: '7.0',
+    tp: '-2.0',
+    maxGain: '15',
+    ...inputs,
+  },
 });
 
 export const createV2RemoveDataStreamsOperation = (): IffmpegCommandV2Operation => createV2Operation({

@@ -47,20 +47,17 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
     },
   },
   {
-    id: 'noop-operations-are-logged',
-    description: 'Currently no-op v2 operations are consumed explicitly without processing',
+    id: 'normalize-audio',
+    description: 'Normalize audio scopes loudnorm and audio encode args to audio streams',
     streams: createDefaultV2Streams(),
     operations: [
       createV2NormalizeAudioOperation(),
     ],
     expected: {
-      shouldProcess: false,
+      shouldProcess: true,
       container: 'mp4',
       sourceIndexes: [0, 1],
       codecTypes: ['video', 'audio'],
-      jobLogs: [
-        'Normalize Audio v2 operation has no render action yet; leaving streams unchanged.',
-      ],
       spawnArgs: [
         '-y',
         '-i',
@@ -72,7 +69,13 @@ const customScenarios: IffmpegCommandV2Scenario[] = [
         '-map',
         '0:1',
         '-c:1',
-        'copy',
+        'aac',
+        '-b:a:0',
+        '192k',
+        '-filter:a:0',
+        'loudnorm=print_format=summary:linear=true:I=-23.0:LRA=7.0:TP=-2.0:'
+        + 'measured_i=-16.42:measured_lra=11.32:measured_tp=-0.23:'
+        + 'measured_thresh=-26.83:offset=0.59',
       ],
     },
   },

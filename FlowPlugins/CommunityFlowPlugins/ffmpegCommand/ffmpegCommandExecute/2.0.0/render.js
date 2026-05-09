@@ -68,6 +68,7 @@ var singletonOperationTypes = [
     'setContainer',
     'reorderStreams',
     'cropBlackBars',
+    'normalizeAudio',
 ];
 var clone = function (value) { return JSON.parse(JSON.stringify(value)); };
 var createInitialWorkingStreams = function (args) {
@@ -130,6 +131,13 @@ var parseNumberInput = function (value, defaultValue) {
     }
     var parsed = Number(trimmedValue);
     return Number.isFinite(parsed) ? parsed : defaultValue;
+};
+var getStringInput = function (value, defaultValue) {
+    if (value === undefined || value === null) {
+        return defaultValue;
+    }
+    var trimmedValue = String(value).trim();
+    return trimmedValue === '' ? defaultValue : trimmedValue;
 };
 var parseCropValues = function (output) {
     var results = [];
@@ -667,6 +675,127 @@ var applyEnsureAudioStream = function (args, streams, inputs) {
     }
     return addedOrExists.changed;
 };
+var getNormalizeAudioSettings = function (inputs) { return ({
+    i: getStringInput(inputs.i, '-23.0'),
+    lra: getStringInput(inputs.lra, '7.0'),
+    tp: getStringInput(inputs.tp, '-2.0'),
+    maxGain: parseNumberInput(inputs.maxGain, 15),
+}); };
+var getNullOutputPath = function (args) { return (String(args.platform || process.platform) === 'win32' ? 'NUL' : '/dev/null'); };
+var getLoudnormFirstPassFilter = function (settings) { return ("loudnorm=I=".concat(settings.i, ":LRA=").concat(settings.lra, ":TP=").concat(settings.tp, ":print_format=json")); };
+var getLoudnormSecondPassFilter = function (settings, values) { return ("loudnorm=print_format=summary:linear=true:I=".concat(settings.i, ":LRA=").concat(settings.lra, ":TP=").concat(settings.tp, ":")
+    + "measured_i=".concat(values.input_i, ":")
+    + "measured_lra=".concat(values.input_lra, ":")
+    + "measured_tp=".concat(values.input_tp, ":")
+    + "measured_thresh=".concat(values.input_thresh, ":offset=").concat(values.target_offset)); };
+var parseLoudnormValues = function (output) {
+    var loudnormIdx = output.lastIndexOf('Parsed_loudnorm');
+    if (loudnormIdx === -1) {
+        throw new Error('Failed to find loudnorm in report, please rerun');
+    }
+    var fullTail = output.slice(loudnormIdx);
+    var targetOffsetIdx = fullTail.lastIndexOf('target_offset');
+    if (targetOffsetIdx === -1) {
+        throw new Error('Failed to find target_offset in loudnorm output, please rerun');
+    }
+    var closingBraceIdx = fullTail.indexOf('}', targetOffsetIdx);
+    if (closingBraceIdx === -1) {
+        throw new Error('Failed to find closing brace in loudnorm output, please rerun');
+    }
+    var openingBraceIdx = fullTail.lastIndexOf('{', targetOffsetIdx);
+    if (openingBraceIdx === -1) {
+        throw new Error('Failed to find opening brace in loudnorm output, please rerun');
+    }
+    var parsedValues = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1));
+    var getRequiredValue = function (key) {
+        var value = parsedValues[key];
+        if (value === undefined || value === null || String(value).trim() === '') {
+            throw new Error("Failed to find ".concat(key, " in loudnorm output, please rerun"));
+        }
+        return String(value);
+    };
+    return {
+        input_i: getRequiredValue('input_i'),
+        input_tp: getRequiredValue('input_tp'),
+        input_lra: getRequiredValue('input_lra'),
+        input_thresh: getRequiredValue('input_thresh'),
+        target_offset: getRequiredValue('target_offset'),
+    };
+};
+var detectLoudnormValues = function (args, stream, settings) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    var childProcess = require('child_process');
+    var ffmpegArgs = [
+        '-i',
+        args.inputFileObj._id,
+        '-map',
+        "0:".concat(stream.sourceIndex),
+        '-af',
+        getLoudnormFirstPassFilter(settings),
+        '-f',
+        'null',
+        getNullOutputPath(args),
+    ];
+    var result = childProcess.spawnSync(args.ffmpegPath, ffmpegArgs, {
+        windowsHide: true,
+        encoding: 'utf8',
+        shell: false,
+    });
+    if (result.error) {
+        args.jobLog('Running FFmpeg failed');
+        throw result.error;
+    }
+    if (result.status !== 0) {
+        args.jobLog('Running FFmpeg failed');
+        throw new Error('FFmpeg failed');
+    }
+    var loudnormValues = parseLoudnormValues("".concat(result.stdout || '').concat(result.stderr || ''));
+    args.jobLog("Loudnorm first pass values returned for stream ".concat(stream.sourceIndex, ":  \n").concat(JSON.stringify(loudnormValues)));
+    return loudnormValues;
+};
+var getLoudnormValuesIfGainAllowed = function (args, stream, settings) {
+    var loudnormValues = detectLoudnormValues(args, stream, settings);
+    var gainNeeded = parseFloat(settings.i) - parseFloat(loudnormValues.input_i);
+    args.jobLog("Gain required for stream ".concat(stream.sourceIndex, ": ")
+        + "".concat(gainNeeded.toFixed(2), " LU (max allowed: ").concat(settings.maxGain, " LU)"));
+    if (gainNeeded > settings.maxGain) {
+        args.jobLog("Skipping normalization for stream ".concat(stream.sourceIndex, ": required gain of ")
+            + "".concat(gainNeeded.toFixed(2), " LU exceeds max allowed gain of ").concat(settings.maxGain, " LU.")
+            + ' File may be mostly quiet or noise.');
+        return null;
+    }
+    return loudnormValues;
+};
+var appendNormalizeAudioOutputArgs = function (stream, settings, loudnormValues) {
+    if (!hasCodecOutputArg(stream.outputArgs)) {
+        stream.outputArgs.push('-c:{outputIndex}', 'aac', '-b:a:{outputTypeIndex}', '192k');
+    }
+    stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));
+};
+var applyNormalizeAudio = function (args, streams, inputs) {
+    var settings = getNormalizeAudioSettings(inputs);
+    var audioStreams = streams.filter(function (stream) { return !stream.removed && stream.codec_type === 'audio'; });
+    var valuesBySourceIndex = new Map();
+    var shouldProcess = false;
+    if (audioStreams.length === 0) {
+        args.jobLog('No audio streams found for Normalize Audio; skipping.');
+        return false;
+    }
+    for (var i = 0; i < audioStreams.length; i += 1) {
+        var stream = audioStreams[i];
+        var sourceIndex = Number(stream.sourceIndex);
+        var loudnormValues = valuesBySourceIndex.get(sourceIndex);
+        if (!valuesBySourceIndex.has(sourceIndex)) {
+            loudnormValues = getLoudnormValuesIfGainAllowed(args, stream, settings);
+            valuesBySourceIndex.set(sourceIndex, loudnormValues);
+        }
+        if (loudnormValues) {
+            appendNormalizeAudioOutputArgs(stream, settings, loudnormValues);
+            shouldProcess = true;
+        }
+    }
+    return shouldProcess;
+};
 var getCropDetectionSettings = function (inputs) { return ({
     cropMode: String(inputs.cropMode || 'mostCommon'),
     cropThreshold: Math.max(0, Math.min(255, parseNumberInput(inputs.cropThreshold, 24))),
@@ -1125,8 +1254,10 @@ var applyVideoFilters = function (args, streams, operations, singletonInputs) {
 var warnForCustomOutputConflicts = function (args, outputArguments) {
     var conflictArgs = [
         '-vf',
+        '-af',
         '-filter',
         '-filter:v',
+        '-filter:a',
         '-c',
         '-codec',
         '-map',
@@ -1136,13 +1267,8 @@ var warnForCustomOutputConflicts = function (args, outputArguments) {
         args.jobLog('Custom FFmpeg output arguments include command-shaping options that may conflict with v2 rendering.');
     }
 };
-var logNoopOperations = function (args, operations) {
-    getOperations(operations, 'normalizeAudio').forEach(function () {
-        args.jobLog('Normalize Audio v2 operation has no render action yet; leaving streams unchanged.');
-    });
-};
 var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var commandState, operations, singletonInputs, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, cropBlackBarsInputs, containerInputs, targetContainer, currentContainer, fileContainer, reorderInputs, originalStreams, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
+    var commandState, operations, singletonInputs, streams, shouldProcess, container, overallInputArguments, overallOutputArguments, cropBlackBarsInputs, containerInputs, targetContainer, currentContainer, fileContainer, reorderInputs, originalStreams, normalizeAudioInputs, encoderInputs, bitrateInputs, filteredStreams, spawnArgs;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -1192,7 +1318,6 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                 if (cropBlackBarsInputs) {
                     shouldProcess = applyCropBlackBars(args, streams, cropBlackBarsInputs) || shouldProcess;
                 }
-                logNoopOperations(args, operations);
                 containerInputs = singletonInputs.setContainer;
                 if (containerInputs) {
                     targetContainer = String(containerInputs.container);
@@ -1224,6 +1349,10 @@ var renderFfmpegCommandV2 = function (args) { return __awaiter(void 0, void 0, v
                     if (JSON.stringify(streams) !== originalStreams) {
                         shouldProcess = true;
                     }
+                }
+                normalizeAudioInputs = singletonInputs.normalizeAudio;
+                if (normalizeAudioInputs) {
+                    shouldProcess = applyNormalizeAudio(args, streams, normalizeAudioInputs) || shouldProcess;
                 }
                 encoderInputs = singletonInputs.setVideoEncoder;
                 if (!encoderInputs) return [3 /*break*/, 2];

@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process';
 import { renderFfmpegCommandV2 } from
   '../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandExecute/2.0.0/index';
 import { getEncoder } from '../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils';
@@ -15,7 +16,24 @@ jest.mock('../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils', () => ({
   getEncoder: jest.fn(),
 }));
 
+jest.mock('child_process', () => ({
+  spawnSync: jest.fn(),
+}));
+
 const mockGetEncoder = getEncoder as jest.MockedFunction<typeof getEncoder>;
+const mockSpawnSync = spawnSync as jest.Mock;
+
+const makeLoudnormOutput = (): string => [
+  'Some other output',
+  `[Parsed_loudnorm_0 @ 0x123456] ${JSON.stringify({
+    input_i: '-16.42',
+    input_tp: '-0.23',
+    input_lra: '11.32',
+    input_thresh: '-26.83',
+    target_offset: '0.59',
+  }, null, 2)}`,
+  'More output',
+].join('\n');
 
 const renderScenario = async (
   scenario: IffmpegCommandV2Scenario,
@@ -73,6 +91,12 @@ const expectScenarioResult = (
 describe('FFmpeg command v2 scenario rendering', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSpawnSync.mockReturnValue({
+      stdout: '',
+      stderr: makeLoudnormOutput(),
+      status: 0,
+      signal: null,
+    });
   });
 
   it.each(ffmpegCommandV2Scenarios.map((scenario) => [

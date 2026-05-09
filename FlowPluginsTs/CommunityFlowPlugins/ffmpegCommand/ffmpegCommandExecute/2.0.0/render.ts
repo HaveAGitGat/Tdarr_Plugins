@@ -52,6 +52,21 @@ interface ICropTargetStream {
   height: number,
 }
 
+interface INormalizeAudioSettings {
+  i: string,
+  lra: string,
+  tp: string,
+  maxGain: number,
+}
+
+interface ILoudnormValues {
+  input_i: string,
+  input_tp: string,
+  input_lra: string,
+  input_thresh: string,
+  target_offset: string,
+}
+
 export interface IffmpegCommandV2RenderResult {
   spawnArgs: string[],
   shouldProcess: boolean,
@@ -67,6 +82,7 @@ const singletonOperationTypes = [
   'setContainer',
   'reorderStreams',
   'cropBlackBars',
+  'normalizeAudio',
 ] as const;
 
 type SingletonOperationType = typeof singletonOperationTypes[number];
@@ -150,6 +166,15 @@ const parseNumberInput = (value: unknown, defaultValue: number): number => {
 
   const parsed = Number(trimmedValue);
   return Number.isFinite(parsed) ? parsed : defaultValue;
+};
+
+const getStringInput = (value: unknown, defaultValue: string): string => {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  const trimmedValue = String(value).trim();
+  return trimmedValue === '' ? defaultValue : trimmedValue;
 };
 
 const parseCropValues = (output: string): ICropValues[] => {
@@ -866,6 +891,186 @@ const applyEnsureAudioStream = (
   return addedOrExists.changed;
 };
 
+const getNormalizeAudioSettings = (inputs: Record<string, unknown>): INormalizeAudioSettings => ({
+  i: getStringInput(inputs.i, '-23.0'),
+  lra: getStringInput(inputs.lra, '7.0'),
+  tp: getStringInput(inputs.tp, '-2.0'),
+  maxGain: parseNumberInput(inputs.maxGain, 15),
+});
+
+const getNullOutputPath = (args: IpluginInputArgs): string => (
+  String(args.platform || process.platform) === 'win32' ? 'NUL' : '/dev/null'
+);
+
+const getLoudnormFirstPassFilter = (settings: INormalizeAudioSettings): string => (
+  `loudnorm=I=${settings.i}:LRA=${settings.lra}:TP=${settings.tp}:print_format=json`
+);
+
+const getLoudnormSecondPassFilter = (
+  settings: INormalizeAudioSettings,
+  values: ILoudnormValues,
+): string => (
+  `loudnorm=print_format=summary:linear=true:I=${settings.i}:LRA=${settings.lra}:TP=${settings.tp}:`
+  + `measured_i=${values.input_i}:`
+  + `measured_lra=${values.input_lra}:`
+  + `measured_tp=${values.input_tp}:`
+  + `measured_thresh=${values.input_thresh}:offset=${values.target_offset}`
+);
+
+const parseLoudnormValues = (output: string): ILoudnormValues => {
+  const loudnormIdx = output.lastIndexOf('Parsed_loudnorm');
+  if (loudnormIdx === -1) {
+    throw new Error('Failed to find loudnorm in report, please rerun');
+  }
+
+  const fullTail = output.slice(loudnormIdx);
+  const targetOffsetIdx = fullTail.lastIndexOf('target_offset');
+  if (targetOffsetIdx === -1) {
+    throw new Error('Failed to find target_offset in loudnorm output, please rerun');
+  }
+
+  const closingBraceIdx = fullTail.indexOf('}', targetOffsetIdx);
+  if (closingBraceIdx === -1) {
+    throw new Error('Failed to find closing brace in loudnorm output, please rerun');
+  }
+
+  const openingBraceIdx = fullTail.lastIndexOf('{', targetOffsetIdx);
+  if (openingBraceIdx === -1) {
+    throw new Error('Failed to find opening brace in loudnorm output, please rerun');
+  }
+
+  const parsedValues = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1)) as Record<string, unknown>;
+  const getRequiredValue = (key: keyof ILoudnormValues): string => {
+    const value = parsedValues[key];
+    if (value === undefined || value === null || String(value).trim() === '') {
+      throw new Error(`Failed to find ${key} in loudnorm output, please rerun`);
+    }
+    return String(value);
+  };
+
+  return {
+    input_i: getRequiredValue('input_i'),
+    input_tp: getRequiredValue('input_tp'),
+    input_lra: getRequiredValue('input_lra'),
+    input_thresh: getRequiredValue('input_thresh'),
+    target_offset: getRequiredValue('target_offset'),
+  };
+};
+
+const detectLoudnormValues = (
+  args: IpluginInputArgs,
+  stream: IworkingStream,
+  settings: INormalizeAudioSettings,
+): ILoudnormValues => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const childProcess = require('child_process');
+  const ffmpegArgs = [
+    '-i',
+    args.inputFileObj._id,
+    '-map',
+    `0:${stream.sourceIndex}`,
+    '-af',
+    getLoudnormFirstPassFilter(settings),
+    '-f',
+    'null',
+    getNullOutputPath(args),
+  ];
+
+  const result = childProcess.spawnSync(args.ffmpegPath, ffmpegArgs, {
+    windowsHide: true,
+    encoding: 'utf8',
+    shell: false,
+  });
+
+  if (result.error) {
+    args.jobLog('Running FFmpeg failed');
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    args.jobLog('Running FFmpeg failed');
+    throw new Error('FFmpeg failed');
+  }
+
+  const loudnormValues = parseLoudnormValues(`${result.stdout || ''}${result.stderr || ''}`);
+  args.jobLog(
+    `Loudnorm first pass values returned for stream ${stream.sourceIndex}:  \n${JSON.stringify(loudnormValues)}`,
+  );
+
+  return loudnormValues;
+};
+
+const getLoudnormValuesIfGainAllowed = (
+  args: IpluginInputArgs,
+  stream: IworkingStream,
+  settings: INormalizeAudioSettings,
+): ILoudnormValues | null => {
+  const loudnormValues = detectLoudnormValues(args, stream, settings);
+  const gainNeeded = parseFloat(settings.i) - parseFloat(loudnormValues.input_i);
+
+  args.jobLog(
+    `Gain required for stream ${stream.sourceIndex}: `
+    + `${gainNeeded.toFixed(2)} LU (max allowed: ${settings.maxGain} LU)`,
+  );
+
+  if (gainNeeded > settings.maxGain) {
+    args.jobLog(
+      `Skipping normalization for stream ${stream.sourceIndex}: required gain of `
+      + `${gainNeeded.toFixed(2)} LU exceeds max allowed gain of ${settings.maxGain} LU.`
+      + ' File may be mostly quiet or noise.',
+    );
+    return null;
+  }
+
+  return loudnormValues;
+};
+
+const appendNormalizeAudioOutputArgs = (
+  stream: IworkingStream,
+  settings: INormalizeAudioSettings,
+  loudnormValues: ILoudnormValues,
+): void => {
+  if (!hasCodecOutputArg(stream.outputArgs)) {
+    stream.outputArgs.push('-c:{outputIndex}', 'aac', '-b:a:{outputTypeIndex}', '192k');
+  }
+
+  stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));
+};
+
+const applyNormalizeAudio = (
+  args: IpluginInputArgs,
+  streams: IworkingStream[],
+  inputs: Record<string, unknown>,
+): boolean => {
+  const settings = getNormalizeAudioSettings(inputs);
+  const audioStreams = streams.filter((stream) => !stream.removed && stream.codec_type === 'audio');
+  const valuesBySourceIndex = new Map<number, ILoudnormValues | null>();
+  let shouldProcess = false;
+
+  if (audioStreams.length === 0) {
+    args.jobLog('No audio streams found for Normalize Audio; skipping.');
+    return false;
+  }
+
+  for (let i = 0; i < audioStreams.length; i += 1) {
+    const stream = audioStreams[i];
+    const sourceIndex = Number(stream.sourceIndex);
+    let loudnormValues = valuesBySourceIndex.get(sourceIndex);
+
+    if (!valuesBySourceIndex.has(sourceIndex)) {
+      loudnormValues = getLoudnormValuesIfGainAllowed(args, stream, settings);
+      valuesBySourceIndex.set(sourceIndex, loudnormValues);
+    }
+
+    if (loudnormValues) {
+      appendNormalizeAudioOutputArgs(stream, settings, loudnormValues);
+      shouldProcess = true;
+    }
+  }
+
+  return shouldProcess;
+};
+
 const getCropDetectionSettings = (inputs: Record<string, unknown>): ICropDetectionSettings => ({
   cropMode: String(inputs.cropMode || 'mostCommon'),
   cropThreshold: Math.max(0, Math.min(255, parseNumberInput(inputs.cropThreshold, 24))),
@@ -1439,8 +1644,10 @@ const applyVideoFilters = (
 const warnForCustomOutputConflicts = (args: IpluginInputArgs, outputArguments: string[]): void => {
   const conflictArgs = [
     '-vf',
+    '-af',
     '-filter',
     '-filter:v',
+    '-filter:a',
     '-c',
     '-codec',
     '-map',
@@ -1452,15 +1659,6 @@ const warnForCustomOutputConflicts = (args: IpluginInputArgs, outputArguments: s
   if (hasConflict) {
     args.jobLog('Custom FFmpeg output arguments include command-shaping options that may conflict with v2 rendering.');
   }
-};
-
-const logNoopOperations = (
-  args: IpluginInputArgs,
-  operations: IffmpegCommandV2Operation[],
-): void => {
-  getOperations(operations, 'normalizeAudio').forEach(() => {
-    args.jobLog('Normalize Audio v2 operation has no render action yet; leaving streams unchanged.');
-  });
 };
 
 export const renderFfmpegCommandV2 = async (
@@ -1524,8 +1722,6 @@ export const renderFfmpegCommandV2 = async (
     shouldProcess = applyCropBlackBars(args, streams, cropBlackBarsInputs) || shouldProcess;
   }
 
-  logNoopOperations(args, operations);
-
   const containerInputs = singletonInputs.setContainer;
   if (containerInputs) {
     const targetContainer = String(containerInputs.container);
@@ -1565,6 +1761,11 @@ export const renderFfmpegCommandV2 = async (
     if (JSON.stringify(streams) !== originalStreams) {
       shouldProcess = true;
     }
+  }
+
+  const normalizeAudioInputs = singletonInputs.normalizeAudio;
+  if (normalizeAudioInputs) {
+    shouldProcess = applyNormalizeAudio(args, streams, normalizeAudioInputs) || shouldProcess;
   }
 
   const encoderInputs = singletonInputs.setVideoEncoder;
