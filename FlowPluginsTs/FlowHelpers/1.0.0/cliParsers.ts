@@ -124,8 +124,18 @@ const getFFmpegPercentage = ({
     } else {
       perc = (frame);
     }
-  } else if (time > 0 && Duration > 0) {
-    perc = ((time / Duration) * 100);
+  }
+
+  // Switch to time-based progress when frame-based exceeds 100
+  // (e.g. filters like yadif=1 or nnedi that double the frame count) (#452),
+  // is unavailable, or is significantly below time-based (nb_frames from
+  // r_frame_rate doesn't match actual encoding fps) (#1236)
+  if (time > 0 && Duration > 0) {
+    const timePerc = ((time / Duration) * 100);
+    if (perc > 100 || perc === 0
+      || (timePerc <= 100 && perc < timePerc * 0.75)) {
+      perc = timePerc;
+    }
   }
 
   const percString = perc.toFixed(2);
@@ -244,11 +254,48 @@ const editreadyParser = ({ str }:{str: string}): number => {
   return percentage;
 };
 
+// When FFmpeg 7 omits fps= for non-encoding tasks (remux, stream copy, etc.),
+// compute an effective FPS from speed= and the source video frame rate.
+// e.g. speed=931x with 23.976fps source => ~22321 effective fps
+const getFpsFromSpeed = ({
+  str,
+  videoFrameRate,
+}: {
+  str: string,
+  videoFrameRate: number | undefined,
+}): number => {
+  if (!videoFrameRate || videoFrameRate <= 0) {
+    return 0;
+  }
+
+  let speedStr = getFFmpegVar({
+    str,
+    variable: 'speed',
+  });
+
+  if (!speedStr) {
+    return 0;
+  }
+
+  // Remove trailing 'x' from speed value (e.g. "931x" -> "931", "1.46e+03x" -> "1.46e+03")
+  speedStr = speedStr.replace(/x$/i, '');
+
+  const speed = parseFloat(speedStr);
+
+  // eslint-disable-next-line no-restricted-globals
+  if (isNaN(speed) || speed <= 0) {
+    return 0;
+  }
+
+  return Math.round(speed * videoFrameRate);
+};
+
 export {
   handbrakeParser,
   ffmpegParser,
   getFFmpegPercentage,
   getFFmpegVar,
   getHandBrakeFps,
+  getFpsFromSpeed,
   editreadyParser,
 };

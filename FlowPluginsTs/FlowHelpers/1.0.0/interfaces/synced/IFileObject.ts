@@ -121,6 +121,7 @@ export interface Imeta {
 export interface ImediaInfo {
   track?: [{
     '@type': string,
+    'StreamOrder': string,
     'UniqueID': string,
     'VideoCount': string,
     'AudioCount': string,

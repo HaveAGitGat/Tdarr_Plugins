@@ -31,7 +31,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ', -c copy -map 0:v?  -map 0:a:3 -disposition:a:0 default -map 0:a:0  -map 0:a:1  -disposition:a:1 0  -map 0:a:2  -disposition:a:2 0  -disposition:a:3 0  -map 0:a:4  -disposition:a:4 0  -map 0:s? -map 0:d? ',
+      preset: ', -c copy -map 0:v?  -map 0:a:3 -disposition:a:0 default -map 0:a:0  -map 0:a:1  -disposition:a:1 0  -map 0:a:2  -disposition:a:2 0  -disposition:a:3 0  -map 0:a:4  -disposition:a:4 0  -map 0:s? -map 0:d? -map 0:t? ',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -77,7 +77,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: ', -c copy -map 0:v?  -map 0:a:1 -disposition:a:0 default -map 0:a:0  -disposition:a:1 0  -map 0:a:2  -disposition:a:2 0  -map 0:a:3  -disposition:a:3 0  -map 0:a:4  -disposition:a:4 0  -map 0:a:5  -disposition:a:5 0  -map 0:s? -map 0:d? ',
+      preset: ', -c copy -map 0:v?  -map 0:a:1 -disposition:a:0 default -map 0:a:0  -disposition:a:1 0  -map 0:a:2  -disposition:a:2 0  -map 0:a:3  -disposition:a:3 0  -map 0:a:4  -disposition:a:4 0  -map 0:a:5  -disposition:a:5 0  -map 0:s? -map 0:d? -map 0:t? ',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,

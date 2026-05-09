@@ -12,7 +12,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset slow -cq 23 -rc-lookahead 32 -bf 0 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset slow -cq 23 -rc-lookahead 32 -bf 0 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -57,7 +57,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 24 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 24 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -89,7 +89,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 22 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 22 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -121,7 +121,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 26 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 26 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -153,7 +153,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 29 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -dn -c:v hevc_nvenc -b:v 0 -preset medium -cq 29 -rc-lookahead 32 -bf 5 -a53cc 0 -c:a copy -c:s copy',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,

@@ -1,25 +1,52 @@
-import { getEncoder } from './hardwareUtils';
+import { getEncoder, IgetEncoder } from './hardwareUtils';
 
-const run = async () => {
-  const encoderProperties = await getEncoder({
-    targetCodec: 'h264',
-    hardwareEncoding: true,
-    hardwareType: 'auto',
-    // @ts-expect-error type
-    args: {
-      workerType: 'transcodegpu',
-      ffmpegPath: 'ffmpeg',
-      jobLog: (t:string) => {
-        // eslint-disable-next-line no-console
-        console.log(t);
-      },
+const baseInput = {
+  targetCodec: 'h264',
+  hardwareEncoding: true,
+  hardwareType: 'auto',
+  args: {
+    workerType: 'transcodegpu',
+    ffmpegPath: 'ffmpeg',
+    jobLog: () => {
+      //
     },
-  });
-
-  // eslint-disable-next-line no-console
-  console.log({
-    encoderProperties,
-  });
+  },
 };
 
-void run();
+interface IcheckHardware {
+  targetCodec:string | undefined,
+  hardwareEncoding:boolean | undefined,
+  hardwareType:string | undefined,
+  ffmpegPath:string | undefined,
+}
+
+const checkHardware = async (settings:IcheckHardware):Promise<IgetEncoder> => {
+  const input = JSON.parse(JSON.stringify(baseInput));
+
+  input.args.jobLog = () => {
+    // eslint-disable-next-line no-console
+    // console.log(t);
+  };
+
+  if (settings.targetCodec) {
+    input.targetCodec = settings.targetCodec;
+  }
+
+  if (settings.hardwareEncoding) {
+    input.hardwareEncoding = settings.hardwareEncoding;
+  }
+
+  if (settings.hardwareType) {
+    input.hardwareType = settings.hardwareType;
+  }
+
+  if (settings.ffmpegPath) {
+    input.args.ffmpegPath = settings.ffmpegPath;
+  }
+
+  const encoderProperties = await getEncoder(input);
+
+  return encoderProperties;
+};
+
+export default checkHardware;
