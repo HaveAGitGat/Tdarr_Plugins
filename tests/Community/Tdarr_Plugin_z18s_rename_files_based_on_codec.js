@@ -33,7 +33,6 @@ const tests = [
   },
   {
     file: buildFile(sampleH264, 'C:/Transcode/AV1 Folder/Movie.mp4'),
-    expectedPath: 'C:/Transcode/AV1 Folder/Movie.mp4',
     shouldRename: false,
   },
 ];
@@ -57,7 +56,6 @@ const run = async () => {
       const test = tests[i];
       const inputFile = _.cloneDeep(test.file);
       const expectedFile = _.cloneDeep(test.file);
-      const originalPath = inputFile._id;
       renameCalls.length = 0;
 
       // eslint-disable-next-line no-await-in-loop
@@ -68,6 +66,8 @@ const run = async () => {
         assert.equal(result, undefined);
         assert.deepEqual(inputFile, expectedFile);
       } else {
+        const originalPath = inputFile._id;
+
         expectedFile._id = test.expectedPath;
         expectedFile.file = test.expectedPath;
 
