@@ -1,4 +1,7 @@
-import { plugin } from '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/normalizeAudio/1.0.0/index';
+import {
+  INormalizeAudioPluginInputArgs,
+  plugin,
+} from '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/normalizeAudio/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
@@ -10,7 +13,7 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils', () => ({
 }));
 
 describe('normalizeAudio Plugin', () => {
-  let baseArgs: IpluginInputArgs;
+  let baseArgs: INormalizeAudioPluginInputArgs;
   let mockCLI: { runCli: jest.Mock };
 
   const createMockResponse = (loudnormValues: Record<string, string>, exitCode = 0) => ({
@@ -42,7 +45,7 @@ describe('normalizeAudio Plugin', () => {
       updateWorker: jest.fn(),
       workDir: '/tmp/tdarr-workdir',
       deps: { fsextra: { ensureDirSync: jest.fn() } },
-    } as unknown as IpluginInputArgs;
+    } as unknown as INormalizeAudioPluginInputArgs;
   });
 
   describe('Two-Pass Normalization', () => {
@@ -81,7 +84,9 @@ describe('normalizeAudio Plugin', () => {
     });
 
     it('should use custom loudnorm parameters', async () => {
-      baseArgs.inputs = { i: '-16.0', lra: '11.0', tp: '-1.5' };
+      baseArgs.inputs = {
+        i: '-16.0', lra: '11.0', tp: '-1.5', maxGain: '20',
+      };
 
       mockCLI.runCli
         .mockResolvedValueOnce(createMockResponse({

@@ -83,7 +83,9 @@ const details = (): IpluginDetails => ({
           ],
         },
       },
-      tooltip: 'Specify ffmpeg preset',
+      tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7,'
+        + ' AMF uses quality/balanced/speed, QSV uses CPU names directly.'
+        + ' Ignored for VAAPI/rkmpp/videotoolbox.',
     },
     {
       label: 'Enable FFmpeg Quality',
@@ -230,7 +232,45 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
         if (ffmpegPresetEnabled) {
           if (targetCodec !== 'av1' && ffmpegPreset) {
-            stream.outputArgs.push('-preset', ffmpegPreset);
+            let presetToUse: string | null = ffmpegPreset;
+            // Convert CPU preset names to GPU-specific presets for hardware encoders
+            if (encoderProperties.isGpu) {
+              if (encoderProperties.encoder.includes('nvenc')) {
+                const nvencPresetMap: Record<string, string> = {
+                  veryslow: 'p7',
+                  slower: 'p7',
+                  slow: 'p6',
+                  medium: 'p5',
+                  fast: 'p4',
+                  faster: 'p3',
+                  veryfast: 'p2',
+                  superfast: 'p1',
+                  ultrafast: 'p1',
+                };
+                presetToUse = nvencPresetMap[ffmpegPreset] || 'p5';
+              } else if (encoderProperties.encoder.includes('amf')) {
+                const amfPresetMap: Record<string, string> = {
+                  veryslow: 'quality',
+                  slower: 'quality',
+                  slow: 'quality',
+                  medium: 'balanced',
+                  fast: 'balanced',
+                  faster: 'speed',
+                  veryfast: 'speed',
+                  superfast: 'speed',
+                  ultrafast: 'speed',
+                };
+                presetToUse = amfPresetMap[ffmpegPreset] || 'balanced';
+              } else if (encoderProperties.encoder.includes('qsv')) {
+                // QSV: Uses CPU-style preset names directly
+              } else {
+                // VAAPI, rkmpp, videotoolbox: -preset not supported
+                presetToUse = null;
+              }
+            }
+            if (presetToUse) {
+              stream.outputArgs.push('-preset', presetToUse);
+            }
           }
         }
 

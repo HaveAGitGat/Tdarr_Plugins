@@ -22,11 +22,11 @@ jest.mock('../../../../../../methods/lib', () => () => ({
 
 // Mock the fileUtils module
 jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => ({
-  getFileAbosluteDir: jest.fn(),
+  getFileAbsoluteDir: jest.fn(),
 }));
 
 const mockFs = fsp as jest.Mocked<typeof fsp>;
-const { getFileAbosluteDir } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
+const { getFileAbsoluteDir } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils');
 
 describe('deleteFile Plugin', () => {
   let baseArgs: IpluginInputArgs;
@@ -75,8 +75,8 @@ describe('deleteFile Plugin', () => {
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
 
-    // Setup mock for getFileAbosluteDir
-    getFileAbosluteDir.mockReturnValue('/original');
+    // Setup mock for getFileAbsoluteDir
+    getFileAbsoluteDir.mockReturnValue('/original');
   });
 
   describe('Delete Working File', () => {
@@ -136,7 +136,7 @@ describe('deleteFile Plugin', () => {
 
       const result = await plugin(baseArgs);
 
-      expect(getFileAbosluteDir).toHaveBeenCalledWith('/original/file.mp4');
+      expect(getFileAbsoluteDir).toHaveBeenCalledWith('/original/file.mp4');
       expect(mockFs.readdir).toHaveBeenCalledWith('/original');
       expect(mockFs.rmdir).toHaveBeenCalledWith('/original');
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Checking if folder /original is empty');

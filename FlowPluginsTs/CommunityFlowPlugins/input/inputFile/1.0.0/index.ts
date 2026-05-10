@@ -5,7 +5,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import { getFileAbosluteDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getFileAbsoluteDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -56,7 +56,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const orignalFolder = getFileAbosluteDir(args.originalLibraryFile._id);
+  const orignalFolder = getFileAbsoluteDir(args.originalLibraryFile._id);
   const { fileAccessChecks, pauseNodeIfAccessChecksFail } = args.inputs;
 
   const nodeID = process.argv[8];

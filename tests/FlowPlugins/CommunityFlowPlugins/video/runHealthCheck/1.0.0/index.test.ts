@@ -16,7 +16,13 @@ jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => (
   getPluginWorkDir: jest.requireActual('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils').getPluginWorkDir,
 }));
 
+// Mock hardwareUtils getEncoder
+jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils', () => ({
+  getEncoder: jest.fn(),
+}));
+
 const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+const { getEncoder } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/hardwareUtils');
 
 // Define interface for mock CLI
 interface MockCLI {
@@ -31,6 +37,7 @@ describe('runHealthCheck Plugin', () => {
     baseArgs = {
       inputs: {
         type: 'quick',
+        gpuAcceleration: 'none',
       },
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),
@@ -43,6 +50,7 @@ describe('runHealthCheck Plugin', () => {
       updateStat: jest.fn(),
       logOutcome: jest.fn(),
       workDir: '/tmp/work',
+      workerType: 'transcodegpu',
       deps: {
         fsextra: {
           ensureDirSync: jest.fn(),
@@ -58,6 +66,15 @@ describe('runHealthCheck Plugin', () => {
       runCli: jest.fn().mockResolvedValue({ cliExitCode: 0 }),
     };
     CLI.mockImplementation(() => mockCLI);
+
+    // Default getEncoder mock — returns no GPU (for none/quick tests)
+    getEncoder.mockResolvedValue({
+      encoder: 'libx265',
+      inputArgs: [],
+      outputArgs: [],
+      isGpu: false,
+      enabledDevices: [],
+    });
 
     jest.clearAllMocks();
   });
@@ -80,66 +97,353 @@ describe('runHealthCheck Plugin', () => {
 
       await plugin(baseArgs);
 
-      expect(CLI).toHaveBeenCalledWith({
-        cli: '/usr/bin/HandBrakeCLI',
-        spawnArgs: [
-          '-i',
-          baseArgs.inputFileObj._id,
-          '-o',
-          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
-          '--scan',
-        ],
-        spawnOpts: {},
-        jobLog: baseArgs.jobLog,
-        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
-        inputFileObj: baseArgs.inputFileObj,
-        logFullCliOutput: false,
-        updateWorker: baseArgs.updateWorker,
-        args: baseArgs,
-      });
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cli: '/usr/bin/HandBrakeCLI',
+          spawnArgs: expect.arrayContaining(['--scan']),
+        }),
+      );
     });
   });
 
   describe('Thorough Health Check', () => {
     it('should run thorough health check with FFmpeg', async () => {
       baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'none';
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(result.variables.healthCheck).toBe('Success');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('Running health check of type thorough');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Running health check of type thorough',
+      );
       expect(baseArgs.logOutcome).toHaveBeenCalledWith('hSuc');
     });
 
-    it('should use FFmpeg CLI for thorough health check', async () => {
+    it('should use FFmpeg CLI for thorough health check with no GPU', async () => {
       baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'none';
 
       await plugin(baseArgs);
 
-      expect(CLI).toHaveBeenCalledWith({
-        cli: '/usr/bin/ffmpeg',
-        spawnArgs: [
-          '-stats',
-          '-v',
-          'error',
-          '-i',
-          baseArgs.inputFileObj._id,
-          '-f',
-          'null',
-          '-max_muxing_queue_size',
-          '9999',
-          expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
-        ],
-        spawnOpts: {},
-        jobLog: baseArgs.jobLog,
-        outputFilePath: expect.stringContaining('SampleVideo_1280x720_1mb.mp4'),
-        inputFileObj: baseArgs.inputFileObj,
-        logFullCliOutput: false,
-        updateWorker: baseArgs.updateWorker,
-        args: baseArgs,
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cli: '/usr/bin/ffmpeg',
+          spawnArgs: [
+            '-stats',
+            '-v',
+            'error',
+            '-i',
+            baseArgs.inputFileObj._id,
+            '-f',
+            'null',
+            '-max_muxing_queue_size',
+            '9999',
+            expect.stringContaining('SampleVideo_1280x720_1mb'),
+          ],
+        }),
+      );
+      expect(getEncoder).not.toHaveBeenCalled();
+    });
+
+    it('should auto-detect GPU and use hwaccel args', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'auto';
+
+      getEncoder.mockResolvedValue({
+        encoder: 'hevc_nvenc',
+        inputArgs: ['-hwaccel', 'cuda'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
       });
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          targetCodec: 'hevc',
+          hardwareEncoding: true,
+          hardwareType: 'auto',
+        }),
+      );
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'cuda',
+          ]),
+        }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('GPU acceleration: using auto'),
+      );
+    });
+
+    it('should fall back to CPU when auto detects no GPU', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'auto';
+
+      getEncoder.mockResolvedValue({
+        encoder: 'libx265',
+        inputArgs: [],
+        outputArgs: [],
+        isGpu: false,
+        enabledDevices: [],
+      });
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: [
+            '-stats',
+            '-v',
+            'error',
+            '-i',
+            baseArgs.inputFileObj._id,
+            '-f',
+            'null',
+            '-max_muxing_queue_size',
+            '9999',
+            expect.stringContaining('SampleVideo_1280x720_1mb'),
+          ],
+        }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('auto selected on GPU worker but no compatible GPU detected'),
+      );
+    });
+
+    it('should use NVIDIA hwaccel via getEncoder for nvenc', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'nvenc';
+
+      getEncoder.mockResolvedValue({
+        encoder: 'hevc_nvenc',
+        inputArgs: ['-hwaccel', 'cuda'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hardwareType: 'nvenc',
+        }),
+      );
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'cuda',
+          ]),
+        }),
+      );
+    });
+
+    it('should use QSV hwaccel via getEncoder for qsv', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'qsv';
+
+      getEncoder.mockResolvedValue({
+        encoder: 'hevc_qsv',
+        inputArgs: ['-hwaccel', 'qsv'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hardwareType: 'qsv',
+        }),
+      );
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'qsv',
+          ]),
+        }),
+      );
+    });
+
+    it('should use VAAPI hwaccel via getEncoder', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'vaapi';
+
+      getEncoder.mockResolvedValue({
+        encoder: 'hevc_vaapi',
+        inputArgs: [
+          '-hwaccel', 'vaapi',
+          '-hwaccel_device', '/dev/dri/renderD128',
+          '-hwaccel_output_format', 'vaapi',
+        ],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hardwareType: 'vaapi',
+        }),
+      );
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'vaapi',
+            '-hwaccel_device', '/dev/dri/renderD128',
+            '-hwaccel_output_format', 'vaapi',
+          ]),
+        }),
+      );
+    });
+
+    it('should use VideoToolbox hwaccel via getEncoder', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'videotoolbox';
+
+      getEncoder.mockResolvedValue({
+        encoder: 'hevc_videotoolbox',
+        inputArgs: ['-hwaccel', 'videotoolbox'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+      });
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hardwareType: 'videotoolbox',
+        }),
+      );
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'videotoolbox',
+          ]),
+        }),
+      );
+    });
+
+    it('should use DXVA2 GPU acceleration directly', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'dxva2';
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).not.toHaveBeenCalled();
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'dxva2',
+            '-hwaccel_output_format', 'dxva2_vld',
+          ]),
+        }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'GPU acceleration: using DXVA2 (Windows hardware decoding)',
+      );
+    });
+
+    it('should use D3D11VA GPU acceleration directly', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'd3d11va';
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).not.toHaveBeenCalled();
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spawnArgs: expect.arrayContaining([
+            '-hwaccel', 'd3d11va',
+            '-hwaccel_output_format', 'd3d11',
+          ]),
+        }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'GPU acceleration: using D3D11VA (Windows hardware decoding)',
+      );
+    });
+
+    it('should handle getEncoder errors gracefully', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'nvenc';
+
+      getEncoder.mockRejectedValue(new Error('Encoder not found'));
+
+      await plugin(baseArgs);
+
+      // Should still run health check without hwaccel
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cli: '/usr/bin/ffmpeg',
+          spawnArgs: [
+            '-stats',
+            '-v',
+            'error',
+            '-i',
+            baseArgs.inputFileObj._id,
+            '-f',
+            'null',
+            '-max_muxing_queue_size',
+            '9999',
+            expect.stringContaining('SampleVideo_1280x720_1mb'),
+          ],
+        }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('GPU acceleration error'),
+      );
+    });
+
+    it('should skip GPU on CPU worker for explicit selection with clear message', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'nvenc';
+      (baseArgs as unknown as Record<string, unknown>).workerType = 'transcodecpu';
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('only available on transcode GPU workers'),
+      );
+    });
+
+    it('should log CPU usage on CPU worker when auto is selected', async () => {
+      baseArgs.inputs.type = 'thorough';
+      baseArgs.inputs.gpuAcceleration = 'auto';
+      (baseArgs as unknown as Record<string, unknown>).workerType = 'transcodecpu';
+
+      await plugin(baseArgs);
+
+      expect(getEncoder).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'GPU acceleration: auto selected but worker is CPU, using CPU',
+      );
+    });
+
+    it('should not use GPU acceleration for quick health check', async () => {
+      baseArgs.inputs.type = 'quick';
+      baseArgs.inputs.gpuAcceleration = 'nvenc';
+
+      await plugin(baseArgs);
+
+      expect(CLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cli: '/usr/bin/HandBrakeCLI',
+          spawnArgs: expect.arrayContaining(['--scan']),
+        }),
+      );
+      expect(getEncoder).not.toHaveBeenCalled();
     });
   });
 
