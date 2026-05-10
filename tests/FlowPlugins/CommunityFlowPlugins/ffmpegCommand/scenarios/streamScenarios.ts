@@ -95,6 +95,45 @@ const streamScenarios: IffmpegCommandV2Scenario[] = [
     },
   },
   {
+    id: 'remove-attachment-by-property',
+    description: 'Remove Stream By Property can target normalized attachment streams',
+    streams: [
+      createV2VideoStream({ index: 0 }),
+      createV2AudioStream({ index: 1 }),
+      createV2AttachmentStream({ index: 2 }),
+    ],
+    operations: [
+      createV2RemoveStreamByPropertyOperation({
+        codecType: 'attachment',
+        propertyToCheck: 'codec_type',
+        valuesToRemove: 'attachment',
+        condition: 'equals',
+      }),
+    ],
+    expected: {
+      shouldProcess: true,
+      container: 'mp4',
+      sourceIndexes: [0, 1],
+      codecTypes: ['video', 'audio'],
+      jobLogs: [
+        'Removing stream index 2 because codec_type of attachment equals attachment\n',
+      ],
+      spawnArgs: [
+        '-y',
+        '-i',
+        '/tmp/source.mp4',
+        '-map',
+        '0:0',
+        '-c:0',
+        'copy',
+        '-map',
+        '0:1',
+        '-c:1',
+        'copy',
+      ],
+    },
+  },
+  {
     id: 'remove-subtitles-and-reorder-streams',
     description: 'Subtitle removal followed by audio-first reordering keeps output indexes stable',
     streams: [

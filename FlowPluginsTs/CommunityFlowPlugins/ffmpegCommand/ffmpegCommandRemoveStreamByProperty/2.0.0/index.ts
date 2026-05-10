@@ -33,6 +33,7 @@ const details = (): IpluginDetails => ({
           'audio',
           'video',
           'subtitle',
+          'attachment',
           'any',
         ],
       },
@@ -61,7 +62,7 @@ const details = (): IpluginDetails => ({
         - sample_rate - Audio quality (like 44100, 48000)
         - bit_rate - Quality/file size (higher = better quality, larger file)
         - tags.language - Audio/subtitle language (like eng, spa, fre)
-        - codec_type - Whether it's "video", "audio", or "subtitle"
+        - codec_type - Whether it's "video", "audio", "subtitle", or "attachment"
 
         Enter the exact property name you want to check.
         `,
@@ -84,7 +85,7 @@ const details = (): IpluginDetails => ({
         - For languages: eng,spa,fre
         - For video sizes: 1920 (for width) or 1080 (for height)
         - For audio channels: 2,6,8
-        - For stream types: audio,video,subtitle
+        - For stream types: audio,video,subtitle,attachment
 
         The plugin will look for files that have any of these values.
         `,

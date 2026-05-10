@@ -1,8 +1,20 @@
-import { plugin } from
+import { details, plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandRemoveStreamByProperty/2.0.0/index';
 import { createV2Args, expectV2Operation } from '../../v2TestUtils';
 
 describe('ffmpegCommandRemoveStreamByProperty v2 Plugin', () => {
+  it('offers attachment as a codec type option', () => {
+    const codecTypeInput = details().inputs.find((input) => input.name === 'codecType');
+
+    expect(codecTypeInput?.inputUI.options).toEqual([
+      'audio',
+      'video',
+      'subtitle',
+      'attachment',
+      'any',
+    ]);
+  });
+
   it('appends a removeStreamByProperty operation only', () => {
     const args = createV2Args({
       inputs: {
