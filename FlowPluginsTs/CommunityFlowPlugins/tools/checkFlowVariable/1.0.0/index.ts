@@ -55,6 +55,12 @@ const details = (): IpluginDetails => ({
 
       \\nExample\\n
       {{{args.inputFileObj.ffProbeData.streams.1.codec_name}}}
+
+      \\n
+      \\n
+      You can also enter a plain variable name matching what was used in 'Set Flow Variable'.
+      For example, if you set a variable called 'test', you can enter 'test' here
+      and it will check args.variables.user.test automatically.
       `,
     },
     {
@@ -139,6 +145,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       default:
         throw new Error(`Invalid variable: ${variable}`);
     }
+  } else if (
+    !variable.includes('.')
+    && !variable.includes('{')
+    && args.variables.user
+    && args.variables.user[variable] !== undefined
+  ) {
+    // plain variable name matching a key set via 'Set Flow Variable'
+    args.jobLog(`Looking up flow variable: args.variables.user.${variable}`);
+    targetValue = args.variables.user[variable];
   } else {
     targetValue = variable;
   }

@@ -7,10 +7,10 @@ import {
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = ():IpluginDetails => ({
-  name: 'Check If Processed',
+  name: 'Check Skiplist',
   description: `
-    Check if file has already been added to processed list by 'Add To Processed' flow plugin.
-    You can clear the processed list by clicking the 'Clear history' buttons in the library 'Transcode Options' panel.
+    Check if file has already been added to skiplist by 'Add To Skiplist' flow plugin.
+    You can view and clear the skiplist by going to Library -> Skiplist.
   `,
   style: {
     borderColor: 'orange',
@@ -41,11 +41,11 @@ const details = ():IpluginDetails => ({
   outputs: [
     {
       number: 1,
-      tooltip: 'File has not been processed',
+      tooltip: 'File is not on library skiplist',
     },
     {
       number: 2,
-      tooltip: 'File has been processed',
+      tooltip: 'File is on library skiplist',
     },
   ],
 });
@@ -68,17 +68,17 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     propertyToCheck = await hashFile(args.inputFileObj._id, 'sha256');
   }
 
-  args.jobLog(`Checking if file has already been processed: ${propertyToCheck}`);
+  args.jobLog(`Checking if file is on skiplist: ${propertyToCheck}`);
 
   const outputHist = await args.deps.crudTransDBN('F2FOutputJSONDB', 'getById', propertyToCheck, {});
 
   let outputNumber = 1;
 
   if (outputHist !== undefined && outputHist.DB === args.inputFileObj.DB) {
-    args.jobLog('File has already been processed by this library');
+    args.jobLog('File is on library skiplist');
     outputNumber = 2;
   } else {
-    args.jobLog('File has not been processed by this library');
+    args.jobLog('File is not on library skiplist');
   }
 
   return {

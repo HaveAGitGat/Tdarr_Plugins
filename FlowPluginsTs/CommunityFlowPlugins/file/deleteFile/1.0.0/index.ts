@@ -5,7 +5,7 @@ import {
   IpluginInputArgs,
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
-import { getFileAbosluteDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
+import { getFileAbsoluteDir } from '../../../../FlowHelpers/1.0.0/fileUtils';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
@@ -121,7 +121,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     await fsp.unlink(args.originalLibraryFile._id);
   }
 
-  const fileDir = getFileAbosluteDir(args.originalLibraryFile._id);
+  const fileDir = getFileAbsoluteDir(args.originalLibraryFile._id);
 
   if (deleteParentFolderIfEmpty) {
     args.jobLog(`Checking if folder ${fileDir} is empty`);
