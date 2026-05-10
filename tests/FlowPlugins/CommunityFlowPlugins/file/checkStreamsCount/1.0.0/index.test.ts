@@ -21,6 +21,7 @@ describe('checkStreamsCount Plugin', () => {
   describe('Plugin Details', () => {
     it('should provide selectable stream types', () => {
       const streamTypeInput = details().inputs.find((input) => input.name === 'streamType');
+      const streamsTargetInput = details().inputs.find((input) => input.name === 'streamsTarget');
 
       expect(streamTypeInput?.inputUI.options).toEqual([
         'video',
@@ -29,6 +30,8 @@ describe('checkStreamsCount Plugin', () => {
         'attachment',
         'data',
       ]);
+      expect(streamsTargetInput?.type).toBe('number');
+      expect(streamsTargetInput?.inputUI.type).toBe('text');
     });
   });
 

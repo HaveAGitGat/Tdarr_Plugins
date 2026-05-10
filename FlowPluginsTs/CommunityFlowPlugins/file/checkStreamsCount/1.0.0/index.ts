@@ -41,11 +41,7 @@ const details = (): IpluginDetails => ({
       type: 'number',
       defaultValue: '1',
       inputUI: {
-        type: 'slider',
-        sliderOptions: {
-          min: 0,
-          max: 10,
-        },
+        type: 'text',
       },
       tooltip: 'Specify streams count to check for',
     },
