@@ -95,6 +95,24 @@ var getOuputStreamTypeIndex = function (streams, stream) {
     }
     return index;
 };
+var hasCodecOutputArg = function (outputArgs) { return outputArgs.some(function (arg) { return (/^-(c|codec)(:|$)/.test(arg)
+    || /^-[vasd]codec(:|$)/.test(arg)); }); };
+var isCopyCompatibleOutputOption = function (arg) { return (arg === '-metadata'
+    || arg.startsWith('-metadata:')
+    || arg === '-disposition'
+    || arg.startsWith('-disposition:')); };
+var hasOnlyCopyCompatibleOutputArgs = function (outputArgs) {
+    for (var i = 0; i < outputArgs.length; i += 1) {
+        var arg = outputArgs[i];
+        if (!isCopyCompatibleOutputOption(arg)) {
+            return false;
+        }
+        i += 1;
+    }
+    return true;
+};
+var shouldAddCopyCodec = function (outputArgs) { return (outputArgs.length === 0
+    || (!hasCodecOutputArg(outputArgs) && hasOnlyCopyCompatibleOutputArgs(outputArgs))); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
     var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res;
@@ -138,12 +156,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         return arg;
                     });
                     cliArgs.push.apply(cliArgs, stream.mapArgs);
-                    if (stream.outputArgs.length === 0) {
+                    if (shouldAddCopyCodec(stream.outputArgs)) {
                         cliArgs.push("-c:".concat(getOuputStreamIndex(streams, stream)), 'copy');
                     }
-                    else {
-                        cliArgs.push.apply(cliArgs, stream.outputArgs);
-                    }
+                    cliArgs.push.apply(cliArgs, stream.outputArgs);
                     inputArgs.push.apply(inputArgs, stream.inputArgs);
                 };
                 for (i = 0; i < streams.length; i += 1) {

@@ -23,7 +23,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'text',
             },
-            tooltip: "Variable to check using templating. \n      \\n\n      \\n\n      https://docs.tdarr.io/docs/plugins/flow-plugins/basics#plugin-variable-templating\n      \n      \\n\n      \\n\n      For example , \n      \n      \\nExample\\n\n      {{{args.librarySettings._id}}}\n      \n      \\nExample\\n\n      {{{args.inputFileObj._id}}}\n\n      \\nExample\\n\n      {{{args.userVariables.library.test}}}\n\n      \\nExample\\n\n      {{{args.userVariables.global.test}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.mediaInfo.track.0.IsStreamable}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.format.nb_streams}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.streams.1.codec_name}}}\n      ",
+            tooltip: "Variable to check using templating. \n      \\n\n      \\n\n      https://docs.tdarr.io/docs/plugins/flow-plugins/basics#plugin-variable-templating\n      \n      \\n\n      \\n\n      For example , \n      \n      \\nExample\\n\n      {{{args.librarySettings._id}}}\n      \n      \\nExample\\n\n      {{{args.inputFileObj._id}}}\n\n      \\nExample\\n\n      {{{args.userVariables.library.test}}}\n\n      \\nExample\\n\n      {{{args.userVariables.global.test}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.mediaInfo.track.0.IsStreamable}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.format.nb_streams}}}\n\n      \\nExample\\n\n      {{{args.inputFileObj.ffProbeData.streams.1.codec_name}}}\n\n      \\n\n      \\n\n      You can also enter a plain variable name matching what was used in 'Set Flow Variable'.\n      For example, if you set a variable called 'test', you can enter 'test' here\n      and it will check args.variables.user.test automatically.\n      ",
         },
         {
             label: 'Condition',
@@ -100,6 +100,14 @@ var plugin = function (args) {
             default:
                 throw new Error("Invalid variable: ".concat(variable));
         }
+    }
+    else if (!variable.includes('.')
+        && !variable.includes('{')
+        && args.variables.user
+        && args.variables.user[variable] !== undefined) {
+        // plain variable name matching a key set via 'Set Flow Variable'
+        args.jobLog("Looking up flow variable: args.variables.user.".concat(variable));
+        targetValue = args.variables.user[variable];
     }
     else {
         targetValue = variable;

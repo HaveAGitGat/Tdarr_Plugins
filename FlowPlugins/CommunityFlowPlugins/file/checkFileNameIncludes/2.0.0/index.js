@@ -17,6 +17,20 @@ var details = function () { return ({
     icon: 'faQuestion',
     inputs: [
         {
+            label: 'File to check',
+            name: 'fileToCheck',
+            type: 'string',
+            defaultValue: 'workingFile',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'workingFile',
+                    'originalFile',
+                ],
+            },
+            tooltip: 'Specify the file name to check.',
+        },
+        {
             label: 'Terms',
             name: 'terms',
             type: 'string',
@@ -59,6 +73,7 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var processPath = function (includeFileDirectory, input) { return (includeFileDirectory ? input : "".concat((0, fileUtils_1.getFileName)(input), ".").concat((0, fileUtils_1.getContainer)(input))); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
@@ -66,23 +81,24 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     var terms = String(args.inputs.terms);
     var pattern = String(args.inputs.pattern);
-    var includeFileDirectory = args.inputs.includeFileDirectory;
-    var fileName = includeFileDirectory
-        ? args.inputFileObj._id
-        : "".concat((0, fileUtils_1.getFileName)(args.inputFileObj._id), ".").concat((0, fileUtils_1.getContainer)(args.inputFileObj._id));
+    var fileToCheck = String(args.inputs.fileToCheck);
+    var includeFileDirectory = Boolean(args.inputs.includeFileDirectory);
+    var filePathToCheck = fileToCheck === 'originalFile'
+        ? processPath(includeFileDirectory, args.originalLibraryFile._id)
+        : processPath(includeFileDirectory, args.inputFileObj._id);
     var searchCriteriasArray = terms.trim().split(',')
         .map(function (term) { return term.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&'); }); // https://github.com/tc39/proposal-regex-escaping
     if (pattern) {
         searchCriteriasArray.push(pattern);
     }
     var searchCriteriaMatched = searchCriteriasArray
-        .find(function (searchCriteria) { return new RegExp(searchCriteria).test(fileName); });
+        .find(function (searchCriteria) { return new RegExp(searchCriteria).test(filePathToCheck); });
     var isAMatch = searchCriteriaMatched !== undefined;
     if (isAMatch) {
-        args.jobLog("'".concat(fileName, "' includes '").concat(searchCriteriaMatched, "'"));
+        args.jobLog("'".concat(filePathToCheck, "' includes '").concat(searchCriteriaMatched, "'"));
     }
     else {
-        args.jobLog("'".concat(fileName, "' does not include any of the terms or patterns"));
+        args.jobLog("'".concat(filePathToCheck, "' does not include any of the terms or patterns"));
     }
     return {
         outputFileObj: args.inputFileObj,
