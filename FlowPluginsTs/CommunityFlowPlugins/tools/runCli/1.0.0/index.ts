@@ -7,6 +7,54 @@ import {
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+
+type ParseArgsStringToArgv = (argsString: string, env: string, cwd: string) => string[];
+
+const parseRunCliArguments = (
+  cliPath: string,
+  cliArguments: string,
+  parseArgsStringToArgv: ParseArgsStringToArgv,
+): string[] => {
+  const normalizedCliPath = cliPath.replace(/\\/g, '/');
+  const cliName = normalizedCliPath
+    .slice(normalizedCliPath.lastIndexOf('/') + 1)
+    .toLowerCase()
+    .replace(/\.exe$/i, '');
+
+  let shellCommandArgMatch: RegExpMatchArray | null = null;
+
+  if (cliName === 'bash' || cliName === 'sh') {
+    shellCommandArgMatch = cliArguments.match(/(^|\s)(-[^-\s]*c[^\s]*)(\s+)([\s\S]*)$/);
+  } else if (cliName === 'powershell' || cliName === 'pwsh') {
+    shellCommandArgMatch = cliArguments.match(/(^|\s)(-command|-c)(\s+)([\s\S]*)$/i);
+  }
+
+  if (!shellCommandArgMatch) {
+    return [
+      ...parseArgsStringToArgv(cliArguments, '', ''),
+    ];
+  }
+
+  const prefixArgsString = cliArguments.slice(0, shellCommandArgMatch.index).trim();
+  const prefixArgs = prefixArgsString
+    ? parseArgsStringToArgv(prefixArgsString, '', '')
+    : [];
+  const commandArgsString = shellCommandArgMatch[4].trim();
+  let commandArgs: string[] = [];
+
+  if (/^['"]/.test(commandArgsString)) {
+    commandArgs = parseArgsStringToArgv(commandArgsString, '', '');
+  } else if (commandArgsString) {
+    commandArgs = [commandArgsString];
+  }
+
+  return [
+    ...prefixArgs,
+    shellCommandArgMatch[2],
+    ...commandArgs,
+  ];
+};
+
 const details = (): IpluginDetails => ({
   name: 'Run CLI',
   description: 'Choose a CLI and custom arguments to run',
@@ -225,10 +273,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     cliArguments = cliArguments.replace(/\${outputFilePath}/g, userOutputFilePath);
   }
 
-  const cliArgs = [
-    ...args.deps.parseArgsStringToArgv(cliArguments, '', ''),
-  ];
-
   const availableCli:{
     [index: string]: string;
   } = {
@@ -247,6 +291,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     cliPath = availableCli[userCli];
   }
+
+  const cliArgs = parseRunCliArguments(
+    cliPath,
+    cliArguments,
+    args.deps.parseArgsStringToArgv,
+  );
 
   const cli = new CLI({
     cli: cliPath,
@@ -279,5 +329,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 };
 export {
   details,
+  parseRunCliArguments,
   plugin,
 };

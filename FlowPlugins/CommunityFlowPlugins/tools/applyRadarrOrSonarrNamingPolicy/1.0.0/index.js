@@ -236,7 +236,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             buildPreviewRenameResquestUrl: function (fInfo) { return "".concat(arrHost, "/api/v3/rename?seriesId=").concat(fInfo.id, "&seasonNumber=").concat(fInfo.seasonNumber); },
                             getFileToRenameFromPreviewRenameResponse: function (previewRenameResponse, fInfo) {
                                 var _a;
-                                return (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
+                                var fileToRename = (_a = previewRenameResponse.data) === null || _a === void 0 ? void 0 : _a.find(function (episodeFile) { var _a; return ((_a = episodeFile.episodeNumbers) === null || _a === void 0 ? void 0 : _a.at(0)) === fInfo.episodeNumber; });
+                                return fileToRename
+                                    ? __assign(__assign({}, fileToRename), { newPath: fileToRename.newPath.split(/[\\/]/).pop() || fileToRename.newPath }) : undefined;
                             },
                         },
                     };
@@ -262,7 +264,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fileToRename = arrApp.delegates
                     .getFileToRenameFromPreviewRenameResponse(previewRenameRequestResult, fInfo);
                 if (!(fileToRename !== undefined)) return [3 /*break*/, 6];
-                newPath = "".concat((0, fileUtils_1.getFileAbosluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
+                newPath = "".concat((0, fileUtils_1.getFileAbsoluteDir)(currentFileName), "/").concat((0, fileUtils_1.getFileName)(fileToRename.newPath), ".").concat((0, fileUtils_1.getContainer)(fileToRename.newPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: currentFileName,

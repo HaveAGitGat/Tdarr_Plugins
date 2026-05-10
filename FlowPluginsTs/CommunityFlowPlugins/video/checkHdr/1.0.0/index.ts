@@ -43,9 +43,15 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       const stream = args.inputFileObj.ffProbeData.streams[i];
       if (
         stream.codec_type === 'video'
-        && stream.color_transfer === 'smpte2084'
-        && stream.color_primaries === 'bt2020'
-        && stream.color_range === 'tv'
+            && (
+              (stream.color_transfer === 'smpte2084'
+                    && stream.color_primaries === 'bt2020'
+                    && stream.color_range === 'tv')
+                || (stream.codec_tag_string?.includes('dvhe'))
+                || (stream.codec_tag_string?.includes('dvav'))
+                || (stream.codec_tag_string?.includes('dav1'))
+                || (stream.codec_tag_string?.includes('dvh11'))
+            )
       ) {
         isHdr = true;
       }

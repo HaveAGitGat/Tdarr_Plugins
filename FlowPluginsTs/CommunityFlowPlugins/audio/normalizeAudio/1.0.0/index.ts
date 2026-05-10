@@ -21,37 +21,65 @@ const details = (): IpluginDetails => ({
   icon: '',
   inputs: [
     {
-      label: 'i',
+      label: 'Target Integrated Loudness (LUFS)',
       name: 'i',
       type: 'string',
       defaultValue: '-23.0',
       inputUI: {
         type: 'text',
       },
-      tooltip: `"i" value used in loudnorm pass \\n
-              defaults to -23.0`,
+      tooltip: `Target integrated loudness in LUFS (Loudness Units relative to Full Scale). \\n
+              This is the average perceptual loudness the output file will be normalized to. \\n
+              Common values: \\n
+              -14.0 = Spotify / YouTube streaming standard \\n
+              -16.0 = Apple Music / AES streaming recommendation \\n
+              -23.0 = EBU R128 broadcast standard (default) \\n`,
     },
     {
-      label: 'lra',
+      label: 'Target Loudness Range (LU)',
       name: 'lra',
       type: 'string',
       defaultValue: '7.0',
       inputUI: {
         type: 'text',
       },
-      tooltip: `Desired lra value. \\n Defaults to 7.0  
-            `,
+      tooltip: `Target loudness range in LU (Loudness Units). \\n
+              Controls how much dynamic variation is allowed between quiet and loud sections. \\n
+              A lower value produces more consistent loudness throughout the file. \\n
+              A higher value preserves more of the original dynamic range. \\n
+              Typical values: \\n
+              3.0-7.0 = Compressed / consistent (speech, podcasts) \\n
+              7.0-15.0 = Moderate dynamics (most music, TV) \\n
+              15.0-20.0 = Wide dynamics (classical, film) \\n
+              Defaults to 7.0`,
     },
     {
-      label: 'tp',
+      label: 'Target True Peak (dBTP)',
       name: 'tp',
       type: 'string',
       defaultValue: '-2.0',
       inputUI: {
         type: 'text',
       },
-      tooltip: `Desired "tp" value. \\n Defaults to -2.0 
-              `,
+      tooltip: `Maximum true peak level in dBTP (decibels True Peak). \\n
+              True peak accounts for inter-sample peaks that occur after digital-to-analogue \\n
+              conversion or codec processing, and should be kept below 0 dBTP to prevent clipping. \\n
+              Common values: \\n
+              -1.0 = EBU R128 / streaming platform recommended ceiling \\n
+              -2.0 = Conservative headroom for lossy codec safety (default) \\n`,
+    },
+    {
+      label: 'Max Gain (LU)',
+      name: 'maxGain',
+      type: 'string',
+      defaultValue: '15',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `Maximum gain in Loudness Units that will be applied. \\n
+              If the required gain exceeds this value, normalization is skipped \\n
+              to avoid amplifying noise in mostly-quiet files. \\n
+              Defaults to 15`,
     },
   ],
   outputs: [
@@ -62,16 +90,24 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+export interface INormalizeAudioPluginInputArgs extends IpluginInputArgs {
+  inputs: {
+    i: string,
+    lra: string,
+    tp: string,
+    maxGain: string,
+  } & IpluginInputArgs['inputs']
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
+const plugin = async (args: INormalizeAudioPluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  // setup required varibles
-  const loudNorm_i = args.inputs.i;
-  const { lra } = args.inputs;
-  const { tp } = args.inputs;
+  // setup required variables
+  const { i: inputs_i, lra: inputs_lra, tp: inputs_tp } = args.inputs;
+  const maxGain = parseFloat(args.inputs.maxGain);
 
   const container = getContainer(args.inputFileObj._id);
   const outputFilePath = `${getPluginWorkDir(args)}/${getFileName(args.inputFileObj._id)}.${container}`;
@@ -80,14 +116,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     '-i',
     args.inputFileObj._id,
     '-af',
-    `loudnorm=I=${loudNorm_i}:LRA=${lra}:TP=${tp}:print_format=json`,
+    `loudnorm=I=${inputs_i}:LRA=${inputs_lra}:TP=${inputs_tp}:print_format=json`,
     '-f',
     'null',
-    'NUL',
-    '-map',
-    '0',
-    '-c',
-    'copy',
+    (args.platform === 'win32' ? 'NUL' : '/dev/null'),
   ];
 
   const cli = new CLI({
@@ -123,14 +155,41 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     throw new Error('Failed to find loudnorm in report, please rerun');
   }
 
-  const parts = lines[idx].split(']');
-  parts.shift();
-  let infoLine = parts.join(']');
-  infoLine = infoLine.split('\r\n').join('').split('\t').join('');
+  const fullTail = res.errorLogFull.slice(idx).join('');
 
-  const loudNormValues = JSON.parse(infoLine);
+  const targetOffsetIdx = fullTail.lastIndexOf('target_offset');
+  if (targetOffsetIdx === -1) {
+    throw new Error('Failed to find target_offset in loudnorm output, please rerun');
+  }
+
+  const closingBraceIdx = fullTail.indexOf('}', targetOffsetIdx);
+  if (closingBraceIdx === -1) {
+    throw new Error('Failed to find closing brace in loudnorm output, please rerun');
+  }
+
+  const openingBraceIdx = fullTail.lastIndexOf('{', targetOffsetIdx);
+  if (openingBraceIdx === -1) {
+    throw new Error('Failed to find opening brace in loudnorm output, please rerun');
+  }
+
+  const loudNormValues = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1));
 
   args.jobLog(`Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`);
+
+  const gainNeeded = parseFloat(inputs_i) - parseFloat(loudNormValues.input_i);
+  args.jobLog(`Gain required: ${gainNeeded.toFixed(2)} LU (max allowed: ${maxGain} LU)`);
+
+  if (gainNeeded > maxGain) {
+    args.jobLog(
+      `Skipping normalization: required gain of ${gainNeeded.toFixed(2)} LU exceeds `
+      + `max allowed gain of ${maxGain} LU. File may be mostly quiet or noise.`,
+    );
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
 
   const normArgs2 = [
     '-i',
@@ -144,11 +203,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     '-b:a',
     '192k',
     '-af',
-    `loudnorm=print_format=summary:linear=true:I=${loudNorm_i}:LRA=${lra}:TP=${tp}:`
+    `loudnorm=print_format=summary:linear=true:I=${inputs_i}:LRA=${inputs_lra}:TP=${inputs_tp}:`
     + `measured_i=${loudNormValues.input_i}:`
     + `measured_lra=${loudNormValues.input_lra}:`
     + `measured_tp=${loudNormValues.input_tp}:`
-    + `measured_thresh=${loudNormValues.input_thresh}:offset=${loudNormValues.target_offset} `,
+    + `measured_thresh=${loudNormValues.input_thresh}:offset=${loudNormValues.target_offset}`,
     outputFilePath,
   ];
 

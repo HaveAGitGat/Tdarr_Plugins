@@ -1,6 +1,6 @@
 import fileMoveOrCopy from '../../../../FlowHelpers/1.0.0/fileMoveOrCopy';
 import {
-  getContainer, getFileAbosluteDir, getFileName,
+  getContainer, getFileAbsoluteDir, getFileName,
 } from '../../../../FlowHelpers/1.0.0/fileUtils';
 import {
   IpluginDetails,
@@ -55,7 +55,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   newName = newName.replace(/\${fileName}/g, fileName);
   newName = newName.replace(/\${container}/g, getContainer(args.inputFileObj._id));
 
-  const fileDir = getFileAbosluteDir(args.inputFileObj._id);
+  const fileDir = getFileAbsoluteDir(args.inputFileObj._id);
   const newPath = `${fileDir}/${newName}`;
 
   if (args.inputFileObj._id === newPath) {
