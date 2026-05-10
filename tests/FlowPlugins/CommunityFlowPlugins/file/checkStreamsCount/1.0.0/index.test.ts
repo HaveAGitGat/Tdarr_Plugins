@@ -1,24 +1,39 @@
-import { plugin } from
-  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/checkAudioStreamsCount/1.0.0/index';
+import { details, plugin } from
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/file/checkStreamsCount/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
 const sampleAAC = require('../../../../../sampleData/media/sampleAAC_1.json');
+const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
-describe('checkAudioStreamsCount Plugin', () => {
+describe('checkStreamsCount Plugin', () => {
   let baseArgs: IpluginInputArgs;
 
   beforeEach(() => {
     baseArgs = {
-      inputs: { audioStreamsTarget: '1' },
+      inputs: { streamType: 'audio', streamsTarget: '1' },
       variables: {} as IpluginInputArgs['variables'],
       inputFileObj: JSON.parse(JSON.stringify(sampleAAC)) as IFileObject,
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });
 
-  describe('Audio Stream Count Detection', () => {
-    it('should route to output 2 when the audio stream count equals the target', () => {
+  describe('Plugin Details', () => {
+    it('should provide selectable stream types', () => {
+      const streamTypeInput = details().inputs.find((input) => input.name === 'streamType');
+
+      expect(streamTypeInput?.inputUI.options).toEqual([
+        'video',
+        'audio',
+        'subtitle',
+        'attachment',
+        'data',
+      ]);
+    });
+  });
+
+  describe('Stream Count Detection', () => {
+    it('should route to output 2 when the selected stream count equals the target', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
@@ -27,8 +42,8 @@ describe('checkAudioStreamsCount Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('1 audio streams found');
     });
 
-    it('should route to output 1 when the audio stream count is less than the target', () => {
-      baseArgs.inputs.audioStreamsTarget = '2';
+    it('should route to output 1 when the selected stream count is less than the target', () => {
+      baseArgs.inputs.streamsTarget = '2';
 
       const result = plugin(baseArgs);
 
@@ -37,8 +52,7 @@ describe('checkAudioStreamsCount Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('1 audio streams found');
     });
 
-    it('should route to output 3 when the audio stream count is more than the target', () => {
-      baseArgs.inputs.audioStreamsTarget = '1';
+    it('should route to output 3 when the selected stream count is more than the target', () => {
       baseArgs.inputFileObj.ffProbeData.streams?.push({
         index: 2,
         codec_name: 'ac3',
@@ -53,22 +67,19 @@ describe('checkAudioStreamsCount Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('2 audio streams found');
     });
 
-    it('should count only audio streams among mixed stream types', () => {
-      baseArgs.inputs.audioStreamsTarget = '2';
+    it('should count only the selected stream type among mixed stream types', () => {
+      baseArgs.inputs.streamType = 'subtitle';
+      baseArgs.inputs.streamsTarget = '2';
       baseArgs.inputFileObj.ffProbeData.streams = [
         {
           index: 0,
           codec_name: 'h264',
           codec_type: 'video',
-          width: 1920,
-          height: 1080,
         },
         {
           index: 1,
           codec_name: 'aac',
           codec_type: 'audio',
-          sample_rate: '48000',
-          channels: 2,
         },
         {
           index: 2,
@@ -77,21 +88,47 @@ describe('checkAudioStreamsCount Plugin', () => {
         },
         {
           index: 3,
-          codec_name: 'ac3',
-          codec_type: 'audio',
-          sample_rate: '48000',
-          channels: 6,
+          codec_name: 'ass',
+          codec_type: 'subtitle',
+        },
+        {
+          index: 4,
+          codec_name: 'mjpeg',
+          codec_type: 'attachment',
         },
       ];
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('2 audio streams found');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('2 subtitle streams found');
     });
 
-    it('should handle zero audio streams', () => {
-      baseArgs.inputs.audioStreamsTarget = '0';
+    it('should support attachment streams', () => {
+      baseArgs.inputs.streamType = 'attachment';
+      baseArgs.inputs.streamsTarget = '1';
+      baseArgs.inputFileObj.ffProbeData.streams = [
+        {
+          index: 0,
+          codec_name: 'h264',
+          codec_type: 'video',
+        },
+        {
+          index: 1,
+          codec_name: 'ttf',
+          codec_type: 'attachment',
+        },
+      ];
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('1 attachment streams found');
+    });
+
+    it('should handle zero selected streams', () => {
+      baseArgs.inputs.streamType = 'data';
+      baseArgs.inputs.streamsTarget = '0';
       baseArgs.inputFileObj.ffProbeData.streams = [
         {
           index: 0,
@@ -103,11 +140,11 @@ describe('checkAudioStreamsCount Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('0 audio streams found');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('0 data streams found');
     });
 
     it('should route empty stream arrays as less than a positive target', () => {
-      baseArgs.inputs.audioStreamsTarget = '1';
+      baseArgs.inputs.streamsTarget = '1';
       baseArgs.inputFileObj.ffProbeData.streams = [];
 
       const result = plugin(baseArgs);
@@ -118,13 +155,15 @@ describe('checkAudioStreamsCount Plugin', () => {
   });
 
   describe('Default Values', () => {
-    it('should use the default target of 1 when the input is empty', () => {
+    it('should use the default stream type and target when inputs are empty', () => {
       baseArgs.inputs = {};
+      baseArgs.inputFileObj = JSON.parse(JSON.stringify(sampleH264)) as IFileObject;
 
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('Checking for 1 audio streams');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Checking for 1 video streams');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('1 video streams found');
     });
   });
 

@@ -4,7 +4,8 @@ exports.plugin = exports.details = void 0;
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check Video Streams Count',
-    description: 'This plugin checks if the number of video streams is 1 or more.',
+    description: 'Deprecated: use Check Streams Count instead. This plugin checks if the number of video streams '
+        + 'is 1 or more.',
     style: {
         borderColor: 'orange',
     },
