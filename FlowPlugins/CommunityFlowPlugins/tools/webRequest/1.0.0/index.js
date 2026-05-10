@@ -113,20 +113,92 @@ var details = function () { return ({
             },
             tooltip: 'Specify whether to log response body in the job report',
         },
+        {
+            label: 'Output 2 Status Codes',
+            name: 'output2StatusCodes',
+            type: 'string',
+            defaultValue: '',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: 'Comma-separated HTTP status codes or ranges to route to output 2 instead of failing, '
+                + 'e.g. 400,404,429,500-599.',
+        },
+        {
+            label: 'Output 2 On Network Error',
+            name: 'output2OnNetworkError',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Route connection errors, DNS errors, and timeouts to output 2 instead of failing the flow.',
+        },
     ],
     outputs: [
         {
             number: 1,
-            tooltip: 'Continue to next plugin',
+            tooltip: 'Request succeeded',
+        },
+        {
+            number: 2,
+            tooltip: 'Request failed with a configured status code or network error',
         },
     ],
 }); };
 exports.details = details;
+var MIN_HTTP_STATUS_CODE = 100;
+var MAX_HTTP_STATUS_CODE = 599;
+var MIN_SUCCESS_STATUS_CODE = 200;
+var MAX_SUCCESS_STATUS_CODE = 299;
+var validateStatusCode = function (statusCode, token) {
+    if (statusCode < MIN_HTTP_STATUS_CODE || statusCode > MAX_HTTP_STATUS_CODE) {
+        throw new Error("Invalid HTTP status code in Output 2 Status Codes: ".concat(token));
+    }
+};
+var parseOutput2StatusCodes = function (input) {
+    var tokens = input.split(',')
+        .map(function (rawToken) { return rawToken.trim(); })
+        .filter(function (token) { return token !== ''; });
+    return tokens.map(function (token) {
+        if (/^\d{3}$/.test(token)) {
+            var statusCode = Number(token);
+            validateStatusCode(statusCode, token);
+            return {
+                min: statusCode,
+                max: statusCode,
+            };
+        }
+        var rangeMatch = /^(\d{3})\s*-\s*(\d{3})$/.exec(token);
+        if (rangeMatch) {
+            var min = Number(rangeMatch[1]);
+            var max = Number(rangeMatch[2]);
+            validateStatusCode(min, token);
+            validateStatusCode(max, token);
+            if (min > max) {
+                throw new Error("Invalid HTTP status code range in Output 2 Status Codes: ".concat(token));
+            }
+            return {
+                min: min,
+                max: max,
+            };
+        }
+        throw new Error("Invalid Output 2 Status Codes value: ".concat(token));
+    });
+};
+var shouldRouteStatusCodeToOutput2 = function (statusCode, output2StatusCodeRanges) { return output2StatusCodeRanges.some(function (range) { return (statusCode >= range.min && statusCode <= range.max); }); };
+var isSuccessfulStatusCode = function (statusCode) { return (statusCode >= MIN_SUCCESS_STATUS_CODE && statusCode <= MAX_SUCCESS_STATUS_CODE); };
+var buildOutputArgs = function (args, outputNumber) { return ({
+    outputFileObj: args.inputFileObj,
+    outputNumber: outputNumber,
+    variables: args.variables,
+}); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, method, requestUrl, requestHeaders, requestBody, logResponseBody, requestConfig, res, err_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, method, requestUrl, requestHeaders, requestBody, logResponseBody, output2StatusCodeRanges, output2OnNetworkError, requestConfig, res, err_1, errWithResponse, rawStatusCode, statusCode_1, statusCode;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -136,33 +208,55 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 requestHeaders = JSON.parse(String(args.inputs.requestHeaders));
                 requestBody = JSON.parse(String(args.inputs.requestBody));
                 logResponseBody = args.inputs.logResponseBody;
+                output2StatusCodeRanges = parseOutput2StatusCodes(String(args.inputs.output2StatusCodes));
+                output2OnNetworkError = args.inputs.output2OnNetworkError;
                 requestConfig = {
                     method: method,
                     url: requestUrl,
                     headers: requestHeaders,
                     data: requestBody,
                 };
-                _a.label = 1;
+                _b.label = 1;
             case 1:
-                _a.trys.push([1, 3, , 4]);
+                _b.trys.push([1, 3, , 4]);
                 return [4 /*yield*/, args.deps.axios(requestConfig)];
             case 2:
-                res = _a.sent();
-                args.jobLog("Web request succeeded: Status Code: ".concat(res.status));
+                res = _b.sent();
+                return [3 /*break*/, 4];
+            case 3:
+                err_1 = _b.sent();
+                args.jobLog('Web Request Failed');
+                args.jobLog(JSON.stringify(err_1));
+                errWithResponse = err_1;
+                rawStatusCode = (_a = errWithResponse.response) === null || _a === void 0 ? void 0 : _a.status;
+                statusCode_1 = Number(rawStatusCode);
+                if (shouldRouteStatusCodeToOutput2(statusCode_1, output2StatusCodeRanges)) {
+                    args.jobLog("Routing status code ".concat(statusCode_1, " to output 2"));
+                    return [2 /*return*/, buildOutputArgs(args, 2)];
+                }
+                if (rawStatusCode === undefined && output2OnNetworkError) {
+                    args.jobLog('Routing network error to output 2');
+                    return [2 /*return*/, buildOutputArgs(args, 2)];
+                }
+                throw new Error('Web Request Failed');
+            case 4:
+                statusCode = Number(res.status);
+                if (isSuccessfulStatusCode(statusCode)) {
+                    args.jobLog("Web request succeeded: Status Code: ".concat(statusCode));
+                    if (logResponseBody) {
+                        args.jobLog("Response Body: ".concat(JSON.stringify(res.data)));
+                    }
+                    return [2 /*return*/, buildOutputArgs(args, 1)];
+                }
+                args.jobLog("Web request failed: Status Code: ".concat(statusCode));
                 if (logResponseBody) {
                     args.jobLog("Response Body: ".concat(JSON.stringify(res.data)));
                 }
-                return [3 /*break*/, 4];
-            case 3:
-                err_1 = _a.sent();
-                args.jobLog('Web Request Failed');
-                args.jobLog(JSON.stringify(err_1));
+                if (shouldRouteStatusCodeToOutput2(statusCode, output2StatusCodeRanges)) {
+                    args.jobLog("Routing status code ".concat(statusCode, " to output 2"));
+                    return [2 /*return*/, buildOutputArgs(args, 2)];
+                }
                 throw new Error('Web Request Failed');
-            case 4: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: 1,
-                    variables: args.variables,
-                }];
         }
     });
 }); };

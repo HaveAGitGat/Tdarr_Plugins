@@ -4,8 +4,8 @@ const details = () => ({
   Name: 'Migz Clean Title Metadata',
   Type: 'Video',
   Operation: 'Transcode',
-  Description: 'This plugin removes title metadata from video/audio/subtitles.\n\n',
-  Version: '1.9',
+  Description: 'This plugin removes title and comment metadata from video/audio/subtitles.\n\n',
+  Version: '2.0',
   Tags: 'pre-processing,ffmpeg,configurable',
   Inputs: [{
     name: 'clean_audio',
@@ -41,6 +41,26 @@ Optional. Only removes titles if they contain at least 3 '.' characters.
     tooltip: `
 Specify if subtitle titles should be checked & cleaned.
 Optional. Only removes titles if they contain at least 3 '.' characters.
+               \\nExample:\\n
+               true
+
+               \\nExample:\\n
+               false`,
+  },
+  {
+    name: 'clean_comments',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `
+Specify if comment metadata should be checked & cleaned.
+Optional. Removes comment metadata from the file and from video/audio/subtitle streams.
                \\nExample:\\n
                true
 
@@ -121,6 +141,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // Check if overall file metadata comment is not empty, if it's not empty set to "".
+  if (
+    inputs.clean_comments === true
+    && !(
+      typeof file.meta.Comment === 'undefined'
+        || file.meta.Comment === '""'
+        || file.meta.Comment === ''
+    )
+  ) {
+    try {
+      ffmpegCommandInsert += ' -metadata comment= ';
+      convert = true;
+    } catch (err) {
+      // Error
+    }
+  }
+
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i += 1) {
     // Check if stream is a video.
@@ -136,6 +173,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         ) {
           response.infoLog += `☒Video stream title is not empty. Removing title from stream ${i} \n`;
           ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} title= `;
+          convert = true;
+        }
+        // Check if stream comment is not empty, if it's not empty set to "".
+        if (
+          inputs.clean_comments === true
+          && !(
+            typeof file.ffProbeData.streams[i].tags.comment === 'undefined'
+            || file.ffProbeData.streams[i].tags.comment === '""'
+            || file.ffProbeData.streams[i].tags.comment === ''
+          )
+        ) {
+          response.infoLog += `☒Video stream comment is not empty. Removing comment from stream ${i} \n`;
+          ffmpegCommandInsert += ` -metadata:s:v:${videoIdx} comment= `;
           convert = true;
         }
         // Increment videoIdx.
@@ -181,6 +231,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             }
           }
         }
+        // Check if audio stream comment is not empty, if it's not empty set to "".
+        if (
+          inputs.clean_comments === true
+          && !(
+            typeof file.ffProbeData.streams[i].tags.comment === 'undefined'
+            || file.ffProbeData.streams[i].tags.comment === '""'
+            || file.ffProbeData.streams[i].tags.comment === ''
+          )
+        ) {
+          response.infoLog += `☒Audio stream comment is not empty. Removing comment from stream ${i} \n`;
+          ffmpegCommandInsert += ` -metadata:s:a:${audioIdx} comment= `;
+          convert = true;
+        }
         // Increment audioIdx.
         audioIdx += 1;
       } catch (err) {
@@ -224,6 +287,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
             }
           }
         }
+        // Check if subtitle stream comment is not empty, if it's not empty set to "".
+        if (
+          inputs.clean_comments === true
+          && !(
+            typeof file.ffProbeData.streams[i].tags.comment === 'undefined'
+            || file.ffProbeData.streams[i].tags.comment === '""'
+            || file.ffProbeData.streams[i].tags.comment === ''
+          )
+        ) {
+          response.infoLog += `☒Subtitle stream comment is not empty. Removing comment from stream ${i} \n`;
+          ffmpegCommandInsert += ` -metadata:s:s:${subtitleIdx} comment= `;
+          convert = true;
+        }
         // Increment subtitleIdx.
         subtitleIdx += 1;
       } catch (err) {
@@ -234,12 +310,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Convert file if convert variable is set to true.
   if (convert === true) {
-    response.infoLog += '☒File has title metadata. Removing \n';
+    response.infoLog += '☒File has metadata to clean. Removing \n';
     response.preset = `,${ffmpegCommandInsert} -c copy -map 0 -max_muxing_queue_size 9999`;
     response.reQueueAfter = true;
     response.processFile = true;
   } else {
-    response.infoLog += '☑File has no title metadata \n';
+    response.infoLog += '☑File has no metadata to clean \n';
   }
   return response;
 };

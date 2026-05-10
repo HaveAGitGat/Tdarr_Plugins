@@ -37,10 +37,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
-    name: 'Pause/Unpause All Nodes',
-    description: "\n  Pause/Unpause All Nodes\n  ",
+    name: 'Pause/Unpause Node(s)',
+    description: "\n  Pause/Unpause all nodes or the current node\n  ",
     style: {
         borderColor: 'yellow',
     },
@@ -59,7 +58,21 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: 'Specify whether to pause or unpause all nodes',
+            tooltip: 'Specify whether to pause or unpause',
+        },
+        {
+            label: 'Target',
+            name: 'target',
+            type: 'string',
+            defaultValue: 'allNodes',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'allNodes',
+                    'currentNode',
+                ],
+            },
+            tooltip: 'Pause/unpause all nodes or just the current node',
         },
     ],
     outputs: [
@@ -72,24 +85,50 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, pause;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, pause, target, _a, serverURL, apiKey, nodeID, normalizedServerURL;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                pause = args.inputs.pause;
-                return [4 /*yield*/, args.deps.crudTransDBN('SettingsGlobalJSONDB', 'update', 'globalsettings', {
-                        pauseAllNodes: pause,
+                pause = Boolean(args.inputs.pause);
+                target = String(args.inputs.target);
+                if (!(target === 'currentNode')) return [3 /*break*/, 2];
+                _a = args.configVars.config, serverURL = _a.serverURL, apiKey = _a.apiKey, nodeID = _a.nodeID;
+                normalizedServerURL = serverURL.replace(/\/+$/, '');
+                args.jobLog("".concat(pause ? 'Pausing' : 'Unpausing', " current node"));
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'post',
+                        url: "".concat(normalizedServerURL, "/api/v2/update-node"),
+                        headers: {
+                            'x-api-key': apiKey,
+                        },
+                        data: {
+                            data: {
+                                nodeID: nodeID,
+                                nodeUpdates: {
+                                    nodePaused: pause,
+                                },
+                            },
+                        },
                     })];
             case 1:
-                _a.sent();
-                return [2 /*return*/, {
-                        outputFileObj: args.inputFileObj,
-                        outputNumber: 1,
-                        variables: args.variables,
-                    }];
+                _b.sent();
+                args.jobLog("Node ".concat(pause ? 'paused' : 'unpaused'));
+                return [3 /*break*/, 4];
+            case 2: return [4 /*yield*/, args.deps.crudTransDBN('SettingsGlobalJSONDB', 'update', 'globalsettings', {
+                    pauseAllNodes: pause,
+                })];
+            case 3:
+                _b.sent();
+                args.jobLog("".concat(pause ? 'Paused' : 'Unpaused', " all nodes"));
+                _b.label = 4;
+            case 4: return [2 /*return*/, {
+                    outputFileObj: args.inputFileObj,
+                    outputNumber: 1,
+                    variables: args.variables,
+                }];
         }
     });
 }); };

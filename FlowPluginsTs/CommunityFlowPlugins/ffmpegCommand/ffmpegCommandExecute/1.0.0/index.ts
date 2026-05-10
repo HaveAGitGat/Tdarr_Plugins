@@ -63,6 +63,37 @@ const getOuputStreamTypeIndex = (streams: IffmpegCommandStream[], stream: Iffmpe
   return index;
 };
 
+const hasCodecOutputArg = (outputArgs: string[]): boolean => outputArgs.some((arg) => (
+  /^-(c|codec)(:|$)/.test(arg)
+  || /^-[vasd]codec(:|$)/.test(arg)
+));
+
+const isCopyCompatibleOutputOption = (arg: string): boolean => (
+  arg === '-metadata'
+  || arg.startsWith('-metadata:')
+  || arg === '-disposition'
+  || arg.startsWith('-disposition:')
+);
+
+const hasOnlyCopyCompatibleOutputArgs = (outputArgs: string[]): boolean => {
+  for (let i = 0; i < outputArgs.length; i += 1) {
+    const arg = outputArgs[i];
+
+    if (!isCopyCompatibleOutputOption(arg)) {
+      return false;
+    }
+
+    i += 1;
+  }
+
+  return true;
+};
+
+const shouldAddCopyCodec = (outputArgs: string[]): boolean => (
+  outputArgs.length === 0
+  || (!hasCodecOutputArg(outputArgs) && hasOnlyCopyCompatibleOutputArgs(outputArgs))
+);
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
@@ -118,11 +149,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     cliArgs.push(...stream.mapArgs);
 
-    if (stream.outputArgs.length === 0) {
+    if (shouldAddCopyCodec(stream.outputArgs)) {
       cliArgs.push(`-c:${getOuputStreamIndex(streams, stream)}`, 'copy');
-    } else {
-      cliArgs.push(...stream.outputArgs);
     }
+
+    cliArgs.push(...stream.outputArgs);
 
     inputArgs.push(...stream.inputArgs);
   }
