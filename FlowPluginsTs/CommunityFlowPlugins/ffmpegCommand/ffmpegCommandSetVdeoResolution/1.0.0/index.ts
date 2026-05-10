@@ -45,6 +45,33 @@ const details = () :IpluginDetails => ({
   ],
 });
 
+const getQsvVfScale = (
+  targetResolution: string,
+): string[] => {
+  switch (targetResolution) {
+    case '480p':
+      return ['-vf', 'vpp_qsv=w=720:h=480'];
+
+    case '576p':
+      return ['-vf', 'vpp_qsv=w=720:h=576'];
+
+    case '720p':
+      return ['-vf', 'vpp_qsv=w=1280:h=720'];
+
+    case '1080p':
+      return ['-vf', 'vpp_qsv=w=1920:h=1080'];
+
+    case '1440p':
+      return ['-vf', 'vpp_qsv=w=2560:h=1440'];
+
+    case '4KUHD':
+      return ['-vf', 'vpp_qsv=w=3840:h=2160'];
+
+    default:
+      return ['-vf', 'vpp_qsv=w=1920:h=1080'];
+  }
+};
+
 const getVfScale = (
   targetResolution: string,
 ):string[] => {
@@ -82,7 +109,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
   for (let i = 0; i < args.variables.ffmpegCommand.streams.length; i += 1) {
     const stream = args.variables.ffmpegCommand.streams[i];
-
+    const usesQSV = stream.outputArgs.some((row) => row.includes('qsv'));
     if (stream.codec_type === 'video') {
       const targetResolution = String(args.inputs.targetResolution);
 
@@ -91,7 +118,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
       ) {
         // eslint-disable-next-line no-param-reassign
         args.variables.ffmpegCommand.shouldProcess = true;
-        const scaleArgs = getVfScale(targetResolution);
+        const scaleArgs = usesQSV ? getQsvVfScale(targetResolution) : getVfScale(targetResolution);
         stream.outputArgs.push(...scaleArgs);
       }
     }

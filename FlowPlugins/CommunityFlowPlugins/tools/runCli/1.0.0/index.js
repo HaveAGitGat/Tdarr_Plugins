@@ -45,10 +45,42 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.plugin = exports.details = void 0;
+exports.plugin = exports.parseRunCliArguments = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
-/* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
+var parseRunCliArguments = function (cliPath, cliArguments, parseArgsStringToArgv) {
+    var normalizedCliPath = cliPath.replace(/\\/g, '/');
+    var cliName = normalizedCliPath
+        .slice(normalizedCliPath.lastIndexOf('/') + 1)
+        .toLowerCase()
+        .replace(/\.exe$/i, '');
+    var shellCommandArgMatch = null;
+    if (cliName === 'bash' || cliName === 'sh') {
+        shellCommandArgMatch = cliArguments.match(/(^|\s)(-[^-\s]*c[^\s]*)(\s+)([\s\S]*)$/);
+    }
+    else if (cliName === 'powershell' || cliName === 'pwsh') {
+        shellCommandArgMatch = cliArguments.match(/(^|\s)(-command|-c)(\s+)([\s\S]*)$/i);
+    }
+    if (!shellCommandArgMatch) {
+        return __spreadArray([], parseArgsStringToArgv(cliArguments, '', ''), true);
+    }
+    var prefixArgsString = cliArguments.slice(0, shellCommandArgMatch.index).trim();
+    var prefixArgs = prefixArgsString
+        ? parseArgsStringToArgv(prefixArgsString, '', '')
+        : [];
+    var commandArgsString = shellCommandArgMatch[4].trim();
+    var commandArgs = [];
+    if (/^['"]/.test(commandArgsString)) {
+        commandArgs = parseArgsStringToArgv(commandArgsString, '', '');
+    }
+    else if (commandArgsString) {
+        commandArgs = [commandArgsString];
+    }
+    return __spreadArray(__spreadArray(__spreadArray([], prefixArgs, true), [
+        shellCommandArgMatch[2]
+    ], false), commandArgs, true);
+};
+exports.parseRunCliArguments = parseRunCliArguments;
 var details = function () { return ({
     name: 'Run CLI',
     description: 'Choose a CLI and custom arguments to run',
@@ -214,7 +246,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, userCli, useCustomCliPath, customCliPath, cliPath, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, cliArgs, availableCli, msg, cli, res, msg;
+    var lib, userCli, useCustomCliPath, customCliPath, cliPath, outputFileBecomesWorkingFile, userOutputFilePath, cliArguments, cacheDir, fileName, availableCli, msg, cliArgs, cli, res, msg;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -242,7 +274,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     }
                     cliArguments = cliArguments.replace(/\${outputFilePath}/g, userOutputFilePath);
                 }
-                cliArgs = __spreadArray([], args.deps.parseArgsStringToArgv(cliArguments, '', ''), true);
                 availableCli = {
                     mkvpropedit: args.mkvpropeditPath,
                     mkvmerge: 'mkvmerge',
@@ -258,6 +289,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     }
                     cliPath = availableCli[userCli];
                 }
+                cliArgs = parseRunCliArguments(cliPath, cliArguments, args.deps.parseArgsStringToArgv);
                 cli = new cliUtils_1.CLI({
                     cli: cliPath,
                     spawnArgs: cliArgs,

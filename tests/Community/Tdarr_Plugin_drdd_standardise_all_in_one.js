@@ -47,7 +47,7 @@ const tests = [
         + '• Minimum Bitrate: 1061\n'
         + '• Maximum Bitrate: 1972\n',
       processFile: true,
-      preset: '-c:v h264_cuvid,-map 0 -map -0:d -c:v hevc_nvenc -cq:v 19 -b:v 1517k -minrate 1061k -maxrate 1972k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:a:0 ac3 -c:s copy -max_muxing_queue_size 4096',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda,-map 0 -map -0:d -c:v hevc_nvenc -cq:v 19 -b:v 1517k -minrate 1061k -maxrate 1972k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:a:0 ac3 -c:s copy -max_muxing_queue_size 4096',
       reQueueAfter: false,
     },
   },

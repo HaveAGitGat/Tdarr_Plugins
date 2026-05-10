@@ -161,7 +161,7 @@ var doOperation = function (_a) { return __awaiter(void 0, [_a], void 0, functio
                 args.jobLog("Input and output path are the same, skipping ".concat(operation));
                 return [3 /*break*/, 3];
             case 1:
-                args.deps.fsextra.ensureDirSync((0, fileUtils_1.getFileAbosluteDir)(destinationPath));
+                args.deps.fsextra.ensureDirSync((0, fileUtils_1.getFileAbsoluteDir)(destinationPath));
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: operation,
                         sourcePath: sourcePath,
@@ -206,9 +206,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 else {
                     outputPath = outputDirectory;
                 }
-                sourceDir = (0, fileUtils_1.getFileAbosluteDir)(args.originalLibraryFile._id);
+                sourceDir = (0, fileUtils_1.getFileAbsoluteDir)(args.originalLibraryFile._id);
                 if (sourceDirectory === 'workingDirectory') {
-                    sourceDir = (0, fileUtils_1.getFileAbosluteDir)(args.inputFileObj._id);
+                    sourceDir = (0, fileUtils_1.getFileAbsoluteDir)(args.inputFileObj._id);
                 }
                 return [4 /*yield*/, fs_1.promises.readdir(sourceDir)];
             case 1:

@@ -174,26 +174,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   getMediaInfo(file);
 
-  // Set decoding options here
-  switch (file.ffProbeData.streams[0].codec_name) {
-    case 'hevc':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid  ';
-      break;
-    case 'h264':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v h264_cuvid ';
-      break;
-    case 'vc1':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vc1_cuvid ';
-      break;
-    case 'vp8':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vp8_cuvid ';
-      break;
-    case 'vp9':
-      response.preset = '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v vp9_cuvid ';
-      break;
-    default:
-      break;
-  } // end switch(codec)
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
+  response.preset = `${getNvdecHwaccelPreset(file)} `;
 
   let targetBitrate;
 

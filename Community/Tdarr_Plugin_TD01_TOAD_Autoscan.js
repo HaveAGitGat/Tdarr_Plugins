@@ -1,6 +1,6 @@
 /* eslint-disable linebreak-style */
 module.exports.dependencies = [
-  'request',
+  'request@2.88.2',
 ];
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
