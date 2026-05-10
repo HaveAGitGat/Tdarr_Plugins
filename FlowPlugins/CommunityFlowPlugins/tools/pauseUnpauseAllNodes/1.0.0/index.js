@@ -85,7 +85,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, pause, target, _a, serverURL, apiKey, nodeID;
+    var lib, pause, target, _a, serverURL, apiKey, nodeID, normalizedServerURL;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -96,10 +96,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 target = String(args.inputs.target);
                 if (!(target === 'currentNode')) return [3 /*break*/, 2];
                 _a = args.configVars.config, serverURL = _a.serverURL, apiKey = _a.apiKey, nodeID = _a.nodeID;
+                normalizedServerURL = serverURL.replace(/\/+$/, '');
                 args.jobLog("".concat(pause ? 'Pausing' : 'Unpausing', " current node"));
                 return [4 /*yield*/, args.deps.axios({
                         method: 'post',
-                        url: "".concat(serverURL, "/api/v2/update-node"),
+                        url: "".concat(normalizedServerURL, "/api/v2/update-node"),
                         headers: {
                             'x-api-key': apiKey,
                         },

@@ -22,7 +22,7 @@ describe('Pause/Unpause Node(s) Plugin', () => {
     const configVars = getConfigVars();
     configVars.config.serverIP = '192.0.2.10';
     configVars.config.serverPort = '9999';
-    configVars.config.serverURL = 'http://tdarr-server:8266';
+    configVars.config.serverURL = 'http://tdarr-server:8266/';
     configVars.config.nodeID = 'test-node-id';
 
     baseArgs = {

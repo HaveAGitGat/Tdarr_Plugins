@@ -67,11 +67,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       apiKey,
       nodeID,
     } = args.configVars.config;
+    const normalizedServerURL = serverURL.replace(/\/+$/, '');
 
     args.jobLog(`${pause ? 'Pausing' : 'Unpausing'} current node`);
     await args.deps.axios({
       method: 'post',
-      url: `${serverURL}/api/v2/update-node`,
+      url: `${normalizedServerURL}/api/v2/update-node`,
       headers: {
         'x-api-key': apiKey,
       },
