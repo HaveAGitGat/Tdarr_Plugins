@@ -21,6 +21,8 @@ describe('webRequest Plugin', () => {
         requestHeaders: '{"Content-Type": "application/json"}',
         requestBody: '{"test": "test"}',
         logResponseBody: 'false',
+        output2StatusCodes: '',
+        output2OnNetworkError: 'false',
       },
       variables: {
         ffmpegCommand: {
@@ -274,6 +276,133 @@ describe('webRequest Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Web Request Failed');
       expect(baseArgs.jobLog).toHaveBeenCalledWith(JSON.stringify(timeoutError));
     });
+
+    it('should throw on unconfigured non-2xx responses', async () => {
+      const mockResponse = {
+        status: 429,
+        data: { error: 'Rate limited' },
+      };
+      mockAxios.mockResolvedValue(mockResponse);
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Web Request Failed');
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Web request failed: Status Code: 429');
+    });
+  });
+
+  describe('Output 2 Routing', () => {
+    it('should route configured status codes to output 2', async () => {
+      baseArgs.inputs.output2StatusCodes = '404,429';
+      const mockResponse = {
+        status: 429,
+        data: { error: 'Rate limited' },
+      };
+      mockAxios.mockResolvedValue(mockResponse);
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Web request failed: Status Code: 429');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Routing status code 429 to output 2');
+    });
+
+    it('should route configured status code ranges to output 2', async () => {
+      baseArgs.inputs.output2StatusCodes = '400-499, 500-599';
+      const mockResponse = {
+        status: 503,
+        data: { error: 'Unavailable' },
+      };
+      mockAxios.mockResolvedValue(mockResponse);
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Web request failed: Status Code: 503');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Routing status code 503 to output 2');
+    });
+
+    it('should ignore blank status code entries', async () => {
+      baseArgs.inputs.output2StatusCodes = '404, ,429,';
+      const mockResponse = {
+        status: 404,
+        data: { error: 'Not Found' },
+      };
+      mockAxios.mockResolvedValue(mockResponse);
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Routing status code 404 to output 2');
+    });
+
+    it('should route configured HTTP error responses to output 2', async () => {
+      baseArgs.inputs.output2StatusCodes = '404';
+      const httpError = {
+        response: {
+          status: 404,
+          data: { error: 'Not Found' },
+        },
+        message: 'Request failed with status code 404',
+      };
+      mockAxios.mockRejectedValue(httpError);
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Routing status code 404 to output 2');
+    });
+
+    it('should route network errors to output 2 when enabled', async () => {
+      baseArgs.inputs.output2OnNetworkError = 'true';
+      const networkError = new Error('Network Error');
+      mockAxios.mockRejectedValue(networkError);
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Routing network error to output 2');
+    });
+
+    it('should not route unconfigured HTTP responses through the network error switch', async () => {
+      baseArgs.inputs.output2OnNetworkError = 'true';
+      const httpError = {
+        response: {
+          status: 500,
+          data: { error: 'Server Error' },
+        },
+        message: 'Request failed with status code 500',
+      };
+      mockAxios.mockRejectedValue(httpError);
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Web Request Failed');
+
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith('Routing network error to output 2');
+    });
+
+    it('should not route response processing errors through the network error switch', async () => {
+      baseArgs.inputs.logResponseBody = 'true';
+      baseArgs.inputs.output2OnNetworkError = 'true';
+      const circularResponseData: Record<string, unknown> = {};
+      circularResponseData.self = circularResponseData;
+      const mockResponse = {
+        status: 200,
+        data: circularResponseData,
+      };
+      mockAxios.mockResolvedValue(mockResponse);
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Converting circular structure to JSON');
+
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith('Routing network error to output 2');
+    });
+
+    it('should reject invalid output 2 status code configuration', async () => {
+      baseArgs.inputs.output2StatusCodes = '404,abc';
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Invalid Output 2 Status Codes value: abc');
+
+      expect(mockAxios).not.toHaveBeenCalled();
+    });
   });
 
   describe('Input Validation and Edge Cases', () => {
@@ -336,7 +465,7 @@ describe('webRequest Plugin', () => {
       [201, 'Created'],
       [202, 'Accepted'],
       [204, 'No Content'],
-      [300, 'Multiple Choices'],
+      [299, 'Custom Success'],
     ])('should handle status code %d', async (statusCode, statusText) => {
       const mockResponse = {
         status: statusCode,

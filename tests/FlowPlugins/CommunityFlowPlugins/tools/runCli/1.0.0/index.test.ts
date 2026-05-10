@@ -1,4 +1,4 @@
-import { plugin } from
+import { parseRunCliArguments, plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/runCli/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -162,6 +162,27 @@ describe('runCli Plugin', () => {
         '',
       );
     });
+
+    it('should keep bash -c commands with quoted paths as one command argument', async () => {
+      baseArgs.inputs.useCustomCliPath = true;
+      baseArgs.inputs.customCliPath = '/usr/bin/bash';
+      baseArgs.inputs.userOutputFilePath = '/cache/out file.mkv';
+      // eslint-disable-next-line no-template-curly-in-string
+      baseArgs.inputs.cliArguments = '-c /app/configs/remove_dovi.sh "/Video/Testing\'s Movie.mkv" "${outputFilePath}"';
+
+      await plugin(baseArgs);
+
+      expect(mockCLI).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cli: '/usr/bin/bash',
+          spawnArgs: [
+            '-c',
+            '/app/configs/remove_dovi.sh "/Video/Testing\'s Movie.mkv" "/cache/out file.mkv"',
+          ],
+        }),
+      );
+      expect(baseArgs.deps.parseArgsStringToArgv).not.toHaveBeenCalled();
+    });
   });
 
   describe('CLI Error Handling', () => {
@@ -258,5 +279,140 @@ describe('runCli Plugin', () => {
 
       expect(result.variables).toEqual(expect.objectContaining({ testVar: 'testValue' }));
     });
+  });
+});
+
+describe('parseRunCliArguments', () => {
+  const mockParseArgsStringToArgv = jest.fn((value: string) => (
+    value.match(/"[^"]*"|'[^']*'|\S+/g)?.map((arg) => arg.replace(/^["']|["']$/g, '')) || []
+  ));
+
+  beforeEach(() => {
+    mockParseArgsStringToArgv.mockClear();
+  });
+
+  it('should delegate normal spawn argument parsing', () => {
+    const result = parseRunCliArguments(
+      'mkvmerge',
+      '-o "/cache/out file.mkv" "/video/input file.mkv"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual(['-o', '/cache/out file.mkv', '/video/input file.mkv']);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith(
+      '-o "/cache/out file.mkv" "/video/input file.mkv"',
+      '',
+      '',
+    );
+  });
+
+  it('should keep unquoted bash -c remainder as one command string', () => {
+    const result = parseRunCliArguments(
+      '/usr/bin/bash',
+      '-c /app/configs/remove_dovi.sh "/Video/Testing\'s Movie.mkv" "/cache/out file.mkv"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-c',
+      '/app/configs/remove_dovi.sh "/Video/Testing\'s Movie.mkv" "/cache/out file.mkv"',
+    ]);
+    expect(mockParseArgsStringToArgv).not.toHaveBeenCalled();
+  });
+
+  it('should keep sh -c remainder as one command string', () => {
+    const result = parseRunCliArguments(
+      '/bin/sh',
+      '-c echo "hello world"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-c',
+      'echo "hello world"',
+    ]);
+    expect(mockParseArgsStringToArgv).not.toHaveBeenCalled();
+  });
+
+  it('should unwrap quoted shell command strings and preserve inner quotes', () => {
+    const result = parseRunCliArguments(
+      '/bin/bash',
+      '-lc "printf \'%s\' \'two words\'"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-lc',
+      'printf \'%s\' \'two words\'',
+    ]);
+  });
+
+  it('should preserve bash positional arguments after a quoted command string', () => {
+    const result = parseRunCliArguments(
+      '/bin/bash',
+      '-c \'printf "%s" "$1"\' shell-name "two words"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-c',
+      'printf "%s" "$1"',
+      'shell-name',
+      'two words',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith(
+      '\'printf "%s" "$1"\' shell-name "two words"',
+      '',
+      '',
+    );
+  });
+
+  it('should not treat bash long options containing c as command switches', () => {
+    const result = parseRunCliArguments(
+      '/bin/bash',
+      '--norc -c echo hi',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '--norc',
+      '-c',
+      'echo hi',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith('--norc', '', '');
+  });
+
+  it('should parse PowerShell options before -Command and keep the command string intact', () => {
+    const result = parseRunCliArguments(
+      'powershell.exe',
+      '-NoProfile -Command "if (Get-Process -Name \'ffmpeg\') { Write-Host \'found process\' }"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-NoProfile',
+      '-Command',
+      'if (Get-Process -Name \'ffmpeg\') { Write-Host \'found process\' }',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith('-NoProfile', '', '');
+  });
+
+  it('should preserve PowerShell arguments after a quoted command string', () => {
+    const result = parseRunCliArguments(
+      'pwsh',
+      '-Command "Write-Host $args[0]" "two words"',
+      mockParseArgsStringToArgv,
+    );
+
+    expect(result).toEqual([
+      '-Command',
+      'Write-Host $args[0]',
+      'two words',
+    ]);
+    expect(mockParseArgsStringToArgv).toHaveBeenCalledWith(
+      '"Write-Host $args[0]" "two words"',
+      '',
+      '',
+    );
   });
 });

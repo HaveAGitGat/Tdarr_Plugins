@@ -1,4 +1,3 @@
-import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import { IpluginInputArgs } from './interfaces/interfaces';
@@ -44,7 +43,7 @@ export const hasEncoder = async ({
       '-f',
       'lavfi',
       '-i',
-      'color=c=black:s=256x256:d=1:r=30',
+      'color=c=black:s=512x512:d=1:r=30',
       ...(filter ? filter.split(' ') : []),
       '-c:v',
       encoder,
@@ -257,10 +256,10 @@ export const getEncoder = async ({
         inputArgs: [
           '-hwaccel',
           'qsv',
+          '-hwaccel_output_format',
+          'qsv',
         ],
-        outputArgs: [
-          ...(os.platform() === 'win32' ? ['-load_plugin', 'hevc_hw'] : []),
-        ],
+        outputArgs: [],
         filter: '',
       },
       {
@@ -304,6 +303,8 @@ export const getEncoder = async ({
         enabled: false,
         inputArgs: [
           '-hwaccel',
+          'qsv',
+          '-hwaccel_output_format',
           'qsv',
         ],
         outputArgs: [],
