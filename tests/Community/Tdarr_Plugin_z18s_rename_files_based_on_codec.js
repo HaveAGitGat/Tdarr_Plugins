@@ -1,4 +1,4 @@
-const chai = require('chai');
+const assert = require('assert/strict');
 const _ = require('lodash');
 const importFresh = require('import-fresh');
 const fs = require('fs');
@@ -6,34 +6,35 @@ const fs = require('fs');
 const sampleH264 = require('../sampleData/media/sampleH264_1.json');
 const sampleH265 = require('../sampleData/media/sampleH265_1.json');
 
+const buildFile = (sample, filePath, codecName) => {
+  const file = _.cloneDeep(sample);
+  file._id = filePath;
+  file.file = filePath;
+
+  if (codecName) {
+    file.ffProbeData.streams[0].codec_name = codecName;
+  }
+
+  return file;
+};
+
 const tests = [
   {
-    file: _.merge(_.cloneDeep(sampleH265), {
-      _id: 'C:/Transcode/Source Folder/Movie_AVC.mkv',
-      file: 'C:/Transcode/Source Folder/Movie_AVC.mkv',
-    }),
+    file: buildFile(sampleH265, 'C:/Transcode/Source Folder/Movie_AVC.mkv'),
     expectedPath: 'C:/Transcode/Source Folder/Movie_HEVC.mkv',
   },
   {
-    file: _.merge(_.cloneDeep(sampleH264), {
-      _id: 'C:/Transcode/Source Folder/Movie_AV1.mp4',
-      file: 'C:/Transcode/Source Folder/Movie_AV1.mp4',
-    }),
+    file: buildFile(sampleH264, 'C:/Transcode/Source Folder/Movie_AV1.mp4'),
     expectedPath: 'C:/Transcode/Source Folder/Movie_264.mp4',
   },
   {
-    file: _.merge(_.cloneDeep(sampleH264), {
-      _id: 'C:/Transcode/Source Folder/Movie_x265.mkv',
-      file: 'C:/Transcode/Source Folder/Movie_x265.mkv',
-      ffProbeData: {
-        streams: [
-          {
-            codec_name: 'av1',
-          },
-        ],
-      },
-    }),
+    file: buildFile(sampleH264, 'C:/Transcode/Source Folder/Movie_x265.mkv', 'av1'),
     expectedPath: 'C:/Transcode/Source Folder/Movie_AV1.mkv',
+  },
+  {
+    file: buildFile(sampleH264, 'C:/Transcode/AV1 Folder/Movie.mp4'),
+    expectedPath: 'C:/Transcode/AV1 Folder/Movie.mp4',
+    shouldRename: false,
   },
 ];
 
@@ -55,29 +56,35 @@ const run = async () => {
     for (let i = 0; i < tests.length; i += 1) {
       const test = tests[i];
       const inputFile = _.cloneDeep(test.file);
+      const expectedFile = _.cloneDeep(test.file);
       const originalPath = inputFile._id;
       renameCalls.length = 0;
 
       // eslint-disable-next-line no-await-in-loop
       const result = await plugin(inputFile, {}, {}, {});
 
-      chai.assert.lengthOf(renameCalls, 1);
-      chai.assert.deepEqual(renameCalls[0], {
-        sourcePath: originalPath,
-        targetPath: test.expectedPath,
-        options: {
-          overwrite: true,
-        },
-      });
-      chai.assert.deepEqual(result, {
-        file: {
-          ...inputFile,
-          _id: test.expectedPath,
-          file: test.expectedPath,
-        },
-        removeFromDB: false,
-        updateDB: true,
-      });
+      if (test.shouldRename === false) {
+        assert.equal(renameCalls.length, 0);
+        assert.equal(result, undefined);
+        assert.deepEqual(inputFile, expectedFile);
+      } else {
+        expectedFile._id = test.expectedPath;
+        expectedFile.file = test.expectedPath;
+
+        assert.equal(renameCalls.length, 1);
+        assert.deepEqual(renameCalls[0], {
+          sourcePath: originalPath,
+          targetPath: test.expectedPath,
+          options: {
+            overwrite: true,
+          },
+        });
+        assert.deepEqual(result, {
+          file: expectedFile,
+          removeFromDB: false,
+          updateDB: true,
+        });
+      }
     }
   } finally {
     fs.renameSync = originalRenameSync;
