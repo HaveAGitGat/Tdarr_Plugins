@@ -1,5 +1,5 @@
-import { plugin } from
-  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/audio/checkAudioStreamsCount/1.0.0/index';
+import { details, plugin } from
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/deprecated/checkAudioStreamsCount/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
@@ -15,6 +15,15 @@ describe('checkAudioStreamsCount Plugin', () => {
       inputFileObj: JSON.parse(JSON.stringify(sampleAAC)) as IFileObject,
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
+  });
+
+  describe('Plugin Details', () => {
+    it('should use a plain number input for stream count', () => {
+      const streamCountInput = details().inputs.find((input) => input.name === 'audioStreamsTarget');
+
+      expect(streamCountInput?.type).toBe('number');
+      expect(streamCountInput?.inputUI.type).toBe('text');
+    });
   });
 
   describe('Audio Stream Count Detection', () => {

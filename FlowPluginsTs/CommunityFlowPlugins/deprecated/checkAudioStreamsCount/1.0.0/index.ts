@@ -7,7 +7,8 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 const details = (): IpluginDetails => ({
   name: 'Check Audio Streams Count',
-  description: 'This plugin checks if the number of audio streams is equal, less or more than a specific number.',
+  description: 'Deprecated: use Check Streams Count instead. This plugin checks if the number of audio streams '
+    + 'is equal, less or more than a specific number.',
   style: {
     borderColor: 'orange',
   },
@@ -24,15 +25,10 @@ const details = (): IpluginDetails => ({
       type: 'number',
       defaultValue: '1',
       inputUI: {
-        type: 'slider',
-        sliderOptions: {
-          min: 0,
-          max: 10,
-        },
+        type: 'text',
       },
       tooltip: 'Specify streams count to check for',
     },
-
   ],
   outputs: [
     {
