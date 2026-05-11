@@ -59,8 +59,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
   // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
   // Helper returns '' for AV1 to keep older GPUs on software decode.
-  const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
-  response.preset = getNvdecHwaccelPreset(file);
+  const nvencDecodeOptions = { softwareFrames: true };
+  const {
+    getNvdecHwaccelPreset,
+    getNvenc10BitFormatArg,
+  } = require('../methods/nvdecPreset');
+  response.preset = getNvdecHwaccelPreset(file, nvencDecodeOptions);
 
   //Set Subtitle Var before adding encode cli
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -97,11 +101,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       }
     } catch (err) {}
   }
-  // Use scale_cuda when CUDA hwaccel is active (frames live in GPU memory and
-  // `-pix_fmt p010le` fails on hwframes); fall back to `-pix_fmt p010le` for
-  // software decode paths.
-  const { getNvenc10BitFormatArg } = require('../methods/nvdecPreset');
-  const tenBit = getNvenc10BitFormatArg(file).trim();
+  const tenBit = getNvenc10BitFormatArg(file, nvencDecodeOptions).trim();
 
   //file will be encoded if the resolution is 480p or 576p
   //codec will be checked so it can be transcoded correctly

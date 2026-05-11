@@ -1,6 +1,18 @@
 /* eslint max-len: 0 */
 const _ = require('lodash');
+const childProcess = require('child_process');
 const run = require('../helpers/run');
+
+childProcess.exec = (command, callback) => {
+  callback(command.includes('hevc_nvenc') ? null : new Error('unsupported encoder'));
+};
+
+childProcess.execSync = (command) => {
+  if (command.includes('--query-gpu=name')) {
+    return 'Mock GPU';
+  }
+  return '7';
+};
 
 const tests = [
   {
@@ -70,6 +82,82 @@ const tests = [
       FFmpegMode: true,
       reQueueAfter: true,
       infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 1591143.0722891565 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 1193357.3042168673 \n'
+        + 'Minimum = 835350.1129518071 \n'
+        + 'Maximum = 1551364.4954819276 \n'
+        + 'File is not in hevc. Transcoding. \n',
+      container: '.mkv',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        target_codec: 'hevc',
+        target_bitrate_multiplier: 0.75,
+        try_use_gpu: true,
+        container: 'mkv',
+        bitrate_cutoff: 0,
+
+        enable_10bit: true,
+        bframes_enabled: false,
+        bframes_value: 5,
+        force_conform: false,
+
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '  <io> -map 0 -c copy -c:v libx265  -cq:v 19 -b:v 1193357.3042168673 -minrate 835350.1129518071 -maxrate 1551364.4954819276 -bufsize 1591143.0722891565 -spatial_aq:v 1 -rc-lookahead:v 32 -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 1591143.0722891565 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 1193357.3042168673 \n'
+        + 'Minimum = 835350.1129518071 \n'
+        + 'Maximum = 1551364.4954819276 \n'
+        + 'File is not in hevc. Transcoding. \n',
+      container: '.mkv',
+    },
+  },
+
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        target_codec: 'hevc',
+        target_bitrate_multiplier: 0.75,
+        try_use_gpu: true,
+        container: 'mkv',
+        bitrate_cutoff: 0,
+
+        enable_10bit: true,
+        bframes_enabled: false,
+        bframes_value: 5,
+        force_conform: false,
+
+      },
+      otherArguments: {
+        workerType: 'gpu',
+        ffmpegPath: 'ffmpeg',
+      },
+    },
+    output: {
+      processFile: true,
+      preset: '-hwaccel cuda -hwaccel_device 0 <io> -map 0 -c copy -c:v hevc_nvenc -gpu 0 -cq:v 19 -b:v 1193357.3042168673 -minrate 835350.1129518071 -maxrate 1551364.4954819276 -bufsize 1591143.0722891565 -spatial_aq:v 1 -rc-lookahead:v 32 -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'GPU 0 : Utilization 7%\n'
+        + 'Container for output selected as mkv. \n'
         + 'Current bitrate = 1591143.0722891565 \n'
         + 'Bitrate settings: \n'
         + 'Target = 1193357.3042168673 \n'
