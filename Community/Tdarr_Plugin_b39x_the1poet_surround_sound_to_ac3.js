@@ -17,8 +17,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          'false',
           'true',
+          'false',
         ],
       },
       tooltip: 'Specify if you\'d like to overwrite the existing track or keep'

@@ -43,8 +43,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          'false',
           'true',
+          'false',
         ],
       },
       tooltip: 'If enabled then will use GPU if possible.',
