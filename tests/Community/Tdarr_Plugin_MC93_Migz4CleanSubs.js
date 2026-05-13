@@ -98,7 +98,7 @@ const tests = [
   },
   {
     // Default behaviour preserved: with commentary=true and sdh left at its
-    // default (true), SDH-tagged tracks are still removed (matches pre-fix behaviour).
+    // default (true), SDH-tagged tracks are still removed.
     input: {
       file: (() => {
         const file = _.cloneDeep(require('../sampleData/media/sampleH264_2.json'));

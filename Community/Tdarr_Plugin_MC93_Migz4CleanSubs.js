@@ -6,7 +6,7 @@ const details = () => ({
   Type: 'Subtitle',
   Operation: 'Transcode',
   Description: 'This plugin keeps only specified language tracks & can tag tracks with an unknown language. \n\n',
-  Version: '2.5',
+  Version: '2.6',
   Tags: 'pre-processing,ffmpeg,subtitle only,configurable',
   Inputs: [{
     name: 'language',
@@ -48,8 +48,8 @@ const details = () => ({
     inputUI: {
       type: 'dropdown',
       options: [
-        'false',
         'true',
+        'false',
       ],
     },
     tooltip: `Specify if subtitle tracks tagged as SDH (Subtitles for the Deaf and Hard of hearing) should be removed.
