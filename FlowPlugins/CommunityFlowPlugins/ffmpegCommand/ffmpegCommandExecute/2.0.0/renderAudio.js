@@ -111,6 +111,48 @@ var getLoudnormSecondPassFilter = function (settings, values) { return ("loudnor
     + "measured_lra=".concat(values.input_lra, ":")
     + "measured_tp=".concat(values.input_tp, ":")
     + "measured_thresh=".concat(values.input_thresh, ":offset=").concat(values.target_offset)); };
+var loudnormSecondPassRanges = {
+    input_i: { min: -99, max: 0 },
+    input_tp: { min: -99, max: 99 },
+    input_lra: { min: 0, max: 99 },
+    input_thresh: { min: -99, max: 0 },
+    target_offset: { min: -99, max: 99 },
+};
+var parseFiniteLoudnormNumber = function (value) {
+    var parsedValue = Number(value);
+    return Number.isFinite(parsedValue) ? parsedValue : null;
+};
+var clamp = function (value, range) { return Math.max(range.min, Math.min(range.max, value)); };
+var normalizeClampedValue = function (value) {
+    if (Object.is(value, -0)) {
+        return '0';
+    }
+    return String(value);
+};
+var sanitizeLoudnormValuesForSecondPass = function (args, stream, values) {
+    var sanitizedValues = __assign({}, values);
+    var adjustments = [];
+    var rangeEntries = Object.entries(loudnormSecondPassRanges);
+    for (var i = 0; i < rangeEntries.length; i += 1) {
+        var _a = rangeEntries[i], key = _a[0], range = _a[1];
+        var parsedValue = parseFiniteLoudnormNumber(values[key]);
+        if (parsedValue === null) {
+            args.jobLog("Skipping normalization for stream ".concat(stream.sourceIndex, ": loudnorm returned non-finite ").concat(key, " value ")
+                + "".concat(values[key], "."));
+            return null;
+        }
+        var clampedValue = clamp(parsedValue, range);
+        if (clampedValue !== parsedValue) {
+            sanitizedValues[key] = normalizeClampedValue(clampedValue);
+            adjustments.push("".concat(key, " ").concat(values[key], " -> ").concat(sanitizedValues[key]));
+        }
+    }
+    if (adjustments.length > 0) {
+        args.jobLog("Adjusted loudnorm values for stream ".concat(stream.sourceIndex, " to FFmpeg second-pass ranges: ")
+            + "".concat(adjustments.join(', '), "."));
+    }
+    return sanitizedValues;
+};
 var parseLoudnormValues = function (output) {
     var loudnormIdx = output.lastIndexOf('Parsed_loudnorm');
     if (loudnormIdx === -1) {
@@ -179,7 +221,18 @@ var detectLoudnormValues = function (args, stream, settings) {
 };
 var getLoudnormValuesIfGainAllowed = function (args, stream, settings) {
     var loudnormValues = detectLoudnormValues(args, stream, settings);
-    var gainNeeded = parseFloat(settings.i) - parseFloat(loudnormValues.input_i);
+    var measuredInputI = parseFiniteLoudnormNumber(loudnormValues.input_i);
+    if (measuredInputI === null) {
+        args.jobLog("Skipping normalization for stream ".concat(stream.sourceIndex, ": loudnorm returned non-finite input_i value ")
+            + "".concat(loudnormValues.input_i, "."));
+        return null;
+    }
+    var targetI = parseFiniteLoudnormNumber(settings.i);
+    if (targetI === null) {
+        args.jobLog("Skipping normalization for stream ".concat(stream.sourceIndex, ": target loudness ").concat(settings.i, " is not finite."));
+        return null;
+    }
+    var gainNeeded = targetI - measuredInputI;
     args.jobLog("Gain required for stream ".concat(stream.sourceIndex, ": ")
         + "".concat(gainNeeded.toFixed(2), " LU (max allowed: ").concat(settings.maxGain, " LU)"));
     if (gainNeeded > settings.maxGain) {
@@ -188,7 +241,7 @@ var getLoudnormValuesIfGainAllowed = function (args, stream, settings) {
             + ' File may be mostly quiet or noise.');
         return null;
     }
-    return loudnormValues;
+    return sanitizeLoudnormValuesForSecondPass(args, stream, loudnormValues);
 };
 var appendNormalizeAudioOutputArgs = function (stream, settings, loudnormValues) {
     stream.outputArgs.push('-filter:a:{outputTypeIndex}', getLoudnormSecondPassFilter(settings, loudnormValues));

@@ -135,6 +135,45 @@ describe('ffmpegCommandExecute v2 normalize audio', () => {
     ]));
   });
 
+  it('clamps out-of-range loudnorm values before rendering the second pass', async () => {
+    const values = {
+      input_i: '14.35',
+      input_tp: '123.45',
+      input_lra: '-2.00',
+      input_thresh: '4.35',
+      target_offset: '-123.45',
+    };
+    const args = createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mocks.mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput(values)));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(true);
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-filter:a:0',
+      makeExpectedLoudnormFilter({
+        ...values,
+        input_i: '0',
+        input_tp: '99',
+        input_lra: '0',
+        input_thresh: '0',
+        target_offset: '-99',
+      }),
+    ]));
+    expect(args.jobLog).toHaveBeenCalledWith(
+      'Adjusted loudnorm values for stream 1 to FFmpeg second-pass ranges: '
+      + 'input_i 14.35 -> 0, input_tp 123.45 -> 99, input_lra -2.00 -> 0, '
+      + 'input_thresh 4.35 -> 0, target_offset -123.45 -> -99.',
+    );
+  });
+
   it('skips normalize audio when required gain exceeds maxGain', async () => {
     const args = createV2Args({
       operations: [
@@ -169,6 +208,77 @@ describe('ffmpegCommandExecute v2 normalize audio', () => {
     expect(args.jobLog).toHaveBeenCalledWith(
       'Skipping normalization for stream 1: required gain of 37.00 LU exceeds max allowed gain of 15 LU.'
       + ' File may be mostly quiet or noise.',
+    );
+  });
+
+  it('skips normalize audio when loudnorm returns non-finite values', async () => {
+    const args = createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mocks.mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput({
+      input_i: '-inf',
+      input_tp: '-inf',
+      input_thresh: '-inf',
+    })));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(args.jobLog).toHaveBeenCalledWith(
+      'Skipping normalization for stream 1: loudnorm returned non-finite input_i value -inf.',
+    );
+  });
+
+  it('skips normalize audio when a non-input_i second-pass value is non-finite', async () => {
+    const args = createV2Args({
+      operations: [
+        createAudioEncoderOperation({
+          forceEncoding: false,
+        }),
+        createNormalizeAudioOperation(),
+      ],
+    });
+    mocks.mockSpawnSync.mockReturnValue(makeSpawnOutput(makeLoudnormOutput({
+      input_i: '-20.00',
+      input_tp: '-inf',
+    })));
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(args.jobLog).toHaveBeenCalledWith(
+      'Skipping normalization for stream 1: loudnorm returned non-finite input_tp value -inf.',
     );
   });
 
