@@ -50,8 +50,9 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'Threshold for cropdetect filter (0-255). Higher values detect less aggressively.'
-        + ' Default is 24. Lower values may detect dark scenes as black bars.',
+      tooltip: 'Threshold for cropdetect filter (0-255). Higher values treat brighter pixels as black'
+        + ' and can help detect bars on HDR/10-bit sources. Default is 24.'
+        + ' Lower values are stricter and reduce false crops in dark scenes.',
     },
     {
       label: 'Sample Count',
