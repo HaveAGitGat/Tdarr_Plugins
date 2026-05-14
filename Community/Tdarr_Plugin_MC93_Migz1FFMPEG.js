@@ -76,8 +76,8 @@ const details = () => ({
         'true',
       ],
     },
-    tooltip: `Use full GPU 10-bit conversion with scale_cuda. This can restore previous NVENC speeds,
-                    but may fail on files affected by CUDA filter graph issues. Default is false.
+    tooltip: `Use full GPU 10-bit conversion with scale_cuda. May fail on files affected by CUDA filter graph issues.
+                    Default is false.
                     \\nExample:\\n
                     true
 

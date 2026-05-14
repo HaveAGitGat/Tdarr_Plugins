@@ -199,6 +199,14 @@ module.exports.plugin = plugin;`;
         } else if (Array.isArray(inputs[j].inputUI.options) && inputs[j].inputUI.options.some((option) => typeof option === 'boolean')) {
           console.log(chalk.red(`Plugin Input has a boolean dropdown input: '${folder}/${files[i]}' : ${inputs[j].name}`));
           errorEncountered = true;
+        } else if (
+          inputs[j].type === 'boolean'
+          && inputs[j].inputUI.type === 'dropdown'
+          && Array.isArray(inputs[j].inputUI.options)
+          && String(inputs[j].defaultValue) !== String(inputs[j].inputUI.options[0])
+        ) {
+          console.log(chalk.red(`Plugin Input boolean dropdown defaultValue does not match first option: '${folder}/${files[i]}' : ${inputs[j].name}`));
+          errorEncountered = true;
         }
 
         const count = read.split(inputs[j].name).length - 1;
