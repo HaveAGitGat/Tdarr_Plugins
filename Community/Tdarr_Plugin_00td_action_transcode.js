@@ -43,8 +43,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          'false',
           'true',
+          'false',
         ],
       },
       tooltip: 'If enabled then will use GPU if possible.',
@@ -425,6 +425,13 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   let extraArguments = '';
   let genpts = '';
   let bitrateSettings = '';
+  const {
+    getNvdecHwaccelPreset,
+    getNvenc10BitFormatArg,
+  } = require('../methods/nvdecPreset');
+  const nvencDecodeOptions = inputs.enable_10bit === true
+    ? { softwareFrames: true }
+    : undefined;
 
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
 
@@ -506,11 +513,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
 
   // Check if 10bit variable is true.
   if (inputs.enable_10bit === true) {
-    // Use scale_cuda when CUDA hwaccel is active (frames live in GPU memory
-    // and `-pix_fmt p010le` fails on hwframes); fall back to `-pix_fmt
-    // p010le` for software decode paths.
-    const { getNvenc10BitFormatArg } = require('../methods/nvdecPreset');
-    extraArguments += getNvenc10BitFormatArg(file);
+    extraArguments += getNvenc10BitFormatArg(file, nvencDecodeOptions);
   }
 
   // Check if b frame variable is true.
@@ -579,8 +582,7 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
   // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
   // Helper returns '' for AV1 to keep older GPUs on software decode.
   if (encoderProperties.encoder.includes('nvenc')) {
-    const { getNvdecHwaccelPreset } = require('../methods/nvdecPreset');
-    response.preset = getNvdecHwaccelPreset(file);
+    response.preset = getNvdecHwaccelPreset(file, nvencDecodeOptions);
   }
 
   const vEncode = `-cq:v 19 ${bitrateSettings}`;
