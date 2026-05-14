@@ -1,5 +1,7 @@
 import {
+  createV2AudioStream,
   createV2HdrToSdrOperation,
+  createV2HdrVideoStream,
   createV2MockEncoder,
   createV2Set10BitOperation,
   createV2VideoEncoderOperation,
@@ -74,6 +76,10 @@ const orderIndependenceScenarios: IffmpegCommandV2Scenario[] = [
       [softwareEncoderOperation, hdrToSdrOperation, resolution1080Operation, framerate24Operation],
       [framerate24Operation, resolution1080Operation, softwareEncoderOperation, hdrToSdrOperation],
       [resolution1080Operation, hdrToSdrOperation, framerate24Operation, softwareEncoderOperation],
+    ],
+    streams: [
+      createV2HdrVideoStream(),
+      createV2AudioStream(),
     ],
     encoder: createV2MockEncoder({
       encoder: 'libx264',

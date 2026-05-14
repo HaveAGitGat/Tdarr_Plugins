@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.applyVideoFilters = exports.shouldScaleVideoStream = void 0;
+exports.applyVideoFilters = exports.isHdrVideoStream = exports.shouldScaleVideoStream = void 0;
 var renderUtils_1 = require("./renderUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var getFixedResolutionDimensions = function (targetResolution) {
@@ -81,6 +81,24 @@ var shouldScaleVideoStream = function (args, stream, resolutionInputs) {
     return targetResolution !== args.inputFileObj.video_resolution;
 };
 exports.shouldScaleVideoStream = shouldScaleVideoStream;
+var includesAny = function (value, matches) {
+    var normalizedValue = String(value || '').toLowerCase();
+    return matches.some(function (match) { return normalizedValue.includes(match); });
+};
+var isHdrVideoStream = function (stream) {
+    if (stream.codec_type !== 'video') {
+        return false;
+    }
+    var colorTransfer = String(stream.color_transfer || '').toLowerCase();
+    var colorPrimaries = String(stream.color_primaries || '').toLowerCase();
+    var colorSpace = String(stream.color_space || '').toLowerCase();
+    var codecTag = stream.codec_tag_string;
+    var hasHdrTransfer = colorTransfer === 'smpte2084' || colorTransfer === 'arib-std-b67';
+    var hasBt2020Color = colorPrimaries === 'bt2020' || colorSpace.includes('bt2020');
+    var hasDolbyVisionTag = includesAny(codecTag, ['dvhe', 'dvh1', 'dvh11', 'dvav', 'dav1']);
+    return (hasHdrTransfer && hasBt2020Color) || hasDolbyVisionTag;
+};
+exports.isHdrVideoStream = isHdrVideoStream;
 var getQsvScaleFilter = function (targetResolution, format) {
     var formatSuffix = format ? ":format=".concat(format) : '';
     var _a = getFixedResolutionDimensions(targetResolution), width = _a.width, height = _a.height;
@@ -139,11 +157,11 @@ var getFrameRateFilter = function (args, stream, desiredFrameRate) {
     return "fps=".concat(String(frameRate));
 };
 var appendSoftwareVideoFilters = function (_a) {
-    var args = _a.args, stream = _a.stream, filterChain = _a.filterChain, hasHdrToSdrOperation = _a.hasHdrToSdrOperation, shouldScale = _a.shouldScale, resolutionInputs = _a.resolutionInputs, targetResolution = _a.targetResolution, frameRateInputs = _a.frameRateInputs;
+    var args = _a.args, stream = _a.stream, filterChain = _a.filterChain, shouldApplyHdrToSdr = _a.shouldApplyHdrToSdr, shouldScale = _a.shouldScale, resolutionInputs = _a.resolutionInputs, targetResolution = _a.targetResolution, frameRateInputs = _a.frameRateInputs;
     if (stream.cropFilter) {
         filterChain.push(stream.cropFilter);
     }
-    if (hasHdrToSdrOperation) {
+    if (shouldApplyHdrToSdr) {
         filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
     }
     if (shouldScale && resolutionInputs) {
@@ -172,14 +190,18 @@ var applyVideoFilters = function (args, streams, operations, singletonInputs) {
         var hardwareDecodedQsv = usesQsv && hardwareDecoding;
         var hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
         var hasCropFilter = Boolean(stream.cropFilter);
-        var needsSoftwareOnlyFilter = hasCropFilter || hasHdrToSdrOperation || Boolean(frameRateInputs);
+        var shouldApplyHdrToSdr = hasHdrToSdrOperation && (0, exports.isHdrVideoStream)(stream);
+        var needsSoftwareOnlyFilter = hasCropFilter || shouldApplyHdrToSdr || Boolean(frameRateInputs);
         var shouldScale = (0, exports.shouldScaleVideoStream)(args, stream, resolutionInputs);
         var targetResolution = resolutionInputs ? String(resolutionInputs.targetResolution) : '';
         var qsvNeedsSoftwareRoundTrip = hardwareDecodedQsv && (needsSoftwareOnlyFilter || shouldScale);
+        if (hasHdrToSdrOperation && !shouldApplyHdrToSdr) {
+            args.jobLog("Skipping HDR to SDR for stream ".concat(stream.sourceIndex, ": stream is not HDR-tagged."));
+        }
         if (hardwareDecodedQsv
             && shouldScale
             && !hasCropFilter
-            && !hasHdrToSdrOperation
+            && !shouldApplyHdrToSdr
             && !frameRateInputs) {
             filterChain.push(getQsvScaleFilter(targetResolution, has10BitOperation ? 'p010le' : undefined));
         }
@@ -187,7 +209,7 @@ var applyVideoFilters = function (args, streams, operations, singletonInputs) {
             && has10BitOperation
             && !shouldScale
             && !hasCropFilter
-            && !hasHdrToSdrOperation
+            && !shouldApplyHdrToSdr
             && !frameRateInputs) {
             filterChain.push('scale_qsv=format=p010le');
         }
@@ -207,7 +229,7 @@ var applyVideoFilters = function (args, streams, operations, singletonInputs) {
                     args: args,
                     stream: stream,
                     filterChain: filterChain,
-                    hasHdrToSdrOperation: hasHdrToSdrOperation,
+                    shouldApplyHdrToSdr: shouldApplyHdrToSdr,
                     shouldScale: shouldScale,
                     resolutionInputs: resolutionInputs,
                     targetResolution: targetResolution,
@@ -226,7 +248,7 @@ var applyVideoFilters = function (args, streams, operations, singletonInputs) {
                 args: args,
                 stream: stream,
                 filterChain: filterChain,
-                hasHdrToSdrOperation: hasHdrToSdrOperation,
+                shouldApplyHdrToSdr: shouldApplyHdrToSdr,
                 shouldScale: shouldScale,
                 resolutionInputs: resolutionInputs,
                 targetResolution: targetResolution,
@@ -255,7 +277,7 @@ var applyVideoFilters = function (args, streams, operations, singletonInputs) {
             }
             shouldProcess = true;
         }
-        if (hasHdrToSdrOperation) {
+        if (shouldApplyHdrToSdr) {
             shouldProcess = true;
         }
         if (shouldScale) {

@@ -1,5 +1,7 @@
 import {
+  createV2AudioStream,
   createV2HdrToSdrOperation,
+  createV2HdrVideoStream,
   createV2MockEncoder,
   createV2VideoEncoderOperation,
   createV2VideoResolutionOperation,
@@ -27,6 +29,10 @@ const hardwareScenarios: IffmpegCommandV2Scenario[] = [
       }),
       createV2HdrToSdrOperation(),
       createV2VideoResolutionOperation('1080p'),
+    ],
+    streams: [
+      createV2HdrVideoStream(),
+      createV2AudioStream(),
     ],
     encoder: createV2MockEncoder({
       encoder: 'hevc_vaapi',

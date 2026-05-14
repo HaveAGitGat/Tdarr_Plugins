@@ -49,6 +49,16 @@ export const createV2VideoStream = (overrides: Partial<Istreams> = {}): Istreams
   ...overrides,
 });
 
+export const createV2HdrVideoStream = (overrides: Partial<Istreams> = {}): Istreams => createV2VideoStream({
+  codec_name: 'hevc',
+  color_transfer: 'smpte2084',
+  color_primaries: 'bt2020',
+  color_space: 'bt2020nc',
+  color_range: 'tv',
+  pix_fmt: 'yuv420p10le',
+  ...overrides,
+});
+
 export const createV2AudioStream = (overrides: Partial<Istreams> = {}): Istreams => ({
   index: 1,
   codec_name: 'aac',

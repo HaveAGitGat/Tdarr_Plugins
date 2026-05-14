@@ -2,6 +2,8 @@ import {
   createCropBlackBarsOperation,
   createDefaultV2Streams,
   createEncoderOperation,
+  createHdrToSdrOperation,
+  createHdrVideoStream,
   createOperation,
   createResolutionOperation,
   createSoftwareEncoderOperation,
@@ -146,21 +148,19 @@ describe('ffmpegCommandExecute v2 video rendering', () => {
 
   it('downloads and uploads VAAPI frames when software filters are needed', async () => {
     mocks.mockVaapiEncoder();
-    const hdrOperation: IffmpegCommandV2Operation = {
-      pluginName: 'ffmpegCommandHdrToSdr',
-      pluginVersion: '2.0.0',
-      operationType: 'hdrToSdr',
-      inputs: {},
-    };
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
+      streams: [
+        createHdrVideoStream(),
+        createDefaultV2Streams()[1],
+      ],
       operations: [
         createEncoderOperation({
           ffmpegQualityEnabled: false,
           hardwareType: 'vaapi',
           hardwareDecoding: true,
         }),
-        hdrOperation,
+        createHdrToSdrOperation(),
         createResolutionOperation(),
       ],
     }));
@@ -201,14 +201,12 @@ describe('ffmpegCommandExecute v2 video rendering', () => {
   it('downloads, crops, applies software filters, and reuploads VAAPI frames', async () => {
     mocks.mockVaapiEncoder();
     mocks.mockSpawnSync.mockReturnValue(makeSpawnOutput(makeCropdetectOutput(1280, 600, 0, 60, 30)));
-    const hdrOperation: IffmpegCommandV2Operation = {
-      pluginName: 'ffmpegCommandHdrToSdr',
-      pluginVersion: '2.0.0',
-      operationType: 'hdrToSdr',
-      inputs: {},
-    };
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
+      streams: [
+        createHdrVideoStream(),
+        createDefaultV2Streams()[1],
+      ],
       operations: [
         createEncoderOperation({
           ffmpegQualityEnabled: false,
@@ -218,7 +216,7 @@ describe('ffmpegCommandExecute v2 video rendering', () => {
         createCropBlackBarsOperation({
           sampleCount: '1',
         }),
-        hdrOperation,
+        createHdrToSdrOperation(),
         createResolutionOperation(),
       ],
     }));
@@ -271,21 +269,158 @@ describe('ffmpegCommandExecute v2 video rendering', () => {
   });
 
   it('combines HDR and resolution into one scoped video filter chain', async () => {
-    const hdrOperation: IffmpegCommandV2Operation = {
-      pluginName: 'ffmpegCommandHdrToSdr',
-      pluginVersion: '2.0.0',
-      operationType: 'hdrToSdr',
-      inputs: {},
-    };
     mocks.mockSoftwareEncoder();
 
     const renderResult = await renderFfmpegCommandV2(createV2Args({
-      operations: [hdrOperation, createResolutionOperation(), createSoftwareEncoderOperation()],
+      streams: [
+        createHdrVideoStream(),
+        createDefaultV2Streams()[1],
+      ],
+      operations: [createHdrToSdrOperation(), createResolutionOperation(), createSoftwareEncoderOperation()],
     }));
     const filterOptions = renderResult.spawnArgs.filter((arg) => arg === '-vf' || arg.startsWith('-filter'));
 
     expect(filterOptions).toEqual(['-filter:v:0']);
     expect(renderResult.spawnArgs).toContain('zscale=t=linear:npl=100,format=yuv420p,scale=1920:-2');
+  });
+
+  it('skips HDR to SDR on SDR or untagged video streams', async () => {
+    const args = createV2Args({
+      operations: [
+        createSoftwareEncoderOperation({
+          forceEncoding: false,
+        }),
+        createHdrToSdrOperation(),
+      ],
+    });
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+    expect(renderResult.spawnArgs.join(',')).not.toContain('zscale=t=linear:npl=100');
+    expect(args.jobLog).toHaveBeenCalledWith('Skipping HDR to SDR for stream 0: stream is not HDR-tagged.');
+  });
+
+  it('does not require a video encoder when HDR to SDR has no HDR-tagged stream', async () => {
+    const args = createV2Args({
+      operations: [
+        createHdrToSdrOperation(),
+      ],
+    });
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(mocks.mockGetEncoder).not.toHaveBeenCalled();
+    expect(renderResult.shouldProcess).toBe(false);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'copy',
+    ]);
+  });
+
+  it('applies HDR to SDR only to HDR streams when mixed with SDR video streams', async () => {
+    const streams = [
+      {
+        ...createDefaultV2Streams()[0],
+        codec_name: 'hevc',
+      },
+      createHdrVideoStream({
+        index: 1,
+      }),
+      {
+        ...createDefaultV2Streams()[1],
+        index: 2,
+      },
+    ];
+    const args = createV2Args({
+      streams,
+      operations: [
+        createEncoderOperation({
+          forceEncoding: false,
+        }),
+        createHdrToSdrOperation(),
+      ],
+    });
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(true);
+    expect(renderResult.spawnArgs).toEqual([
+      '-y',
+      '-hwaccel',
+      'qsv',
+      '-hwaccel_output_format',
+      'qsv',
+      '-i',
+      '/tmp/source.mp4',
+      '-map',
+      '0:0',
+      '-c:0',
+      'copy',
+      '-map',
+      '0:1',
+      '-c:1',
+      'hevc_qsv',
+      '-global_quality',
+      '25',
+      '-preset',
+      'fast',
+      '-filter:v:1',
+      'hwdownload,format=nv12,zscale=t=linear:npl=100,format=yuv420p,hwupload=extra_hw_frames=64,format=qsv',
+      '-map',
+      '0:2',
+      '-c:2',
+      'copy',
+    ]);
+    expect(args.jobLog).toHaveBeenCalledWith('Skipping HDR to SDR for stream 0: stream is not HDR-tagged.');
+  });
+
+  it('treats HLG bt2020 video as HDR for HDR to SDR rendering', async () => {
+    const args = createV2Args({
+      streams: [
+        createHdrVideoStream({
+          color_transfer: 'arib-std-b67',
+        }),
+        createDefaultV2Streams()[1],
+      ],
+      operations: [
+        createSoftwareEncoderOperation({
+          forceEncoding: false,
+        }),
+        createHdrToSdrOperation(),
+      ],
+    });
+    mocks.mockSoftwareEncoder();
+
+    const renderResult = await renderFfmpegCommandV2(args);
+
+    expect(renderResult.shouldProcess).toBe(true);
+    expect(renderResult.spawnArgs).toEqual(expect.arrayContaining([
+      '-filter:v:0',
+      'zscale=t=linear:npl=100,format=yuv420p',
+    ]));
   });
 
   it('scopes filters and codecs correctly across multiple video streams', async () => {

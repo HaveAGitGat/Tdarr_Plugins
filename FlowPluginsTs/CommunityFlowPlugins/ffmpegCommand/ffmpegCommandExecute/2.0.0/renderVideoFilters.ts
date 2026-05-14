@@ -106,6 +106,27 @@ export const shouldScaleVideoStream = (
   return targetResolution !== args.inputFileObj.video_resolution;
 };
 
+const includesAny = (value: unknown, matches: string[]): boolean => {
+  const normalizedValue = String(value || '').toLowerCase();
+  return matches.some((match) => normalizedValue.includes(match));
+};
+
+export const isHdrVideoStream = (stream: IworkingStream): boolean => {
+  if (stream.codec_type !== 'video') {
+    return false;
+  }
+
+  const colorTransfer = String(stream.color_transfer || '').toLowerCase();
+  const colorPrimaries = String(stream.color_primaries || '').toLowerCase();
+  const colorSpace = String(stream.color_space || '').toLowerCase();
+  const codecTag = stream.codec_tag_string;
+  const hasHdrTransfer = colorTransfer === 'smpte2084' || colorTransfer === 'arib-std-b67';
+  const hasBt2020Color = colorPrimaries === 'bt2020' || colorSpace.includes('bt2020');
+  const hasDolbyVisionTag = includesAny(codecTag, ['dvhe', 'dvh1', 'dvh11', 'dvav', 'dav1']);
+
+  return (hasHdrTransfer && hasBt2020Color) || hasDolbyVisionTag;
+};
+
 const getQsvScaleFilter = (targetResolution: string, format?: string): string => {
   const formatSuffix = format ? `:format=${format}` : '';
   const { width, height } = getFixedResolutionDimensions(targetResolution);
@@ -180,7 +201,7 @@ const appendSoftwareVideoFilters = ({
   args,
   stream,
   filterChain,
-  hasHdrToSdrOperation,
+  shouldApplyHdrToSdr,
   shouldScale,
   resolutionInputs,
   targetResolution,
@@ -189,7 +210,7 @@ const appendSoftwareVideoFilters = ({
   args: IpluginInputArgs,
   stream: IworkingStream,
   filterChain: string[],
-  hasHdrToSdrOperation: boolean,
+  shouldApplyHdrToSdr: boolean,
   shouldScale: boolean,
   resolutionInputs?: Record<string, unknown>,
   targetResolution: string,
@@ -199,7 +220,7 @@ const appendSoftwareVideoFilters = ({
     filterChain.push(stream.cropFilter);
   }
 
-  if (hasHdrToSdrOperation) {
+  if (shouldApplyHdrToSdr) {
     filterChain.push('zscale=t=linear:npl=100', 'format=yuv420p');
   }
 
@@ -237,16 +258,21 @@ export const applyVideoFilters = (
     const hardwareDecodedQsv = usesQsv && hardwareDecoding;
     const hardwareDecodedVaapi = usesVaapi && hardwareDecoding;
     const hasCropFilter = Boolean(stream.cropFilter);
-    const needsSoftwareOnlyFilter = hasCropFilter || hasHdrToSdrOperation || Boolean(frameRateInputs);
+    const shouldApplyHdrToSdr = hasHdrToSdrOperation && isHdrVideoStream(stream);
+    const needsSoftwareOnlyFilter = hasCropFilter || shouldApplyHdrToSdr || Boolean(frameRateInputs);
     const shouldScale = shouldScaleVideoStream(args, stream, resolutionInputs);
     const targetResolution = resolutionInputs ? String(resolutionInputs.targetResolution) : '';
     const qsvNeedsSoftwareRoundTrip = hardwareDecodedQsv && (needsSoftwareOnlyFilter || shouldScale);
+
+    if (hasHdrToSdrOperation && !shouldApplyHdrToSdr) {
+      args.jobLog(`Skipping HDR to SDR for stream ${stream.sourceIndex}: stream is not HDR-tagged.`);
+    }
 
     if (
       hardwareDecodedQsv
       && shouldScale
       && !hasCropFilter
-      && !hasHdrToSdrOperation
+      && !shouldApplyHdrToSdr
       && !frameRateInputs
     ) {
       filterChain.push(getQsvScaleFilter(
@@ -258,7 +284,7 @@ export const applyVideoFilters = (
       && has10BitOperation
       && !shouldScale
       && !hasCropFilter
-      && !hasHdrToSdrOperation
+      && !shouldApplyHdrToSdr
       && !frameRateInputs
     ) {
       filterChain.push('scale_qsv=format=p010le');
@@ -283,7 +309,7 @@ export const applyVideoFilters = (
           args,
           stream,
           filterChain,
-          hasHdrToSdrOperation,
+          shouldApplyHdrToSdr,
           shouldScale,
           resolutionInputs,
           targetResolution,
@@ -303,7 +329,7 @@ export const applyVideoFilters = (
         args,
         stream,
         filterChain,
-        hasHdrToSdrOperation,
+        shouldApplyHdrToSdr,
         shouldScale,
         resolutionInputs,
         targetResolution,
@@ -343,7 +369,7 @@ export const applyVideoFilters = (
       shouldProcess = true;
     }
 
-    if (hasHdrToSdrOperation) {
+    if (shouldApplyHdrToSdr) {
       shouldProcess = true;
     }
 

@@ -2,6 +2,8 @@ import {
   createAudioEncoderOperation,
   createConflictMessage,
   createDefaultV2Streams,
+  createHdrToSdrOperation,
+  createHdrVideoStream,
   createImplicitEncoderMessage,
   createOperation,
   createResolutionOperation,
@@ -83,13 +85,25 @@ describe('ffmpegCommandExecute v2 Plugin', () => {
       '10-bit',
       [createOperation('ffmpegCommand10BitVideo', 'set10BitVideo', {})],
     ],
-    [
-      'HDR to SDR',
-      [createOperation('ffmpegCommandHdrToSdr', 'hdrToSdr', {})],
-    ],
   ])('rejects %s without an explicit video encoder', async (_name, operations) => {
     const args = createV2Args({
       operations,
+    });
+    const message = createImplicitEncoderMessage('video', 0);
+
+    await expect(renderFfmpegCommandV2(args)).rejects.toThrow(message);
+    expect(args.jobLog).toHaveBeenCalledWith(message);
+  });
+
+  it('rejects HDR to SDR without an explicit video encoder when a stream is HDR-tagged', async () => {
+    const args = createV2Args({
+      streams: [
+        createHdrVideoStream(),
+        createDefaultV2Streams()[1],
+      ],
+      operations: [
+        createHdrToSdrOperation(),
+      ],
     });
     const message = createImplicitEncoderMessage('video', 0);
 

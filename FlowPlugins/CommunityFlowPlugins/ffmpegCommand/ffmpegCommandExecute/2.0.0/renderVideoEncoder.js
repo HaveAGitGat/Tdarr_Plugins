@@ -117,7 +117,7 @@ var applyVideoEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, f
                     || Boolean(videoBitrateInputs)
                     || Boolean(stream.cropFilter)
                     || has10BitOperation
-                    || hasHdrToSdrOperation);
+                    || (hasHdrToSdrOperation && (0, renderVideoFilters_1.isHdrVideoStream)(stream)));
                 if (!(forceEncoding
                     || stream.codec_name !== targetCodec
                     || videoOperationRequiresEncoding)) return [3 /*break*/, 4];

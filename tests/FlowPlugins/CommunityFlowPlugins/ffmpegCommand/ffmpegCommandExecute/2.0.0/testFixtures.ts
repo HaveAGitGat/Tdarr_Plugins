@@ -201,6 +201,12 @@ export const createNormalizeAudioOperation = (
   ...inputs,
 });
 
+export const createHdrToSdrOperation = (): IffmpegCommandV2Operation => createOperation(
+  'ffmpegCommandHdrToSdr',
+  'hdrToSdr',
+  {},
+);
+
 export const createEnsureAudioOperation = (
   inputs: Record<string, unknown> = {},
 ): IffmpegCommandV2Operation => createOperation('ffmpegCommandEnsureAudioStream', 'ensureAudioStream', {
@@ -218,6 +224,17 @@ export const createDtsAudioStream = (): Istreams => ({
   ...createDefaultV2Streams()[1],
   codec_name: 'dts',
   channels: 6,
+});
+
+export const createHdrVideoStream = (overrides: Partial<Istreams> = {}): Istreams => ({
+  ...createDefaultV2Streams()[0],
+  codec_name: 'hevc',
+  color_transfer: 'smpte2084',
+  color_primaries: 'bt2020',
+  color_space: 'bt2020nc',
+  color_range: 'tv',
+  pix_fmt: 'yuv420p10le',
+  ...overrides,
 });
 
 export const createRemoveDtsAudioOperation = (): IffmpegCommandV2Operation => createOperation(

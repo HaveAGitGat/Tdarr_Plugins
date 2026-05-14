@@ -14,7 +14,10 @@ import {
   getVaapiDeviceArgs,
   hasOperation,
 } from './renderUtils';
-import { shouldScaleVideoStream } from './renderVideoFilters';
+import {
+  isHdrVideoStream,
+  shouldScaleVideoStream,
+} from './renderVideoFilters';
 
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
@@ -117,7 +120,7 @@ export const applyVideoEncoder = async ({
       || Boolean(videoBitrateInputs)
       || Boolean(stream.cropFilter)
       || has10BitOperation
-      || hasHdrToSdrOperation
+      || (hasHdrToSdrOperation && isHdrVideoStream(stream))
     );
 
     if (
