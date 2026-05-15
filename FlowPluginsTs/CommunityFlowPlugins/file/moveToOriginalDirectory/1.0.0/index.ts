@@ -60,6 +60,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     sourcePath: args.inputFileObj._id,
     destinationPath: ouputFilePath,
     args,
+    requireSourceDeletion: true,
   });
 
   return {

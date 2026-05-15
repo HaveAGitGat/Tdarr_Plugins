@@ -274,6 +274,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         sourcePath: currentFileName,
         destinationPath: newPath,
         args,
+        requireSourceDeletion: true,
       });
     } else {
       isSuccessful = true;
