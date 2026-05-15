@@ -41,7 +41,7 @@ var hardwareUtils_1 = require("../../../../FlowHelpers/1.0.0/hardwareUtils");
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 var details = function () { return ({
     name: 'Check Node Hardware Encoder',
-    description: "\n  Check if node hardware encoder is available. Can also be used to check for specific hardware.\n  For example:\n\n  HEVC encoders:\n  hevc_nvenc = Nvidia\n  hevc_amf = AMD\n  hevc_vaapi = Intel\n  hevc_qsv = Intel\n  hevc_videotoolbox = Apple\n  \n  AV1 encoders:\n  av1_nvenc = Nvidia\n  av1_amf = AMD\n  av1_vaapi = Intel\n  av1_qsv = Intel\n  av1_videotoolbox = Apple\n  ",
+    description: "\n  Check if node hardware encoder is available. Can also be used to check for specific hardware.\n  For example:\n\n  HEVC encoders:\n  hevc_nvenc = Nvidia\n  hevc_amf = AMD\n  hevc_vaapi = Intel\n  hevc_qsv = Intel\n  hevc_videotoolbox = Apple\n  \n  AV1 encoders:\n  av1_nvenc = Nvidia\n  av1_amf = AMD\n  av1_vaapi = Intel\n  av1_qsv = Intel\n  av1_videotoolbox = Apple\n\n  The 10-bit option runs a stricter encoder output probe using a 10-bit synthetic source.\n  ",
     style: {
         borderColor: 'orange',
     },
@@ -75,6 +75,20 @@ var details = function () { return ({
             },
             tooltip: 'Specify hardware (based on encoder) to check for',
         },
+        {
+            label: 'Required Output Bit Depth',
+            name: 'bitDepth',
+            type: 'string',
+            defaultValue: 'any',
+            inputUI: {
+                type: 'dropdown',
+                options: [
+                    'any',
+                    '10bit',
+                ],
+            },
+            tooltip: 'Specify whether the selected encoder only needs to work, or must also support 10-bit output',
+        },
     ],
     outputs: [
         {
@@ -90,7 +104,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareEncoder, encoderString, targetCodec, encoderProperties, nodeHasHardware;
+    var lib, hardwareEncoder, isTenBitOutputProbe, probeBitDepth, encoderString, targetCodec, getEncoderOptions, encoderProperties, nodeHasHardware, bitDepthLogText;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -98,18 +112,25 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 hardwareEncoder = args.inputs.hardwareEncoder;
+                isTenBitOutputProbe = String(args.inputs.bitDepth) === '10bit';
+                probeBitDepth = isTenBitOutputProbe ? '10bit' : 'any';
                 encoderString = String(hardwareEncoder);
                 targetCodec = encoderString.startsWith('av1_') ? 'av1' : 'hevc';
-                return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)({
-                        targetCodec: targetCodec,
-                        hardwareEncoding: true,
-                        hardwareType: 'auto',
-                        args: args,
-                    })];
+                getEncoderOptions = {
+                    targetCodec: targetCodec,
+                    hardwareEncoding: true,
+                    hardwareType: 'auto',
+                    args: args,
+                };
+                if (isTenBitOutputProbe) {
+                    getEncoderOptions.probeBitDepth = probeBitDepth;
+                }
+                return [4 /*yield*/, (0, hardwareUtils_1.getEncoder)(getEncoderOptions)];
             case 1:
                 encoderProperties = _a.sent();
                 nodeHasHardware = encoderProperties.enabledDevices.some(function (row) { return row.encoder === encoderString; });
-                args.jobLog("Node has hardwareEncoder ".concat(encoderString, ": ").concat(nodeHasHardware));
+                bitDepthLogText = isTenBitOutputProbe ? ' 10-bit output' : '';
+                args.jobLog("Node has".concat(bitDepthLogText, " hardwareEncoder ").concat(encoderString, ": ").concat(nodeHasHardware));
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: nodeHasHardware ? 1 : 2,

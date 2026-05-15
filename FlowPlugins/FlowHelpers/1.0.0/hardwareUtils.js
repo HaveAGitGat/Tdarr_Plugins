@@ -80,31 +80,65 @@ var getVaapiRenderDevice = function () {
         return defaultDevice;
     }
 };
+var getLavfiProbeInput = function (probeBitDepth) {
+    var source = 'color=c=black:s=512x512:d=1:r=30';
+    if (probeBitDepth === '10bit') {
+        return "".concat(source, ",format=yuv420p10le");
+    }
+    return source;
+};
+var getProbeFilterArgs = function (_a) {
+    var encoder = _a.encoder, filter = _a.filter, probeBitDepth = _a.probeBitDepth;
+    if (probeBitDepth === '10bit' && encoder.includes('vaapi')) {
+        return ['-vf', 'format=p010,hwupload'];
+    }
+    return filter ? filter.split(' ') : [];
+};
+var getTenBitEncoderArgs = function (encoder) {
+    var isVaapi = encoder.includes('vaapi');
+    var isVideoToolbox = encoder.includes('videotoolbox');
+    var args = [];
+    if (encoder.startsWith('hevc_')) {
+        args.push('-profile:v', isVideoToolbox ? '2' : 'main10');
+    }
+    if (!isVaapi) {
+        args.push('-pix_fmt', isVideoToolbox ? 'yuv420p10le' : 'p010le');
+    }
+    return args;
+};
 var hasEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var spawn, isEnabled, commandArr_1, err_1;
-    var ffmpegPath = _b.ffmpegPath, encoder = _b.encoder, inputArgs = _b.inputArgs, outputArgs = _b.outputArgs, filter = _b.filter, args = _b.args;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+    var spawn, isEnabled, isTenBitProbe, commandArr_1, bitDepthLogText, err_1;
+    var ffmpegPath = _b.ffmpegPath, encoder = _b.encoder, inputArgs = _b.inputArgs, outputArgs = _b.outputArgs, filter = _b.filter, args = _b.args, _c = _b.probeBitDepth, probeBitDepth = _c === void 0 ? 'any' : _c;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
                 spawn = require('child_process').spawn;
                 isEnabled = false;
-                _c.label = 1;
+                _d.label = 1;
             case 1:
-                _c.trys.push([1, 3, , 4]);
-                commandArr_1 = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], inputArgs, true), [
+                _d.trys.push([1, 3, , 4]);
+                isTenBitProbe = probeBitDepth === '10bit';
+                commandArr_1 = __spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray(__spreadArray([], inputArgs, true), [
                     '-f',
                     'lavfi',
                     '-i',
-                    'color=c=black:s=512x512:d=1:r=30'
-                ], false), (filter ? filter.split(' ') : []), true), [
+                    getLavfiProbeInput(probeBitDepth)
+                ], false), getProbeFilterArgs({
+                    encoder: encoder,
+                    filter: filter,
+                    probeBitDepth: probeBitDepth,
+                }), true), [
                     '-c:v',
                     encoder
-                ], false), outputArgs, true), [
+                ], false), (isTenBitProbe
+                    ? getTenBitEncoderArgs(encoder)
+                    : []), true), outputArgs, true), [
                     '-f',
                     'null',
                     '/dev/null',
                 ], false);
-                args.jobLog("Checking for encoder ".concat(encoder, " with command:"));
+                bitDepthLogText = isTenBitProbe ? ' 10-bit' : '';
+                args.jobLog("Checking for".concat(bitDepthLogText, " encoder ").concat(encoder, " with command:"));
                 args.jobLog("".concat(ffmpegPath, " ").concat(commandArr_1.join(' ')));
                 return [4 /*yield*/, new Promise(function (resolve) {
                         var error = function () {
@@ -140,11 +174,11 @@ var hasEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         }
                     })];
             case 2:
-                isEnabled = _c.sent();
-                args.jobLog("Encoder ".concat(encoder, " is ").concat(isEnabled ? 'enabled' : 'disabled'));
+                isEnabled = _d.sent();
+                args.jobLog("Encoder ".concat(encoder).concat(bitDepthLogText, " is ").concat(isEnabled ? 'enabled' : 'disabled'));
                 return [3 /*break*/, 4];
             case 3:
-                err_1 = _c.sent();
+                err_1 = _d.sent();
                 // eslint-disable-next-line no-console
                 console.log(err_1);
                 return [3 /*break*/, 4];
@@ -226,9 +260,9 @@ var encoderFilter = function (encoder, targetCodec) {
 };
 var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
     var supportedGpuEncoders, vaapiDevice, vaapiInputArgs, vaapiFilter, gpuEncoders, filteredGpuEncoders, idx, _i, filteredGpuEncoders_1, gpuEncoder, _c, enabledDevices, res;
-    var targetCodec = _b.targetCodec, hardwareEncoding = _b.hardwareEncoding, hardwareType = _b.hardwareType, args = _b.args;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var targetCodec = _b.targetCodec, hardwareEncoding = _b.hardwareEncoding, hardwareType = _b.hardwareType, args = _b.args, _d = _b.probeBitDepth, probeBitDepth = _d === void 0 ? 'any' : _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 supportedGpuEncoders = ['hevc', 'h264', 'av1'];
                 if (!(args.workerType
@@ -391,7 +425,7 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                 }
                 args.jobLog(JSON.stringify({ filteredGpuEncoders: filteredGpuEncoders }));
                 _i = 0, filteredGpuEncoders_1 = filteredGpuEncoders;
-                _d.label = 1;
+                _e.label = 1;
             case 1:
                 if (!(_i < filteredGpuEncoders_1.length)) return [3 /*break*/, 4];
                 gpuEncoder = filteredGpuEncoders_1[_i];
@@ -404,11 +438,12 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                         outputArgs: gpuEncoder.outputArgs,
                         filter: gpuEncoder.filter,
                         args: args,
+                        probeBitDepth: probeBitDepth,
                     })];
             case 2:
                 // eslint-disable-next-line no-await-in-loop
-                _c.enabled = _d.sent();
-                _d.label = 3;
+                _c.enabled = _e.sent();
+                _e.label = 3;
             case 3:
                 _i++;
                 return [3 /*break*/, 1];
@@ -442,7 +477,7 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                 if (!supportedGpuEncoders.includes(targetCodec)) {
                     args.jobLog("Target codec ".concat(targetCodec, " is not supported for GPU encoding"));
                 }
-                _d.label = 6;
+                _e.label = 6;
             case 6:
                 if (targetCodec === 'hevc') {
                     return [2 /*return*/, {

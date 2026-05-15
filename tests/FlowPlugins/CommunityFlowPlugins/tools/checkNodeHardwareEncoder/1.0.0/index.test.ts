@@ -383,6 +383,37 @@ describe('checkNodeHardwareEncoder Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Node has hardwareEncoder hevc_nvenc: true');
     });
 
+    it('should require 10-bit encoder capability when selected', async () => {
+      baseArgs.inputs.bitDepth = '10bit';
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_nvenc',
+        inputArgs: ['-hwaccel', 'cuda'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [
+          {
+            encoder: 'hevc_nvenc',
+            enabled: true,
+            inputArgs: ['-hwaccel', 'cuda'],
+            outputArgs: [],
+            filter: '',
+          },
+        ],
+      });
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Node has 10-bit output hardwareEncoder hevc_nvenc: true');
+      expect(mockGetEncoder).toHaveBeenCalledWith({
+        targetCodec: 'hevc',
+        hardwareEncoding: true,
+        hardwareType: 'auto',
+        args: baseArgs,
+        probeBitDepth: '10bit',
+      });
+    });
+
     it('should handle string input conversion correctly', async () => {
       baseArgs.inputs.hardwareEncoder = 123 as unknown as string; // Simulate non-string input
       mockGetEncoder.mockResolvedValue({

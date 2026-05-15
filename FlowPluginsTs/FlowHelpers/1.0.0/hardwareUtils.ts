@@ -20,6 +20,51 @@ const getVaapiRenderDevice = (): string => {
   }
 };
 
+export type IprobeBitDepth = 'any' | '10bit';
+
+const getLavfiProbeInput = (probeBitDepth: IprobeBitDepth): string => {
+  const source = 'color=c=black:s=512x512:d=1:r=30';
+
+  if (probeBitDepth === '10bit') {
+    return `${source},format=yuv420p10le`;
+  }
+
+  return source;
+};
+
+const getProbeFilterArgs = ({
+  encoder,
+  filter,
+  probeBitDepth,
+}: {
+  encoder: string,
+  filter: string,
+  probeBitDepth: IprobeBitDepth,
+}): string[] => {
+  if (probeBitDepth === '10bit' && encoder.includes('vaapi')) {
+    return ['-vf', 'format=p010,hwupload'];
+  }
+
+  return filter ? filter.split(' ') : [];
+};
+
+const getTenBitEncoderArgs = (encoder: string): string[] => {
+  const isVaapi = encoder.includes('vaapi');
+  const isVideoToolbox = encoder.includes('videotoolbox');
+
+  const args: string[] = [];
+
+  if (encoder.startsWith('hevc_')) {
+    args.push('-profile:v', isVideoToolbox ? '2' : 'main10');
+  }
+
+  if (!isVaapi) {
+    args.push('-pix_fmt', isVideoToolbox ? 'yuv420p10le' : 'p010le');
+  }
+
+  return args;
+};
+
 export const hasEncoder = async ({
   ffmpegPath,
   encoder,
@@ -27,6 +72,7 @@ export const hasEncoder = async ({
   outputArgs,
   filter,
   args,
+  probeBitDepth = 'any',
 }: {
   ffmpegPath: string,
   encoder: string,
@@ -34,26 +80,39 @@ export const hasEncoder = async ({
   outputArgs: string[],
   filter: string,
   args: IpluginInputArgs,
+  probeBitDepth?: IprobeBitDepth,
 }): Promise<boolean> => {
   const { spawn } = require('child_process');
   let isEnabled = false;
   try {
+    const isTenBitProbe = probeBitDepth === '10bit';
     const commandArr = [
       ...inputArgs,
       '-f',
       'lavfi',
       '-i',
-      'color=c=black:s=512x512:d=1:r=30',
-      ...(filter ? filter.split(' ') : []),
+      getLavfiProbeInput(probeBitDepth),
+      ...getProbeFilterArgs({
+        encoder,
+        filter,
+        probeBitDepth,
+      }),
       '-c:v',
       encoder,
+      ...(
+        isTenBitProbe
+          ? getTenBitEncoderArgs(encoder)
+          : []
+      ),
       ...outputArgs,
       '-f',
       'null',
       '/dev/null',
     ];
 
-    args.jobLog(`Checking for encoder ${encoder} with command:`);
+    const bitDepthLogText = isTenBitProbe ? ' 10-bit' : '';
+
+    args.jobLog(`Checking for${bitDepthLogText} encoder ${encoder} with command:`);
     args.jobLog(`${ffmpegPath} ${commandArr.join(' ')}`);
 
     isEnabled = await new Promise((resolve) => {
@@ -92,7 +151,7 @@ export const hasEncoder = async ({
       }
     });
 
-    args.jobLog(`Encoder ${encoder} is ${isEnabled ? 'enabled' : 'disabled'}`);
+    args.jobLog(`Encoder ${encoder}${bitDepthLogText} is ${isEnabled ? 'enabled' : 'disabled'}`);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.log(err);
@@ -199,11 +258,13 @@ export const getEncoder = async ({
   hardwareEncoding,
   hardwareType,
   args,
+  probeBitDepth = 'any',
 }: {
   targetCodec: string,
   hardwareEncoding: boolean,
   hardwareType: string,
   args: IpluginInputArgs,
+  probeBitDepth?: IprobeBitDepth,
 }): Promise<IgetEncoder> => {
   const supportedGpuEncoders = ['hevc', 'h264', 'av1'];
 
@@ -390,6 +451,7 @@ export const getEncoder = async ({
         outputArgs: gpuEncoder.outputArgs,
         filter: gpuEncoder.filter,
         args,
+        probeBitDepth,
       });
     }
 

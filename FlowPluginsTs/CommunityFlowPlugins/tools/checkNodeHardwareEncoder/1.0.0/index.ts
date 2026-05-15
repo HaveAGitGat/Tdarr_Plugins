@@ -25,6 +25,8 @@ const details = (): IpluginDetails => ({
   av1_vaapi = Intel
   av1_qsv = Intel
   av1_videotoolbox = Apple
+
+  The 10-bit option runs a stricter encoder output probe using a 10-bit synthetic source.
   `,
   style: {
     borderColor: 'orange',
@@ -59,6 +61,20 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'Specify hardware (based on encoder) to check for',
     },
+    {
+      label: 'Required Output Bit Depth',
+      name: 'bitDepth',
+      type: 'string',
+      defaultValue: 'any',
+      inputUI: {
+        type: 'dropdown',
+        options: [
+          'any',
+          '10bit',
+        ],
+      },
+      tooltip: 'Specify whether the selected encoder only needs to work, or must also support 10-bit output',
+    },
   ],
   outputs: [
     {
@@ -80,6 +96,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const { hardwareEncoder } = args.inputs;
 
+  const isTenBitOutputProbe = String(args.inputs.bitDepth) === '10bit';
+  const probeBitDepth = isTenBitOutputProbe ? '10bit' : 'any';
+
   // Ensure hardwareEncoder is a string
   const encoderString = String(hardwareEncoder);
 
@@ -87,16 +106,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const targetCodec = encoderString.startsWith('av1_') ? 'av1' : 'hevc';
 
   // eslint-disable-next-line no-await-in-loop
-  const encoderProperties = await getEncoder({
+  const getEncoderOptions: Parameters<typeof getEncoder>[0] = {
     targetCodec,
     hardwareEncoding: true,
     hardwareType: 'auto',
     args,
-  });
+  };
+
+  if (isTenBitOutputProbe) {
+    getEncoderOptions.probeBitDepth = probeBitDepth;
+  }
+
+  const encoderProperties = await getEncoder(getEncoderOptions);
 
   const nodeHasHardware = encoderProperties.enabledDevices.some((row) => row.encoder === encoderString);
+  const bitDepthLogText = isTenBitOutputProbe ? ' 10-bit output' : '';
 
-  args.jobLog(`Node has hardwareEncoder ${encoderString}: ${nodeHasHardware}`);
+  args.jobLog(`Node has${bitDepthLogText} hardwareEncoder ${encoderString}: ${nodeHasHardware}`);
 
   return {
     outputFileObj: args.inputFileObj,
