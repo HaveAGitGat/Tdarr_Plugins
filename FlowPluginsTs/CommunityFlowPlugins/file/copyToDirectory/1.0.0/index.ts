@@ -40,7 +40,28 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'Specify whether to keep the relative path',
+      tooltip: `
+      
+Specify whether to keep the relative path.
+
+For example:
+
+\\n Source folder:
+\\n C:/input/
+
+\\n Source file:
+\\n C:/input/test1/test2/qsv_h264.mkv
+
+\\n Copy to Directory Output Directory
+\\n C:/output/
+
+\\n Keep Relative Path disabled:
+\\n C:/output/qsv_h264.mkv
+
+\\n Keep Relative Path enabled:
+\\n C:/output/test1/test2/qsv_h264.mkv
+      
+      `,
     },
     {
       label: 'Make Working File',

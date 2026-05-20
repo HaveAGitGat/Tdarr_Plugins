@@ -41,6 +41,17 @@ const details = ():IpluginDetails => ({
      + `"discord://{{{args.userVariables.global.discord_webhook}}}"
       `,
     },
+    {
+      label: 'Apprise Path',
+      name: 'apprisePath',
+      type: 'string',
+      defaultValue: 'apprise',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: 'Specify the path to the Apprise executable.'
+      + 'If the path is not specified, the plugin will use the default path.',
+    },
   ],
   outputs: [
     {
@@ -56,14 +67,15 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const { command } = args.inputs;
+  const command = String(args.inputs.command);
+  const apprisePath = String(args.inputs.apprisePath).trim();
 
   const cliArgs = [
     ...args.deps.parseArgsStringToArgv(command, '', ''),
   ];
 
   const cli = new CLI({
-    cli: 'apprise',
+    cli: apprisePath,
     spawnArgs: cliArgs,
     spawnOpts: {},
     jobLog: args.jobLog,

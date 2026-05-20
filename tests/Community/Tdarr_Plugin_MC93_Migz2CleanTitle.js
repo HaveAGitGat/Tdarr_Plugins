@@ -17,7 +17,7 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
-      infoLog: '☒File has title metadata. Removing \n',
+      infoLog: '☒File has metadata to clean. Removing \n',
     },
   },
   {
@@ -38,7 +38,46 @@ const tests = [
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: false,
-      infoLog: '☑File has no title metadata \n',
+      infoLog: '☑File has no metadata to clean \n',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: { clean_comments: true },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: ', -metadata title=  -metadata comment=  -c copy -map 0 -max_muxing_queue_size 9999',
+      container: '.mp4',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: '☒File has metadata to clean. Removing \n',
+    },
+  },
+  {
+    input: {
+      file: (() => {
+        const file = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+        file.meta.Title = undefined;
+        file.meta.Comment = undefined;
+        return file;
+      })(),
+      librarySettings: {},
+      inputs: { clean_comments: true },
+      otherArguments: {},
+    },
+    output: {
+      processFile: false,
+      preset: '',
+      container: '.mp4',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: false,
+      infoLog: '☑File has no metadata to clean \n',
     },
   },
 ];

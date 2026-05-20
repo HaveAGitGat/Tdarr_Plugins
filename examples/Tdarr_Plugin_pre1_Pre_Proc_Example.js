@@ -8,7 +8,7 @@
 
 // List any npm dependencies which the plugin needs, they will be auto installed when the plugin runs:
 module.exports.dependencies = [
-  'import-fresh',
+  'import-fresh@3.3.1',
 ];
 
 const details = () => ({

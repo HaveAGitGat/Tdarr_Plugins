@@ -12,7 +12,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -56,7 +56,36 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      preset: '-hwaccel cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as mp4. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.mp4',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'mp4',
+        enable_10bit: 'true',
+        enable_full_gpu_10bit: 'true',
+        enable_bframes: 'true',
+        force_conform: 'true',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-hwaccel cuda -hwaccel_output_format cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -vf scale_cuda=format=p010le -bf 5 ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -106,7 +135,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
+      preset: '-hwaccel cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -pix_fmt p010le ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -134,7 +163,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-c:v h264_cuvid, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -pix_fmt p010le ',
+      preset: '-hwaccel cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 3933k -minrate 2753k -maxrate 5112k -bufsize 7866k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -pix_fmt p010le ',
       handBrakeMode: false,
       FFmpegMode: true,
       reQueueAfter: true,
@@ -166,6 +195,83 @@ const tests = [
       reQueueAfter: true,
       infoLog: 'File is hevc or vp9 but is not in mp4 container. Remuxing. \n',
       container: '.mp4',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH265_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'mp4',
+        enable_10bit: 'true',
+        enable_full_gpu_10bit: 'true',
+        enable_bframes: 'true',
+        force_conform: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: ', -map 0 -c copy ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'File is hevc or vp9 but is not in mp4 container. Remuxing. \n',
+      container: '.mp4',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'ts',
+        enable_10bit: 'false',
+        force_conform: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-hwaccel cuda -hwaccel_output_format cuda -fflags +genpts, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as ts. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.ts',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(require('../sampleData/media/sampleH264_1.json')),
+      librarySettings: {},
+      inputs: {
+        container: 'avi',
+        enable_10bit: 'false',
+        force_conform: 'false',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-hwaccel cuda -hwaccel_output_format cuda -fflags +genpts, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as avi. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.avi',
     },
   },
 ];

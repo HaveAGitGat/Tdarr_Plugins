@@ -75,7 +75,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: 'Specify whether to keep the relative path',
+            tooltip: "\n      \nSpecify whether to keep the relative path.\n\nFor example:\n\n\\n Source folder:\n\\n C:/input/\n\n\\n Source file:\n\\n C:/input/test1/test2/qsv_h264.mkv\n\n\\n Move to Directory Output Directory\n\\n C:/output/\n\n\\n Keep Relative Path disabled:\n\\n C:/output/qsv_h264.mkv\n\n\\n Keep Relative Path enabled:\n\\n C:/output/test1/test2/qsv_h264.mkv\n      \n      ",
         },
     ],
     outputs: [
@@ -141,6 +141,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         sourcePath: args.inputFileObj._id,
                         destinationPath: ouputFilePath,
                         args: args,
+                        requireSourceDeletion: true,
                     })];
             case 1:
                 _a.sent();
