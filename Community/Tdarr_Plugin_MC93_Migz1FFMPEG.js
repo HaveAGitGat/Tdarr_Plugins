@@ -10,7 +10,7 @@ const details = () => ({
                   Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
                   NVDEC & NVENC compatable GPU required.
                   This plugin will skip any files that are in the VP9 codec.`,
-  Version: '3.1',
+  Version: '3.2',
   Tags: 'pre-processing,ffmpeg,video only,nvenc h265,configurable',
   Inputs: [{
     name: 'container',
@@ -59,6 +59,25 @@ const details = () => ({
       ],
     },
     tooltip: `Specify if output file should be 10bit. Default is false.
+                    \\nExample:\\n
+                    true
+
+                    \\nExample:\\n
+                    false`,
+  },
+  {
+    name: 'enable_full_gpu_10bit',
+    type: 'boolean',
+    defaultValue: false,
+    inputUI: {
+      type: 'dropdown',
+      options: [
+        'false',
+        'true',
+      ],
+    },
+    tooltip: `Use full GPU 10-bit conversion with scale_cuda. May fail on files affected by CUDA filter graph issues.
+                    Default is false.
                     \\nExample:\\n
                     true
 
@@ -159,10 +178,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
 
   // Set up required variables.
   let videoIdx = 0;
-  let CPU10 = false;
   let extraArguments = '';
   let genpts = '';
   let bitrateSettings = '';
+  const {
+    getNvdecHwaccelPreset,
+    getNvenc10BitFormatArg,
+  } = require('../methods/nvdecPreset');
+  const useSoftwareFramesFor10Bit = inputs.enable_10bit === true
+    && inputs.enable_full_gpu_10bit === false;
+  const nvencDecodeOptions = useSoftwareFramesFor10Bit
+    ? { softwareFrames: true }
+    : undefined;
   // Work out currentBitrate using "Bitrate = file size / (number of minutes * .0075)"
   // Used from here https://blog.frame.io/2017/03/06/calculate-video-bitrates/
   // eslint-disable-next-line no-bitwise
@@ -246,18 +273,6 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // Check if 10bit variable is true.
-  if (inputs.enable_10bit === true) {
-    // If set to true then add 10bit argument
-    extraArguments += '-pix_fmt p010le ';
-  }
-
-  // Check if b frame variable is true.
-  if (inputs.enable_bframes === true) {
-    // If set to true then add b frames argument
-    extraArguments += '-bf 5 ';
-  }
-
   // Go through each stream in the file.
   for (let i = 0; i < file.ffProbeData.streams.length; i++) {
     // Check if stream is a video.
@@ -302,17 +317,22 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
         return response;
       }
 
-      // Check if video stream is HDR or 10bit
-      if (
-        file.ffProbeData.streams[i].profile === 'High 10'
-            || file.ffProbeData.streams[i].bits_per_raw_sample === '10'
-      ) {
-        CPU10 = true;
-      }
-
       // Increment videoIdx.
       videoIdx += 1;
     }
+  }
+
+  // Keep encoder/filter args out of remux commands; FFmpeg cannot combine them with `-c copy`.
+  let transcodeOnlyArguments = '';
+  // Check if 10bit variable is true.
+  if (inputs.enable_10bit === true) {
+    transcodeOnlyArguments += getNvenc10BitFormatArg(file, nvencDecodeOptions);
+  }
+
+  // Check if b frame variable is true.
+  if (inputs.enable_bframes === true) {
+    // If set to true then add b frames argument
+    transcodeOnlyArguments += '-bf 5 ';
   }
 
   // Set bitrateSettings variable using bitrate information calulcated earlier.
@@ -326,31 +346,14 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
-  // Codec will be checked so it can be transcoded correctly
-  if (file.video_codec_name === 'h263') {
-    response.preset = '-c:v h263_cuvid';
-  } else if (file.video_codec_name === 'h264') {
-    if (CPU10 === false) {
-      response.preset = '-c:v h264_cuvid';
-    }
-  } else if (file.video_codec_name === 'mjpeg') {
-    response.preset = '-c:v mjpeg_cuvid';
-  } else if (file.video_codec_name === 'mpeg1') {
-    response.preset = '-c:v mpeg1_cuvid';
-  } else if (file.video_codec_name === 'mpeg2') {
-    response.preset = '-c:v mpeg2_cuvid';
-  } else if (file.video_codec_name === 'mpeg4') {
-    response.preset = '-c:v mpeg4_cuvid';
-  } else if (file.video_codec_name === 'vc1') {
-    response.preset = '-c:v vc1_cuvid';
-  } else if (file.video_codec_name === 'vp8') {
-    response.preset = '-c:v vp8_cuvid';
-  } else if (file.video_codec_name === 'msmpeg4v3') {
-    response.preset = '-c:v msmpeg4v3';
-  }
+  // Use modern CUDA hwaccel instead of legacy *_cuvid decoders
+  // which cause frame-ordering issues (stuttering) with FFmpeg 7+.
+  // Helper returns '' for AV1 to keep older GPUs on software decode.
+  response.preset = getNvdecHwaccelPreset(file, nvencDecodeOptions);
 
+  const outputArguments = `${extraArguments}${transcodeOnlyArguments}`;
   response.preset += `${genpts}, -map 0 -c:v hevc_nvenc -cq:v 19 ${bitrateSettings} `
-  + `-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  + `-spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 ${outputArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;

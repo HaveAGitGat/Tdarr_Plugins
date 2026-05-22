@@ -219,8 +219,8 @@ var tryNormalCopy = function (_a) { return __awaiter(void 0, [_a], void 0, funct
     });
 }); };
 var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var err_4;
-    var args = _b.args, sourcePath = _b.sourcePath;
+    var err_4, message;
+    var args = _b.args, sourcePath = _b.sourcePath, requireSourceDeletion = _b.requireSourceDeletion;
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
@@ -232,7 +232,11 @@ var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, fun
                 return [3 /*break*/, 3];
             case 2:
                 err_4 = _c.sent();
-                args.jobLog("Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_4)));
+                message = "Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_4));
+                args.jobLog(message);
+                if (requireSourceDeletion) {
+                    throw new Error(message);
+                }
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
         }
@@ -240,14 +244,14 @@ var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, fun
 }); };
 var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
     var sourceFileSize, moved, ncpd, copied;
-    var operation = _b.operation, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, args = _b.args;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
+    var operation = _b.operation, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, args = _b.args, _c = _b.requireSourceDeletion, requireSourceDeletion = _c === void 0 ? false : _c;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
                 args.jobLog('Calculating cache file size in bytes');
                 return [4 /*yield*/, getSizeBytes(sourcePath)];
             case 1:
-                sourceFileSize = _c.sent();
+                sourceFileSize = _d.sent();
                 args.jobLog("".concat(sourceFileSize));
                 if (sourceFileSize === 0) {
                     throw new Error("Source file ".concat(sourcePath, " has size 0 or does not exist, aborting ").concat(operation));
@@ -260,7 +264,7 @@ var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, func
                         sourceFileSize: sourceFileSize,
                     })];
             case 2:
-                moved = _c.sent();
+                moved = _d.sent();
                 if (moved) {
                     return [2 /*return*/, true];
                 }
@@ -275,7 +279,7 @@ var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, func
                 //   return true;
                 // }
                 args.jobLog('Failed to move file, trying copy');
-                _c.label = 3;
+                _d.label = 3;
             case 3: return [4 /*yield*/, tyNcp({
                     sourcePath: sourcePath,
                     destinationPath: destinationPath,
@@ -283,16 +287,17 @@ var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, func
                     sourceFileSize: sourceFileSize,
                 })];
             case 4:
-                ncpd = _c.sent();
+                ncpd = _d.sent();
                 if (!ncpd) return [3 /*break*/, 7];
                 if (!(operation === 'move')) return [3 /*break*/, 6];
                 return [4 /*yield*/, cleanSourceFile({
                         args: args,
                         sourcePath: sourcePath,
+                        requireSourceDeletion: requireSourceDeletion,
                     })];
             case 5:
-                _c.sent();
-                _c.label = 6;
+                _d.sent();
+                _d.label = 6;
             case 6: return [2 /*return*/, true];
             case 7: return [4 /*yield*/, tryNormalCopy({
                     sourcePath: sourcePath,
@@ -301,16 +306,17 @@ var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, func
                     sourceFileSize: sourceFileSize,
                 })];
             case 8:
-                copied = _c.sent();
+                copied = _d.sent();
                 if (!copied) return [3 /*break*/, 11];
                 if (!(operation === 'move')) return [3 /*break*/, 10];
                 return [4 /*yield*/, cleanSourceFile({
                         args: args,
                         sourcePath: sourcePath,
+                        requireSourceDeletion: requireSourceDeletion,
                     })];
             case 9:
-                _c.sent();
-                _c.label = 10;
+                _d.sent();
+                _d.label = 10;
             case 10: return [2 /*return*/, true];
             case 11: throw new Error("Failed to ".concat(operation, " file"));
         }

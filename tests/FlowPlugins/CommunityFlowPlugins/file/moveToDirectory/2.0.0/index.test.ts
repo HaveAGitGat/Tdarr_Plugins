@@ -66,6 +66,7 @@ describe('moveToDirectory Plugin', () => {
         sourcePath: baseArgs.inputFileObj._id,
         destinationPath: '/output/directory/SampleVideo_1280x720_1mb.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj._id).toBe('/output/directory/SampleVideo_1280x720_1mb.mp4');
@@ -88,6 +89,7 @@ describe('moveToDirectory Plugin', () => {
         sourcePath: baseArgs.inputFileObj._id,
         destinationPath: '/output/directory/subfolder/SampleVideo_1280x720_1mb.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
       expect(result.outputNumber).toBe(1);
       expect(result.outputFileObj._id).toBe('/output/directory/subfolder/SampleVideo_1280x720_1mb.mp4');

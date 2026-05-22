@@ -97,12 +97,14 @@ describe('copyMoveFolderContent Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/movie.srt',
         destinationPath: '/output/folder/code/Source Folder/movie.srt',
         args: baseArgs,
+        requireSourceDeletion: false,
       });
       expect(mockFileMoveOrCopy).toHaveBeenCalledWith({
         operation: 'copy',
         sourcePath: 'C:/Transcode/Source Folder/movie.ass',
         destinationPath: '/output/folder/code/Source Folder/movie.ass',
         args: baseArgs,
+        requireSourceDeletion: false,
       });
     });
 
@@ -143,6 +145,7 @@ describe('copyMoveFolderContent Plugin', () => {
       expect(mockFileMoveOrCopy).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: 'move',
+          requireSourceDeletion: true,
         }),
       );
     });
@@ -266,6 +269,20 @@ describe('copyMoveFolderContent Plugin', () => {
 
       await expect(plugin(baseArgs)).rejects.toThrow('File operation failed');
     });
+
+    it('should fail move mode when source deletion fails after a fallback copy', async () => {
+      baseArgs.inputs.copyOrMove = 'move';
+      const error = new Error('Failed to delete source file C:/Transcode/Source Folder/movie.srt');
+      (fsp.readdir as jest.Mock).mockResolvedValue(['movie.srt']);
+      mockFileMoveOrCopy.mockRejectedValue(error);
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Failed to delete source file');
+
+      expect(mockFileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({
+        operation: 'move',
+        requireSourceDeletion: true,
+      }));
+    });
   });
 
   describe('Integration Tests', () => {
@@ -296,6 +313,7 @@ describe('copyMoveFolderContent Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/subtitle.srt',
         destinationPath: '/output/folder/subtitle.srt',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
     });
   });

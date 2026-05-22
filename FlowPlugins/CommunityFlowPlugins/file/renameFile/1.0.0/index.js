@@ -107,6 +107,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         sourcePath: args.inputFileObj._id,
                         destinationPath: newPath,
                         args: args,
+                        requireSourceDeletion: true,
                     })];
             case 1:
                 _a.sent();

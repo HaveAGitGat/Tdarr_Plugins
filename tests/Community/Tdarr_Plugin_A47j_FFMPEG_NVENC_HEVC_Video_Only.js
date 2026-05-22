@@ -12,7 +12,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v h264_cuvid ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset medium -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096  -b:v 967680 -maxrate 1257984 -minrate 677376  -bufsize 1205959 -map_metadata:g -1',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset medium -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096  -b:v 967680 -maxrate 1257984 -minrate 677376  -bufsize 1205959 -map_metadata:g -1',
       container: '.mp4',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -36,7 +36,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid  ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset veryslow -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096  -b:v 3207442 -maxrate 4717440 -minrate 2540160 -bufsize 3628800  -map_metadata:g -1',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset veryslow -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096  -b:v 3207442 -maxrate 4717440 -minrate 2540160 -bufsize 3628800  -map_metadata:g -1',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -63,7 +63,7 @@ const tests = [
     },
     output: {
       processFile: true,
-      preset: '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid   -resize 1280x720 ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset veryslow -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096  -b:v 1612800 -maxrate 2096640 -minrate 1128960 -bufsize 1612800  -map_metadata:g -1',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda  -resize 1280x720 ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset veryslow -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096  -b:v 1612800 -maxrate 2096640 -minrate 1128960 -bufsize 1612800  -map_metadata:g -1',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,
@@ -96,7 +96,7 @@ const tests = [
     },
     output: {
       processFile: false,
-      preset: '-vsync 0 -hwaccel cuda -hwaccel_output_format cuda -c:v hevc_cuvid  ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset veryslow -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 ',
+      preset: '-hwaccel cuda -hwaccel_output_format cuda ,-map 0:v -map 0:a -map 0:s? -map -:d? -c copy -c:v:0 hevc_nvenc -preset veryslow -profile:v main10 -rc-lookahead 32 -spatial_aq:v 1 -aq-strength:v 8 -max_muxing_queue_size 4096 ',
       container: '.mkv',
       handBrakeMode: false,
       FFmpegMode: true,

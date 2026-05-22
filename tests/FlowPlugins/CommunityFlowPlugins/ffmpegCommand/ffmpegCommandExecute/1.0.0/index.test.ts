@@ -122,6 +122,153 @@ describe('ffmpegCommandExecute Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Processing file');
     });
 
+    it('should copy streams with only metadata or disposition output args', async () => {
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-metadata:s:v:{outputTypeIndex}', 'title=-Main'];
+      baseArgs.variables.ffmpegCommand.streams[1].outputArgs = ['-disposition:{outputIndex}', 'default+original'];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      const { spawnArgs } = cliOptions;
+
+      expect(result.outputNumber).toBe(1);
+      expect(spawnArgs).toEqual(expect.arrayContaining([
+        '-c:0',
+        'copy',
+        '-metadata:s:v:0',
+        'title=-Main',
+        '-c:1',
+        'copy',
+        '-disposition:1',
+        'default+original',
+      ]));
+      expect(spawnArgs.indexOf('-c:0')).toBeLessThan(spawnArgs.indexOf('-metadata:s:v:0'));
+      expect(spawnArgs.indexOf('-c:1')).toBeLessThan(spawnArgs.indexOf('-disposition:1'));
+    });
+
+    it('should mirror issue 793 by copying kept audio with disposition after removed streams', async () => {
+      baseArgs.variables.ffmpegCommand.streams = [
+        {
+          index: 0,
+          codec_name: 'av1',
+          codec_type: 'video',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:0'],
+        },
+        {
+          index: 1,
+          codec_name: 'eac3',
+          codec_type: 'audio',
+          removed: true,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:1'],
+        },
+        {
+          index: 2,
+          codec_name: 'eac3',
+          codec_type: 'audio',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: ['-disposition:{outputIndex}', 'default+original'],
+          mapArgs: ['-map', '0:2'],
+        },
+        {
+          index: 3,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: true,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:3'],
+        },
+        {
+          index: 4,
+          codec_name: 'subrip',
+          codec_type: 'subtitle',
+          removed: false,
+          forceEncoding: false,
+          inputArgs: [],
+          outputArgs: [],
+          mapArgs: ['-map', '0:4'],
+        },
+      ];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      const { spawnArgs } = cliOptions;
+
+      expect(result.outputNumber).toBe(1);
+      expect(spawnArgs.slice(0, -1)).toEqual([
+        '-y',
+        '-i',
+        baseArgs.inputFileObj._id,
+        '-map',
+        '0:0',
+        '-c:0',
+        'copy',
+        '-map',
+        '0:2',
+        '-c:1',
+        'copy',
+        '-disposition:1',
+        'default+original',
+        '-map',
+        '0:4',
+        '-c:2',
+        'copy',
+      ]);
+      expect(spawnArgs[spawnArgs.length - 1]).toContain('.mp4');
+      expect(spawnArgs.indexOf('-c:1')).toBeLessThan(spawnArgs.indexOf('-disposition:1'));
+    });
+
+    it('should not add copy codec when output args include a codec arg', async () => {
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [
+        '-c:{outputIndex}',
+        'libx264',
+        '-metadata:s:v:{outputTypeIndex}',
+        'title=Encoded',
+      ];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      const { spawnArgs } = cliOptions;
+
+      expect(result.outputNumber).toBe(1);
+      expect(spawnArgs).toEqual(expect.arrayContaining([
+        '-c:0',
+        'libx264',
+        '-metadata:s:v:0',
+        'title=Encoded',
+      ]));
+      expect(spawnArgs.filter((arg: string) => arg === '-c:0')).toHaveLength(1);
+    });
+
+    it('should not add copy codec for non-copy-compatible output args', async () => {
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-vf', 'scale=1280:-2'];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      const { spawnArgs } = cliOptions;
+
+      expect(result.outputNumber).toBe(1);
+      expect(spawnArgs).toEqual(expect.arrayContaining(['-vf', 'scale=1280:-2']));
+      expect(spawnArgs).not.toContain('-c:0');
+    });
+
     it('should handle streams with output args', async () => {
       baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-c:{outputIndex}', 'libx264'];
       baseArgs.variables.ffmpegCommand.streams[1].outputArgs = ['-c:{outputIndex}', 'aac'];

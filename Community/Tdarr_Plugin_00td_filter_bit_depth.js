@@ -15,8 +15,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          'false',
           'true',
+          'false',
         ],
       },
       tooltip: 'Set true to allow 8 bit video to be processed.',
@@ -28,8 +28,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          'false',
           'true',
+          'false',
         ],
       },
       tooltip: 'Set true to allow 10 bit video to be processed.',
@@ -41,8 +41,8 @@ const details = () => ({
       inputUI: {
         type: 'dropdown',
         options: [
-          'false',
           'true',
+          'false',
         ],
       },
       tooltip: 'Set true to allow 12 bit video to be processed.',

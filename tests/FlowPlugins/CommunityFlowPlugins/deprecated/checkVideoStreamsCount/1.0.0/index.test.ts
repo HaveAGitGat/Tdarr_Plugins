@@ -1,5 +1,5 @@
 import { plugin } from
-  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/checkVideoStreamsCount/1.0.0/index';
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/deprecated/checkVideoStreamsCount/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { Istreams } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 

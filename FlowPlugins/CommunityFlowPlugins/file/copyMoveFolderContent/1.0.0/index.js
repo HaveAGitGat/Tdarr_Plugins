@@ -167,6 +167,7 @@ var doOperation = function (_a) { return __awaiter(void 0, [_a], void 0, functio
                         sourcePath: sourcePath,
                         destinationPath: destinationPath,
                         args: args,
+                        requireSourceDeletion: operation === 'move',
                     })];
             case 2:
                 _c.sent();

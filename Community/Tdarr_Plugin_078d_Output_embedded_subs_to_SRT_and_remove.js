@@ -7,15 +7,15 @@ const details = () => {
     Type: "Video",
     Operation: "Transcode",
     Description: `This plugin outputs embedded subs to SRT and then removes them \n\n`,
-    Version: "1.00",
+    Version: "1.01",
     Tags: "ffmpeg",
     Inputs:[],
   };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = (file, librarySettings, inputs, otherArguments) => {
-    
+const plugin = async (file, librarySettings, inputs, otherArguments) => {
+
     const lib = require('../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
@@ -32,7 +32,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   const ffmpegPath = otherArguments.ffmpegPath
-  const exec = require("child_process").exec;
+  const { promisify } = require("util");
+  const exec = promisify(require("child_process").exec);
 
   let subsArr = file.ffProbeData.streams.filter(row => row.codec_name === 'subrip' || row.codec_name === 'mov_text')
 
@@ -68,7 +69,19 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   let codecParam = subStream.codec_name === 'mov_text' ? ' -c:s srt' : ''
   let command = `${ffmpegPath} -i "${file.file}" -map 0:${index}${codecParam} "${subsFile}"`
 
-  exec(command);
+  // Await extraction so it finishes before Tdarr's subtitle-removal transcode starts;
+  // otherwise the two ffmpeg processes race and "replace original file" reports a size mismatch.
+  // Re-throw on failure so Tdarr halts the plugin stack and flags the job as errored,
+  // rather than proceeding to strip the embedded subs (which would lose them for good).
+  try {
+    await exec(command, { maxBuffer: 1024 * 1024 });
+  } catch (err) {
+    // Replace err.message with a bounded summary so a verbose ffmpeg stderr
+    // can't bloat Tdarr's job log. Keep err.stderr/stdout/code/cmd intact.
+    const stderrTail = (err.stderr || '').slice(-2048);
+    err.message = `Sub extraction failed, keeping embedded subs (exit ${err.code}): ${stderrTail}`;
+    throw err;
+  }
 
   response = {
     processFile: true,

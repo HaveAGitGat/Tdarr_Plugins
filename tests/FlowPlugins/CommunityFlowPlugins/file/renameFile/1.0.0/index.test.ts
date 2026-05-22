@@ -53,6 +53,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb_720p.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -72,6 +73,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/sample__-__-__libmp3lame__30s__audio.mkv',
         destinationPath: 'C:/Transcode/Source Folder/sample__-__-__libmp3lame__30s__audio_processed.mkv',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -94,6 +96,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb_transcoded.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -111,6 +114,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/converted_file.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -128,6 +132,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb_backup_SampleVideo_1280x720_1mb.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -143,6 +148,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/static_filename.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -178,6 +184,7 @@ describe('renameFile Plugin', () => {
         sourcePath: '/media/videos/subfolder/Movie (2023) [1080p].mp4',
         destinationPath: '/media/videos/subfolder/Movie (2023) [1080p]_renamed.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -199,6 +206,7 @@ describe('renameFile Plugin', () => {
         sourcePath: '/media/videos/filename_no_ext',
         destinationPath: '/media/videos/_new./media/videos/filename_no_ext',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -218,6 +226,7 @@ describe('renameFile Plugin', () => {
         sourcePath: '/media/videos/movie.part1.2023.mp4',
         destinationPath: '/media/videos/movie.part1.2023_complete.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -234,6 +243,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb_trimmed.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -250,6 +260,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
         destinationPath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb_720p.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -286,6 +297,7 @@ describe('renameFile Plugin', () => {
         sourcePath: 'D:\\Videos\\Movie.mp4',
         destinationPath: '/D:\\Videos\\Movie_win.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -305,9 +317,25 @@ describe('renameFile Plugin', () => {
         sourcePath: '/home/user/videos/movie.mp4',
         destinationPath: '/home/user/videos/movie_unix.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should fail when source deletion fails after a fallback copy', async () => {
+      mockFileMoveOrCopy.mockRejectedValue(
+        new Error('Failed to delete source file C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4'),
+      );
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Failed to delete source file');
+
+      expect(mockFileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({
+        operation: 'move',
+        requireSourceDeletion: true,
+      }));
     });
   });
 });
