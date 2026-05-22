@@ -5,11 +5,11 @@ import getConfigVars from '../../../../configVars';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
-const mockExecSync = jest.fn();
+const mockExecFileSync = jest.fn();
 const mockExec = jest.fn();
 
 jest.mock('child_process', () => ({
-  execSync: (...a: unknown[]) => mockExecSync(...a),
+  execFileSync: (...a: unknown[]) => mockExecFileSync(...a),
   exec: (...a: unknown[]) => mockExec(...a),
 }));
 
@@ -49,7 +49,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
   beforeEach(() => {
     jest.useFakeTimers({ doNotFake: ['setImmediate'] });
     mockAxiosGet = jest.fn();
-    mockExecSync.mockReset();
+    mockExecFileSync.mockReset();
     mockExec.mockReset();
 
     baseArgs = {
@@ -88,7 +88,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
 
   it('should exit after 3 consecutive no-workers confirmations', async () => {
     mockNoOtherWorkers();
-    mockExecSync.mockReturnValue(pmonNoEnc);
+    mockExecFileSync.mockReturnValue(pmonNoEnc);
 
     const pluginPromise = plugin(baseArgs);
     await flush();
@@ -99,6 +99,11 @@ describe('detectNonTdarrNvenc Plugin', () => {
 
     const result = await pluginPromise;
     expect(result.outputNumber).toBe(1);
+    expect(mockExecFileSync).toHaveBeenCalledWith(
+      'nvidia-smi',
+      ['pmon', '-c', '1', '-s', 'u'],
+      expect.objectContaining({ timeout: 15000, encoding: 'utf8' }),
+    );
     expect(baseArgs.jobLog).toHaveBeenCalledWith(
       expect.stringContaining('No other workers running'),
     );
@@ -122,7 +127,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
     });
 
     let execCount = 0;
-    mockExecSync.mockImplementation(() => {
+    mockExecFileSync.mockImplementation(() => {
       execCount += 1;
       return execCount === 1 ? pmonWithNvenc : pmonNoEnc;
     });
@@ -160,7 +165,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
     });
 
     let execCount = 0;
-    mockExecSync.mockImplementation(() => {
+    mockExecFileSync.mockImplementation(() => {
       execCount += 1;
       return execCount === 1 ? pmonWithNvenc : pmonNoEnc;
     });
@@ -181,7 +186,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
 
   it('should not count Tdarr ffmpeg as non-Tdarr NVENC', async () => {
     mockNoOtherWorkers();
-    mockExecSync.mockReturnValue(pmonWithTdarrFfmpeg);
+    mockExecFileSync.mockReturnValue(pmonWithTdarrFfmpeg);
 
     const pluginPromise = plugin(baseArgs);
     await flush();
@@ -199,7 +204,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
 
   it('should handle nvidia-smi failure gracefully', async () => {
     mockNoOtherWorkers();
-    mockExecSync.mockImplementation(() => {
+    mockExecFileSync.mockImplementation(() => {
       throw new Error('nvidia-smi not found');
     });
 
@@ -231,7 +236,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
       });
     });
 
-    mockExecSync.mockReturnValue(pmonWithNvenc);
+    mockExecFileSync.mockReturnValue(pmonWithNvenc);
 
     const pluginPromise = plugin(baseArgs);
     await flush();
@@ -267,7 +272,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
         });
       });
 
-      mockExecSync.mockReturnValue(pmonWithNvenc);
+      mockExecFileSync.mockReturnValue(pmonWithNvenc);
 
       const pluginPromise = plugin(baseArgs);
       await flush();
