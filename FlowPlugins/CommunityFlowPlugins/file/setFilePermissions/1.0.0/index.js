@@ -180,13 +180,14 @@ var isInteger = function (value) { return (typeof value === 'number'
     && Math.floor(value) === value); };
 var formatMode = function (mode) { return mode.toString(8); };
 var getOriginalStatValues = function (args) { return (args.originalLibraryFile.statSync || {}); };
-var getOriginalMode = function (args) {
-    var mode = getOriginalStatValues(args).mode;
+var getModeFromStatValues = function (statValues, label) {
+    var mode = statValues.mode;
     if (!isInteger(mode)) {
-        throw new Error('Original file stat data does not include a valid mode.');
+        throw new Error("".concat(label, " stat data does not include a valid mode."));
     }
     return mode % fileTypeModeModulo;
 };
+var getOriginalMode = function (args) { return (getModeFromStatValues(getOriginalStatValues(args), 'Original file')); };
 var getOriginalOwnership = function (args) {
     var _a = getOriginalStatValues(args), uid = _a.uid, gid = _a.gid;
     if (!isInteger(uid) || !isInteger(gid)) {
@@ -194,6 +195,14 @@ var getOriginalOwnership = function (args) {
     }
     return { uid: uid, gid: gid };
 };
+var getTargetStatValues = function (filePath) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, fs_1.promises.stat(filePath)];
+            case 1: return [2 /*return*/, (_a.sent())];
+        }
+    });
+}); };
 var parseCustomMode = function (customPermissions) {
     var normalizedPermissions = customPermissions.trim().replace(/^0o/i, '');
     if (!/^[0-7]{3,4}$/.test(normalizedPermissions)) {
@@ -311,14 +320,20 @@ var resolveOwnerGroupAction = function (args, ownerGroupSource, fileToUpdate) {
         gid: gid,
     };
 };
-var applyFilePermissions = function (args, filePath, action) { return __awaiter(void 0, void 0, void 0, function () {
+var applyFilePermissions = function (args, filePath, action, preservedMode) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                if (action.type === 'skip') {
-                    args.jobLog(action.logMessage);
-                    return [2 /*return*/];
-                }
+                if (!(action.type === 'skip')) return [3 /*break*/, 3];
+                args.jobLog(action.logMessage);
+                if (!(preservedMode !== undefined)) return [3 /*break*/, 2];
+                args.jobLog("Restoring unchanged permissions: ".concat(formatMode(preservedMode)));
+                return [4 /*yield*/, fs_1.promises.chmod(filePath, preservedMode)];
+            case 1:
+                _a.sent();
+                _a.label = 2;
+            case 2: return [2 /*return*/];
+            case 3:
                 if (action.source === 'custom') {
                     args.jobLog("Setting custom permissions: ".concat(formatMode(action.mode)));
                 }
@@ -326,40 +341,50 @@ var applyFilePermissions = function (args, filePath, action) { return __awaiter(
                     args.jobLog("Setting permissions to match original file: ".concat(formatMode(action.mode)));
                 }
                 return [4 /*yield*/, fs_1.promises.chmod(filePath, action.mode)];
-            case 1:
+            case 4:
                 _a.sent();
                 return [2 /*return*/];
         }
     });
 }); };
-var applyOwnerGroup = function (args, filePath, action) { return __awaiter(void 0, void 0, void 0, function () {
+var targetAlreadyHasOwnerGroup = function (targetStatValues, uid, gid) { return (targetStatValues !== undefined
+    && isInteger(targetStatValues.uid)
+    && isInteger(targetStatValues.gid)
+    && targetStatValues.uid === uid
+    && targetStatValues.gid === gid); };
+var applyOwnerGroup = function (args, filePath, action, targetStatValues) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 if (action.type === 'skip') {
                     args.jobLog(action.logMessage);
-                    return [2 /*return*/];
+                    return [2 /*return*/, false];
                 }
                 if (!(action.type === 'setCustom')) return [3 /*break*/, 2];
                 args.jobLog("Setting custom owner/group: ".concat(action.ownerSpec));
                 return [4 /*yield*/, execFileAsync('chown', [action.ownerSpec, filePath])];
             case 1:
                 _a.sent();
-                return [2 /*return*/];
+                return [2 /*return*/, true];
             case 2:
+                if (targetAlreadyHasOwnerGroup(targetStatValues, action.uid, action.gid)) {
+                    args.jobLog('Skipping owner/group update because current owner/group already matches original file: '
+                        + "".concat(action.uid, ":").concat(action.gid));
+                    return [2 /*return*/, false];
+                }
                 args.jobLog("Setting owner/group to match original file: ".concat(action.uid, ":").concat(action.gid));
                 return [4 /*yield*/, fs_1.promises.chown(filePath, action.uid, action.gid)];
             case 3:
                 _a.sent();
-                return [2 /*return*/];
+                return [2 /*return*/, true];
         }
     });
 }); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, fileToUpdate, filePath, permissionSource, ownerGroupSource, permissionAction, ownerGroupAction;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, fileToUpdate, filePath, permissionSource, ownerGroupSource, permissionAction, ownerGroupAction, shouldPreservePermissions, shouldCheckCurrentOwnerGroup, targetStatValues, _a, preservedMode, ownerGroupChanged;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -371,12 +396,28 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 permissionAction = resolvePermissionAction(args, permissionSource, fileToUpdate);
                 ownerGroupAction = resolveOwnerGroupAction(args, ownerGroupSource, fileToUpdate);
                 args.jobLog("Updating ".concat(fileToUpdate, ": ").concat(filePath));
-                return [4 /*yield*/, applyOwnerGroup(args, filePath, ownerGroupAction)];
+                shouldPreservePermissions = permissionAction.type === 'skip'
+                    && ownerGroupAction.type !== 'skip';
+                shouldCheckCurrentOwnerGroup = ownerGroupAction.type === 'setOriginal';
+                if (!(shouldPreservePermissions || shouldCheckCurrentOwnerGroup)) return [3 /*break*/, 2];
+                return [4 /*yield*/, getTargetStatValues(filePath)];
             case 1:
-                _a.sent();
-                return [4 /*yield*/, applyFilePermissions(args, filePath, permissionAction)];
+                _a = _b.sent();
+                return [3 /*break*/, 3];
             case 2:
-                _a.sent();
+                _a = undefined;
+                _b.label = 3;
+            case 3:
+                targetStatValues = _a;
+                preservedMode = shouldPreservePermissions && targetStatValues !== undefined
+                    ? getModeFromStatValues(targetStatValues, 'Target file')
+                    : undefined;
+                return [4 /*yield*/, applyOwnerGroup(args, filePath, ownerGroupAction, targetStatValues)];
+            case 4:
+                ownerGroupChanged = _b.sent();
+                return [4 /*yield*/, applyFilePermissions(args, filePath, permissionAction, ownerGroupChanged ? preservedMode : undefined)];
+            case 5:
+                _b.sent();
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: 1,

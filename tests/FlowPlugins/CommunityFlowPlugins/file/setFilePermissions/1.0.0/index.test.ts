@@ -10,6 +10,7 @@ jest.mock('fs', () => ({
   promises: {
     chmod: jest.fn(),
     chown: jest.fn(),
+    stat: jest.fn(),
   },
 }));
 
@@ -26,6 +27,12 @@ jest.mock('../../../../../../methods/lib', () => () => ({
 
 const mockFs = fsp as jest.Mocked<typeof fsp>;
 const mockExecFile = execFile as unknown as jest.Mock;
+
+const getMockStat = (mode: number, uid: number, gid: number) => ({
+  mode,
+  uid,
+  gid,
+} as never);
 
 type MockWithCallOrder = {
   mock: {
@@ -46,6 +53,7 @@ describe('setFilePermissions Plugin', () => {
     jest.clearAllMocks();
     mockFs.chmod.mockResolvedValue();
     mockFs.chown.mockResolvedValue();
+    mockFs.stat.mockResolvedValue(getMockStat(0o100600, 2000, 2001));
 
     baseArgs = {
       inputs: {
@@ -101,14 +109,29 @@ describe('setFilePermissions Plugin', () => {
       expect(result.variables).toBe(baseArgs.variables);
     });
 
-    it('should update the original file when selected', async () => {
+    it('should update original file permissions and skip matching owner/group when selected', async () => {
       baseArgs.inputs.fileToUpdate = 'originalFile';
+      mockFs.stat.mockResolvedValueOnce(getMockStat(0o100640, 1000, 1001));
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).toHaveBeenCalledWith('/library/original_movie.mkv', 0o640);
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping owner/group update because current owner/group already matches original file: 1000:1001',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Updating originalFile: /library/original_movie.mkv');
+    });
+
+    it('should still copy original owner/group when the selected original file ownership differs', async () => {
+      baseArgs.inputs.fileToUpdate = 'originalFile';
+      mockFs.stat.mockResolvedValueOnce(getMockStat(0o100640, 2000, 2001));
 
       await plugin(baseArgs);
 
       expect(mockFs.chmod).toHaveBeenCalledWith('/library/original_movie.mkv', 0o640);
       expect(mockFs.chown).toHaveBeenCalledWith('/library/original_movie.mkv', 1000, 1001);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('Updating originalFile: /library/original_movie.mkv');
+      expectCalledBefore(mockFs.chown, mockFs.chmod);
     });
 
     it('should throw when original stat data does not include mode', async () => {
@@ -175,12 +198,30 @@ describe('setFilePermissions Plugin', () => {
 
     it('should leave working file permissions unchanged and copy original owner/group', async () => {
       baseArgs.inputs.permissionSource = 'unchanged';
+      mockFs.stat.mockResolvedValueOnce(getMockStat(0o104755, 2000, 2001));
 
       await plugin(baseArgs);
 
-      expect(mockFs.chmod).not.toHaveBeenCalled();
       expect(mockFs.chown).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 1000, 1001);
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o4755);
+      expectCalledBefore(mockFs.chown, mockFs.chmod);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Leaving working file permissions unchanged');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Restoring unchanged permissions: 4755');
+    });
+
+    it('should not restore unchanged permissions when matching owner/group is skipped', async () => {
+      baseArgs.inputs.permissionSource = 'unchanged';
+      mockFs.stat.mockResolvedValueOnce(getMockStat(0o104755, 1000, 1001));
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(mockFs.chmod).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Leaving working file permissions unchanged');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping owner/group update because current owner/group already matches original file: 1000:1001',
+      );
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith('Restoring unchanged permissions: 4755');
     });
 
     it('should leave the selected original file unchanged when unchanged sources are selected', async () => {
@@ -202,16 +243,19 @@ describe('setFilePermissions Plugin', () => {
       baseArgs.inputs.ownerGroupSource = 'custom';
       baseArgs.inputs.customUser = 'tdarr';
       baseArgs.inputs.customGroup = 'media';
+      mockFs.stat.mockResolvedValueOnce(getMockStat(0o101777, 2000, 2001));
 
       await plugin(baseArgs);
 
-      expect(mockFs.chmod).not.toHaveBeenCalled();
       expect(mockExecFile).toHaveBeenCalledWith(
         'chown',
         ['tdarr:media', '/cache/transcoded_movie.mkv'],
         expect.any(Function),
       );
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o1777);
+      expectCalledBefore(mockExecFile, mockFs.chmod);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Leaving working file permissions unchanged');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Restoring unchanged permissions: 1777');
     });
 
     it('should throw a clear error when original stat data is missing', async () => {
@@ -333,6 +377,21 @@ describe('setFilePermissions Plugin', () => {
       expect(mockFs.chown).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 1000, 1001);
       expectCalledBefore(mockFs.chown, mockFs.chmod);
       expect(mockExecFile).not.toHaveBeenCalled();
+    });
+
+    it('should set custom permissions on the original file without a matching owner/group chown', async () => {
+      baseArgs.inputs.fileToUpdate = 'originalFile';
+      baseArgs.inputs.customPermissions = '775';
+      baseArgs.inputs.ownerGroupSource = 'originalFile';
+      mockFs.stat.mockResolvedValueOnce(getMockStat(0o100640, 1000, 1001));
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).toHaveBeenCalledWith('/library/original_movie.mkv', 0o775);
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping owner/group update because current owner/group already matches original file: 1000:1001',
+      );
     });
 
     it('should apply owner/group before custom permissions to preserve special bits', async () => {

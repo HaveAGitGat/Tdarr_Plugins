@@ -190,15 +190,19 @@ const getOriginalStatValues = (args: IpluginInputArgs): StatValues => (
   (args.originalLibraryFile.statSync || {}) as unknown as StatValues
 );
 
-const getOriginalMode = (args: IpluginInputArgs): number => {
-  const { mode } = getOriginalStatValues(args);
+const getModeFromStatValues = (statValues: StatValues, label: string): number => {
+  const { mode } = statValues;
 
   if (!isInteger(mode)) {
-    throw new Error('Original file stat data does not include a valid mode.');
+    throw new Error(`${label} stat data does not include a valid mode.`);
   }
 
   return mode % fileTypeModeModulo;
 };
+
+const getOriginalMode = (args: IpluginInputArgs): number => (
+  getModeFromStatValues(getOriginalStatValues(args), 'Original file')
+);
 
 const getOriginalOwnership = (args: IpluginInputArgs): { uid: number, gid: number } => {
   const { uid, gid } = getOriginalStatValues(args);
@@ -209,6 +213,10 @@ const getOriginalOwnership = (args: IpluginInputArgs): { uid: number, gid: numbe
 
   return { uid, gid };
 };
+
+const getTargetStatValues = async (filePath: string): Promise<StatValues> => (
+  (await fsp.stat(filePath)) as unknown as StatValues
+);
 
 const parseCustomMode = (customPermissions: string): number => {
   const normalizedPermissions = customPermissions.trim().replace(/^0o/i, '');
@@ -377,9 +385,16 @@ const applyFilePermissions = async (
   args: IpluginInputArgs,
   filePath: string,
   action: PermissionAction,
+  preservedMode?: number,
 ): Promise<void> => {
   if (action.type === 'skip') {
     args.jobLog(action.logMessage);
+
+    if (preservedMode !== undefined) {
+      args.jobLog(`Restoring unchanged permissions: ${formatMode(preservedMode)}`);
+      await fsp.chmod(filePath, preservedMode);
+    }
+
     return;
   }
 
@@ -392,24 +407,46 @@ const applyFilePermissions = async (
   await fsp.chmod(filePath, action.mode);
 };
 
+const targetAlreadyHasOwnerGroup = (
+  targetStatValues: StatValues | undefined,
+  uid: number,
+  gid: number,
+): boolean => (
+  targetStatValues !== undefined
+  && isInteger(targetStatValues.uid)
+  && isInteger(targetStatValues.gid)
+  && targetStatValues.uid === uid
+  && targetStatValues.gid === gid
+);
+
 const applyOwnerGroup = async (
   args: IpluginInputArgs,
   filePath: string,
   action: OwnerGroupAction,
-): Promise<void> => {
+  targetStatValues?: StatValues,
+): Promise<boolean> => {
   if (action.type === 'skip') {
     args.jobLog(action.logMessage);
-    return;
+    return false;
   }
 
   if (action.type === 'setCustom') {
     args.jobLog(`Setting custom owner/group: ${action.ownerSpec}`);
     await execFileAsync('chown', [action.ownerSpec, filePath]);
-    return;
+    return true;
+  }
+
+  if (targetAlreadyHasOwnerGroup(targetStatValues, action.uid, action.gid)) {
+    args.jobLog(
+      'Skipping owner/group update because current owner/group already matches original file: '
+      + `${action.uid}:${action.gid}`,
+    );
+    return false;
   }
 
   args.jobLog(`Setting owner/group to match original file: ${action.uid}:${action.gid}`);
   await fsp.chown(filePath, action.uid, action.gid);
+  return true;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -427,8 +464,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   args.jobLog(`Updating ${fileToUpdate}: ${filePath}`);
 
-  await applyOwnerGroup(args, filePath, ownerGroupAction);
-  await applyFilePermissions(args, filePath, permissionAction);
+  const shouldPreservePermissions = permissionAction.type === 'skip'
+    && ownerGroupAction.type !== 'skip';
+  const shouldCheckCurrentOwnerGroup = ownerGroupAction.type === 'setOriginal';
+  const targetStatValues = shouldPreservePermissions || shouldCheckCurrentOwnerGroup
+    ? await getTargetStatValues(filePath)
+    : undefined;
+  const preservedMode = shouldPreservePermissions && targetStatValues !== undefined
+    ? getModeFromStatValues(targetStatValues, 'Target file')
+    : undefined;
+  const ownerGroupChanged = await applyOwnerGroup(args, filePath, ownerGroupAction, targetStatValues);
+
+  await applyFilePermissions(
+    args,
+    filePath,
+    permissionAction,
+    ownerGroupChanged ? preservedMode : undefined,
+  );
 
   return {
     outputFileObj: args.inputFileObj,
