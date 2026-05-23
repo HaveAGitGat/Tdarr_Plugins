@@ -27,6 +27,18 @@ jest.mock('../../../../../../methods/lib', () => () => ({
 const mockFs = fsp as jest.Mocked<typeof fsp>;
 const mockExecFile = execFile as unknown as jest.Mock;
 
+type MockWithCallOrder = {
+  mock: {
+    invocationCallOrder: number[],
+  },
+};
+
+const expectCalledBefore = (first: MockWithCallOrder, second: MockWithCallOrder): void => {
+  expect(first.mock.invocationCallOrder[0]).toBeLessThan(
+    second.mock.invocationCallOrder[0],
+  );
+};
+
 describe('setFilePermissions Plugin', () => {
   let baseArgs: IpluginInputArgs;
 
@@ -72,6 +84,7 @@ describe('setFilePermissions Plugin', () => {
         },
       } as IFileObject,
       jobLog: jest.fn(),
+      platform: 'linux',
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
   });
 
@@ -81,6 +94,7 @@ describe('setFilePermissions Plugin', () => {
 
       expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o640);
       expect(mockFs.chown).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 1000, 1001);
+      expectCalledBefore(mockFs.chown, mockFs.chmod);
       expect(mockExecFile).not.toHaveBeenCalled();
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(result.outputNumber).toBe(1);
@@ -113,7 +127,22 @@ describe('setFilePermissions Plugin', () => {
       } as unknown as IFileObject['statSync'];
 
       await expect(plugin(baseArgs)).rejects.toThrow('Original file stat data does not include a valid uid/gid.');
+      expect(mockFs.chmod).not.toHaveBeenCalled();
       expect(mockFs.chown).not.toHaveBeenCalled();
+    });
+
+    it('should apply owner/group before original special-bit permissions', async () => {
+      baseArgs.originalLibraryFile.statSync = {
+        mode: 0o104755,
+        uid: 1000,
+        gid: 1001,
+      } as unknown as IFileObject['statSync'];
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chown).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 1000, 1001);
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o4755);
+      expectCalledBefore(mockFs.chown, mockFs.chmod);
     });
 
     it('should copy permissions from original file with custom owner/group', async () => {
@@ -130,10 +159,11 @@ describe('setFilePermissions Plugin', () => {
         ['tdarr:media', '/cache/transcoded_movie.mkv'],
         expect.any(Function),
       );
+      expectCalledBefore(mockExecFile, mockFs.chmod);
     });
 
     it('should copy permissions from original file and leave working file owner/group unchanged', async () => {
-      baseArgs.inputs.ownerGroupSource = 'workingFile';
+      baseArgs.inputs.ownerGroupSource = 'unchanged';
 
       await plugin(baseArgs);
 
@@ -144,7 +174,7 @@ describe('setFilePermissions Plugin', () => {
     });
 
     it('should leave working file permissions unchanged and copy original owner/group', async () => {
-      baseArgs.inputs.permissionSource = 'workingFile';
+      baseArgs.inputs.permissionSource = 'unchanged';
 
       await plugin(baseArgs);
 
@@ -153,8 +183,22 @@ describe('setFilePermissions Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Leaving working file permissions unchanged');
     });
 
+    it('should leave the selected original file unchanged when unchanged sources are selected', async () => {
+      baseArgs.inputs.fileToUpdate = 'originalFile';
+      baseArgs.inputs.permissionSource = 'unchanged';
+      baseArgs.inputs.ownerGroupSource = 'unchanged';
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).not.toHaveBeenCalled();
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Leaving original file permissions unchanged');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Leaving original file owner/group unchanged');
+    });
+
     it('should leave working file permissions unchanged and set custom owner/group', async () => {
-      baseArgs.inputs.permissionSource = 'workingFile';
+      baseArgs.inputs.permissionSource = 'unchanged';
       baseArgs.inputs.ownerGroupSource = 'custom';
       baseArgs.inputs.customUser = 'tdarr';
       baseArgs.inputs.customGroup = 'media';
@@ -203,6 +247,35 @@ describe('setFilePermissions Plugin', () => {
       expect(mockFs.chmod).not.toHaveBeenCalled();
       expect(mockFs.chown).not.toHaveBeenCalled();
     });
+
+    it('should skip owner/group changes on Windows and still apply permissions', async () => {
+      baseArgs.platform = 'win32';
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o640);
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping original file owner/group on Windows because changing file ownership is not supported',
+      );
+    });
+
+    it('should not require original uid/gid when owner/group is skipped on Windows', async () => {
+      baseArgs.platform = 'win32';
+      baseArgs.originalLibraryFile.statSync = {
+        mode: 0o100640,
+      } as unknown as IFileObject['statSync'];
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o640);
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping original file owner/group on Windows because changing file ownership is not supported',
+      );
+    });
   });
 
   describe('Custom Source', () => {
@@ -225,11 +298,12 @@ describe('setFilePermissions Plugin', () => {
         ['tdarr:media', '/cache/transcoded_movie.mkv'],
         expect.any(Function),
       );
+      expectCalledBefore(mockExecFile, mockFs.chmod);
     });
 
     it('should accept a custom mode with 0o prefix', async () => {
       baseArgs.inputs.customPermissions = '0o664';
-      baseArgs.inputs.ownerGroupSource = 'workingFile';
+      baseArgs.inputs.ownerGroupSource = 'unchanged';
 
       await plugin(baseArgs);
 
@@ -240,7 +314,7 @@ describe('setFilePermissions Plugin', () => {
 
     it('should accept a custom mode with leading zero', async () => {
       baseArgs.inputs.customPermissions = '0755';
-      baseArgs.inputs.ownerGroupSource = 'workingFile';
+      baseArgs.inputs.ownerGroupSource = 'unchanged';
 
       await plugin(baseArgs);
 
@@ -257,7 +331,19 @@ describe('setFilePermissions Plugin', () => {
 
       expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o775);
       expect(mockFs.chown).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 1000, 1001);
+      expectCalledBefore(mockFs.chown, mockFs.chmod);
       expect(mockExecFile).not.toHaveBeenCalled();
+    });
+
+    it('should apply owner/group before custom permissions to preserve special bits', async () => {
+      baseArgs.inputs.customPermissions = '4755';
+      baseArgs.inputs.ownerGroupSource = 'originalFile';
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chown).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 1000, 1001);
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o4755);
+      expectCalledBefore(mockFs.chown, mockFs.chmod);
     });
 
     it('should set only a custom user when group is blank', async () => {
@@ -314,6 +400,7 @@ describe('setFilePermissions Plugin', () => {
       });
 
       await expect(plugin(baseArgs)).rejects.toThrow('Operation not permitted');
+      expect(mockFs.chmod).not.toHaveBeenCalled();
     });
 
     it('should reject colon-separated custom user input', async () => {
@@ -323,6 +410,49 @@ describe('setFilePermissions Plugin', () => {
         "Custom user cannot contain ':'. Enter the user and group in separate inputs.",
       );
       expect(mockExecFile).not.toHaveBeenCalled();
+      expect(mockFs.chmod).not.toHaveBeenCalled();
+    });
+
+    it('should reject custom owner/group values that chown can parse as options', async () => {
+      baseArgs.inputs.customUser = '--reference=/tmp/reference-file';
+
+      await expect(plugin(baseArgs)).rejects.toThrow(
+        "Custom owner/group cannot start with '-' because chown can parse it as an option.",
+      );
+      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(mockFs.chmod).not.toHaveBeenCalled();
+    });
+
+    it('should skip custom owner/group changes on Windows and still apply permissions', async () => {
+      baseArgs.platform = 'win32';
+      baseArgs.inputs.customPermissions = '775';
+      baseArgs.inputs.customUser = 'tdarr';
+      baseArgs.inputs.customGroup = 'media';
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o775);
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping custom owner/group on Windows because changing file ownership is not supported',
+      );
+    });
+
+    it('should skip Windows custom owner/group before chown-specific validation', async () => {
+      baseArgs.platform = 'win32';
+      baseArgs.inputs.customPermissions = '775';
+      baseArgs.inputs.customUser = '--reference=/tmp/reference-file';
+      baseArgs.inputs.customGroup = '';
+
+      await plugin(baseArgs);
+
+      expect(mockFs.chmod).toHaveBeenCalledWith('/cache/transcoded_movie.mkv', 0o775);
+      expect(mockFs.chown).not.toHaveBeenCalled();
+      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping custom owner/group on Windows because changing file ownership is not supported',
+      );
     });
   });
 });

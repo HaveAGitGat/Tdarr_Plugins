@@ -79,10 +79,10 @@ const details = (): IpluginDetails => ({
         options: [
           'originalFile',
           'custom',
-          'workingFile',
+          'unchanged',
         ],
       },
-      tooltip: 'Choose how to set numeric file permissions. workingFile leaves the target file permissions unchanged.',
+      tooltip: 'Choose how to set numeric file permissions. Select unchanged to leave the target unchanged.',
     },
     {
       label: 'Custom Permissions',
@@ -105,10 +105,11 @@ const details = (): IpluginDetails => ({
         options: [
           'originalFile',
           'custom',
-          'workingFile',
+          'unchanged',
         ],
       },
-      tooltip: 'Choose how to set the owner/group. workingFile leaves the target file owner/group unchanged.',
+      tooltip: 'Choose how to set the owner/group. Select unchanged to leave the target unchanged. '
+        + 'Owner/group changes are skipped on Windows.',
     },
     {
       label: 'Custom User',
@@ -149,8 +150,29 @@ type StatValues = {
   gid?: unknown,
 };
 
-type PermissionSource = 'originalFile' | 'custom' | 'workingFile';
-type OwnerGroupSource = 'originalFile' | 'custom' | 'workingFile';
+type MetadataSource = 'originalFile' | 'custom' | 'unchanged';
+type FileToUpdate = 'originalFile' | 'workingFile';
+
+type PermissionAction = {
+  type: 'set',
+  source: 'originalFile' | 'custom',
+  mode: number,
+} | {
+  type: 'skip',
+  logMessage: string,
+};
+
+type OwnerGroupAction = {
+  type: 'setOriginal',
+  uid: number,
+  gid: number,
+} | {
+  type: 'setCustom',
+  ownerSpec: string,
+} | {
+  type: 'skip',
+  logMessage: string,
+};
 
 const fileTypeModeModulo = 0o10000;
 
@@ -211,6 +233,10 @@ const getCustomOwnerSpec = (customUser: string, customGroup: string): string => 
   validateOwnershipInput(user, 'Custom user');
   validateOwnershipInput(group, 'Custom group');
 
+  if (user.startsWith('-')) {
+    throw new Error("Custom owner/group cannot start with '-' because chown can parse it as an option.");
+  }
+
   if (user && group) {
     return `${user}:${group}`;
   }
@@ -222,74 +248,168 @@ const getCustomOwnerSpec = (customUser: string, customGroup: string): string => 
   return user;
 };
 
-const getFilePathToUpdate = (args: IpluginInputArgs, fileToUpdate: string): string => {
-  if (fileToUpdate === 'workingFile') {
-    return args.inputFileObj._id;
-  }
-
-  if (fileToUpdate === 'originalFile') {
-    return args.originalLibraryFile._id;
+const parseFileToUpdate = (fileToUpdate: string): FileToUpdate => {
+  if (
+    fileToUpdate === 'workingFile'
+    || fileToUpdate === 'originalFile'
+  ) {
+    return fileToUpdate;
   }
 
   throw new Error(`Invalid file to update: ${fileToUpdate}`);
 };
 
-const parsePermissionSource = (permissionSource: string): PermissionSource => {
+const getFilePathToUpdate = (args: IpluginInputArgs, fileToUpdate: FileToUpdate): string => {
+  if (fileToUpdate === 'workingFile') {
+    return args.inputFileObj._id;
+  }
+
+  return args.originalLibraryFile._id;
+};
+
+const getFileToUpdateLogLabel = (fileToUpdate: FileToUpdate): string => {
+  if (fileToUpdate === 'workingFile') {
+    return 'working file';
+  }
+
+  return 'original file';
+};
+
+const parseMetadataSource = (source: string, label: string): MetadataSource => {
   if (
-    permissionSource === 'originalFile'
-    || permissionSource === 'custom'
-    || permissionSource === 'workingFile'
+    source === 'originalFile'
+    || source === 'custom'
+    || source === 'unchanged'
   ) {
-    return permissionSource;
+    return source;
   }
 
-  throw new Error(`Invalid permissions source: ${permissionSource}`);
+  throw new Error(`Invalid ${label} source: ${source}`);
 };
 
-const parseOwnerGroupSource = (ownerGroupSource: string): OwnerGroupSource => {
-  if (
-    ownerGroupSource === 'originalFile'
-    || ownerGroupSource === 'custom'
-    || ownerGroupSource === 'workingFile'
-  ) {
-    return ownerGroupSource;
+const resolvePermissionAction = (
+  args: IpluginInputArgs,
+  permissionSource: MetadataSource,
+  fileToUpdate: FileToUpdate,
+): PermissionAction => {
+  if (permissionSource === 'custom') {
+    return {
+      type: 'set',
+      source: 'custom',
+      mode: parseCustomMode(String(args.inputs.customPermissions)),
+    };
   }
 
-  throw new Error(`Invalid owner/group source: ${ownerGroupSource}`);
-};
-
-const applyCustomFilePermissions = async (args: IpluginInputArgs, filePath: string): Promise<void> => {
-  const customMode = parseCustomMode(String(args.inputs.customPermissions));
-  args.jobLog(`Setting custom permissions: ${formatMode(customMode)}`);
-  await fsp.chmod(filePath, customMode);
-};
-
-const applyOriginalFilePermissions = async (args: IpluginInputArgs, filePath: string): Promise<void> => {
-  const originalMode = getOriginalMode(args);
-
-  args.jobLog(`Setting permissions to match original file: ${formatMode(originalMode)}`);
-  await fsp.chmod(filePath, originalMode);
-};
-
-const applyCustomOwnerGroup = async (args: IpluginInputArgs, filePath: string): Promise<void> => {
-  const ownerSpec = getCustomOwnerSpec(
-    String(args.inputs.customUser),
-    String(args.inputs.customGroup),
-  );
-
-  if (ownerSpec) {
-    args.jobLog(`Setting custom owner/group: ${ownerSpec}`);
-    await execFileAsync('chown', [ownerSpec, filePath]);
-  } else {
-    args.jobLog('Skipping custom owner/group because user and group are blank');
+  if (permissionSource === 'originalFile') {
+    return {
+      type: 'set',
+      source: 'originalFile',
+      mode: getOriginalMode(args),
+    };
   }
+
+  return {
+    type: 'skip',
+    logMessage: `Leaving ${getFileToUpdateLogLabel(fileToUpdate)} permissions unchanged`,
+  };
 };
 
-const applyOriginalOwnerGroup = async (args: IpluginInputArgs, filePath: string): Promise<void> => {
+const resolveOwnerGroupAction = (
+  args: IpluginInputArgs,
+  ownerGroupSource: MetadataSource,
+  fileToUpdate: FileToUpdate,
+): OwnerGroupAction => {
+  const isWindows = args.platform === 'win32';
+
+  if (ownerGroupSource === 'unchanged') {
+    return {
+      type: 'skip',
+      logMessage: `Leaving ${getFileToUpdateLogLabel(fileToUpdate)} owner/group unchanged`,
+    };
+  }
+
+  if (ownerGroupSource === 'custom') {
+    const customUser = String(args.inputs.customUser);
+    const customGroup = String(args.inputs.customGroup);
+
+    if (!customUser.trim() && !customGroup.trim()) {
+      return {
+        type: 'skip',
+        logMessage: 'Skipping custom owner/group because user and group are blank',
+      };
+    }
+
+    if (isWindows) {
+      return {
+        type: 'skip',
+        logMessage: 'Skipping custom owner/group on Windows because changing file ownership is not supported',
+      };
+    }
+
+    const ownerSpec = getCustomOwnerSpec(
+      customUser,
+      customGroup,
+    );
+
+    return {
+      type: 'setCustom',
+      ownerSpec,
+    };
+  }
+
+  if (isWindows) {
+    return {
+      type: 'skip',
+      logMessage: 'Skipping original file owner/group on Windows because changing file ownership is not supported',
+    };
+  }
+
   const { uid, gid } = getOriginalOwnership(args);
 
-  args.jobLog(`Setting owner/group to match original file: ${uid}:${gid}`);
-  await fsp.chown(filePath, uid, gid);
+  return {
+    type: 'setOriginal',
+    uid,
+    gid,
+  };
+};
+
+const applyFilePermissions = async (
+  args: IpluginInputArgs,
+  filePath: string,
+  action: PermissionAction,
+): Promise<void> => {
+  if (action.type === 'skip') {
+    args.jobLog(action.logMessage);
+    return;
+  }
+
+  if (action.source === 'custom') {
+    args.jobLog(`Setting custom permissions: ${formatMode(action.mode)}`);
+  } else {
+    args.jobLog(`Setting permissions to match original file: ${formatMode(action.mode)}`);
+  }
+
+  await fsp.chmod(filePath, action.mode);
+};
+
+const applyOwnerGroup = async (
+  args: IpluginInputArgs,
+  filePath: string,
+  action: OwnerGroupAction,
+): Promise<void> => {
+  if (action.type === 'skip') {
+    args.jobLog(action.logMessage);
+    return;
+  }
+
+  if (action.type === 'setCustom') {
+    args.jobLog(`Setting custom owner/group: ${action.ownerSpec}`);
+    await execFileAsync('chown', [action.ownerSpec, filePath]);
+    return;
+  }
+
+  args.jobLog(`Setting owner/group to match original file: ${action.uid}:${action.gid}`);
+  await fsp.chown(filePath, action.uid, action.gid);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -298,28 +418,17 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  const fileToUpdate = String(args.inputs.fileToUpdate);
+  const fileToUpdate = parseFileToUpdate(String(args.inputs.fileToUpdate));
   const filePath = getFilePathToUpdate(args, fileToUpdate);
-  const permissionSource = parsePermissionSource(String(args.inputs.permissionSource));
-  const ownerGroupSource = parseOwnerGroupSource(String(args.inputs.ownerGroupSource));
+  const permissionSource = parseMetadataSource(String(args.inputs.permissionSource), 'permissions');
+  const ownerGroupSource = parseMetadataSource(String(args.inputs.ownerGroupSource), 'owner/group');
+  const permissionAction = resolvePermissionAction(args, permissionSource, fileToUpdate);
+  const ownerGroupAction = resolveOwnerGroupAction(args, ownerGroupSource, fileToUpdate);
 
   args.jobLog(`Updating ${fileToUpdate}: ${filePath}`);
 
-  if (permissionSource === 'custom') {
-    await applyCustomFilePermissions(args, filePath);
-  } else if (permissionSource === 'originalFile') {
-    await applyOriginalFilePermissions(args, filePath);
-  } else if (permissionSource === 'workingFile') {
-    args.jobLog('Leaving working file permissions unchanged');
-  }
-
-  if (ownerGroupSource === 'custom') {
-    await applyCustomOwnerGroup(args, filePath);
-  } else if (ownerGroupSource === 'originalFile') {
-    await applyOriginalOwnerGroup(args, filePath);
-  } else if (ownerGroupSource === 'workingFile') {
-    args.jobLog('Leaving working file owner/group unchanged');
-  }
+  await applyOwnerGroup(args, filePath, ownerGroupAction);
+  await applyFilePermissions(args, filePath, permissionAction);
 
   return {
     outputFileObj: args.inputFileObj,

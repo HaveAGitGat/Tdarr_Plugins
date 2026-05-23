@@ -108,10 +108,10 @@ var details = function () { return ({
                 options: [
                     'originalFile',
                     'custom',
-                    'workingFile',
+                    'unchanged',
                 ],
             },
-            tooltip: 'Choose how to set numeric file permissions. workingFile leaves the target file permissions unchanged.',
+            tooltip: 'Choose how to set numeric file permissions. Select unchanged to leave the target unchanged.',
         },
         {
             label: 'Custom Permissions',
@@ -134,10 +134,11 @@ var details = function () { return ({
                 options: [
                     'originalFile',
                     'custom',
-                    'workingFile',
+                    'unchanged',
                 ],
             },
-            tooltip: 'Choose how to set the owner/group. workingFile leaves the target file owner/group unchanged.',
+            tooltip: 'Choose how to set the owner/group. Select unchanged to leave the target unchanged. '
+                + 'Owner/group changes are skipped on Windows.',
         },
         {
             label: 'Custom User',
@@ -210,6 +211,9 @@ var getCustomOwnerSpec = function (customUser, customGroup) {
     var group = customGroup.trim();
     validateOwnershipInput(user, 'Custom user');
     validateOwnershipInput(group, 'Custom group');
+    if (user.startsWith('-')) {
+        throw new Error("Custom owner/group cannot start with '-' because chown can parse it as an option.");
+    }
     if (user && group) {
         return "".concat(user, ":").concat(group);
     }
@@ -218,144 +222,166 @@ var getCustomOwnerSpec = function (customUser, customGroup) {
     }
     return user;
 };
+var parseFileToUpdate = function (fileToUpdate) {
+    if (fileToUpdate === 'workingFile'
+        || fileToUpdate === 'originalFile') {
+        return fileToUpdate;
+    }
+    throw new Error("Invalid file to update: ".concat(fileToUpdate));
+};
 var getFilePathToUpdate = function (args, fileToUpdate) {
     if (fileToUpdate === 'workingFile') {
         return args.inputFileObj._id;
     }
-    if (fileToUpdate === 'originalFile') {
-        return args.originalLibraryFile._id;
-    }
-    throw new Error("Invalid file to update: ".concat(fileToUpdate));
+    return args.originalLibraryFile._id;
 };
-var parsePermissionSource = function (permissionSource) {
-    if (permissionSource === 'originalFile'
-        || permissionSource === 'custom'
-        || permissionSource === 'workingFile') {
-        return permissionSource;
+var getFileToUpdateLogLabel = function (fileToUpdate) {
+    if (fileToUpdate === 'workingFile') {
+        return 'working file';
     }
-    throw new Error("Invalid permissions source: ".concat(permissionSource));
+    return 'original file';
 };
-var parseOwnerGroupSource = function (ownerGroupSource) {
-    if (ownerGroupSource === 'originalFile'
-        || ownerGroupSource === 'custom'
-        || ownerGroupSource === 'workingFile') {
-        return ownerGroupSource;
+var parseMetadataSource = function (source, label) {
+    if (source === 'originalFile'
+        || source === 'custom'
+        || source === 'unchanged') {
+        return source;
     }
-    throw new Error("Invalid owner/group source: ".concat(ownerGroupSource));
+    throw new Error("Invalid ".concat(label, " source: ").concat(source));
 };
-var applyCustomFilePermissions = function (args, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var customMode;
+var resolvePermissionAction = function (args, permissionSource, fileToUpdate) {
+    if (permissionSource === 'custom') {
+        return {
+            type: 'set',
+            source: 'custom',
+            mode: parseCustomMode(String(args.inputs.customPermissions)),
+        };
+    }
+    if (permissionSource === 'originalFile') {
+        return {
+            type: 'set',
+            source: 'originalFile',
+            mode: getOriginalMode(args),
+        };
+    }
+    return {
+        type: 'skip',
+        logMessage: "Leaving ".concat(getFileToUpdateLogLabel(fileToUpdate), " permissions unchanged"),
+    };
+};
+var resolveOwnerGroupAction = function (args, ownerGroupSource, fileToUpdate) {
+    var isWindows = args.platform === 'win32';
+    if (ownerGroupSource === 'unchanged') {
+        return {
+            type: 'skip',
+            logMessage: "Leaving ".concat(getFileToUpdateLogLabel(fileToUpdate), " owner/group unchanged"),
+        };
+    }
+    if (ownerGroupSource === 'custom') {
+        var customUser = String(args.inputs.customUser);
+        var customGroup = String(args.inputs.customGroup);
+        if (!customUser.trim() && !customGroup.trim()) {
+            return {
+                type: 'skip',
+                logMessage: 'Skipping custom owner/group because user and group are blank',
+            };
+        }
+        if (isWindows) {
+            return {
+                type: 'skip',
+                logMessage: 'Skipping custom owner/group on Windows because changing file ownership is not supported',
+            };
+        }
+        var ownerSpec = getCustomOwnerSpec(customUser, customGroup);
+        return {
+            type: 'setCustom',
+            ownerSpec: ownerSpec,
+        };
+    }
+    if (isWindows) {
+        return {
+            type: 'skip',
+            logMessage: 'Skipping original file owner/group on Windows because changing file ownership is not supported',
+        };
+    }
+    var _a = getOriginalOwnership(args), uid = _a.uid, gid = _a.gid;
+    return {
+        type: 'setOriginal',
+        uid: uid,
+        gid: gid,
+    };
+};
+var applyFilePermissions = function (args, filePath, action) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                customMode = parseCustomMode(String(args.inputs.customPermissions));
-                args.jobLog("Setting custom permissions: ".concat(formatMode(customMode)));
-                return [4 /*yield*/, fs_1.promises.chmod(filePath, customMode)];
+                if (action.type === 'skip') {
+                    args.jobLog(action.logMessage);
+                    return [2 /*return*/];
+                }
+                if (action.source === 'custom') {
+                    args.jobLog("Setting custom permissions: ".concat(formatMode(action.mode)));
+                }
+                else {
+                    args.jobLog("Setting permissions to match original file: ".concat(formatMode(action.mode)));
+                }
+                return [4 /*yield*/, fs_1.promises.chmod(filePath, action.mode)];
             case 1:
                 _a.sent();
                 return [2 /*return*/];
         }
     });
 }); };
-var applyOriginalFilePermissions = function (args, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var originalMode;
+var applyOwnerGroup = function (args, filePath, action) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                originalMode = getOriginalMode(args);
-                args.jobLog("Setting permissions to match original file: ".concat(formatMode(originalMode)));
-                return [4 /*yield*/, fs_1.promises.chmod(filePath, originalMode)];
+                if (action.type === 'skip') {
+                    args.jobLog(action.logMessage);
+                    return [2 /*return*/];
+                }
+                if (!(action.type === 'setCustom')) return [3 /*break*/, 2];
+                args.jobLog("Setting custom owner/group: ".concat(action.ownerSpec));
+                return [4 /*yield*/, execFileAsync('chown', [action.ownerSpec, filePath])];
             case 1:
                 _a.sent();
                 return [2 /*return*/];
-        }
-    });
-}); };
-var applyCustomOwnerGroup = function (args, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var ownerSpec;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                ownerSpec = getCustomOwnerSpec(String(args.inputs.customUser), String(args.inputs.customGroup));
-                if (!ownerSpec) return [3 /*break*/, 2];
-                args.jobLog("Setting custom owner/group: ".concat(ownerSpec));
-                return [4 /*yield*/, execFileAsync('chown', [ownerSpec, filePath])];
-            case 1:
-                _a.sent();
-                return [3 /*break*/, 3];
             case 2:
-                args.jobLog('Skipping custom owner/group because user and group are blank');
-                _a.label = 3;
-            case 3: return [2 /*return*/];
-        }
-    });
-}); };
-var applyOriginalOwnerGroup = function (args, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, uid, gid;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
-            case 0:
-                _a = getOriginalOwnership(args), uid = _a.uid, gid = _a.gid;
-                args.jobLog("Setting owner/group to match original file: ".concat(uid, ":").concat(gid));
-                return [4 /*yield*/, fs_1.promises.chown(filePath, uid, gid)];
-            case 1:
-                _b.sent();
+                args.jobLog("Setting owner/group to match original file: ".concat(action.uid, ":").concat(action.gid));
+                return [4 /*yield*/, fs_1.promises.chown(filePath, action.uid, action.gid)];
+            case 3:
+                _a.sent();
                 return [2 /*return*/];
         }
     });
 }); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, fileToUpdate, filePath, permissionSource, ownerGroupSource;
+    var lib, fileToUpdate, filePath, permissionSource, ownerGroupSource, permissionAction, ownerGroupAction;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                fileToUpdate = String(args.inputs.fileToUpdate);
+                fileToUpdate = parseFileToUpdate(String(args.inputs.fileToUpdate));
                 filePath = getFilePathToUpdate(args, fileToUpdate);
-                permissionSource = parsePermissionSource(String(args.inputs.permissionSource));
-                ownerGroupSource = parseOwnerGroupSource(String(args.inputs.ownerGroupSource));
+                permissionSource = parseMetadataSource(String(args.inputs.permissionSource), 'permissions');
+                ownerGroupSource = parseMetadataSource(String(args.inputs.ownerGroupSource), 'owner/group');
+                permissionAction = resolvePermissionAction(args, permissionSource, fileToUpdate);
+                ownerGroupAction = resolveOwnerGroupAction(args, ownerGroupSource, fileToUpdate);
                 args.jobLog("Updating ".concat(fileToUpdate, ": ").concat(filePath));
-                if (!(permissionSource === 'custom')) return [3 /*break*/, 2];
-                return [4 /*yield*/, applyCustomFilePermissions(args, filePath)];
+                return [4 /*yield*/, applyOwnerGroup(args, filePath, ownerGroupAction)];
             case 1:
                 _a.sent();
-                return [3 /*break*/, 5];
+                return [4 /*yield*/, applyFilePermissions(args, filePath, permissionAction)];
             case 2:
-                if (!(permissionSource === 'originalFile')) return [3 /*break*/, 4];
-                return [4 /*yield*/, applyOriginalFilePermissions(args, filePath)];
-            case 3:
                 _a.sent();
-                return [3 /*break*/, 5];
-            case 4:
-                if (permissionSource === 'workingFile') {
-                    args.jobLog('Leaving working file permissions unchanged');
-                }
-                _a.label = 5;
-            case 5:
-                if (!(ownerGroupSource === 'custom')) return [3 /*break*/, 7];
-                return [4 /*yield*/, applyCustomOwnerGroup(args, filePath)];
-            case 6:
-                _a.sent();
-                return [3 /*break*/, 10];
-            case 7:
-                if (!(ownerGroupSource === 'originalFile')) return [3 /*break*/, 9];
-                return [4 /*yield*/, applyOriginalOwnerGroup(args, filePath)];
-            case 8:
-                _a.sent();
-                return [3 /*break*/, 10];
-            case 9:
-                if (ownerGroupSource === 'workingFile') {
-                    args.jobLog('Leaving working file owner/group unchanged');
-                }
-                _a.label = 10;
-            case 10: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: 1,
-                    variables: args.variables,
-                }];
+                return [2 /*return*/, {
+                        outputFileObj: args.inputFileObj,
+                        outputNumber: 1,
+                        variables: args.variables,
+                    }];
         }
     });
 }); };
