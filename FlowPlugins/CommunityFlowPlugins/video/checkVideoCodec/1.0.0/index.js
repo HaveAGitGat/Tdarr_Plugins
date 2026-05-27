@@ -27,6 +27,7 @@ var details = function () { return ({
                     'av1',
                     'vp9',
                     'h264',
+                    'vc1',
                     'vp8',
                     'wmv2',
                     'wmv3',

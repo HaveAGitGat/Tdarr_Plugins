@@ -1,4 +1,4 @@
-import { plugin } from
+import { details, plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/video/checkVideoCodec/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -18,6 +18,16 @@ describe('checkVideoCodec Plugin', () => {
       inputFileObj: JSON.parse(JSON.stringify(sampleH264)),
       jobLog: jest.fn(),
     } as Partial<IpluginInputArgs> as IpluginInputArgs;
+  });
+
+  describe('Plugin Details', () => {
+    it('should include VC-1 in the codec dropdown', () => {
+      const [{ inputUI: { options } }] = details().inputs;
+
+      expect(options).toEqual(expect.arrayContaining([
+        'vc1',
+      ]));
+    });
   });
 
   describe('Basic Codec Detection', () => {
@@ -52,6 +62,21 @@ describe('checkVideoCodec Plugin', () => {
 
       expect(result.outputNumber).toBe(2);
     });
+
+    it('should detect matching codec (VC-1)', () => {
+      baseArgs.inputFileObj.ffProbeData.streams = [
+        {
+          index: 0,
+          codec_name: 'vc1',
+          codec_type: 'video',
+        },
+      ];
+      baseArgs.inputs.codec = 'vc1';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+    });
   });
 
   describe('Multiple Video Codec Types', () => {
@@ -60,6 +85,7 @@ describe('checkVideoCodec Plugin', () => {
       'av1',
       'vp9',
       'h264',
+      'vc1',
       'vp8',
       'wmv2',
       'wmv3',
