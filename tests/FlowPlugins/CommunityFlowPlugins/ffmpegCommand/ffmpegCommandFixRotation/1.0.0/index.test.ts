@@ -63,6 +63,9 @@ describe('ffmpegCommandFixRotation Plugin', () => {
         '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
       ]);
       expect(result.variables.ffmpegCommand.overallInputArguments).toContain('-noautorotate');
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
+        expect.arrayContaining(['-display_rotation:v:0', '0']),
+      );
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
     });
 
@@ -109,6 +112,8 @@ describe('ffmpegCommandFixRotation Plugin', () => {
 
   describe('Display Matrix side data', () => {
     it('should fix a rotation reported via side_data_list', () => {
+      // Display Matrix rotation is counter-clockwise, so -90 here means the same physical
+      // correction as a legacy rotate=90 tag: rotate 90 degrees clockwise (transpose=1).
       baseArgs.variables.ffmpegCommand.streams[0].side_data_list = [
         { side_data_type: 'Display Matrix', rotation: -90 },
       ];
@@ -116,9 +121,24 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
       ]);
       expect(result.variables.ffmpegCommand.overallInputArguments).toContain('-noautorotate');
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
+        expect.arrayContaining(['-display_rotation:v:0', '0']),
+      );
+    });
+
+    it('should fix a positive Display Matrix rotation in the opposite direction of the same tag value', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].side_data_list = [
+        { side_data_type: 'Display Matrix', rotation: 90 },
+      ];
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
+        '-vf', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+      ]);
     });
 
     it('should prefer the legacy rotate tag over side data when both are present', () => {
@@ -132,6 +152,34 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
         '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
       ]);
+    });
+  });
+
+  describe('Multiple video streams', () => {
+    it('should index -display_rotation against the video stream position, not the overall stream index', () => {
+      baseArgs.variables.ffmpegCommand.streams.unshift({
+        index: 2,
+        codec_name: 'mjpeg',
+        codec_type: 'video',
+        width: 300,
+        height: 300,
+        removed: false,
+        forceEncoding: false,
+        inputArgs: [],
+        outputArgs: [],
+        mapArgs: ['-map', '0:2'],
+      });
+      baseArgs.variables.ffmpegCommand.streams[1].tags = { rotate: '90' };
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
+      expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([
+        '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+      ]);
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
+        expect.arrayContaining(['-display_rotation:v:1', '0']),
+      );
     });
   });
 

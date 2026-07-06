@@ -50,7 +50,10 @@ const getRotation = (stream: IffmpegCommandStream): number => {
     if (displayMatrix) {
       const parsed = parseInt(String(displayMatrix.rotation), 10);
       if (!Number.isNaN(parsed)) {
-        return normalizeAngle(parsed);
+        // ffmpeg's Display Matrix rotation is a counter-clockwise angle (av_display_rotation_get),
+        // the opposite sign convention of the legacy clockwise "rotate" tag. Negate it so both
+        // paths feed getTransposeFilter() the same "degrees to rotate clockwise" convention.
+        return normalizeAngle(-parsed);
       }
     }
   }
@@ -82,9 +85,19 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   checkFfmpegCommandInit(args);
 
   let rotationFixed = false;
+  let inputVideoTypeIndex = -1;
 
   args.variables.ffmpegCommand.streams.forEach((stream) => {
-    if (stream.codec_type !== 'video' || stream.removed) {
+    if (stream.codec_type !== 'video') {
+      return;
+    }
+
+    // Tracks this stream's index among the *input* file's video streams (unaffected by
+    // `removed`), since -display_rotation below is an input-side option and must address
+    // the original demuxed stream layout, not our flow's filtered output layout.
+    inputVideoTypeIndex += 1;
+
+    if (stream.removed) {
       return;
     }
 
@@ -100,6 +113,16 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
     stream.outputArgs.push('-vf', transposeFilter);
     stream.outputArgs.push('-metadata:s:v:{outputTypeIndex}', 'rotate=0');
+
+    // Baking the rotation into the pixels is not enough: ffmpeg copies any pre-existing
+    // "Display Matrix" side data straight through to the output stream, so without this
+    // the fixed file would still carry the original rotation instruction and get rotated
+    // a second time by any player that actually honors it. -display_rotation overrides
+    // the input's side data to 0 so nothing stale survives into the encode.
+    args.variables.ffmpegCommand.overallInputArguments.push(
+      `-display_rotation:v:${inputVideoTypeIndex}`,
+      '0',
+    );
 
     rotationFixed = true;
   });
