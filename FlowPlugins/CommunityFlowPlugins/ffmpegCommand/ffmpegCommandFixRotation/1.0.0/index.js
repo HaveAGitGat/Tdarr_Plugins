@@ -7,7 +7,10 @@ var details = function () { return ({
     description: 'Detect rotation metadata (legacy "rotate" tag or "Display Matrix" side data) on the video '
         + 'stream, bake the rotation into the pixels, and strip the metadata. Fixes portrait/vertical videos '
         + 'that play sideways or upside-down on ExoPlayer-based apps (Plex, Kodi, Jellyfin on Android/Android TV), '
-        + 'which do not reliably honor rotation metadata during direct play.',
+        + 'which do not reliably honor rotation metadata during direct play. Requires ffmpeg 6.0+ (uses '
+        + '-display_rotation); on older ffmpeg builds the job will fail with "Unrecognized option". Forces a real '
+        + 'video re-encode, so pair this with a "Set Video Encoder" plugin if you want control over the output '
+        + 'codec/quality - without one, ffmpeg falls back to its default encoder settings.',
     style: {
         borderColor: '#6efefc',
     },
@@ -72,33 +75,44 @@ var plugin = function (args) {
     args.inputs = lib.loadDefaultValues(args.inputs, details);
     (0, flowUtils_1.checkFfmpegCommandInit)(args);
     var rotationFixed = false;
-    var inputVideoTypeIndex = -1;
     args.variables.ffmpegCommand.streams.forEach(function (stream) {
-        if (stream.codec_type !== 'video') {
-            return;
-        }
-        // Tracks this stream's index among the *input* file's video streams (unaffected by
-        // `removed`), since -display_rotation below is an input-side option and must address
-        // the original demuxed stream layout, not our flow's filtered output layout.
-        inputVideoTypeIndex += 1;
-        if (stream.removed) {
+        if (stream.codec_type !== 'video' || stream.removed) {
             return;
         }
         var rotation = getRotation(stream);
         var transposeFilter = getTransposeFilter(rotation);
         if (!transposeFilter) {
+            if (rotation !== 0) {
+                args.jobLog("Found ".concat(rotation, "\u00B0 rotation metadata on video stream index ").concat(stream.index, ", ")
+                    + 'which is not a multiple of 90° - skipping as this plugin cannot handle non-90-degree rotations');
+            }
             return;
+        }
+        if (stream.outputArgs.some(function (arg) { return arg === '-vf' || arg.startsWith('-filter:v'); })) {
+            args.jobLog("Warning: video stream index ".concat(stream.index, " already has a video filter set by an earlier ")
+                + 'plugin. ffmpeg only keeps the last filter option per stream, so one of them will be silently '
+                + 'dropped - place Fix Rotation before other video filter plugins, or merge the filters manually.');
         }
         args.jobLog("Found ".concat(rotation, "\u00B0 rotation metadata on video stream index ").concat(stream.index, ", ")
             + "applying '".concat(transposeFilter, "' and clearing rotation metadata"));
-        stream.outputArgs.push('-vf', transposeFilter);
-        stream.outputArgs.push('-metadata:s:v:{outputTypeIndex}', 'rotate=0');
+        // Use a stream-specific specifier (not the unqualified -vf/-filter:v alias) since an
+        // unqualified filter option applies to every video output stream, not just this one -
+        // it would collide fatally with any other, untouched video stream that Execute copies.
+        stream.outputArgs.push('-filter:v:{outputTypeIndex}', transposeFilter);
+        stream.outputArgs.push('-metadata:s:v:{outputTypeIndex}', 'rotate=');
         // Baking the rotation into the pixels is not enough: ffmpeg copies any pre-existing
         // "Display Matrix" side data straight through to the output stream, so without this
         // the fixed file would still carry the original rotation instruction and get rotated
         // a second time by any player that actually honors it. -display_rotation overrides
         // the input's side data to 0 so nothing stale survives into the encode.
-        args.variables.ffmpegCommand.overallInputArguments.push("-display_rotation:v:".concat(inputVideoTypeIndex), '0');
+        //
+        // Addressed by the stream's own absolute ffprobe index (a plain numeric specifier, not
+        // a "v:N" type-relative one) since that's the only addressing that stays correct
+        // regardless of earlier flow plugins: Begin Command retypes attached-picture streams to
+        // codec_type 'attachment' (so a naive video-only counter here would skip them, even
+        // though ffmpeg still counts them as video streams for "v:N" input-side addressing),
+        // and Reorder Streams mutates the streams array order in place.
+        args.variables.ffmpegCommand.overallInputArguments.push("-display_rotation:".concat(stream.index), '0');
         rotationFixed = true;
     });
     if (rotationFixed) {

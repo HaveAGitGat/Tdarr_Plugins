@@ -60,11 +60,11 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
       expect(result.variables.ffmpegCommand.overallInputArguments).toContain('-noautorotate');
       expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
-        expect.arrayContaining(['-display_rotation:v:0', '0']),
+        expect.arrayContaining(['-display_rotation:0', '0']),
       );
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(true);
     });
@@ -75,7 +75,7 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'hflip,vflip', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'hflip,vflip', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
     });
 
@@ -85,7 +85,7 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
     });
 
@@ -95,7 +95,7 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
     });
 
@@ -121,11 +121,11 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
       expect(result.variables.ffmpegCommand.overallInputArguments).toContain('-noautorotate');
       expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
-        expect.arrayContaining(['-display_rotation:v:0', '0']),
+        expect.arrayContaining(['-display_rotation:0', '0']),
       );
     });
 
@@ -137,7 +137,7 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=2', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
     });
 
@@ -150,13 +150,13 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
-        '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
     });
   });
 
   describe('Multiple video streams', () => {
-    it('should index -display_rotation against the video stream position, not the overall stream index', () => {
+    it('should index -display_rotation by the stream\'s own ffprobe index, not its array position', () => {
       baseArgs.variables.ffmpegCommand.streams.unshift({
         index: 2,
         codec_name: 'mjpeg',
@@ -175,11 +175,64 @@ describe('ffmpegCommandFixRotation Plugin', () => {
 
       expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
       expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([
-        '-vf', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=0',
+        '-filter:v:{outputTypeIndex}', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
+      ]);
+      // The rotated stream's own ffprobe index is 0 (set in beforeEach), even though it sits
+      // at array position 1 after the mjpeg cover art was unshifted to the front.
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
+        expect.arrayContaining(['-display_rotation:0', '0']),
+      );
+    });
+
+    it('should not skip a rotated stream that sits after an attachment-typed stream', () => {
+      // Begin Command retypes attached-picture streams to codec_type 'attachment'. A naive
+      // "count video-typed streams seen so far" counter would then undercount any real video
+      // stream positioned after it, since ffmpeg still numbers it as a video stream on the
+      // input side. Addressing by the stream's own ffprobe index sidesteps this entirely.
+      baseArgs.variables.ffmpegCommand.streams.unshift({
+        index: 0,
+        codec_name: 'mjpeg',
+        codec_type: 'attachment',
+        width: 300,
+        height: 300,
+        removed: false,
+        forceEncoding: false,
+        inputArgs: [],
+        outputArgs: [],
+        mapArgs: ['-map', '0:0'],
+      });
+      baseArgs.variables.ffmpegCommand.streams[1].index = 1;
+      baseArgs.variables.ffmpegCommand.streams[1].tags = { rotate: '90' };
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([
+        '-filter:v:{outputTypeIndex}', 'transpose=1', '-metadata:s:v:{outputTypeIndex}', 'rotate=',
       ]);
       expect(result.variables.ffmpegCommand.overallInputArguments).toEqual(
-        expect.arrayContaining(['-display_rotation:v:1', '0']),
+        expect.arrayContaining(['-display_rotation:1', '0']),
       );
+    });
+  });
+
+  describe('Warnings', () => {
+    it('should log when the rotation is not a multiple of 90 degrees', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].tags = { rotate: '45' };
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
+      expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('not a multiple of 90'));
+    });
+
+    it('should warn when the stream already has a video filter set', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].tags = { rotate: '90' };
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-vf', 'scale=1280:720'];
+
+      plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('already has a video filter'));
     });
   });
 
