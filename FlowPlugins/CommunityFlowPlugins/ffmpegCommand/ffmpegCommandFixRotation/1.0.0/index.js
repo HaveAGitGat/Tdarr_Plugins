@@ -88,18 +88,33 @@ var plugin = function (args) {
             }
             return;
         }
-        if (stream.outputArgs.some(function (arg) { return arg === '-vf' || arg.startsWith('-filter:v'); })) {
-            args.jobLog("Warning: video stream index ".concat(stream.index, " already has a video filter set by an earlier ")
-                + 'plugin. ffmpeg only keeps the last filter option per stream, so one of them will be silently '
-                + 'dropped - place Fix Rotation before other video filter plugins, or merge the filters manually.');
-        }
         args.jobLog("Found ".concat(rotation, "\u00B0 rotation metadata on video stream index ").concat(stream.index, ", ")
             + "applying '".concat(transposeFilter, "' and clearing rotation metadata"));
-        // Use a stream-specific specifier (not the unqualified -vf/-filter:v alias) since an
-        // unqualified filter option applies to every video output stream, not just this one -
-        // it would collide fatally with any other, untouched video stream that Execute copies.
-        stream.outputArgs.push('-filter:v:{outputTypeIndex}', transposeFilter);
-        stream.outputArgs.push('-metadata:s:v:{outputTypeIndex}', 'rotate=');
+        // A stream can only carry one filtergraph: ffmpeg keeps just the last -vf/-filter
+        // option per stream and silently drops the rest. If an earlier plugin (scale, HDR
+        // tonemap, ...) already set a filter, chain the transpose onto the end of it instead
+        // of pushing a competing option. Either way the option name is the stream-specific
+        // form, not the unqualified -vf/-filter:v alias: an unqualified filter option applies
+        // to every video output stream and collides fatally with any other, untouched video
+        // stream that Execute copies.
+        var outputArgs = stream.outputArgs;
+        var existingFilterIndex = -1;
+        for (var i = outputArgs.length - 2; i >= 0; i -= 1) {
+            if (outputArgs[i] === '-vf' || outputArgs[i].startsWith('-filter:v')) {
+                existingFilterIndex = i;
+                break;
+            }
+        }
+        if (existingFilterIndex !== -1) {
+            args.jobLog("Video stream index ".concat(stream.index, " already has filter '").concat(outputArgs[existingFilterIndex + 1], "' ")
+                + "set by an earlier plugin, appending '".concat(transposeFilter, "' to it"));
+            outputArgs[existingFilterIndex] = '-filter:v:{outputTypeIndex}';
+            outputArgs[existingFilterIndex + 1] += ",".concat(transposeFilter);
+        }
+        else {
+            outputArgs.push('-filter:v:{outputTypeIndex}', transposeFilter);
+        }
+        outputArgs.push('-metadata:s:v:{outputTypeIndex}', 'rotate=');
         // Baking the rotation into the pixels is not enough: ffmpeg copies any pre-existing
         // "Display Matrix" side data straight through to the output stream, so without this
         // the fixed file would still carry the original rotation instruction and get rotated

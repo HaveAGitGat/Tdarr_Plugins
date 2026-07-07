@@ -225,14 +225,46 @@ describe('ffmpegCommandFixRotation Plugin', () => {
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('not a multiple of 90'));
     });
+  });
 
-    it('should warn when the stream already has a video filter set', () => {
+  describe('Existing video filters', () => {
+    it('should chain the transpose onto an existing -vf filter instead of adding a competing option', () => {
       baseArgs.variables.ffmpegCommand.streams[0].tags = { rotate: '90' };
       baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-vf', 'scale=1280:720'];
 
-      plugin(baseArgs);
+      const result = plugin(baseArgs);
 
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('already has a video filter'));
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
+        '-filter:v:{outputTypeIndex}', 'scale=1280:720,transpose=1',
+        '-metadata:s:v:{outputTypeIndex}', 'rotate=',
+      ]);
+    });
+
+    it('should chain the transpose onto an existing stream-specific filter option', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].tags = { rotate: '180' };
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = [
+        '-filter:v:{outputTypeIndex}', 'zscale=t=linear:npl=100,format=yuv420p',
+      ];
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
+        '-filter:v:{outputTypeIndex}', 'zscale=t=linear:npl=100,format=yuv420p,hflip,vflip',
+        '-metadata:s:v:{outputTypeIndex}', 'rotate=',
+      ]);
+    });
+
+    it('should not treat non-filter output args as an existing filter', () => {
+      baseArgs.variables.ffmpegCommand.streams[0].tags = { rotate: '90' };
+      baseArgs.variables.ffmpegCommand.streams[0].outputArgs = ['-c:v:{outputTypeIndex}', 'libx265'];
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([
+        '-c:v:{outputTypeIndex}', 'libx265',
+        '-filter:v:{outputTypeIndex}', 'transpose=1',
+        '-metadata:s:v:{outputTypeIndex}', 'rotate=',
+      ]);
     });
   });
 
