@@ -317,6 +317,33 @@ describe('ffmpegCommandExecute Plugin', () => {
   });
 
   describe('Input and Output Arguments', () => {
+    it('should use only custom stream arguments when generated mapping is disabled', async () => {
+      baseArgs.variables.ffmpegCommand.mapAllStreams = false;
+      baseArgs.variables.ffmpegCommand.overallOuputArguments = [
+        '-map', '0:v:0', '-map', '0:a:0', '-c', 'copy', '-sn',
+      ];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      const { spawnArgs } = cliOptions;
+
+      expect(result.outputNumber).toBe(1);
+      expect(spawnArgs.slice(0, -1)).toEqual([
+        '-y',
+        '-i',
+        baseArgs.inputFileObj._id,
+        '-map',
+        '0:v:0',
+        '-map',
+        '0:a:0',
+        '-c',
+        'copy',
+        '-sn',
+      ]);
+    });
+
     it('should handle overall input arguments', async () => {
       baseArgs.variables.ffmpegCommand.overallInputArguments = ['-threads', '4'];
 

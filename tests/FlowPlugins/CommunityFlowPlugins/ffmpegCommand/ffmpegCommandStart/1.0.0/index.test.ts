@@ -28,8 +28,18 @@ describe('ffmpegCommandStart Plugin', () => {
       expect(result.variables.ffmpegCommand).toBeDefined();
       expect(result.variables.ffmpegCommand.init).toBe(true);
       expect(result.variables.ffmpegCommand.container).toBe('mp4');
+      expect(result.variables.ffmpegCommand.mapAllStreams).toBe(true);
       expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
       expect(result.variables.ffmpegCommand.hardwareDecoding).toBe(false);
+    });
+
+    it('should allow generated stream mapping to be disabled', () => {
+      baseArgs.inputs.mapAllStreams = false;
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.mapAllStreams).toBe(false);
+      expect(result.variables.ffmpegCommand.streams).toHaveLength(2);
     });
 
     it('should initialize ffmpeg command structure with audio file', () => {
