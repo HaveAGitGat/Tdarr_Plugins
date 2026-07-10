@@ -245,6 +245,9 @@ const attemptMakeStream = ({
   const streamCopy: IffmpegCommandStream = JSON.parse(JSON.stringify(streamWithHighestChannel));
   streamCopy.removed = false;
   streamCopy.index = streams.length;
+  // Keep planned stream metadata aligned for subsequent command plugins.
+  streamCopy.codec_name = audioCodec;
+  streamCopy.channels = targetChannels;
   streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
   streamCopy.outputArgs.push('-ac', `${targetChannels}`);
 
