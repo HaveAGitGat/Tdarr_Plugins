@@ -86,6 +86,8 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'dropdown',
         options: [
+          'ffmpeg',
+          'handbrakecli',
           'mkvmerge',
           'mkvpropedit',
         ],
@@ -273,11 +275,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     cliArguments = cliArguments.replace(/\${outputFilePath}/g, userOutputFilePath);
   }
 
-  const availableCli:{
-    [index: string]: string;
-  } = {
-    mkvpropedit: args.mkvpropeditPath,
+  const availableCli: Record<string, string> = {
+    ffmpeg: args.ffmpegPath,
+    handbrakecli: args.handbrakePath,
     mkvmerge: 'mkvmerge',
+    mkvpropedit: args.mkvpropeditPath,
   };
 
   if (useCustomCliPath) {

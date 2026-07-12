@@ -1,4 +1,4 @@
-import { parseRunCliArguments, plugin } from
+import { details, parseRunCliArguments, plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/tools/runCli/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
@@ -65,6 +65,8 @@ describe('runCli Plugin', () => {
         configVars: getConfigVars(),
       },
       workDir: '/tmp/work',
+      ffmpegPath: '/usr/bin/ffmpeg',
+      handbrakePath: '/usr/bin/HandBrakeCLI',
       mkvpropeditPath: '/usr/bin/mkvpropedit',
       logFullCliOutput: false,
       updateWorker: jest.fn(),
@@ -72,6 +74,21 @@ describe('runCli Plugin', () => {
   });
 
   describe('Basic CLI Execution', () => {
+    it('should list the configured transcode CLIs in the dropdown', () => {
+      expect(details().inputs.find((input) => input.name === 'userCli')).toEqual(
+        expect.objectContaining({
+          inputUI: expect.objectContaining({
+            options: [
+              'ffmpeg',
+              'handbrakecli',
+              'mkvmerge',
+              'mkvpropedit',
+            ],
+          }),
+        }),
+      );
+    });
+
     it('should execute mkvmerge CLI successfully', async () => {
       const result = await plugin(baseArgs);
 
@@ -94,7 +111,33 @@ describe('runCli Plugin', () => {
       );
     });
 
+    it.each([
+      ['ffmpeg', 'ffmpegPath', '/opt/Tdarr Node/ffmpeg'],
+      ['handbrakecli', 'handbrakePath', '/usr/bin/HandBrakeCLI'],
+    ] as const)('should use the configured %s path', async (userCli, pathKey, configuredPath) => {
+      baseArgs.inputs.userCli = userCli;
+      baseArgs[pathKey] = configuredPath;
+
+      await plugin(baseArgs);
+
+      expect(mockCLI).toHaveBeenCalledWith(
+        expect.objectContaining({ cli: configuredPath }),
+      );
+    });
+
+    it('should reject FFmpeg when its configured path is empty', async () => {
+      baseArgs.inputs.userCli = 'ffmpeg';
+      baseArgs.ffmpegPath = '';
+
+      await expect(plugin(baseArgs)).rejects.toThrow(
+        'CLI ffmpeg not available to run in this plugin',
+      );
+      expect(mockCLI).not.toHaveBeenCalled();
+    });
+
     it('should use custom CLI path when specified', async () => {
+      baseArgs.inputs.userCli = 'ffmpeg';
+      baseArgs.ffmpegPath = '';
       baseArgs.inputs.useCustomCliPath = true;
       baseArgs.inputs.customCliPath = '/custom/path/mkvmerge';
 
