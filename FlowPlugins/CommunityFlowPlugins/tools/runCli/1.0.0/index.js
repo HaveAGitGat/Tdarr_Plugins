@@ -112,6 +112,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'dropdown',
                 options: [
+                    'ffmpeg',
+                    'handbrakecli',
                     'mkvmerge',
                     'mkvpropedit',
                 ],
@@ -275,8 +277,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     cliArguments = cliArguments.replace(/\${outputFilePath}/g, userOutputFilePath);
                 }
                 availableCli = {
-                    mkvpropedit: args.mkvpropeditPath,
+                    ffmpeg: args.ffmpegPath,
+                    handbrakecli: args.handbrakePath,
                     mkvmerge: 'mkvmerge',
+                    mkvpropedit: args.mkvpropeditPath,
                 };
                 if (useCustomCliPath) {
                     cliPath = customCliPath;
