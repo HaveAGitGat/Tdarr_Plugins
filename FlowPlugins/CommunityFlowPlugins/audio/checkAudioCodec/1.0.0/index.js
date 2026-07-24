@@ -124,8 +124,10 @@ var plugin = function (args) {
     var hasCodec = false;
     if (args.inputFileObj.ffProbeData.streams) {
         args.inputFileObj.ffProbeData.streams.forEach(function (stream, index) {
-            var _a, _b, _c;
-            if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
+            var _a, _b, _c, _d;
+            var codecMatches = stream.codec_name === args.inputs.codec
+                || (args.inputs.codec === 'wma' && ((_a = stream.codec_name) === null || _a === void 0 ? void 0 : _a.startsWith('wma')));
+            if (stream.codec_type === 'audio' && codecMatches) {
                 if (!checkBitrate) {
                     args.jobLog("File has codec: ".concat(args.inputs.codec));
                     hasCodec = true;
@@ -137,7 +139,7 @@ var plugin = function (args) {
                             + " ".concat(ffprobeBitrate, " between ").concat(greaterThan, " and ").concat(lessThan));
                         hasCodec = true;
                     }
-                    var mediaInfoBitrate = Number(((_c = (_b = (_a = args.inputFileObj.mediaInfo) === null || _a === void 0 ? void 0 : _a.track) === null || _b === void 0 ? void 0 : _b[index + 1]) === null || _c === void 0 ? void 0 : _c.BitRate) || 0);
+                    var mediaInfoBitrate = Number(((_d = (_c = (_b = args.inputFileObj.mediaInfo) === null || _b === void 0 ? void 0 : _b.track) === null || _c === void 0 ? void 0 : _c[index + 1]) === null || _d === void 0 ? void 0 : _d.BitRate) || 0);
                     if (mediaInfoBitrate > greaterThan && mediaInfoBitrate < lessThan) {
                         args.jobLog("File has codec: ".concat(args.inputs.codec, " with bitrate")
                             + " ".concat(mediaInfoBitrate, " between ").concat(greaterThan, " and ").concat(lessThan));
