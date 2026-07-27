@@ -136,6 +136,7 @@ describe('waitTimeout Plugin', () => {
       // Complete the wait
       jest.advanceTimersByTime(3000);
       await pluginPromise;
+      expect(jest.getTimerCount()).toBe(0);
 
       // Clear previous calls
       (baseArgs.jobLog as jest.Mock).mockClear();

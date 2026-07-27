@@ -87,7 +87,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, amount, unit, amountNum, multiplier, waitTime, finished, logWait;
+    var lib, _a, amount, unit, amountNum, multiplier, waitTime, finished, loggingTimeout, logWait;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -116,19 +116,27 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 logWait = function () {
                     if (!finished) {
                         args.jobLog('Waiting...');
-                        setTimeout(logWait, 5000);
+                        loggingTimeout = setTimeout(logWait, 5000);
                     }
                 };
                 logWait();
-                return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, waitTime); })];
+                _b.label = 1;
             case 1:
+                _b.trys.push([1, , 3, 4]);
+                return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, waitTime); })];
+            case 2:
                 _b.sent();
+                return [3 /*break*/, 4];
+            case 3:
                 finished = true;
-                return [2 /*return*/, {
-                        outputFileObj: args.inputFileObj,
-                        outputNumber: 1,
-                        variables: args.variables,
-                    }];
+                if (loggingTimeout)
+                    clearTimeout(loggingTimeout);
+                return [7 /*endfinally*/];
+            case 4: return [2 /*return*/, {
+                    outputFileObj: args.inputFileObj,
+                    outputNumber: 1,
+                    variables: args.variables,
+                }];
         }
     });
 }); };
