@@ -10,6 +10,14 @@ interface Imove {
     args:IpluginInputArgs,
   }
 
+interface IFileMoveOrCopy {
+    operation: 'move' | 'copy',
+    sourcePath: string,
+    destinationPath: string,
+    args: IpluginInputArgs,
+    requireSourceDeletion?: boolean,
+  }
+
 const getSizeBytes = async (fPath: string): Promise<number> => {
   let size = 0;
   try {
@@ -180,15 +188,21 @@ const tryNormalCopy = async ({
 const cleanSourceFile = async ({
   args,
   sourcePath,
+  requireSourceDeletion,
 }:{
     args:IpluginInputArgs,
     sourcePath: string,
-}) => {
+    requireSourceDeletion: boolean,
+}): Promise<void> => {
   try {
     args.jobLog(`Deleting source file ${sourcePath}`);
     await fsp.unlink(sourcePath);
   } catch (err) {
-    args.jobLog(`Failed to delete source file ${sourcePath}: ${JSON.stringify(err)}`);
+    const message = `Failed to delete source file ${sourcePath}: ${JSON.stringify(err)}`;
+    args.jobLog(message);
+    if (requireSourceDeletion) {
+      throw new Error(message);
+    }
   }
 };
 
@@ -197,12 +211,8 @@ const fileMoveOrCopy = async ({
   sourcePath,
   destinationPath,
   args,
-}: {
-    operation: 'move' | 'copy',
-    sourcePath: string,
-    destinationPath: string,
-    args: IpluginInputArgs,
-}):Promise<boolean> => {
+  requireSourceDeletion = false,
+}: IFileMoveOrCopy):Promise<boolean> => {
   args.jobLog('Calculating cache file size in bytes');
 
   const sourceFileSize = await getSizeBytes(sourcePath);
@@ -251,6 +261,7 @@ const fileMoveOrCopy = async ({
       await cleanSourceFile({
         args,
         sourcePath,
+        requireSourceDeletion,
       });
     }
 
@@ -269,6 +280,7 @@ const fileMoveOrCopy = async ({
       await cleanSourceFile({
         args,
         sourcePath,
+        requireSourceDeletion,
       });
     }
 

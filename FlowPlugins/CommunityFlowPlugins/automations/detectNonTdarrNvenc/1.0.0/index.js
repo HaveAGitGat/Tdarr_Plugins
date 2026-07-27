@@ -176,7 +176,7 @@ childProcess, enableDebugLog, jobLog) {
     try {
         // nvidia-smi pmon shows per-process GPU usage including encoder utilization
         // Columns: gpu pid type sm mem enc dec jpg command
-        var output = childProcess.execSync('nvidia-smi pmon -c 1 -s e', { timeout: 15000, windowsHide: true, encoding: 'utf8' });
+        var output = childProcess.execFileSync('nvidia-smi', ['pmon', '-c', '1', '-s', 'u'], { timeout: 15000, windowsHide: true, encoding: 'utf8' });
         var lines = output.split(/\r?\n/);
         var tdarrProcessNames = ['ffmpeg', 'ffprobe', 'handbrakecli'];
         var nvencPids = [];

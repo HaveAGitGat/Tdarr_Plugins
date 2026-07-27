@@ -1,5 +1,7 @@
 import { plugin } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandEnsureAudioStream/1.0.0/index';
+import { plugin as removeStreamByPropertyPlugin } from
+  '../../../../../../FlowPluginsTs/CommunityFlowPlugins/ffmpegCommand/ffmpegCommandRemoveStreamByProperty/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
 
 const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
@@ -357,6 +359,34 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
         expect(audioStreams).toHaveLength(2); // Original + new one
         expect(audioStreams[1].outputArgs).toContain(encoder);
       });
+    });
+  });
+
+  it('should keep a planned EAC3 stream when a downstream plugin removes DTS streams', () => {
+    const { streams } = baseArgs.variables.ffmpegCommand;
+    const sourceAudioStream = streams[1];
+    sourceAudioStream.codec_name = 'dts';
+    sourceAudioStream.tags = { language: 'eng' };
+    baseArgs.inputs.audioEncoder = 'eac3';
+    baseArgs.inputs.language = 'eng';
+    baseArgs.inputs.channels = '2';
+
+    plugin(baseArgs);
+    const plannedStream = streams[2];
+
+    baseArgs.inputs = {
+      codecType: 'audio',
+      propertyToCheck: 'codec_name',
+      valuesToRemove: 'dts',
+      condition: 'includes',
+    };
+    removeStreamByPropertyPlugin(baseArgs);
+
+    expect(sourceAudioStream.removed).toBe(true);
+    expect(plannedStream).toMatchObject({
+      codec_name: 'eac3',
+      channels: 2,
+      removed: false,
     });
   });
 });

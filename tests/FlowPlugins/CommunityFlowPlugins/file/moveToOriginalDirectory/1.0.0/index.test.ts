@@ -17,6 +17,7 @@ describe('moveToOriginalDirectory Plugin', () => {
     sourcePath: string;
     destinationPath: string;
     args: IpluginInputArgs;
+    requireSourceDeletion?: boolean;
   }) => Promise<boolean>>;
 
   beforeEach(() => {
@@ -63,6 +64,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: '/temp/workdir/SampleVideo_1280x720_1mb.mp4',
         destinationPath: '/original/directory/SampleVideo_1280x720_1mb.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputNumber).toBe(1);
@@ -81,6 +83,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: '/temp/workdir/processed_file.mp4',
         destinationPath: '/original/library/processed_file.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
 
       expect(result.outputFileObj._id).toBe('/original/library/processed_file.mp4');
@@ -114,6 +117,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: '/temp/work/processed.mp4',
         destinationPath: '/media/movies/action/processed.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
     });
 
@@ -129,6 +133,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: 'C:\\temp\\work\\processed.mp4',
         destinationPath: '/C:\\temp\\work\\processed.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
     });
   });
@@ -155,6 +160,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: inputPath,
         destinationPath: expectedPath,
         args: baseArgs,
+        requireSourceDeletion: true,
       });
     });
   });
@@ -167,13 +173,17 @@ describe('moveToOriginalDirectory Plugin', () => {
       expect(mockFileMoveOrCopy).toHaveBeenCalled();
     });
 
-    it('should still return output file path even if move fails', async () => {
-      // Mock fileMoveOrCopy to not throw but return false
-      mockFileMoveOrCopy.mockResolvedValue(false);
+    it('should fail when source deletion fails after a fallback copy', async () => {
+      mockFileMoveOrCopy.mockRejectedValue(
+        new Error('Failed to delete source file /temp/workdir/SampleVideo_1280x720_1mb.mp4'),
+      );
 
-      await plugin(baseArgs);
+      await expect(plugin(baseArgs)).rejects.toThrow('Failed to delete source file');
 
-      expect(mockFileMoveOrCopy).toHaveBeenCalled();
+      expect(mockFileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({
+        operation: 'move',
+        requireSourceDeletion: true,
+      }));
     });
   });
 
@@ -189,6 +199,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: '/temp/movie with spaces & symbols!.mp4',
         destinationPath: '/library/movie with spaces & symbols!.mp4',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
     });
 
@@ -204,6 +215,7 @@ describe('moveToOriginalDirectory Plugin', () => {
         sourcePath: '/temp/filename',
         destinationPath: '/library/./temp/filename',
         args: baseArgs,
+        requireSourceDeletion: true,
       });
     });
   });

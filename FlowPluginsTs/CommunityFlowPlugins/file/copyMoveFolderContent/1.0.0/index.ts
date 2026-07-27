@@ -143,6 +143,7 @@ const doOperation = async ({
       sourcePath,
       destinationPath,
       args,
+      requireSourceDeletion: operation === 'move',
     });
   }
 };

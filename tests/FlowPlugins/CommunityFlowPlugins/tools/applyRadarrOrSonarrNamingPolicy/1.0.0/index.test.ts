@@ -76,7 +76,33 @@ describe('applyRadarrOrSonarrNamingPolicy Plugin', () => {
       expect(result.outputNumber).toBe(1);
       expect(mockAxios).toHaveBeenCalledTimes(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Movie \'123\' found for imdb \'tt1234567\'');
-      expect(mockFileMoveOrCopy).toHaveBeenCalled();
+      expect(mockFileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({
+        operation: 'move',
+        sourcePath: 'C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4',
+        destinationPath: 'C:/Transcode/Source Folder/Movie Title (2021) - 1080p BluRay.mkv',
+        requireSourceDeletion: true,
+      }));
+    });
+
+    it('should fail when source deletion fails after a fallback copy', async () => {
+      const mockAxios = baseArgs.deps.axios as jest.MockedFunction<() => Promise<unknown>>;
+      mockAxios
+        .mockResolvedValueOnce({
+          data: [{ id: 123 }],
+        })
+        .mockResolvedValueOnce({
+          data: [{ newPath: '/movies/Movie Title (2021)/Movie Title (2021) - 1080p BluRay.mkv' }],
+        });
+      mockFileMoveOrCopy.mockRejectedValue(
+        new Error('Failed to delete source file C:/Transcode/Source Folder/SampleVideo_1280x720_1mb.mp4'),
+      );
+
+      await expect(plugin(baseArgs)).rejects.toThrow('Failed to delete source file');
+
+      expect(mockFileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({
+        operation: 'move',
+        requireSourceDeletion: true,
+      }));
     });
 
     it('should handle movie not found in Radarr', async () => {
