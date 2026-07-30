@@ -296,6 +296,26 @@ var CLI = /** @class */ (function () {
                     });
                 }
             }
+            else if (_this.config.cli.toLowerCase().includes('nvencc')
+                || _this.config.cli.toLowerCase().includes('qsvencc')
+                || _this.config.cli.toLowerCase().includes('vceencc')) {
+                var progress = (0, cliParsers_1.nvenccParser)({
+                    str: str,
+                });
+                if (progress.fps > 0) {
+                    _this.config.updateWorker({
+                        fps: progress.fps,
+                    });
+                }
+                // updateETA derives the ETA from percentage deltas and reads the output size off
+                // disk, so percentage alone restores the ETA and size/compression columns too.
+                if (progress.percentage > 0) {
+                    void _this.updateETA(progress.percentage);
+                    _this.config.updateWorker({
+                        percentage: progress.percentage,
+                    });
+                }
+            }
             else if (_this.config.cli.toLowerCase().includes('editready')) {
                 var percentage = (0, cliParsers_1.editreadyParser)({
                     str: str,
