@@ -1,9 +1,9 @@
 /* eslint max-len: 0 */
 const _ = require('lodash');
-const run = require('../helpers/run');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const run = require('../helpers/run');
 
 const specialLogHome = fs.mkdtempSync(path.join(os.tmpdir(), 'tdarr-cnt-audio-'));
 fs.mkdirSync(path.join(specialLogHome, 'Tdarr'));
