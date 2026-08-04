@@ -46,6 +46,7 @@ describe('checkAudioCodec Plugin', () => {
     it.each([
       'wmav1',
       'wmav2',
+      'wmapro',
     ])('should detect %s as WMA', (codec) => {
       baseArgs.inputs.codec = 'wma';
       if (baseArgs.inputFileObj.ffProbeData.streams?.[1]) {
