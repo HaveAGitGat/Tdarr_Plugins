@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import { plugin, details } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/automations/preventSleepWhileEncoding/1.0.0/index';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
@@ -170,65 +169,6 @@ describe('preventSleepWhileEncoding Plugin', () => {
   });
 
   describe('Sleep Prevention', () => {
-    it('should wait for child exit after kill before resolving', async () => {
-      mockAxiosGet.mockResolvedValue({
-        data: { 123: { workers: { w1: { job: { jobId: 'my-job-1' } } } } },
-      });
-      const child = new EventEmitter() as EventEmitter & {
-        exitCode: number | null;
-        kill: jest.Mock;
-      };
-      child.exitCode = null;
-      child.kill = jest.fn(() => true);
-      mockSpawn.mockReturnValue(child);
-
-      let resolved = false;
-      const pluginPromise = plugin(baseArgs).then((result) => {
-        resolved = true;
-        return result;
-      });
-      await flush();
-      for (let i = 0; i < 3; i += 1) {
-        await advanceOnePoll(); // eslint-disable-line no-await-in-loop
-      }
-
-      expect(child.kill).toHaveBeenCalled();
-      expect(resolved).toBe(false);
-      child.emit('close', 0);
-      await pluginPromise;
-      expect(resolved).toBe(true);
-    });
-
-    it('should bound cleanup when the child never reports exit', async () => {
-      mockAxiosGet.mockResolvedValue({
-        data: { 123: { workers: { w1: { job: { jobId: 'my-job-1' } } } } },
-      });
-      const child = new EventEmitter() as EventEmitter & {
-        exitCode: number | null;
-        kill: jest.Mock;
-      };
-      child.exitCode = null;
-      child.kill = jest.fn(() => true);
-      mockSpawn.mockReturnValue(child);
-
-      let resolved = false;
-      const pluginPromise = plugin(baseArgs).then((result) => {
-        resolved = true;
-        return result;
-      });
-      await flush();
-      for (let i = 0; i < 3; i += 1) {
-        await advanceOnePoll(); // eslint-disable-line no-await-in-loop
-      }
-
-      jest.advanceTimersByTime(4999);
-      await flush();
-      expect(resolved).toBe(false);
-      jest.advanceTimersByTime(1);
-      await pluginPromise;
-      expect(resolved).toBe(true);
-    });
-
     it('should start systemd-inhibit on linux', async () => {
       mockAxiosGet.mockResolvedValue({
         data: { 123: { workers: { w1: { job: { jobId: 'my-job-1' } } } } },

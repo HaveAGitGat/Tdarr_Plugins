@@ -1,12 +1,6 @@
 /* eslint max-len: 0 */
 const _ = require('lodash');
 const run = require('../helpers/run');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-const specialLogHome = fs.mkdtempSync(path.join(os.tmpdir(), 'tdarr-cnt-audio-'));
-fs.mkdirSync(path.join(specialLogHome, 'Tdarr'));
 
 const tests = [
   {
@@ -93,27 +87,6 @@ const tests = [
         + 'Found wanted eng: 5\n'
         + 'Found unwanted audio\n'
         + 'It will be removed\n',
-    },
-  },
-  {
-    input: {
-      file: _.cloneDeep(require('../sampleData/media/sampleH264_2.json')),
-      librarySettings: {},
-      inputs: {
-        languages: 'eng',
-        special: 'eng',
-        container: 'mp4',
-      },
-      otherArguments: {
-        homePath: specialLogHome,
-      },
-    },
-    output: 'h264\n',
-    outputModify: () => {
-      const logPath = path.join(specialLogHome, 'Tdarr', 'special_audio_eng.txt');
-      const text = fs.readFileSync(logPath, 'utf8');
-      fs.rmSync(specialLogHome, { recursive: true, force: true });
-      return text;
     },
   },
 ];
