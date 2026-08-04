@@ -11,13 +11,13 @@ import {
 /* eslint no-plusplus: ["error", { "allowForLoopAfterthoughts": true }] */
 
 // Sets ffmpeg/HandBrake process priority (cross-platform).
-const setTdarrProcessPriority = async (
+const setTdarrProcessPriority = (
   priority: 'low' | 'below normal' | 'normal' | 'above normal' | 'high',
   platform: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   childProcess: any,
   jobLog: (text: string) => void,
-): Promise<void> => {
+): void => {
   try {
     let cmdFFmpeg = '';
     let cmdHandBrake = '';
@@ -76,24 +76,12 @@ const setTdarrProcessPriority = async (
       cmdHandBrake = `for p in $(pgrep ^HandBrakeCLI$ || true); do renice -n ${niceVal} -p $p; done`;
     }
 
-    const runPriorityCommand = (command: string, processName: string): Promise<void> => (
-      new Promise((resolve) => {
-        try {
-          childProcess.exec(command, { windowsHide: true }, (err: unknown) => {
-            if (err) jobLog(`Error setting ${processName} priority: ${err}`);
-            resolve();
-          });
-        } catch (err) {
-          jobLog(`Error setting ${processName} priority: ${err}`);
-          resolve();
-        }
-      })
-    );
-
-    await Promise.all([
-      runPriorityCommand(cmdFFmpeg, 'ffmpeg'),
-      runPriorityCommand(cmdHandBrake, 'HandBrake'),
-    ]);
+    childProcess.exec(cmdFFmpeg, { windowsHide: true }, (err: unknown) => {
+      if (err) jobLog(`Error setting ffmpeg priority: ${err}`);
+    });
+    childProcess.exec(cmdHandBrake, { windowsHide: true }, (err: unknown) => {
+      if (err) jobLog(`Error setting HandBrake priority: ${err}`);
+    });
   } catch (err) {
     jobLog(`Error setting process priority: ${err}`);
   }
@@ -257,11 +245,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
       if (hasNonTdarrNvenc && !isLowered) {
         args.jobLog(`Non-Tdarr NVENC detected (PIDs: ${nvencPids.join(', ')}), setting priority to ${lowPriority}`);
-        await setTdarrProcessPriority(lowPriority, args.platform, childProcess, args.jobLog);
+        setTdarrProcessPriority(lowPriority, args.platform, childProcess, args.jobLog);
         isLowered = true;
       } else if (!hasNonTdarrNvenc && isLowered) {
         args.jobLog(`No non-Tdarr NVENC processes, restoring priority to ${normalPriority}`);
-        await setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog);
+        setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog);
         isLowered = false;
       }
 
@@ -278,7 +266,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   // Restore priority on exit if it was lowered
   if (isLowered) {
     args.jobLog(`Restoring priority to ${normalPriority} on exit`);
-    await setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog);
+    setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog);
   }
 
   return {

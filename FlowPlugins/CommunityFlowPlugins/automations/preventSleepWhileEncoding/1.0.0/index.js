@@ -73,57 +73,11 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-// Killing a child only requests termination. Wait for exit/close, but keep
-// cleanup best-effort and bounded if the child never reports either event.
-var stopSleepPreventionProcess = function (
+// Spawns a platform-specific process that prevents system sleep.
+// Returns a cleanup function to stop it.
+var startSleepPrevention = function (platform, childProcess, 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-proc) { return __awaiter(void 0, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                if (!proc || proc.exitCode !== null || typeof proc.once !== 'function') {
-                    try {
-                        if (proc)
-                            proc.kill();
-                    }
-                    catch (err) {
-                        // cleanup best-effort
-                    }
-                    return [2 /*return*/];
-                }
-                return [4 /*yield*/, new Promise(function (resolve) {
-                        var settled = false;
-                        var timeout;
-                        var finish = function () {
-                            var _a, _b, _c;
-                            if (settled)
-                                return;
-                            settled = true;
-                            clearTimeout(timeout);
-                            (_a = proc.removeListener) === null || _a === void 0 ? void 0 : _a.call(proc, 'exit', finish);
-                            (_b = proc.removeListener) === null || _b === void 0 ? void 0 : _b.call(proc, 'close', finish);
-                            (_c = proc.removeListener) === null || _c === void 0 ? void 0 : _c.call(proc, 'error', finish);
-                            resolve();
-                        };
-                        proc.once('exit', finish);
-                        proc.once('close', finish);
-                        proc.once('error', finish);
-                        timeout = setTimeout(finish, 5000);
-                        try {
-                            if (proc.kill() === false)
-                                finish();
-                        }
-                        catch (err) {
-                            finish();
-                        }
-                    })];
-            case 1:
-                _a.sent();
-                return [2 /*return*/];
-        }
-    });
-}); };
-var startSleepPrevention = function (platform, childProcess, jobLog) {
+jobLog) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     var proc = null;
     try {
@@ -142,28 +96,25 @@ var startSleepPrevention = function (platform, childProcess, jobLog) {
             proc = childProcess.spawn('powershell', ['-NoProfile', '-Command', psScript], { stdio: 'ignore', windowsHide: true, detached: false });
             jobLog('Sleep prevention active (Windows SetThreadExecutionState, refreshing)');
             var winProc_1 = proc;
-            return function () { return __awaiter(void 0, void 0, void 0, function () {
-                var clearCmd;
-                return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0: return [4 /*yield*/, stopSleepPreventionProcess(winProc_1)];
-                        case 1:
-                            _a.sent();
-                            // Reset execution state via a separate PowerShell call as best-effort
-                            try {
-                                clearCmd = 'powershell -NoProfile -Command "Add-Type -MemberDefinition '
-                                    + '\'[DllImport(\\"kernel32.dll\\")] public static extern uint SetThreadExecutionState(uint f);\' '
-                                    + '-Name SleepUtilClr -Namespace Win32; '
-                                    + '[Win32.SleepUtilClr]::SetThreadExecutionState(2147483648)"';
-                                childProcess.execSync(clearCmd, { timeout: 10000, windowsHide: true });
-                            }
-                            catch (err) {
-                                // cleanup best-effort
-                            }
-                            return [2 /*return*/];
-                    }
-                });
-            }); };
+            return function () {
+                try {
+                    winProc_1.kill();
+                }
+                catch (err) {
+                    // cleanup best-effort
+                }
+                // Reset execution state via a separate PowerShell call as best-effort
+                try {
+                    var clearCmd = 'powershell -NoProfile -Command "Add-Type -MemberDefinition '
+                        + '\'[DllImport(\\"kernel32.dll\\")] public static extern uint SetThreadExecutionState(uint f);\' '
+                        + '-Name SleepUtilClr -Namespace Win32; '
+                        + '[Win32.SleepUtilClr]::SetThreadExecutionState(2147483648)"';
+                    childProcess.execSync(clearCmd, { timeout: 10000, windowsHide: true });
+                }
+                catch (err) {
+                    // cleanup best-effort
+                }
+            };
         }
         if (platform === 'darwin') {
             // caffeinate -i prevents idle sleep, runs until killed
@@ -173,7 +124,14 @@ var startSleepPrevention = function (platform, childProcess, jobLog) {
             });
             jobLog('Sleep prevention active (caffeinate)');
             var cafProc_1 = proc;
-            return function () { return stopSleepPreventionProcess(cafProc_1); };
+            return function () {
+                try {
+                    cafProc_1.kill();
+                }
+                catch (err) {
+                    // cleanup best-effort
+                }
+            };
         }
         // Linux: use systemd-inhibit if available
         proc = childProcess.spawn('systemd-inhibit', ['--what=idle:sleep', '--who=Tdarr', '--why=Encoding in progress', 'sleep', 'infinity'], { stdio: 'ignore', detached: false });
@@ -185,25 +143,23 @@ var startSleepPrevention = function (platform, childProcess, jobLog) {
         });
         jobLog('Sleep prevention active (systemd-inhibit)');
         var inhProc_1 = proc;
-        return function () { return __awaiter(void 0, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        if (!!inhibitFailed_1) return [3 /*break*/, 2];
-                        return [4 /*yield*/, stopSleepPreventionProcess(inhProc_1)];
-                    case 1:
-                        _a.sent();
-                        _a.label = 2;
-                    case 2: return [2 /*return*/];
+        return function () {
+            if (!inhibitFailed_1) {
+                try {
+                    inhProc_1.kill();
                 }
-            });
-        }); };
+                catch (err) {
+                    // cleanup best-effort
+                }
+            }
+        };
     }
     catch (err) {
         jobLog("Could not start sleep prevention: ".concat(err));
     }
     // No-op cleanup if nothing was started
-    return function () { return Promise.resolve(); };
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    return function () { };
 };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
     var lib, childProcess, pollInterval, stopSleepPrevention, confirmCount;
@@ -220,7 +176,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 confirmCount = 3;
                 _a.label = 1;
             case 1:
-                _a.trys.push([1, , 3, 5]);
+                _a.trys.push([1, , 3, 4]);
                 return [4 /*yield*/, (0, automationUtils_1.pollUntilConfirmed)(args, pollInterval, confirmCount, function (firstCheck) { return __awaiter(void 0, void 0, void 0, function () {
                         var othersRunning;
                         return __generator(this, function (_a) {
@@ -236,12 +192,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     }); }, "No other workers running (confirmed ".concat(confirmCount, " times), stopping sleep prevention"))];
             case 2:
                 _a.sent();
-                return [3 /*break*/, 5];
-            case 3: return [4 /*yield*/, stopSleepPrevention()];
-            case 4:
-                _a.sent();
+                return [3 /*break*/, 4];
+            case 3:
+                stopSleepPrevention();
                 return [7 /*endfinally*/];
-            case 5: return [2 /*return*/, {
+            case 4: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: 1,
                     variables: args.variables,

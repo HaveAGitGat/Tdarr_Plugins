@@ -44,58 +44,17 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-// Killing a child only requests termination. Wait for exit/close, but keep
-// cleanup best-effort and bounded if the child never reports either event.
-const stopSleepPreventionProcess = async (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  proc: any,
-): Promise<void> => {
-  if (!proc || proc.exitCode !== null || typeof proc.once !== 'function') {
-    try {
-      if (proc) proc.kill();
-    } catch (err) {
-      // cleanup best-effort
-    }
-    return;
-  }
-
-  await new Promise<void>((resolve) => {
-    let settled = false;
-    let timeout: ReturnType<typeof setTimeout>;
-    const finish = (): void => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      proc.removeListener?.('exit', finish);
-      proc.removeListener?.('close', finish);
-      proc.removeListener?.('error', finish);
-      resolve();
-    };
-
-    proc.once('exit', finish);
-    proc.once('close', finish);
-    proc.once('error', finish);
-    timeout = setTimeout(finish, 5000);
-
-    try {
-      if (proc.kill() === false) finish();
-    } catch (err) {
-      finish();
-    }
-  });
-};
-
 // Spawns a platform-specific process that prevents system sleep.
 // Returns a cleanup function to stop it.
-type StopSleepPrevention = () => Promise<void>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ChildProcessApi = any;
-
 const startSleepPrevention = (
   platform: string,
-  childProcess: ChildProcessApi,
+  childProcess: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jobLog: (text: string) => void,
-): StopSleepPrevention => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): (() => void
+) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let proc: any = null;
 
@@ -120,8 +79,12 @@ const startSleepPrevention = (
       jobLog('Sleep prevention active (Windows SetThreadExecutionState, refreshing)');
 
       const winProc = proc;
-      return async () => {
-        await stopSleepPreventionProcess(winProc);
+      return () => {
+        try {
+          winProc.kill();
+        } catch (err) {
+          // cleanup best-effort
+        }
         // Reset execution state via a separate PowerShell call as best-effort
         try {
           const clearCmd = 'powershell -NoProfile -Command "Add-Type -MemberDefinition '
@@ -144,7 +107,13 @@ const startSleepPrevention = (
       jobLog('Sleep prevention active (caffeinate)');
 
       const cafProc = proc;
-      return () => stopSleepPreventionProcess(cafProc);
+      return () => {
+        try {
+          cafProc.kill();
+        } catch (err) {
+          // cleanup best-effort
+        }
+      };
     }
 
     // Linux: use systemd-inhibit if available
@@ -162,9 +131,13 @@ const startSleepPrevention = (
     jobLog('Sleep prevention active (systemd-inhibit)');
 
     const inhProc = proc;
-    return async () => {
+    return () => {
       if (!inhibitFailed) {
-        await stopSleepPreventionProcess(inhProc);
+        try {
+          inhProc.kill();
+        } catch (err) {
+          // cleanup best-effort
+        }
       }
     };
   } catch (err) {
@@ -172,7 +145,8 @@ const startSleepPrevention = (
   }
 
   // No-op cleanup if nothing was started
-  return () => Promise.resolve();
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  return () => {};
 };
 
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -201,7 +175,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       `No other workers running (confirmed ${confirmCount} times), stopping sleep prevention`,
     );
   } finally {
-    await stopSleepPrevention();
+    stopSleepPrevention();
   }
 
   return {

@@ -50,14 +50,7 @@ describe('detectNonTdarrNvenc Plugin', () => {
     jest.useFakeTimers({ doNotFake: ['setImmediate'] });
     mockAxiosGet = jest.fn();
     mockExecFileSync.mockReset();
-    mockExec.mockReset().mockImplementation((
-      _command: string,
-      _options: unknown,
-      callback: (err: unknown) => void,
-    ) => {
-      callback(null);
-      return {};
-    });
+    mockExec.mockReset();
 
     baseArgs = {
       inputs: {
@@ -257,41 +250,6 @@ describe('detectNonTdarrNvenc Plugin', () => {
     expect(baseArgs.jobLog).toHaveBeenCalledWith(
       expect.stringContaining('Restoring priority to normal on exit'),
     );
-  });
-
-  it('should not resolve until final priority commands complete', async () => {
-    mockNoOtherWorkers();
-    mockExecFileSync.mockReturnValue(pmonWithNvenc);
-    const callbacks: Array<(err: unknown) => void> = [];
-    mockExec.mockImplementation((
-      _command: string,
-      _options: unknown,
-      callback: (err: unknown) => void,
-    ) => {
-      callbacks.push(callback);
-      return {};
-    });
-
-    let resolved = false;
-    const pluginPromise = plugin(baseArgs).then((result) => {
-      resolved = true;
-      return result;
-    });
-    await flush();
-    await advanceOnePoll();
-
-    expect(callbacks.length).toBe(2);
-    expect(resolved).toBe(false);
-    callbacks.splice(0).forEach((callback) => callback(null));
-    await flush();
-    for (let i = 0; i < 2; i += 1) {
-      await advanceOnePoll(); // eslint-disable-line no-await-in-loop
-    }
-    expect(callbacks.length).toBe(2);
-    expect(resolved).toBe(false);
-    callbacks.splice(0).forEach((callback) => callback(null));
-    await pluginPromise;
-    expect(resolved).toBe(true);
   });
 
   describe('Priority on Windows', () => {

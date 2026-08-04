@@ -82,23 +82,19 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog(`Waiting for ${waitTime} milliseconds`);
 
   let finished = false;
-  let loggingTimeout: ReturnType<typeof setTimeout> | undefined;
 
   const logWait = () => {
     if (!finished) {
       args.jobLog('Waiting...');
-      loggingTimeout = setTimeout(logWait, 5000);
+      setTimeout(logWait, 5000);
     }
   };
 
   logWait();
 
-  try {
-    await new Promise((resolve) => setTimeout(resolve, waitTime));
-  } finally {
-    finished = true;
-    if (loggingTimeout) clearTimeout(loggingTimeout);
-  }
+  await new Promise((resolve) => setTimeout(resolve, waitTime));
+
+  finished = true;
 
   return {
     outputFileObj: args.inputFileObj,
