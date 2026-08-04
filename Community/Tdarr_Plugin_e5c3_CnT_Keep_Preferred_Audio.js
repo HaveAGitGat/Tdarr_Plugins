@@ -44,17 +44,9 @@ const details = () => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const plugin = async (file, librarySettings, inputs, otherArguments) => {
+const plugin = (file, librarySettings, inputs, otherArguments) => {
   
-  const lib = require('../methods/lib')(); const fs = require("fs");
-  const appendSpecialAudio = async (filePath, sourceName) => {
-    try {
-      await fs.promises.appendFile(filePath, `${sourceName}\n`);
-      console.log(`added to txt: ` + sourceName);
-    } catch (err) {
-      console.log(`could not add to txt: ` + err);
-    }
-  };
+  const lib = require('../methods/lib')(); const exec = require("child_process").exec; const fs = require("fs");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   if (inputs.languages == "" || typeof inputs.special == "undefined") {
@@ -116,19 +108,30 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
         ) {
           for (l = 0; l < length; l++) {
             if (file.ffProbeData.streams[i].tags.language == special[l]) {
-              const specialAudioPath =
-                otherArguments.homePath +
-                `/Tdarr/special_audio_${special[l]}.txt`;
-              if (!fs.existsSync(specialAudioPath)) {
+              if (
+                !fs.existsSync(
+                  otherArguments.homePath +
+                    `/Tdarr/special_audio_${special[l]}.txt`
+                )
+              ) {
                 //create txt file if it doesn't exist yet
-                await appendSpecialAudio(specialAudioPath, sourcename);
+                exec(
+                  `echo "${sourcename}" >> ${otherArguments.homePath}/Tdarr/special_audio_${special[l]}.txt`
+                ); //first file will be added and file is created
+                console.log(`added to txt: ` + sourcename);
               } else {
                 specialcheck = fs
-                  .readFileSync(specialAudioPath)
+                  .readFileSync(
+                    otherArguments.homePath +
+                      `/Tdarr/special_audio_${special[l]}.txt`
+                  )
                   .toString(); //create string from existing file
                 if (!specialcheck.includes(sourcename)) {
                   //only add the filename if it wasn't added already
-                  await appendSpecialAudio(specialAudioPath, sourcename);
+                  exec(
+                    `echo "${sourcename}" >> ${otherArguments.homePath}/Tdarr/special_audio_${special[l]}.txt`
+                  );
+                  console.log(`added to txt: ` + sourcename);
                 }
               }
 

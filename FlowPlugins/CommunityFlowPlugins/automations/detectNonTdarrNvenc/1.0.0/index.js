@@ -42,94 +42,75 @@ var automationUtils_1 = require("../../../../FlowHelpers/1.0.0/automationUtils")
 // Sets ffmpeg/HandBrake process priority (cross-platform).
 var setTdarrProcessPriority = function (priority, platform, 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-childProcess, jobLog) { return __awaiter(void 0, void 0, void 0, function () {
-    var cmdFFmpeg, cmdHandBrake, priorityClass, niceVal, runPriorityCommand, err_1;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0:
-                _a.trys.push([0, 2, , 3]);
-                cmdFFmpeg = '';
-                cmdHandBrake = '';
-                if (platform === 'win32') {
+childProcess, jobLog) {
+    try {
+        var cmdFFmpeg = '';
+        var cmdHandBrake = '';
+        if (platform === 'win32') {
+            var priorityClass = 'Normal';
+            switch (priority) {
+                case 'high':
+                    priorityClass = 'High';
+                    break;
+                case 'above normal':
+                    priorityClass = 'AboveNormal';
+                    break;
+                case 'normal':
                     priorityClass = 'Normal';
-                    switch (priority) {
-                        case 'high':
-                            priorityClass = 'High';
-                            break;
-                        case 'above normal':
-                            priorityClass = 'AboveNormal';
-                            break;
-                        case 'normal':
-                            priorityClass = 'Normal';
-                            break;
-                        case 'below normal':
-                            priorityClass = 'BelowNormal';
-                            break;
-                        case 'low':
-                            priorityClass = 'Idle';
-                            break;
-                        default:
-                            priorityClass = 'Normal';
-                            break;
-                    }
-                    // eslint-disable-next-line max-len
-                    cmdFFmpeg = "powershell -Command \"if (Get-Process -Name 'ffmpeg' -ErrorAction SilentlyContinue) { Get-Process -Name 'ffmpeg' | ForEach-Object { $_.PriorityClass = '".concat(priorityClass, "' } }\"");
-                    // eslint-disable-next-line max-len
-                    cmdHandBrake = "powershell -Command \"if (Get-Process -Name 'HandBrakeCLI' -ErrorAction SilentlyContinue) { Get-Process -Name 'HandBrakeCLI' | ForEach-Object { $_.PriorityClass = '".concat(priorityClass, "' } }\"");
-                }
-                else {
-                    niceVal = 0;
-                    switch (priority) {
-                        case 'high':
-                            niceVal = -15;
-                            break;
-                        case 'above normal':
-                            niceVal = -10;
-                            break;
-                        case 'normal':
-                            niceVal = 0;
-                            break;
-                        case 'below normal':
-                            niceVal = 10;
-                            break;
-                        case 'low':
-                            niceVal = 19;
-                            break;
-                        default:
-                            niceVal = 0;
-                            break;
-                    }
-                    cmdFFmpeg = "for p in $(pgrep ^ffmpeg$ || true); do renice -n ".concat(niceVal, " -p $p; done");
-                    cmdHandBrake = "for p in $(pgrep ^HandBrakeCLI$ || true); do renice -n ".concat(niceVal, " -p $p; done");
-                }
-                runPriorityCommand = function (command, processName) { return (new Promise(function (resolve) {
-                    try {
-                        childProcess.exec(command, { windowsHide: true }, function (err) {
-                            if (err)
-                                jobLog("Error setting ".concat(processName, " priority: ").concat(err));
-                            resolve();
-                        });
-                    }
-                    catch (err) {
-                        jobLog("Error setting ".concat(processName, " priority: ").concat(err));
-                        resolve();
-                    }
-                })); };
-                return [4 /*yield*/, Promise.all([
-                        runPriorityCommand(cmdFFmpeg, 'ffmpeg'),
-                        runPriorityCommand(cmdHandBrake, 'HandBrake'),
-                    ])];
-            case 1:
-                _a.sent();
-                return [3 /*break*/, 3];
-            case 2:
-                err_1 = _a.sent();
-                jobLog("Error setting process priority: ".concat(err_1));
-                return [3 /*break*/, 3];
-            case 3: return [2 /*return*/];
+                    break;
+                case 'below normal':
+                    priorityClass = 'BelowNormal';
+                    break;
+                case 'low':
+                    priorityClass = 'Idle';
+                    break;
+                default:
+                    priorityClass = 'Normal';
+                    break;
+            }
+            // eslint-disable-next-line max-len
+            cmdFFmpeg = "powershell -Command \"if (Get-Process -Name 'ffmpeg' -ErrorAction SilentlyContinue) { Get-Process -Name 'ffmpeg' | ForEach-Object { $_.PriorityClass = '".concat(priorityClass, "' } }\"");
+            // eslint-disable-next-line max-len
+            cmdHandBrake = "powershell -Command \"if (Get-Process -Name 'HandBrakeCLI' -ErrorAction SilentlyContinue) { Get-Process -Name 'HandBrakeCLI' | ForEach-Object { $_.PriorityClass = '".concat(priorityClass, "' } }\"");
         }
-    });
-}); };
+        else {
+            var niceVal = 0;
+            switch (priority) {
+                case 'high':
+                    niceVal = -15;
+                    break;
+                case 'above normal':
+                    niceVal = -10;
+                    break;
+                case 'normal':
+                    niceVal = 0;
+                    break;
+                case 'below normal':
+                    niceVal = 10;
+                    break;
+                case 'low':
+                    niceVal = 19;
+                    break;
+                default:
+                    niceVal = 0;
+                    break;
+            }
+            cmdFFmpeg = "for p in $(pgrep ^ffmpeg$ || true); do renice -n ".concat(niceVal, " -p $p; done");
+            cmdHandBrake = "for p in $(pgrep ^HandBrakeCLI$ || true); do renice -n ".concat(niceVal, " -p $p; done");
+        }
+        childProcess.exec(cmdFFmpeg, { windowsHide: true }, function (err) {
+            if (err)
+                jobLog("Error setting ffmpeg priority: ".concat(err));
+        });
+        childProcess.exec(cmdHandBrake, { windowsHide: true }, function (err) {
+            if (err)
+                jobLog("Error setting HandBrake priority: ".concat(err));
+        });
+    }
+    catch (err) {
+        jobLog("Error setting process priority: ".concat(err));
+    }
+};
 var details = function () { return ({
     name: 'Set GPU Node to Low Priority When Non-Tdarr NVENC Detected',
     description: 'Polls nvidia-smi for non-Tdarr NVENC encoder processes.'
@@ -267,25 +248,19 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                                 case 0:
                                     nvencPids = getNonTdarrNvencPids(childProcess, firstCheck || firstPoll, args.jobLog);
                                     hasNonTdarrNvenc = nvencPids.length > 0;
-                                    if (!(hasNonTdarrNvenc && !isLowered)) return [3 /*break*/, 2];
-                                    args.jobLog("Non-Tdarr NVENC detected (PIDs: ".concat(nvencPids.join(', '), "), setting priority to ").concat(lowPriority));
-                                    return [4 /*yield*/, setTdarrProcessPriority(lowPriority, args.platform, childProcess, args.jobLog)];
-                                case 1:
-                                    _a.sent();
-                                    isLowered = true;
-                                    return [3 /*break*/, 4];
-                                case 2:
-                                    if (!(!hasNonTdarrNvenc && isLowered)) return [3 /*break*/, 4];
-                                    args.jobLog("No non-Tdarr NVENC processes, restoring priority to ".concat(normalPriority));
-                                    return [4 /*yield*/, setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog)];
-                                case 3:
-                                    _a.sent();
-                                    isLowered = false;
-                                    _a.label = 4;
-                                case 4:
+                                    if (hasNonTdarrNvenc && !isLowered) {
+                                        args.jobLog("Non-Tdarr NVENC detected (PIDs: ".concat(nvencPids.join(', '), "), setting priority to ").concat(lowPriority));
+                                        setTdarrProcessPriority(lowPriority, args.platform, childProcess, args.jobLog);
+                                        isLowered = true;
+                                    }
+                                    else if (!hasNonTdarrNvenc && isLowered) {
+                                        args.jobLog("No non-Tdarr NVENC processes, restoring priority to ".concat(normalPriority));
+                                        setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog);
+                                        isLowered = false;
+                                    }
                                     firstCheck = false;
                                     return [4 /*yield*/, (0, automationUtils_1.checkOtherWorkersRunning)(args, firstPoll)];
-                                case 5:
+                                case 1:
                                     othersRunning = _a.sent();
                                     if (othersRunning === 'error')
                                         return [2 /*return*/, 'error'];
@@ -295,17 +270,16 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     }); }, "No other workers running (confirmed ".concat(confirmCount, " times), stopping NVENC priority monitor"))];
             case 1:
                 _a.sent();
-                if (!isLowered) return [3 /*break*/, 3];
-                args.jobLog("Restoring priority to ".concat(normalPriority, " on exit"));
-                return [4 /*yield*/, setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog)];
-            case 2:
-                _a.sent();
-                _a.label = 3;
-            case 3: return [2 /*return*/, {
-                    outputFileObj: args.inputFileObj,
-                    outputNumber: 1,
-                    variables: args.variables,
-                }];
+                // Restore priority on exit if it was lowered
+                if (isLowered) {
+                    args.jobLog("Restoring priority to ".concat(normalPriority, " on exit"));
+                    setTdarrProcessPriority(normalPriority, args.platform, childProcess, args.jobLog);
+                }
+                return [2 /*return*/, {
+                        outputFileObj: args.inputFileObj,
+                        outputNumber: 1,
+                        variables: args.variables,
+                    }];
         }
     });
 }); };
