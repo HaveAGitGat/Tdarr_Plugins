@@ -39,8 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
 var details = function () { return ({
-    name: 'Notify Radarr or Sonarr',
-    description: 'Notify Radarr or Sonarr to refresh after file change. '
+    name: 'Notify Radarr, Sonarr or Lidarr',
+    description: 'Notify Radarr, Sonarr or Lidarr to refresh after file change. '
         + 'Waits for the scan to complete before continuing.',
     style: {
         borderColor: 'green',
@@ -59,7 +59,7 @@ var details = function () { return ({
             defaultValue: 'radarr',
             inputUI: {
                 type: 'dropdown',
-                options: ['radarr', 'sonarr'],
+                options: ['radarr', 'sonarr', 'lidarr'],
             },
             tooltip: 'Specify which arr to use',
         },
@@ -85,18 +85,20 @@ var details = function () { return ({
                 + '\\nExample:\\n'
                 + 'http://192.168.1.1:7878\\n'
                 + 'http://192.168.1.1:8989\\n'
+                + 'http://192.168.1.1:8686\\n'
                 + 'https://radarr.domain.com\\n'
-                + 'https://sonarr.domain.com\\n',
+                + 'https://sonarr.domain.com\\n'
+                + 'https://lidarr.domain.com\\n',
         },
     ],
     outputs: [
         {
             number: 1,
-            tooltip: 'Radarr or Sonarr notified',
+            tooltip: 'Radarr, Sonarr or Lidarr notified',
         },
         {
             number: 2,
-            tooltip: 'Radarr or Sonarr do not know this file',
+            tooltip: 'Radarr, Sonarr or Lidarr do not know this file',
         },
     ],
 }); };
@@ -129,7 +131,7 @@ var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 
                 _a.sent();
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/command/").concat(commandId),
+                        url: "".concat(arrApp.host, "/api/").concat(arrApp.apiVersion, "/command/").concat(commandId),
                         headers: arrApp.headers,
                     })];
             case 3:
@@ -149,40 +151,39 @@ var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 
     });
 }); };
 var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var imdbId, id, _a, _b, _c, _d;
-    var _e, _f, _g, _h, _j;
-    return __generator(this, function (_k) {
-        switch (_k.label) {
+    var id, imdbId, _a, _b, _c;
+    var _d, _e, _f, _g, _h;
+    return __generator(this, function (_j) {
+        switch (_j.label) {
             case 0:
-                imdbId = (_f = (_e = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _e === void 0 ? void 0 : _e.at(0)) !== null && _f !== void 0 ? _f : '';
+                id = -1;
+                if (!(arrApp.name === 'radarr' || arrApp.name === 'sonarr')) return [3 /*break*/, 2];
+                imdbId = (_e = (_d = /\b(tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _d === void 0 ? void 0 : _d.at(0)) !== null && _e !== void 0 ? _e : '';
                 if (!(imdbId !== '')) return [3 /*break*/, 2];
-                _b = Number;
+                _a = Number;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/").concat(arrApp.name === 'radarr' ? 'movie' : 'series', "/lookup?term=imdb:").concat(imdbId),
+                        url: "".concat(arrApp.host, "/api/").concat(arrApp.apiVersion, "/").concat(arrApp.name === 'radarr' ? 'movie' : 'series')
+                            + "/lookup?term=imdb:".concat(imdbId),
                         headers: arrApp.headers,
                     })];
             case 1:
-                _a = _b.apply(void 0, [(_j = (_h = (_g = (_k.sent()).data) === null || _g === void 0 ? void 0 : _g.at(0)) === null || _h === void 0 ? void 0 : _h.id) !== null && _j !== void 0 ? _j : -1]);
-                return [3 /*break*/, 3];
-            case 2:
-                _a = -1;
-                _k.label = 3;
-            case 3:
-                id = _a;
+                id = _a.apply(void 0, [(_h = (_g = (_f = (_j.sent()).data) === null || _f === void 0 ? void 0 : _f.at(0)) === null || _g === void 0 ? void 0 : _g.id) !== null && _h !== void 0 ? _h : -1]);
                 args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for imdb '").concat(imdbId, "'"));
-                if (!(id === -1)) return [3 /*break*/, 5];
-                _d = (_c = arrApp.delegates).getIdFromParseResponse;
+                _j.label = 2;
+            case 2:
+                if (!(id === -1)) return [3 /*break*/, 4];
+                _c = (_b = arrApp.delegates).getIdFromParseResponse;
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
+                        url: "".concat(arrApp.host, "/api/").concat(arrApp.apiVersion, "/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
                         headers: arrApp.headers,
                     })];
-            case 4:
-                id = _d.apply(_c, [(_k.sent())]);
+            case 3:
+                id = _c.apply(_b, [(_j.sent())]);
                 args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
-                _k.label = 5;
-            case 5: return [2 /*return*/, id];
+                _j.label = 4;
+            case 4: return [2 /*return*/, id];
         }
     });
 }); };
@@ -206,20 +207,37 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     'X-Api-Key': String(args.inputs.arr_api_key),
                     Accept: 'application/json',
                 };
-                arrApp = arr === 'radarr'
-                    ? {
+                if (arr === 'radarr') {
+                    arrApp = {
                         name: arr,
                         host: arrHost,
+                        apiVersion: 'v3',
                         headers: headers,
                         content: 'Movie',
                         delegates: {
                             getIdFromParseResponse: function (parseResponse) { var _a, _b, _c; return Number((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.movie) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshMovie', movieIds: [id] }); },
                         },
-                    }
-                    : {
+                    };
+                }
+                else if (arr === 'lidarr') {
+                    arrApp = {
                         name: arr,
                         host: arrHost,
+                        apiVersion: 'v1',
+                        headers: headers,
+                        content: 'Artist',
+                        delegates: {
+                            getIdFromParseResponse: function (parseResponse) { var _a, _b, _c; return Number((_c = (_b = (_a = parseResponse === null || parseResponse === void 0 ? void 0 : parseResponse.data) === null || _a === void 0 ? void 0 : _a.artist) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : -1); },
+                            buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshArtist', artistIds: [id] }); },
+                        },
+                    };
+                }
+                else {
+                    arrApp = {
+                        name: arr,
+                        host: arrHost,
+                        apiVersion: 'v3',
                         headers: headers,
                         content: 'Serie',
                         delegates: {
@@ -227,6 +245,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             buildRefreshResquestData: function (id) { return JSON.stringify({ name: 'RefreshSeries', seriesId: id }); },
                         },
                     };
+                }
                 args.jobLog('Going to force scan');
                 args.jobLog("Refreshing ".concat(arrApp.name, "..."));
                 return [4 /*yield*/, getId(args, arrApp, originalFileName)];
@@ -241,7 +260,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 if (!(id !== -1)) return [3 /*break*/, 6];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'post',
-                        url: "".concat(arrApp.host, "/api/v3/command"),
+                        url: "".concat(arrApp.host, "/api/").concat(arrApp.apiVersion, "/command"),
                         headers: headers,
                         data: arrApp.delegates.buildRefreshResquestData(id),
                     })];
