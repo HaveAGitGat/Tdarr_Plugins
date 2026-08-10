@@ -35,6 +35,7 @@ const details = ():IpluginDetails => ({
           'wmv2',
           'wmv3',
           'mpeg4',
+          'mpeg1video',
           'mpeg2video',
           'mjpeg',
           'flv',
