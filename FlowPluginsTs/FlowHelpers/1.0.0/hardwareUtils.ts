@@ -192,6 +192,7 @@ export interface IgetEncoder {
   outputArgs: string[],
   isGpu: boolean,
   enabledDevices: IgpuEncoder[],
+  filter?: string,
 }
 
 export const getEncoder = async ({

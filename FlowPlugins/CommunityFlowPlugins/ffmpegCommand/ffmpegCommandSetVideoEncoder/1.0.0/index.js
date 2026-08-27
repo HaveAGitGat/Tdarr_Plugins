@@ -213,10 +213,10 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
-    var _b, _c;
-    return __generator(this, function (_d) {
-        switch (_d.label) {
+    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap, deviceIdx, device;
+    var _b, _c, _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -226,7 +226,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
                 i = 0;
-                _d.label = 1;
+                _e.label = 1;
             case 1:
                 if (!(i < args.variables.ffmpegCommand.streams.length)) return [3 /*break*/, 4];
                 stream = args.variables.ffmpegCommand.streams[i];
@@ -247,7 +247,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         args: args,
                     })];
             case 2:
-                encoderProperties = _d.sent();
+                encoderProperties = _e.sent();
                 stream.outputArgs.push('-c:{outputIndex}', encoderProperties.encoder);
                 if (ffmpegQualityEnabled) {
                     if (encoderProperties.isGpu) {
@@ -311,10 +311,18 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 if (hardwareDecoding) {
                     (_b = stream.inputArgs).push.apply(_b, encoderProperties.inputArgs);
                 }
-                if (encoderProperties.outputArgs) {
-                    (_c = stream.outputArgs).push.apply(_c, encoderProperties.outputArgs);
+                else if (encoderProperties.filter) {
+                    deviceIdx = encoderProperties.inputArgs.indexOf('-hwaccel_device');
+                    device = deviceIdx !== -1 ? encoderProperties.inputArgs[deviceIdx + 1] : undefined;
+                    if (device) {
+                        stream.inputArgs.push('-vaapi_device', device);
+                    }
+                    (_c = stream.outputArgs).push.apply(_c, encoderProperties.filter.split(' '));
                 }
-                _d.label = 3;
+                if (encoderProperties.outputArgs) {
+                    (_d = stream.outputArgs).push.apply(_d, encoderProperties.outputArgs);
+                }
+                _e.label = 3;
             case 3:
                 i += 1;
                 return [3 /*break*/, 1];

@@ -276,6 +276,20 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
         if (hardwareDecoding) {
           stream.inputArgs.push(...encoderProperties.inputArgs);
+        } else if (encoderProperties.filter) {
+          // Hardware encoding without hardware decoding (e.g. VAAPI encode-only):
+          // encoderProperties.inputArgs is skipped above since it forces hwaccel
+          // decode, but the encoder still needs a device context for its filter
+          // (hwupload etc.) to target. Reuse the device path hardwareUtils already
+          // resolved into inputArgs (via -hwaccel_device) and establish it
+          // standalone with -vaapi_device, which - unlike -hwaccel_device - creates
+          // a usable device reference without requiring -hwaccel.
+          const deviceIdx = encoderProperties.inputArgs.indexOf('-hwaccel_device');
+          const device = deviceIdx !== -1 ? encoderProperties.inputArgs[deviceIdx + 1] : undefined;
+          if (device) {
+            stream.inputArgs.push('-vaapi_device', device);
+          }
+          stream.outputArgs.push(...encoderProperties.filter.split(' '));
         }
 
         if (encoderProperties.outputArgs) {
