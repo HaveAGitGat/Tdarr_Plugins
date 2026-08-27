@@ -276,4 +276,81 @@ const tests = [
   },
 ];
 
+// https://github.com/HaveAGitGat/Tdarr_Plugins/issues/703
+// A WebVTT subtitle stream (Matroska CodecID S_TEXT/WEBVTT, reported by ffprobe as codec_name
+// "webvtt") makes ffmpeg fail outright with "Unknown/unsupported AVCodecID S_TEXT/WEBVTT" when
+// copied as-is. force_conform should drop it, same as it already does for mov_text/eia_608/etc.
+const webvttSubtitleStream = {
+  index: 2,
+  codec_name: 'webvtt',
+  codec_long_name: 'WebVTT subtitle',
+  codec_type: 'subtitle',
+  codec_tag_string: '[0][0][0][0]',
+  codec_tag: '0x0000',
+  r_frame_rate: '0/0',
+  avg_frame_rate: '0/0',
+  time_base: '1/1000',
+  tags: {
+    language: 'eng',
+  },
+};
+
+const sampleH264WithWebvttSubtitle = _.cloneDeep(require('../sampleData/media/sampleH264_1.json'));
+
+sampleH264WithWebvttSubtitle.ffProbeData.streams.push(webvttSubtitleStream);
+
+tests.push(
+  {
+    input: {
+      file: _.cloneDeep(sampleH264WithWebvttSubtitle),
+      librarySettings: {},
+      inputs: {
+        force_conform: 'true',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-hwaccel cuda -hwaccel_output_format cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:d -map -0:2 ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as mkv. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.mkv',
+    },
+  },
+  {
+    input: {
+      file: _.cloneDeep(sampleH264WithWebvttSubtitle),
+      librarySettings: {},
+      inputs: {
+        container: 'mp4',
+        force_conform: 'true',
+      },
+      otherArguments: {},
+    },
+    output: {
+      processFile: true,
+      preset: '-hwaccel cuda -hwaccel_output_format cuda, -map 0 -c:v hevc_nvenc -cq:v 19 -b:v 758k -minrate 530k -maxrate 985k -bufsize 1517k -spatial_aq:v 1 -rc-lookahead:v 32 -c:a copy -c:s copy -max_muxing_queue_size 9999 -map -0:2 ',
+      handBrakeMode: false,
+      FFmpegMode: true,
+      reQueueAfter: true,
+      infoLog: 'Container for output selected as mp4. \n'
+        + 'Current bitrate = 1517 \n'
+        + 'Bitrate settings: \n'
+        + 'Target = 758 \n'
+        + 'Minimum = 530 \n'
+        + 'Maximum = 985 \n'
+        + 'File is not hevc or vp9. Transcoding. \n',
+      container: '.mp4',
+    },
+  },
+);
+
 void run(tests);
