@@ -97,6 +97,21 @@ export interface IffmpegCommand {
     overallOuputArguments: string[],
 }
 
+export interface IffmpegCommandV2Operation {
+    pluginName: string,
+    pluginVersion: string,
+    pluginId?: string,
+    operationType: string,
+    inputs: Record<string, unknown>,
+}
+
+export interface IffmpegCommandV2 {
+    version: 2,
+    init: boolean,
+    sourceFileId?: string,
+    operations: IffmpegCommandV2Operation[],
+}
+
 export interface IliveSizeCompare {
     enabled: boolean,
     compareMethod: string,
@@ -109,6 +124,7 @@ export interface IliveSizeCompare {
 
 export interface Ivariables {
     ffmpegCommand: IffmpegCommand,
+    ffmpegCommandV2?: IffmpegCommandV2,
     flowFailed: boolean,
     user: Record<string, string>,
     healthCheck?: 'Success',

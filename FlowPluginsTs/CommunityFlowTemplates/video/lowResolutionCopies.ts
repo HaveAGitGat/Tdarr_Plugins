@@ -126,7 +126,7 @@ const details = () :IflowTemplate => ({
       name: 'Begin Command',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandStart',
-      version: '1.0.0',
+      version: '2.0.0',
       id: 'FSG9AOX5c',
       position: {
         x: 1171.2902386661297,
@@ -137,7 +137,7 @@ const details = () :IflowTemplate => ({
       name: 'Set Video Encoder',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandSetVideoEncoder',
-      version: '1.0.0',
+      version: '2.0.0',
       inputsDB: {
         forceEncoding: 'true',
       },
@@ -151,7 +151,7 @@ const details = () :IflowTemplate => ({
       name: 'Execute',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandExecute',
-      version: '1.0.0',
+      version: '2.0.0',
       id: 'tmUd79-Fb',
       position: {
         x: 1167.5698309351776,
@@ -162,7 +162,7 @@ const details = () :IflowTemplate => ({
       name: 'Begin Command',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandStart',
-      version: '1.0.0',
+      version: '2.0.0',
       id: 'Jn6dcKd3i',
       position: {
         x: 1395.4614497255334,
@@ -173,7 +173,7 @@ const details = () :IflowTemplate => ({
       name: 'Execute',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandExecute',
-      version: '1.0.0',
+      version: '2.0.0',
       id: 'gbY0xIJnB',
       position: {
         x: 1398.0103706416776,
@@ -184,7 +184,7 @@ const details = () :IflowTemplate => ({
       name: 'Set Video Resolution 480p',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandSetVdeoResolution',
-      version: '1.0.0',
+      version: '2.0.0',
       inputsDB: {
         targetResolution: '480p',
       },
@@ -198,7 +198,7 @@ const details = () :IflowTemplate => ({
       name: 'Set Video Encoder',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandSetVideoEncoder',
-      version: '1.0.0',
+      version: '2.0.0',
       inputsDB: {
         forceEncoding: 'true',
       },
@@ -212,7 +212,7 @@ const details = () :IflowTemplate => ({
       name: 'Set Video Resolution 720p',
       sourceRepo: 'Community',
       pluginName: 'ffmpegCommandSetVdeoResolution',
-      version: '1.0.0',
+      version: '2.0.0',
       inputsDB: {
         targetResolution: '720p',
       },
