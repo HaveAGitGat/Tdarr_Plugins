@@ -374,7 +374,7 @@ var CLI = /** @class */ (function () {
                                         // eslint-disable-next-line no-console
                                         console.log("Error executing binary: ".concat(_this.config.cli));
                                         _this.config.jobLog("Error executing binary: ".concat(_this.config.cli));
-                                        resolve(1);
+                                        resolve(-1);
                                     });
                                     // thread.stdout.pipe(process.stdout);
                                     // thread.stderr.pipe(process.stderr);
@@ -392,7 +392,7 @@ var CLI = /** @class */ (function () {
                                     // eslint-disable-next-line no-console
                                     console.log("Error executing binary: ".concat(_this.config.cli, ": ").concat(err));
                                     _this.config.jobLog("Error executing binary: ".concat(_this.config.cli, ": ").concat(err));
-                                    resolve(1);
+                                    resolve(-1);
                                 }
                             })];
                     case 1:

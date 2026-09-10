@@ -422,7 +422,7 @@ class CLI {
           // eslint-disable-next-line no-console
           console.log(`Error executing binary: ${this.config.cli}`);
           this.config.jobLog(`Error executing binary: ${this.config.cli}`);
-          resolve(1);
+          resolve(-1);
         });
 
         // thread.stdout.pipe(process.stdout);
@@ -440,7 +440,7 @@ class CLI {
         // eslint-disable-next-line no-console
         console.log(`Error executing binary: ${this.config.cli}: ${err}`);
         this.config.jobLog(`Error executing binary: ${this.config.cli}: ${err}`);
-        resolve(1);
+        resolve(-1);
       }
     });
 
