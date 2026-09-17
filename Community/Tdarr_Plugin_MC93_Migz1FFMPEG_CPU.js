@@ -9,7 +9,7 @@ const details = () => ({
                 Settings are dependant on file bitrate
                 Working by the logic that H265 can support the same ammount of data at half the bitrate of H264.
                 This plugin will  skip any files that are in the VP9 codec.`,
-  Version: '1.9',
+  Version: '2.0',
   Tags: 'pre-processing,ffmpeg,video only,configurable,h265',
   Inputs: [{
     name: 'container',
@@ -280,8 +280,34 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   response.infoLog += `Minimum = ${minimumBitrate} \n`;
   response.infoLog += `Maximum = ${maximumBitrate} \n`;
 
+  // Matroska cannot store mov_text (MP4's tx3g), so copying such a stream aborts the mux
+  // at header-write with 'Subtitle codec 94213 is not supported' and the job ends having
+  // encoded 0 frames. Convert those streams to subrip instead, which keeps the subtitles,
+  // where force_conform's only remedy is to drop them. Targeted at the individual stream
+  // because the subrip encoder cannot accept bitmap subtitles, so a blanket '-c:s srt'
+  // would break files which also carry PGS or VOBSUB. Skipped when force_conform is
+  // enabled for mkv, as that already removes mov_text streams.
+  let subtitleArguments = '';
+  if (inputs.container.toLowerCase() === 'mkv' && inputs.force_conform !== true) {
+    let subtitleIndex = 0;
+    for (let i = 0; i < file.ffProbeData.streams.length; i++) {
+      try {
+        if (file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle') {
+          if (file.ffProbeData.streams[i].codec_name.toLowerCase() === 'mov_text') {
+            subtitleArguments += ` -c:s:${subtitleIndex} srt`;
+            response.infoLog += `Subtitle stream ${subtitleIndex} is mov_text, `
+              + 'which mkv cannot store. Converting to subrip. \n';
+          }
+          subtitleIndex += 1;
+        }
+      } catch (err) {
+        // Error
+      }
+    }
+  }
+
   response.preset += `,-map 0 -c:v libx265 ${bitrateSettings} `
-  + `-c:a copy -c:s copy -max_muxing_queue_size 9999 ${extraArguments}`;
+  + `-c:a copy -c:s copy${subtitleArguments} -max_muxing_queue_size 9999 ${extraArguments}`;
   response.processFile = true;
   response.infoLog += 'File is not hevc or vp9. Transcoding. \n';
   return response;
