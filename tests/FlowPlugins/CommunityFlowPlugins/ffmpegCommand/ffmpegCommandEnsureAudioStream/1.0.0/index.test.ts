@@ -389,4 +389,127 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       removed: false,
     });
   });
+
+  describe('Encoder Channel Limits', () => {
+    const setupSource = (channels: number) => {
+      const { streams } = baseArgs.variables.ffmpegCommand;
+      streams[1].codec_name = 'dts';
+      streams[1].channels = channels;
+      streams[1].tags = { language: 'eng' };
+      baseArgs.inputs.language = 'eng';
+      return streams;
+    };
+
+    it('should reduce 8 channels to 6 for the eac3 encoder', () => {
+      const streams = setupSource(8);
+      baseArgs.inputs.audioEncoder = 'eac3';
+      baseArgs.inputs.channels = '8';
+
+      plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'eac3 supports at most 6 channels, reducing from 8. \n',
+      );
+      expect(streams[2]).toMatchObject({ codec_name: 'eac3', channels: 6 });
+      expect(streams[2].outputArgs).toEqual(
+        expect.arrayContaining(['-ac:{outputIndex}', '6']),
+      );
+    });
+
+    it('should reduce 8 channels to 6 for the ac3 encoder', () => {
+      const streams = setupSource(8);
+      baseArgs.inputs.audioEncoder = 'ac3';
+      baseArgs.inputs.channels = '8';
+
+      plugin(baseArgs);
+
+      expect(streams[2]).toMatchObject({ codec_name: 'ac3', channels: 6 });
+    });
+
+    it('should not reduce channels for encoders without a limit', () => {
+      const streams = setupSource(8);
+      baseArgs.inputs.audioEncoder = 'aac';
+      baseArgs.inputs.channels = '8';
+
+      plugin(baseArgs);
+
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
+        expect.stringContaining('supports at most'),
+      );
+      expect(streams[2]).toMatchObject({ codec_name: 'aac', channels: 8 });
+    });
+
+    it('should leave requests already within the encoder limit untouched', () => {
+      const streams = setupSource(6);
+      baseArgs.inputs.audioEncoder = 'eac3';
+      baseArgs.inputs.channels = '6';
+
+      plugin(baseArgs);
+
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
+        expect.stringContaining('supports at most'),
+      );
+      expect(streams[2]).toMatchObject({ codec_name: 'eac3', channels: 6 });
+    });
+  });
+
+  describe('Removed Streams', () => {
+    it('should ignore removed streams when looking for a source stream', () => {
+      const { streams } = baseArgs.variables.ffmpegCommand;
+      streams[1].tags = { language: 'eng' };
+      streams[1].removed = true;
+      baseArgs.inputs.language = 'eng';
+      baseArgs.inputs.audioEncoder = 'eac3';
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'No streams with language tag eng found. Skipping \n',
+      );
+      expect(streams).toHaveLength(2);
+    });
+
+    it('should not treat a removed stream as already satisfying the requirement', () => {
+      const { streams } = baseArgs.variables.ffmpegCommand;
+      streams[1].codec_name = 'dts';
+      streams[1].channels = 6;
+      streams[1].tags = { language: 'eng' };
+      streams.push({
+        ...JSON.parse(JSON.stringify(streams[1])),
+        index: 2,
+        codec_name: 'aac',
+        channels: 2,
+        removed: true,
+      });
+      baseArgs.inputs.language = 'eng';
+      baseArgs.inputs.audioEncoder = 'aac';
+      baseArgs.inputs.channels = '2';
+
+      plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Adding eng stream in aac, 2 channels \n',
+      );
+      expect(streams).toHaveLength(4);
+      expect(streams[3]).toMatchObject({ codec_name: 'aac', channels: 2, removed: false });
+    });
+  });
+
+  describe('Output Argument Scoping', () => {
+    it('should scope -ac to the output stream index', () => {
+      const { streams } = baseArgs.variables.ffmpegCommand;
+      streams[1].codec_name = 'dts';
+      streams[1].tags = { language: 'eng' };
+      baseArgs.inputs.language = 'eng';
+      baseArgs.inputs.channels = '2';
+
+      plugin(baseArgs);
+
+      expect(streams[2].outputArgs).toEqual(
+        expect.arrayContaining(['-ac:{outputIndex}', '2']),
+      );
+      expect(streams[2].outputArgs).not.toContain('-ac');
+    });
+  });
 });
