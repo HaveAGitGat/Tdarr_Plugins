@@ -410,4 +410,120 @@ describe('replaceOriginalFile Plugin', () => {
       );
     });
   });
+
+  describe('Atomic Swap', () => {
+    let callOrder: string[];
+
+    beforeEach(() => {
+      callOrder = [];
+      baseArgs.inputs = { atomicSwap: true };
+      baseArgs.platform = 'linux';
+      baseArgs.job = { jobId: 'job123' } as IpluginInputArgs['job'];
+      mockFileMoveOrCopy.mockImplementation(({ sourcePath, destinationPath }) => {
+        callOrder.push(`move:${sourcePath}->${destinationPath}`);
+        return Promise.resolve(true);
+      });
+      mockFsPromises.rename.mockImplementation((from: string, to: string) => {
+        callOrder.push(`rename:${from}->${to}`);
+        return Promise.resolve();
+      });
+      mockFsPromises.unlink.mockImplementation((target: string) => {
+        callOrder.push(`unlink:${target}`);
+        return Promise.resolve();
+      });
+    });
+
+    it('should stage under a hidden name and replace the original with one rename', async () => {
+      inputFileObj._id = '/working/path/video.mp4';
+      mockFileExists.mockResolvedValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(callOrder).toEqual([
+        'move:/working/path/video.mp4->/original/path/.tdarr-replace-job123.tmp',
+        'rename:/original/path/.tdarr-replace-job123.tmp->/original/path/video.mp4',
+      ]);
+      expect(result.outputFileObj._id).toBe('/original/path/video.mp4');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Atomically replaced /original/path/video.mp4');
+    });
+
+    it('should never rename the original aside', async () => {
+      await plugin(baseArgs);
+
+      expect(callOrder.some((c) => c.includes('.partial.old'))).toBe(false);
+      expect(callOrder.some((c) => c.startsWith('rename:/original/path/video.mp4'))).toBe(false);
+    });
+
+    it('should delete the original after the swap when the name or container changed', async () => {
+      const result = await plugin(baseArgs);
+
+      expect(callOrder).toEqual([
+        'move:/working/path/video_transcoded.mkv->/original/path/.tdarr-replace-job123.tmp',
+        'rename:/original/path/.tdarr-replace-job123.tmp->/original/path/video_transcoded.mkv',
+        'unlink:/original/path/video.mp4',
+      ]);
+      expect(result.outputFileObj._id).toBe('/original/path/video_transcoded.mkv');
+    });
+
+    it('should leave the original untouched and clean up if the swap fails', async () => {
+      const renameError = new Error('EACCES');
+      mockFsPromises.rename.mockImplementation((from: string, to: string) => {
+        callOrder.push(`rename:${from}->${to}`);
+        return Promise.reject(renameError);
+      });
+
+      await expect(plugin(baseArgs)).rejects.toThrow('EACCES');
+
+      expect(callOrder).toEqual([
+        'move:/working/path/video_transcoded.mkv->/original/path/.tdarr-replace-job123.tmp',
+        'rename:/original/path/.tdarr-replace-job123.tmp->/original/path/video_transcoded.mkv',
+        'unlink:/original/path/.tdarr-replace-job123.tmp',
+      ]);
+    });
+
+    it('should not touch the original if staging fails', async () => {
+      mockFileMoveOrCopy.mockRejectedValue(new Error('copy failed'));
+
+      await expect(plugin(baseArgs)).rejects.toThrow('copy failed');
+
+      expect(mockFsPromises.rename).not.toHaveBeenCalled();
+      expect(mockFsPromises.unlink).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to a timestamp when no job id is available', async () => {
+      baseArgs.job = undefined as unknown as IpluginInputArgs['job'];
+
+      await plugin(baseArgs);
+
+      expect(callOrder[0]).toMatch(/->\/original\/path\/\.tdarr-replace-\d+\.tmp$/);
+    });
+
+    it('should use the default replace on Windows', async () => {
+      baseArgs.platform = 'win32';
+
+      await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Atomic swap is not supported on Windows, using the default replace',
+      );
+      expect(callOrder).toContain('rename:/original/path/video.mp4->/original/path/video.mp4.partial.old');
+    });
+
+    it('should keep the default replace when the switch is off', async () => {
+      baseArgs.inputs = { atomicSwap: false };
+
+      await plugin(baseArgs);
+
+      expect(callOrder[0]).toBe('move:/working/path/video_transcoded.mkv->/original/path/video_transcoded.mkv.tmp');
+    });
+
+    it('should still skip unchanged files', async () => {
+      baseArgs.inputFileObj = originalFileObj;
+
+      await plugin(baseArgs);
+
+      expect(callOrder).toEqual([]);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has not changed, no need to replace file');
+    });
+  });
 });

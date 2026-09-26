@@ -27,7 +27,31 @@ const details = (): IpluginDetails => ({
   requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faArrowRight',
-  inputs: [],
+  inputs: [
+    {
+      label: 'Atomic Swap',
+      name: 'atomicSwap',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: `Off (default): the working file is staged next to the original as <name>.tmp, the
+original is renamed aside to .partial.old, and the new file is then moved into place.
+For those few seconds the original path does not exist.
+
+On: the working file is staged under a hidden name that is not derived from the
+original (.tdarr-replace-<jobId>.tmp), then a single rename replaces the original.
+The original path always exists, and if anything fails the original is untouched.
+
+Use this when other software watches the library while Tdarr works, e.g. Sonarr/Radarr
+rescans, which can treat a briefly missing file as deleted and remove its "extra" files
+(subtitles, artwork, and the staged <name>.tmp).
+
+Linux/macOS only. On Windows, rename cannot replace an existing file, so the default
+behaviour is used.`,
+    },
+  ],
   outputs: [
     {
       number: 1,
@@ -35,6 +59,66 @@ const details = (): IpluginDetails => ({
     },
   ],
 });
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Stage under a hidden name, then replace the original with one rename(). rename() over an
+// existing file is atomic on POSIX, so the original path never disappears, and any failure
+// before it leaves the original untouched.
+const atomicReplace = async ({
+  args,
+  currentPath,
+  originalPath,
+  newPath,
+  orignalFolder,
+}: {
+  args: IpluginInputArgs,
+  currentPath: string,
+  originalPath: string,
+  newPath: string,
+  orignalFolder: string,
+}): Promise<void> => {
+  const jobId = args.job?.jobId || String(Date.now());
+  const hiddenTmp = `${orignalFolder}/.tdarr-replace-${jobId}.tmp`;
+
+  args.jobLog(JSON.stringify({
+    currentPath,
+    newPath,
+    hiddenTmp,
+  }));
+
+  await sleep(2000);
+
+  await fileMoveOrCopy({
+    operation: 'move',
+    sourcePath: currentPath,
+    destinationPath: hiddenTmp,
+    args,
+  });
+
+  try {
+    await fsp.rename(hiddenTmp, newPath);
+  } catch (err) {
+    args.jobLog(`Failed to rename ${hiddenTmp} to ${newPath}, original untouched: ${JSON.stringify(err)}`);
+    try {
+      await fsp.unlink(hiddenTmp);
+    } catch (cleanupErr) {
+      args.jobLog(`Failed to clean up temporary file ${hiddenTmp}: ${JSON.stringify(cleanupErr)}`);
+    }
+    throw err;
+  }
+  args.jobLog(`Atomically replaced ${newPath}`);
+
+  // The container or name changed, so the new file did not overwrite the original: remove it.
+  if (newPath !== originalPath && currentPath !== originalPath && await fileExists(originalPath)) {
+    args.jobLog(`Deleting original file: ${originalPath}`);
+    try {
+      await fsp.unlink(originalPath);
+    } catch (err) {
+      args.jobLog(`Failed to delete original file ${originalPath}: ${JSON.stringify(err)}`);
+    }
+  }
+};
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -63,6 +147,29 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const container = getContainer(args.inputFileObj._id);
 
   const newPath = `${orignalFolder}/${fileName}.${container}`;
+
+  if (args.inputs.atomicSwap === true) {
+    const platform = args.platform || process.platform;
+    if (platform !== 'win32') {
+      await atomicReplace({
+        args,
+        currentPath,
+        originalPath,
+        newPath,
+        orignalFolder,
+      });
+
+      return {
+        outputFileObj: {
+          _id: newPath,
+        },
+        outputNumber: 1,
+        variables: args.variables,
+      };
+    }
+    args.jobLog('Atomic swap is not supported on Windows, using the default replace');
+  }
+
   const newPathTmp = `${newPath}.tmp`;
   // Suffix includes `.partial` so Tdarr's folder watcher ignores this sentinel if a crash
   // between rename-aside and final move leaves it on disk.
