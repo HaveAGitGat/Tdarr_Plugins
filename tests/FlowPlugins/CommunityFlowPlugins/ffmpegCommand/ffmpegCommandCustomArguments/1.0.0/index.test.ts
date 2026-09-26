@@ -224,4 +224,49 @@ describe('ffmpegCommandCustomArguments Plugin', () => {
       expect((result.variables as any).otherProperty).toBe('test');
     });
   });
+
+  describe('Only Apply If Processing', () => {
+    it('should default to forcing processing (existing behaviour)', () => {
+      baseArgs.inputs.outputArguments = '-metadata title=';
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.overallOuputArguments).toEqual(['-metadata', 'title=']);
+      expect(result.variables.ffmpegCommand.overallOutputArgumentsIfProcessing).toBeUndefined();
+    });
+
+    it('should hold arguments separately when enabled', () => {
+      baseArgs.inputs.onlyApplyIfProcessing = true;
+      baseArgs.inputs.inputArguments = '-analyzeduration 100M';
+      baseArgs.inputs.outputArguments = '-metadata title=';
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.overallInputArguments).toEqual([]);
+      expect(result.variables.ffmpegCommand.overallOuputArguments).toEqual([]);
+      expect(result.variables.ffmpegCommand.overallInputArgumentsIfProcessing)
+        .toEqual(['-analyzeduration', '100M']);
+      expect(result.variables.ffmpegCommand.overallOutputArgumentsIfProcessing).toEqual(['-metadata', 'title=']);
+    });
+
+    it('should append to arguments held by an earlier plugin', () => {
+      baseArgs.inputs.onlyApplyIfProcessing = true;
+      baseArgs.inputs.outputArguments = '-color_primaries bt709';
+      baseArgs.variables.ffmpegCommand.overallOutputArgumentsIfProcessing = ['-metadata', 'title='];
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.overallOutputArgumentsIfProcessing)
+        .toEqual(['-metadata', 'title=', '-color_primaries', 'bt709']);
+    });
+
+    it('should accept the string form of the switch', () => {
+      baseArgs.inputs.onlyApplyIfProcessing = 'false';
+      baseArgs.inputs.outputArguments = '-metadata title=';
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.overallOuputArguments).toEqual(['-metadata', 'title=']);
+    });
+  });
 });

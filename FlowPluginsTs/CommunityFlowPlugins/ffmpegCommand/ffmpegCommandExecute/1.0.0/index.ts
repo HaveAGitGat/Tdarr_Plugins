@@ -166,6 +166,19 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     shouldProcess = true;
   }
 
+  const {
+    overallInputArgumentsIfProcessing = [],
+    overallOutputArgumentsIfProcessing = [],
+  } = args.variables.ffmpegCommand;
+
+  if (shouldProcess) {
+    // Input options go before the first input, like overallInputArguments.
+    cliArgs.splice(cliArgs.indexOf('-y') + 1, 0, ...overallInputArgumentsIfProcessing);
+    cliArgs.push(...overallOutputArgumentsIfProcessing);
+  } else if (overallInputArgumentsIfProcessing.length > 0 || overallOutputArgumentsIfProcessing.length > 0) {
+    args.jobLog('Skipping "only apply if processing" arguments: nothing else requires processing');
+  }
+
   if (!shouldProcess) {
     args.jobLog('No need to process file, already as required');
     return {
