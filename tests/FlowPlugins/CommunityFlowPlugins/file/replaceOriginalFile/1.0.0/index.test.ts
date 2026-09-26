@@ -9,6 +9,7 @@ const mockFileMoveOrCopy = jest.fn();
 const mockFsPromises = {
   unlink: jest.fn(),
   rename: jest.fn(),
+  stat: jest.fn(),
 };
 
 // Mock fileExists
@@ -412,38 +413,75 @@ describe('replaceOriginalFile Plugin', () => {
   });
 
   describe('Atomic Swap', () => {
+    // A tiny in-memory filesystem: path -> inode. Optionally case-insensitive, like macOS APFS.
+    let files: Map<string, number>;
+    let caseInsensitive: boolean;
+    let nextIno: number;
     let callOrder: string[];
+    const key = (p: string) => (caseInsensitive ? p.toLowerCase() : p);
+    const addFile = (p: string) => {
+      files.set(key(p), nextIno);
+      nextIno += 1;
+    };
+    const has = (p: string) => files.has(key(p));
+    const moveEntry = (from: string, to: string) => {
+      if (!has(from)) throw Object.assign(new Error(`ENOENT ${from}`), { code: 'ENOENT' });
+      const ino = files.get(key(from)) as number;
+      files.delete(key(from));
+      files.set(key(to), ino);
+    };
 
     beforeEach(() => {
+      files = new Map();
+      caseInsensitive = false;
+      nextIno = 1;
       callOrder = [];
+      addFile('/original/path/video.mp4');
+      addFile('/working/path/video_transcoded.mkv');
+
       baseArgs.inputs = { atomicSwap: true };
       baseArgs.platform = 'linux';
       baseArgs.job = { jobId: 'job123' } as IpluginInputArgs['job'];
+
+      mockFileExists.mockImplementation((p: string) => Promise.resolve(has(p)));
+      mockFsPromises.stat.mockImplementation((p: string) => {
+        if (!has(p)) return Promise.reject(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
+        return Promise.resolve({ dev: 1, ino: files.get(key(p)) });
+      });
       mockFileMoveOrCopy.mockImplementation(({ sourcePath, destinationPath }) => {
         callOrder.push(`move:${sourcePath}->${destinationPath}`);
+        moveEntry(sourcePath, destinationPath);
         return Promise.resolve(true);
       });
       mockFsPromises.rename.mockImplementation((from: string, to: string) => {
         callOrder.push(`rename:${from}->${to}`);
+        moveEntry(from, to);
         return Promise.resolve();
       });
       mockFsPromises.unlink.mockImplementation((target: string) => {
         callOrder.push(`unlink:${target}`);
+        files.delete(key(target));
         return Promise.resolve();
       });
     });
 
+    const TMP = '/original/path/.tdarr-replace-job123.partial.tmp';
+
     it('should stage under a hidden name and replace the original with one rename', async () => {
+      files.clear();
+      nextIno = 1;
+      addFile('/original/path/video.mp4');
+      addFile('/working/path/video.mp4');
       inputFileObj._id = '/working/path/video.mp4';
-      mockFileExists.mockResolvedValue(true);
 
       const result = await plugin(baseArgs);
 
       expect(callOrder).toEqual([
-        'move:/working/path/video.mp4->/original/path/.tdarr-replace-job123.tmp',
-        'rename:/original/path/.tdarr-replace-job123.tmp->/original/path/video.mp4',
+        `move:/working/path/video.mp4->${TMP}`,
+        `rename:${TMP}->/original/path/video.mp4`,
       ]);
       expect(result.outputFileObj._id).toBe('/original/path/video.mp4');
+      expect(files.get('/original/path/video.mp4')).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Atomically replaced /original/path/video.mp4');
     });
 
@@ -458,44 +496,101 @@ describe('replaceOriginalFile Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(callOrder).toEqual([
-        'move:/working/path/video_transcoded.mkv->/original/path/.tdarr-replace-job123.tmp',
-        'rename:/original/path/.tdarr-replace-job123.tmp->/original/path/video_transcoded.mkv',
+        `move:/working/path/video_transcoded.mkv->${TMP}`,
+        `rename:${TMP}->/original/path/video_transcoded.mkv`,
         'unlink:/original/path/video.mp4',
       ]);
       expect(result.outputFileObj._id).toBe('/original/path/video_transcoded.mkv');
+      expect(Array.from(files.keys())).toEqual(['/original/path/video_transcoded.mkv']);
+    });
+
+    it('should keep the new file when the name differs only by case on a case-insensitive filesystem', async () => {
+      caseInsensitive = true;
+      files.clear();
+      nextIno = 1;
+      addFile('/original/path/video.MKV');
+      addFile('/working/path/video.mkv');
+      originalFileObj._id = '/original/path/video.MKV';
+      inputFileObj._id = '/working/path/video.mkv';
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputFileObj._id).toBe('/original/path/video.mkv');
+      expect(callOrder.some((c) => c.startsWith('unlink:'))).toBe(false);
+      expect(files.get('/original/path/video.mkv')).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Not deleting /original/path/video.MKV: it now resolves to the new file (case-insensitive filesystem?)',
+      );
+    });
+
+    it('should do nothing when the working file is the original (changed in place)', async () => {
+      inputFileObj._id = '/original/path/video.mp4';
+      inputFileObj.file_size = 90;
+
+      const result = await plugin(baseArgs);
+
+      expect(callOrder).toEqual([]);
+      expect(result.outputFileObj._id).toBe('/original/path/video.mp4');
+      expect(has('/original/path/video.mp4')).toBe(true);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Working file is already in place, nothing to swap');
+    });
+
+    it('should not delete anything when the original no longer exists', async () => {
+      files.delete('/original/path/video.mp4');
+
+      await plugin(baseArgs);
+
+      expect(callOrder.some((c) => c.startsWith('unlink:'))).toBe(false);
+      expect(has('/original/path/video_transcoded.mkv')).toBe(true);
     });
 
     it('should leave the original untouched and clean up if the swap fails', async () => {
-      const renameError = new Error('EACCES');
       mockFsPromises.rename.mockImplementation((from: string, to: string) => {
         callOrder.push(`rename:${from}->${to}`);
-        return Promise.reject(renameError);
+        return Promise.reject(new Error('EACCES'));
       });
 
       await expect(plugin(baseArgs)).rejects.toThrow('EACCES');
 
       expect(callOrder).toEqual([
-        'move:/working/path/video_transcoded.mkv->/original/path/.tdarr-replace-job123.tmp',
-        'rename:/original/path/.tdarr-replace-job123.tmp->/original/path/video_transcoded.mkv',
-        'unlink:/original/path/.tdarr-replace-job123.tmp',
+        `move:/working/path/video_transcoded.mkv->${TMP}`,
+        `rename:${TMP}->/original/path/video_transcoded.mkv`,
+        `unlink:${TMP}`,
       ]);
+      expect(files.get('/original/path/video.mp4')).toBe(1);
     });
 
-    it('should not touch the original if staging fails', async () => {
-      mockFileMoveOrCopy.mockRejectedValue(new Error('copy failed'));
+    it('should clean up a partial staged file and leave the original if staging fails', async () => {
+      mockFileMoveOrCopy.mockImplementation(({ destinationPath }) => {
+        addFile(destinationPath); // partial copy left behind
+        return Promise.reject(new Error('copy failed'));
+      });
 
       await expect(plugin(baseArgs)).rejects.toThrow('copy failed');
 
       expect(mockFsPromises.rename).not.toHaveBeenCalled();
-      expect(mockFsPromises.unlink).not.toHaveBeenCalled();
+      expect(mockFsPromises.unlink).toHaveBeenCalledWith(TMP);
+      expect(has(TMP)).toBe(false);
+      expect(files.get('/original/path/video.mp4')).toBe(1);
     });
 
-    it('should fall back to a timestamp when no job id is available', async () => {
+    it('should log, not throw, if the old original cannot be deleted', async () => {
+      mockFsPromises.unlink.mockRejectedValue(new Error('EPERM'));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputFileObj._id).toBe('/original/path/video_transcoded.mkv');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to delete original file /original/path/video.mp4'),
+      );
+    });
+
+    it('should use a unique fallback name when no job id is available', async () => {
       baseArgs.job = undefined as unknown as IpluginInputArgs['job'];
 
       await plugin(baseArgs);
 
-      expect(callOrder[0]).toMatch(/->\/original\/path\/\.tdarr-replace-\d+\.tmp$/);
+      expect(callOrder[0]).toMatch(/->\/original\/path\/\.tdarr-replace-\d+-[a-z0-9]+\.partial\.tmp$/);
     });
 
     it('should use the default replace on Windows', async () => {
@@ -506,6 +601,19 @@ describe('replaceOriginalFile Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         'Atomic swap is not supported on Windows, using the default replace',
       );
+      expect(callOrder).toContain('rename:/original/path/video.mp4->/original/path/video.mp4.partial.old');
+    });
+
+    it('should detect Windows from process.platform when args.platform is not set', async () => {
+      baseArgs.platform = undefined as unknown as string;
+      const realPlatform = Object.getOwnPropertyDescriptor(process, 'platform') as PropertyDescriptor;
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        await plugin(baseArgs);
+      } finally {
+        Object.defineProperty(process, 'platform', realPlatform);
+      }
+
       expect(callOrder).toContain('rename:/original/path/video.mp4->/original/path/video.mp4.partial.old');
     });
 
