@@ -292,6 +292,83 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
+    describe('SVT-AV1 preset', () => {
+      const useSvtAv1 = () => {
+        baseArgs.inputs.outputCodec = 'av1';
+        mockGetEncoder.mockResolvedValue({
+          encoder: 'libsvtav1',
+          inputArgs: [],
+          outputArgs: [],
+          isGpu: false,
+          enabledDevices: [],
+        });
+      };
+
+      it('should add no preset when left blank (default)', async () => {
+        useSvtAv1();
+
+        const result = await plugin(baseArgs);
+
+        const { outputArgs } = result.variables.ffmpegCommand.streams[0];
+        expect(outputArgs.some((a) => a.startsWith('-preset'))).toBe(false);
+      });
+
+      it('should add a stream-scoped numeric preset for libsvtav1', async () => {
+        useSvtAv1();
+        baseArgs.inputs.svtAv1Preset = '4';
+
+        const result = await plugin(baseArgs);
+
+        const { outputArgs } = result.variables.ffmpegCommand.streams[0];
+        expect(outputArgs).toEqual(
+          expect.arrayContaining(['-c:{outputIndex}', 'libsvtav1', '-preset:{outputIndex}', '4']),
+        );
+      });
+
+      it('should accept a numeric input value', async () => {
+        useSvtAv1();
+        baseArgs.inputs.svtAv1Preset = 6;
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual(
+          expect.arrayContaining(['-preset:{outputIndex}', '6']),
+        );
+      });
+
+      it('should ignore the SVT-AV1 preset for hardware AV1 encoders', async () => {
+        baseArgs.inputs.outputCodec = 'av1';
+        baseArgs.inputs.svtAv1Preset = '4';
+        mockGetEncoder.mockResolvedValue({
+          encoder: 'av1_qsv',
+          inputArgs: [],
+          outputArgs: [],
+          isGpu: true,
+          enabledDevices: [],
+        });
+
+        const result = await plugin(baseArgs);
+
+        const { outputArgs } = result.variables.ffmpegCommand.streams[0];
+        expect(outputArgs.some((a) => a.startsWith('-preset'))).toBe(false);
+      });
+
+      it('should ignore the SVT-AV1 preset for other codecs', async () => {
+        baseArgs.inputs.svtAv1Preset = '4';
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs).not.toContain('-preset:{outputIndex}');
+      });
+
+      it('should reject a non-numeric preset', async () => {
+        useSvtAv1();
+        baseArgs.inputs.svtAv1Preset = 'slow';
+
+        await expect(plugin(baseArgs)).rejects.toThrow('SVT-AV1 Preset must be a whole number');
+      });
+    });
+
     it('should handle different preset values for CPU encoders', async () => {
       const presets = ['veryslow', 'slower', 'slow', 'medium', 'fast', 'faster', 'veryfast', 'superfast', 'ultrafast'];
 

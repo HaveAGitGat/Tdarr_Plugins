@@ -88,6 +88,35 @@ const details = (): IpluginDetails => ({
         + ' Ignored for VAAPI/rkmpp/videotoolbox.',
     },
     {
+      label: 'SVT-AV1 Preset',
+      name: 'svtAv1Preset',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'outputCodec',
+                  value: 'av1',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: `Numeric preset for the software AV1 encoder (libsvtav1), e.g. 4.
+Lower is slower and more efficient. Leave blank to use the encoder default.
+
+The FFmpeg Preset above does not apply to AV1, because SVT-AV1 uses numbers
+rather than names. Only used when the encoder is libsvtav1.`,
+    },
+    {
       label: 'Enable FFmpeg Quality',
       name: 'ffmpegQualityEnabled',
       type: 'boolean',
@@ -272,6 +301,14 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
               stream.outputArgs.push('-preset', presetToUse);
             }
           }
+        }
+
+        const svtAv1Preset = String(args.inputs.svtAv1Preset ?? '').trim();
+        if (svtAv1Preset !== '' && encoderProperties.encoder === 'libsvtav1') {
+          if (!/^-?\d+$/.test(svtAv1Preset)) {
+            throw new Error(`SVT-AV1 Preset must be a whole number, got "${svtAv1Preset}"`);
+          }
+          stream.outputArgs.push('-preset:{outputIndex}', svtAv1Preset);
         }
 
         if (hardwareDecoding) {
