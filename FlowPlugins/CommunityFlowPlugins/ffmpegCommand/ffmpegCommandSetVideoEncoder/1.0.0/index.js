@@ -142,7 +142,7 @@ var details = function () { return ({
                     ],
                 },
             },
-            tooltip: "Numeric preset for the software AV1 encoder (libsvtav1), e.g. 4.\nLower is slower and more efficient. Leave blank to use the encoder default.\n\nThe FFmpeg Preset above does not apply to AV1, because SVT-AV1 uses numbers\nrather than names. Only used when the encoder is libsvtav1.",
+            tooltip: "Numeric preset for the software AV1 encoder (libsvtav1), from -1 to 13, e.g. 4.\nLower is slower and more efficient. Leave blank to use the encoder default.\n\nThe FFmpeg Preset above does not apply to AV1, because SVT-AV1 uses numbers\nrather than names. Only used when the encoder is libsvtav1; hardware AV1 encoders ignore it.\nA global -preset added with Custom Arguments comes later in the command and takes precedence.",
         },
         {
             label: 'Enable FFmpeg Quality',
@@ -238,7 +238,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap, svtAv1Preset;
+    var lib, svtAv1Preset, presetNumber, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
     var _b, _c;
     var _d;
     return __generator(this, function (_e) {
@@ -248,6 +248,14 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 (0, flowUtils_1.checkFfmpegCommandInit)(args);
+                svtAv1Preset = String((_d = args.inputs.svtAv1Preset) !== null && _d !== void 0 ? _d : '').trim();
+                if (svtAv1Preset !== '' && String(args.inputs.outputCodec) === 'av1') {
+                    presetNumber = Number(svtAv1Preset);
+                    if (!/^-?\d+$/.test(svtAv1Preset) || presetNumber < -1 || presetNumber > 13) {
+                        throw new Error("SVT-AV1 Preset must be a whole number from -1 to 13, got \"".concat(svtAv1Preset, "\""));
+                    }
+                    svtAv1Preset = String(presetNumber);
+                }
                 hardwareDecoding = args.inputs.hardwareDecoding === true;
                 hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
@@ -334,11 +342,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         }
                     }
                 }
-                svtAv1Preset = String((_d = args.inputs.svtAv1Preset) !== null && _d !== void 0 ? _d : '').trim();
                 if (svtAv1Preset !== '' && encoderProperties.encoder === 'libsvtav1') {
-                    if (!/^-?\d+$/.test(svtAv1Preset)) {
-                        throw new Error("SVT-AV1 Preset must be a whole number, got \"".concat(svtAv1Preset, "\""));
-                    }
                     stream.outputArgs.push('-preset:{outputIndex}', svtAv1Preset);
                 }
                 if (hardwareDecoding) {
