@@ -80,6 +80,16 @@ A failure to unmonitor is logged and does not fail the flow.`,
   ],
 });
 
+// Short error text for the job log. Never logs the request config, which holds the API key.
+const describeError = (err: unknown): string => {
+  const e = err as { message?: string, response?: { status?: number, data?: unknown } };
+  if (e?.response?.status) {
+    const body = e.response.data === undefined ? '' : ` ${JSON.stringify(e.response.data)}`;
+    return `HTTP ${e.response.status}${body}`.slice(0, 500);
+  }
+  return e?.message || String(err);
+};
+
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -140,7 +150,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         });
         args.jobLog(`✔ Unmonitored movie ${movieId} in Radarr.`);
       } catch (err) {
-        args.jobLog(`Failed to unmonitor movie ${movieId} in Radarr: ${(err as Error).message}`);
+        args.jobLog(`Failed to unmonitor movie ${movieId} in Radarr: ${describeError(err)}`);
       }
     }
   } else if (arr === 'sonarr') {
@@ -154,7 +164,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
     const res = await args.deps.axios(requestConfig);
     const seriesId = res.data.series.id;
-    const episodeIds: number[] = (res.data.episodes || []).map((episode: { id: number }) => episode.id);
 
     const requestConfig2 = {
       method: 'post',
@@ -171,6 +180,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.jobLog(`✔ Refreshed series ${seriesId} in Sonarr.`);
 
     if (unmonitor) {
+      const episodes: { id?: unknown }[] = Array.isArray(res.data.episodes) ? res.data.episodes : [];
+      const episodeIds = episodes.map((episode) => episode?.id).filter(Number.isInteger) as number[];
       if (episodeIds.length === 0) {
         args.jobLog('No episodes matched this file, nothing to unmonitor in Sonarr.');
       } else {
@@ -186,7 +197,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           });
           args.jobLog(`✔ Unmonitored episode(s) ${episodeIds.join(', ')} in Sonarr.`);
         } catch (err) {
-          args.jobLog(`Failed to unmonitor episode(s) ${episodeIds.join(', ')} in Sonarr: ${(err as Error).message}`);
+          args.jobLog(`Failed to unmonitor episode(s) ${episodeIds.join(', ')} in Sonarr: ${describeError(err)}`);
         }
       }
     }

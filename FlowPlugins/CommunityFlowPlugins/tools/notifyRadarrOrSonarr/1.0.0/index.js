@@ -105,8 +105,18 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+// Short error text for the job log. Never logs the request config, which holds the API key.
+var describeError = function (err) {
+    var _a;
+    var e = err;
+    if ((_a = e === null || e === void 0 ? void 0 : e.response) === null || _a === void 0 ? void 0 : _a.status) {
+        var body = e.response.data === undefined ? '' : " ".concat(JSON.stringify(e.response.data));
+        return "HTTP ".concat(e.response.status).concat(body).slice(0, 500);
+    }
+    return (e === null || e === void 0 ? void 0 : e.message) || String(err);
+};
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, unmonitor, arr_host, fileName, arrHost, headers, requestConfig, res, movieId, requestConfig2, err_1, requestConfig, res, seriesId, episodeIds, requestConfig2, err_2;
+    var lib, _a, arr, arr_api_key, unmonitor, arr_host, fileName, arrHost, headers, requestConfig, res, movieId, requestConfig2, err_1, requestConfig, res, seriesId, requestConfig2, episodes, episodeIds, err_2;
     var _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -168,7 +178,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [3 /*break*/, 6];
             case 5:
                 err_1 = _d.sent();
-                args.jobLog("Failed to unmonitor movie ".concat(movieId, " in Radarr: ").concat(err_1.message));
+                args.jobLog("Failed to unmonitor movie ".concat(movieId, " in Radarr: ").concat(describeError(err_1)));
                 return [3 /*break*/, 6];
             case 6: return [3 /*break*/, 15];
             case 7:
@@ -183,7 +193,6 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 8:
                 res = _d.sent();
                 seriesId = res.data.series.id;
-                episodeIds = (res.data.episodes || []).map(function (episode) { return episode.id; });
                 requestConfig2 = {
                     method: 'post',
                     url: "".concat(arrHost, "/api/v3/command"),
@@ -198,6 +207,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _d.sent();
                 args.jobLog("\u2714 Refreshed series ".concat(seriesId, " in Sonarr."));
                 if (!unmonitor) return [3 /*break*/, 13];
+                episodes = Array.isArray(res.data.episodes) ? res.data.episodes : [];
+                episodeIds = episodes.map(function (episode) { return episode === null || episode === void 0 ? void 0 : episode.id; }).filter(Number.isInteger);
                 if (!(episodeIds.length === 0)) return [3 /*break*/, 10];
                 args.jobLog('No episodes matched this file, nothing to unmonitor in Sonarr.');
                 return [3 /*break*/, 13];
@@ -218,7 +229,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [3 /*break*/, 13];
             case 12:
                 err_2 = _d.sent();
-                args.jobLog("Failed to unmonitor episode(s) ".concat(episodeIds.join(', '), " in Sonarr: ").concat(err_2.message));
+                args.jobLog("Failed to unmonitor episode(s) ".concat(episodeIds.join(', '), " in Sonarr: ").concat(describeError(err_2)));
                 return [3 /*break*/, 13];
             case 13: return [3 /*break*/, 15];
             case 14:
