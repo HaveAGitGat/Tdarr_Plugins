@@ -55,7 +55,10 @@ Enable this to add the arguments only when another plugin already requires proce
 
 Use it for arguments that should ride along with real work but are not a reason to rewrite
 the file on their own, such as metadata, colour tags or encoder tuning. Otherwise a file
-that already matches the flow is re-processed on every pass just to re-apply them.`,
+that already matches the flow is re-processed on every pass just to re-apply them.
+
+Do not use it for codec selection (e.g. -c:v): a remux triggered by another plugin would
+then become a full re-encode.`,
     },
   ],
   outputs: [

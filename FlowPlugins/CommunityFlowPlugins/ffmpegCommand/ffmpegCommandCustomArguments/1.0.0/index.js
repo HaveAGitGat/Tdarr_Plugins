@@ -44,7 +44,7 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: "By default, any custom argument makes the file get processed.\n\nEnable this to add the arguments only when another plugin already requires processing\n(for example a stream was removed or is being re-encoded).\n\nUse it for arguments that should ride along with real work but are not a reason to rewrite\nthe file on their own, such as metadata, colour tags or encoder tuning. Otherwise a file\nthat already matches the flow is re-processed on every pass just to re-apply them.",
+            tooltip: "By default, any custom argument makes the file get processed.\n\nEnable this to add the arguments only when another plugin already requires processing\n(for example a stream was removed or is being re-encoded).\n\nUse it for arguments that should ride along with real work but are not a reason to rewrite\nthe file on their own, such as metadata, colour tags or encoder tuning. Otherwise a file\nthat already matches the flow is re-processed on every pass just to re-apply them.\n\nDo not use it for codec selection (e.g. -c:v): a remux triggered by another plugin would\nthen become a full re-encode.",
         },
     ],
     outputs: [

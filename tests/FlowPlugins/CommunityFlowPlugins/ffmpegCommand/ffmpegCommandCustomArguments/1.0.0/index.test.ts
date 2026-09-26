@@ -260,13 +260,24 @@ describe('ffmpegCommandCustomArguments Plugin', () => {
         .toEqual(['-metadata', 'title=', '-color_primaries', 'bt709']);
     });
 
-    it('should accept the string form of the switch', () => {
+    it('should accept the string form of the switch (as stored by the UI)', () => {
+      baseArgs.inputs.onlyApplyIfProcessing = 'true';
+      baseArgs.inputs.outputArguments = '-metadata title=';
+
+      const result = plugin(baseArgs);
+
+      expect(result.variables.ffmpegCommand.overallOuputArguments).toEqual([]);
+      expect(result.variables.ffmpegCommand.overallOutputArgumentsIfProcessing).toEqual(['-metadata', 'title=']);
+    });
+
+    it('should treat the string \'false\' as off', () => {
       baseArgs.inputs.onlyApplyIfProcessing = 'false';
       baseArgs.inputs.outputArguments = '-metadata title=';
 
       const result = plugin(baseArgs);
 
       expect(result.variables.ffmpegCommand.overallOuputArguments).toEqual(['-metadata', 'title=']);
+      expect(result.variables.ffmpegCommand.overallOutputArgumentsIfProcessing).toBeUndefined();
     });
   });
 });

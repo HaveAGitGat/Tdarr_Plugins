@@ -173,8 +173,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 _b = args.variables.ffmpegCommand, _c = _b.overallInputArgumentsIfProcessing, overallInputArgumentsIfProcessing = _c === void 0 ? [] : _c, _d = _b.overallOutputArgumentsIfProcessing, overallOutputArgumentsIfProcessing = _d === void 0 ? [] : _d;
                 if (shouldProcess) {
-                    // Input options go before the first input, like overallInputArguments.
-                    cliArgs.splice.apply(cliArgs, __spreadArray([cliArgs.indexOf('-y') + 1, 0], overallInputArgumentsIfProcessing, false));
+                    // Input options go before the first input, after overallInputArguments.
+                    cliArgs.splice.apply(cliArgs, __spreadArray([cliArgs.indexOf('-i'), 0], overallInputArgumentsIfProcessing, false));
                     cliArgs.push.apply(cliArgs, overallOutputArgumentsIfProcessing);
                 }
                 else if (overallInputArgumentsIfProcessing.length > 0 || overallOutputArgumentsIfProcessing.length > 0) {

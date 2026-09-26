@@ -476,6 +476,9 @@ describe('ffmpegCommandExecute Plugin', () => {
       const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
       expect(CLI).not.toHaveBeenCalled();
       expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping "only apply if processing" arguments: nothing else requires processing',
+      );
       expect(baseArgs.jobLog).toHaveBeenCalledWith('No need to process file, already as required');
     });
 
@@ -508,7 +511,19 @@ describe('ffmpegCommandExecute Plugin', () => {
 
       await plugin(baseArgs);
 
-      expect(getSpawnArgs()).toEqual(expect.arrayContaining(['-movflags', '+faststart', '-metadata', 'title=']));
+      expect(getSpawnArgs().slice(-5, -1)).toEqual(['-movflags', '+faststart', '-metadata', 'title=']);
+    });
+
+    it('should place held input arguments after regular ones, before -i', async () => {
+      baseArgs.variables.ffmpegCommand.shouldProcess = false;
+      baseArgs.variables.ffmpegCommand.overallInputArguments = ['-threads', '4'];
+      baseArgs.variables.ffmpegCommand.overallInputArgumentsIfProcessing = ['-analyzeduration', '100M'];
+
+      await plugin(baseArgs);
+
+      const spawnArgs = getSpawnArgs();
+      const i = spawnArgs.indexOf('-i');
+      expect(spawnArgs.slice(i - 4, i)).toEqual(['-threads', '4', '-analyzeduration', '100M']);
     });
   });
 });
