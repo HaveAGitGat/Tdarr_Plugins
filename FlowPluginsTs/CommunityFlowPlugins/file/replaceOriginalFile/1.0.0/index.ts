@@ -41,15 +41,16 @@ original is renamed aside to .partial.old, and the new file is then moved into p
 For those few seconds the original path does not exist.
 
 On: the working file is staged under a hidden name that is not derived from the
-original (.tdarr-replace-<jobId>.tmp), then a single rename replaces the original.
-The original path always exists, and if anything fails the original is untouched.
+original (.tdarr-replace-<jobId>.partial.tmp), then a single rename replaces the original.
+On local Linux/macOS filesystems the original path always exists, and if anything fails
+the original is untouched. A crash mid-copy can leave that hidden file behind.
 
 Use this when other software watches the library while Tdarr works, e.g. Sonarr/Radarr
-rescans, which can treat a briefly missing file as deleted and remove its "extra" files
-(subtitles, artwork, and the staged <name>.tmp).
+rescans, which have been seen to treat a briefly missing file as deleted and remove its
+"extra" files (subtitles, artwork, and the staged <name>.tmp).
 
-Linux/macOS only. On Windows, rename cannot replace an existing file, so the default
-behaviour is used.`,
+As with the default, the new file keeps the working file's owner and permissions.
+On Windows, rename cannot replace an existing file, so the default behaviour is used.`,
     },
   ],
   outputs: [
@@ -62,24 +63,46 @@ behaviour is used.`,
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Stage under a hidden name, then replace the original with one rename(). rename() over an
-// existing file is atomic on POSIX, so the original path never disappears, and any failure
-// before it leaves the original untouched.
+type FileId = { dev: number, ino: number };
+
+const getFileId = async (filePath: string): Promise<FileId | null> => {
+  try {
+    const { dev, ino } = await fsp.stat(filePath);
+    return { dev, ino };
+  } catch (err) {
+    return null;
+  }
+};
+
+// Treat unknown (0) inode numbers as "same file" so we err on the side of not deleting.
+const sameFile = (a: FileId, b: FileId): boolean => a.dev === b.dev && (a.ino === b.ino || a.ino === 0 || b.ino === 0);
+
+// Stage under a hidden name, then replace the original with one rename(). On local POSIX
+// filesystems rename() over an existing file is atomic, so the original path never disappears,
+// and any failure before it leaves the original untouched.
 const atomicReplace = async ({
   args,
   currentPath,
   originalPath,
   newPath,
-  orignalFolder,
+  originalFolder,
 }: {
   args: IpluginInputArgs,
   currentPath: string,
   originalPath: string,
   newPath: string,
-  orignalFolder: string,
+  originalFolder: string,
 }): Promise<void> => {
-  const jobId = args.job?.jobId || String(Date.now());
-  const hiddenTmp = `${orignalFolder}/.tdarr-replace-${jobId}.tmp`;
+  // The working file already is the destination (e.g. edited in place): there is nothing to move,
+  // and staging it would take the only copy out of the library.
+  if (currentPath === newPath || currentPath === originalPath) {
+    args.jobLog('Working file is already in place, nothing to swap');
+    return;
+  }
+
+  const suffix = args.job?.jobId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  // Includes `.partial`, like the default path's sentinel, so Tdarr's folder watcher ignores it.
+  const hiddenTmp = `${originalFolder}/.tdarr-replace-${suffix}.partial.tmp`;
 
   args.jobLog(JSON.stringify({
     currentPath,
@@ -87,14 +110,31 @@ const atomicReplace = async ({
     hiddenTmp,
   }));
 
+  // Identity of the original before the swap. On a case-insensitive filesystem a name that differs
+  // only by case (video.MKV -> video.mkv) is the same directory entry, so after the rename
+  // originalPath resolves to the NEW file and must not be deleted.
+  const originalIdBefore = newPath !== originalPath ? await getFileId(originalPath) : null;
+
   await sleep(2000);
 
-  await fileMoveOrCopy({
-    operation: 'move',
-    sourcePath: currentPath,
-    destinationPath: hiddenTmp,
-    args,
-  });
+  try {
+    await fileMoveOrCopy({
+      operation: 'move',
+      sourcePath: currentPath,
+      destinationPath: hiddenTmp,
+      args,
+    });
+  } catch (err) {
+    args.jobLog(`Failed to stage ${currentPath} as ${hiddenTmp}, original untouched: ${JSON.stringify(err)}`);
+    if (await fileExists(hiddenTmp)) {
+      try {
+        await fsp.unlink(hiddenTmp);
+      } catch (cleanupErr) {
+        args.jobLog(`Failed to clean up temporary file ${hiddenTmp}: ${JSON.stringify(cleanupErr)}`);
+      }
+    }
+    throw err;
+  }
 
   try {
     await fsp.rename(hiddenTmp, newPath);
@@ -109,13 +149,25 @@ const atomicReplace = async ({
   }
   args.jobLog(`Atomically replaced ${newPath}`);
 
-  // The container or name changed, so the new file did not overwrite the original: remove it.
-  if (newPath !== originalPath && currentPath !== originalPath && await fileExists(originalPath)) {
-    args.jobLog(`Deleting original file: ${originalPath}`);
-    try {
-      await fsp.unlink(originalPath);
-    } catch (err) {
-      args.jobLog(`Failed to delete original file ${originalPath}: ${JSON.stringify(err)}`);
+  // The name or container changed, so the new file did not overwrite the original: remove the
+  // original, but only if originalPath is still the same file it was before and not the new one.
+  if (originalIdBefore) {
+    const originalIdAfter = await getFileId(originalPath);
+    const newId = await getFileId(newPath);
+    if (
+      originalIdAfter
+      && newId
+      && sameFile(originalIdAfter, originalIdBefore)
+      && !sameFile(originalIdAfter, newId)
+    ) {
+      args.jobLog(`Deleting original file: ${originalPath}`);
+      try {
+        await fsp.unlink(originalPath);
+      } catch (err) {
+        args.jobLog(`Failed to delete original file ${originalPath}: ${JSON.stringify(err)}`);
+      }
+    } else if (originalIdAfter) {
+      args.jobLog(`Not deleting ${originalPath}: it now resolves to the new file (case-insensitive filesystem?)`);
     }
   }
 };
@@ -156,7 +208,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
         currentPath,
         originalPath,
         newPath,
-        orignalFolder,
+        originalFolder: orignalFolder,
       });
 
       return {
