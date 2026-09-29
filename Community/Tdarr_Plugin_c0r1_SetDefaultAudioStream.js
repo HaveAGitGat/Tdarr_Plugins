@@ -52,43 +52,59 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   var shouldProcess = false;
-  var defaultAudioStreams = 0;
+  var totalDefaultAudioStreams = 0;
   var matchingAudioStreams = 0;
+  var matchingDefaultAudioStreams = 0;
   var defaultSet = false;
   var ffmpegCommandInsert = "";
 
-  // Check if default audio stream matches user's channel selection
-  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (
-      file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio" &&
-      file.ffProbeData.streams[i].channels == inputs.channels
-    ) {
-      matchingAudioStreams++;
-      if (file.ffProbeData.streams[i].disposition.default === 1) {
-        defaultAudioStreams++;
-      }
-    }
-  }
-
-  // build command
+  // Check if default audio stream matches user's channel selection. Count
+  // defaults across ALL audio streams (not just matching ones) -- a file
+  // isn't "already correct" just because the matching stream is default,
+  // it's only correct if no OTHER audio stream is also still flagged default.
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
+      var isDefault = file.ffProbeData.streams[i].disposition.default === 1;
+      if (isDefault) {
+        totalDefaultAudioStreams++;
+      }
       if (file.ffProbeData.streams[i].channels == inputs.channels) {
-        if (!defaultSet) {
-          ffmpegCommandInsert += `-disposition:${i} default `;
-          defaultSet = true;
-        } else {
-          ffmpegCommandInsert += `-disposition:${i} 0 `;
+        matchingAudioStreams++;
+        if (isDefault) {
+          matchingDefaultAudioStreams++;
         }
-      } else {
-        ffmpegCommandInsert += `-disposition:${i} 0 `;
       }
     }
   }
 
-  // Only process when there is a matching stream and
-  // when there is either no default or more than 1 default stream set
-  if (matchingAudioStreams >= 1 && defaultAudioStreams !== 1) {
+  var alreadyCorrect =
+    matchingAudioStreams >= 1 &&
+    matchingDefaultAudioStreams === 1 &&
+    totalDefaultAudioStreams === 1;
+
+  // build command -- use the audio-relative stream index (a:N) rather than
+  // the absolute stream index, since -disposition's plain numeric specifier
+  // refers to the output stream index, not necessarily the same as ffprobe's
+  // absolute index once other stream types are involved.
+  var audioIndex = -1;
+  for (var i = 0; i < file.ffProbeData.streams.length; i++) {
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
+      audioIndex++;
+      if (file.ffProbeData.streams[i].channels == inputs.channels) {
+        if (!defaultSet) {
+          ffmpegCommandInsert += `-disposition:a:${audioIndex} default `;
+          defaultSet = true;
+        } else {
+          ffmpegCommandInsert += `-disposition:a:${audioIndex} 0 `;
+        }
+      } else {
+        ffmpegCommandInsert += `-disposition:a:${audioIndex} 0 `;
+      }
+    }
+  }
+
+  // Only process when there is a matching stream and the file isn't already correct
+  if (matchingAudioStreams >= 1 && !alreadyCorrect) {
     shouldProcess = true;
     response.infoLog += "☒ Matching audio stream is not set to default. \n";
   }
@@ -105,7 +121,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (matchingAudioStreams < 1) {
       response.infoLog +=
         "☑ No " + inputs.channels + " channel audio stream exists. \n ";
-    } else if (defaultAudioStreams === 1) {
+    } else if (alreadyCorrect) {
       response.infoLog +=
         "☑ Default " +
         inputs.channels +
