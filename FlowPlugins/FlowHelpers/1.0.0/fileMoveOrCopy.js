@@ -69,8 +69,48 @@ var compareOldNew = function (_a) {
             + " cache file of size ".concat(sourceFileSize));
     }
 };
+// fsync errors meaning the file system cannot sync, rather than that the data failed to write
+var syncNotSupportedCodes = ['EINVAL', 'ENOTSUP', 'ENOSYS'];
+// ncp resolves before the file is closed, and network shares can drop data still being written
+// if the process then exits, so flush it and report write errors instead of trusting the size
+var syncDestination = function (destinationPath, args) { return __awaiter(void 0, void 0, void 0, function () {
+    var handle, err_2, err_3;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, fs_1.promises.open(destinationPath, 'r+')];
+            case 1:
+                handle = _a.sent();
+                return [3 /*break*/, 3];
+            case 2:
+                err_2 = _a.sent();
+                args.jobLog("Unable to open destination file to sync, skipping sync: ".concat(JSON.stringify(err_2)));
+                return [2 /*return*/, true];
+            case 3:
+                _a.trys.push([3, 5, 6, 8]);
+                return [4 /*yield*/, handle.sync()];
+            case 4:
+                _a.sent();
+                return [2 /*return*/, true];
+            case 5:
+                err_3 = _a.sent();
+                if (syncNotSupportedCodes.includes(err_3.code || '')) {
+                    args.jobLog("Destination file sync not supported, skipping sync: ".concat(JSON.stringify(err_3)));
+                    return [2 /*return*/, true];
+                }
+                args.jobLog("File sync error: ".concat(JSON.stringify(err_3)));
+                return [2 /*return*/, false];
+            case 6: return [4 /*yield*/, handle.close().catch(function () { return undefined; })];
+            case 7:
+                _a.sent();
+                return [7 /*endfinally*/];
+            case 8: return [2 /*return*/];
+        }
+    });
+}); };
 var tryMove = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var error, err_2, destinationSize;
+    var error, err_4, destinationSize;
     var sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, sourceFileSize = _b.sourceFileSize, args = _b.args;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -85,9 +125,9 @@ var tryMove = function (_a) { return __awaiter(void 0, [_a], void 0, function (_
                 _c.sent();
                 return [3 /*break*/, 4];
             case 3:
-                err_2 = _c.sent();
+                err_4 = _c.sent();
                 error = true;
-                args.jobLog("File move error: ".concat(JSON.stringify(err_2)));
+                args.jobLog("File move error: ".concat(JSON.stringify(err_4)));
                 return [3 /*break*/, 4];
             case 4: return [4 /*yield*/, getSizeBytes(destinationPath)];
             case 5:
@@ -150,7 +190,7 @@ var tyNcp = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b)
     return __generator(this, function (_c) {
         switch (_c.label) {
             case 0:
-                if (!args.deps.ncp) return [3 /*break*/, 3];
+                if (!args.deps.ncp) return [3 /*break*/, 5];
                 args.jobLog("Attempting copy from ".concat(sourcePath, " to ").concat(destinationPath, " , method 1"));
                 error_1 = false;
                 return [4 /*yield*/, new Promise(function (resolve) {
@@ -167,8 +207,13 @@ var tyNcp = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b)
                     })];
             case 1:
                 _c.sent();
-                return [4 /*yield*/, getSizeBytes(destinationPath)];
+                if (!!error_1) return [3 /*break*/, 3];
+                return [4 /*yield*/, syncDestination(destinationPath, args)];
             case 2:
+                error_1 = !(_c.sent());
+                _c.label = 3;
+            case 3: return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 4:
                 destinationSize = _c.sent();
                 compareOldNew({
                     sourceFileSize: sourceFileSize,
@@ -179,12 +224,12 @@ var tyNcp = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b)
                     return [2 /*return*/, false];
                 }
                 return [2 /*return*/, true];
-            case 3: return [2 /*return*/, false];
+            case 5: return [2 /*return*/, false];
         }
     });
 }); };
 var tryNormalCopy = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var error, err_3, destinationSize;
+    var error, err_5, destinationSize;
     var sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, sourceFileSize = _b.sourceFileSize, args = _b.args;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -199,12 +244,18 @@ var tryNormalCopy = function (_a) { return __awaiter(void 0, [_a], void 0, funct
                 _c.sent();
                 return [3 /*break*/, 4];
             case 3:
-                err_3 = _c.sent();
+                err_5 = _c.sent();
                 error = true;
-                args.jobLog("File copy error: ".concat(JSON.stringify(err_3)));
+                args.jobLog("File copy error: ".concat(JSON.stringify(err_5)));
                 return [3 /*break*/, 4];
-            case 4: return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 4:
+                if (!!error) return [3 /*break*/, 6];
+                return [4 /*yield*/, syncDestination(destinationPath, args)];
             case 5:
+                error = !(_c.sent());
+                _c.label = 6;
+            case 6: return [4 /*yield*/, getSizeBytes(destinationPath)];
+            case 7:
                 destinationSize = _c.sent();
                 compareOldNew({
                     sourceFileSize: sourceFileSize,
@@ -219,7 +270,7 @@ var tryNormalCopy = function (_a) { return __awaiter(void 0, [_a], void 0, funct
     });
 }); };
 var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var err_4, message;
+    var err_6, message;
     var args = _b.args, sourcePath = _b.sourcePath, requireSourceDeletion = _b.requireSourceDeletion;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -231,8 +282,8 @@ var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, fun
                 _c.sent();
                 return [3 /*break*/, 3];
             case 2:
-                err_4 = _c.sent();
-                message = "Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_4));
+                err_6 = _c.sent();
+                message = "Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_6));
                 args.jobLog(message);
                 if (requireSourceDeletion) {
                     throw new Error(message);

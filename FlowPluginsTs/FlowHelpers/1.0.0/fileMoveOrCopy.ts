@@ -46,6 +46,35 @@ const compareOldNew = ({
   }
 };
 
+// fsync errors meaning the file system cannot sync, rather than that the data failed to write
+const syncNotSupportedCodes = ['EINVAL', 'ENOTSUP', 'ENOSYS'];
+
+// ncp resolves before the file is closed, and network shares can drop data still being written
+// if the process then exits, so flush it and report write errors instead of trusting the size
+const syncDestination = async (destinationPath: string, args: IpluginInputArgs): Promise<boolean> => {
+  let handle: fsp.FileHandle;
+  try {
+    handle = await fsp.open(destinationPath, 'r+');
+  } catch (err) {
+    args.jobLog(`Unable to open destination file to sync, skipping sync: ${JSON.stringify(err)}`);
+    return true;
+  }
+
+  try {
+    await handle.sync();
+    return true;
+  } catch (err) {
+    if (syncNotSupportedCodes.includes((err as NodeJS.ErrnoException).code || '')) {
+      args.jobLog(`Destination file sync not supported, skipping sync: ${JSON.stringify(err)}`);
+      return true;
+    }
+    args.jobLog(`File sync error: ${JSON.stringify(err)}`);
+    return false;
+  } finally {
+    await handle.close().catch(() => undefined);
+  }
+};
+
 const tryMove = async ({
   sourcePath,
   destinationPath,
@@ -138,6 +167,10 @@ const tyNcp = async ({
       });
     });
 
+    if (!error) {
+      error = !await syncDestination(destinationPath, args);
+    }
+
     const destinationSize = await getSizeBytes(destinationPath);
     compareOldNew({
       sourceFileSize,
@@ -169,6 +202,10 @@ const tryNormalCopy = async ({
   } catch (err) {
     error = true;
     args.jobLog(`File copy error: ${JSON.stringify(err)}`);
+  }
+
+  if (!error) {
+    error = !await syncDestination(destinationPath, args);
   }
 
   const destinationSize = await getSizeBytes(destinationPath);
