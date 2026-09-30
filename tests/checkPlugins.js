@@ -54,7 +54,7 @@ folders.forEach((folder) => {
       errorEncountered = true;
     }
 
-    const inputsText = 'inputs = lib.loadDefaultValues(inputs, details);';
+    const inputsText = '= lib.loadDefaultValues(inputs, details);';
     if (!read.includes(inputsText)
     ) {
       console.log(chalk.red(`Plugin error: '${folder}/${files[i]}' does not contain ${inputsText}`));
