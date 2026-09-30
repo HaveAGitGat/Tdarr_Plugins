@@ -65,7 +65,7 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   }
 
   if (!file.ffProbeData || !file.ffProbeData.streams) {
-    response.infoLog += '☑ Nenhuma trilha (stream) detectada no FFprobe do arquivo. Pulando extração de forma segura.\n';
+    response.infoLog += 'No streams detected in file FFprobe data. Safely skipping extraction.\n';
     response.processFile = false;
     return response;
   }
