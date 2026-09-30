@@ -88,6 +88,36 @@ const details = (): IpluginDetails => ({
         + ' Ignored for VAAPI/rkmpp/videotoolbox.',
     },
     {
+      label: 'SVT-AV1 Preset',
+      name: 'svtAv1Preset',
+      type: 'string',
+      defaultValue: '',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'outputCodec',
+                  value: 'av1',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: `Numeric preset for the software AV1 encoder (libsvtav1), from -1 to 13, e.g. 4.
+Lower is slower and more efficient. Leave blank to use the encoder default.
+
+The FFmpeg Preset above does not apply to AV1, because SVT-AV1 uses numbers
+rather than names. Only used when the encoder is libsvtav1; hardware AV1 encoders ignore it.
+A global -preset added with Custom Arguments comes later in the command and takes precedence.`,
+    },
+    {
       label: 'Enable FFmpeg Quality',
       name: 'ffmpegQualityEnabled',
       type: 'boolean',
@@ -187,6 +217,16 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   checkFfmpegCommandInit(args);
 
+  let svtAv1Preset = String(args.inputs.svtAv1Preset ?? '').trim();
+  if (svtAv1Preset !== '' && String(args.inputs.outputCodec) === 'av1') {
+    // ffmpeg accepts -2..13, where -2 means "unset"; -1 is SVT-AV1's slowest research preset.
+    const presetNumber = Number(svtAv1Preset);
+    if (!/^-?\d+$/.test(svtAv1Preset) || presetNumber < -1 || presetNumber > 13) {
+      throw new Error(`SVT-AV1 Preset must be a whole number from -1 to 13, got "${svtAv1Preset}"`);
+    }
+    svtAv1Preset = String(presetNumber);
+  }
+
   const hardwareDecoding = args.inputs.hardwareDecoding === true;
   const hardwareType = String(args.inputs.hardwareType);
   args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
@@ -272,6 +312,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
               stream.outputArgs.push('-preset', presetToUse);
             }
           }
+        }
+
+        if (svtAv1Preset !== '' && encoderProperties.encoder === 'libsvtav1') {
+          stream.outputArgs.push('-preset:{outputIndex}', svtAv1Preset);
         }
 
         if (hardwareDecoding) {
