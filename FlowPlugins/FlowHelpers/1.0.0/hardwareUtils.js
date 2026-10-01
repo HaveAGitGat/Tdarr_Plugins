@@ -355,7 +355,10 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'av1_nvenc',
                         enabled: false,
-                        inputArgs: [],
+                        inputArgs: [
+                            '-hwaccel',
+                            'cuda',
+                        ],
                         outputArgs: [],
                         filter: '',
                     },
@@ -369,7 +372,12 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'av1_qsv',
                         enabled: false,
-                        inputArgs: [],
+                        inputArgs: [
+                            '-hwaccel',
+                            'qsv',
+                            '-hwaccel_output_format',
+                            'qsv',
+                        ],
                         outputArgs: [],
                         filter: '',
                     },
