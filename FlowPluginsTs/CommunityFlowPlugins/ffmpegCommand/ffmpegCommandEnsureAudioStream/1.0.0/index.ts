@@ -155,6 +155,14 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+// Encoders that cannot represent every channel layout. Asking ffmpeg for more than
+// this is a hard failure, e.g. "Specified channel layout '7.1' is not supported by
+// the eac3 encoder", so the request is reduced to what the encoder accepts.
+const MAX_CHANNELS: Record<string, number> = {
+  ac3: 6,
+  eac3: 6,
+};
+
 const getHighest = (first: IffmpegCommandStream, second: IffmpegCommandStream) => {
   // @ts-expect-error channels
   if (first?.channels > second?.channels) {
@@ -190,10 +198,13 @@ const attemptMakeStream = ({
       )
   );
 
-  // filter streams to only include audio streams with the specified lang tag
+  // filter streams to only include audio streams with the specified lang tag.
+  // Streams marked removed by an earlier plugin are excluded, otherwise a stream
+  // that is being stripped would still be treated as available.
   const streamsWithLangTag = streams.filter((stream) => {
     if (
       stream.codec_type === 'audio'
+        && !stream.removed
         && langMatch(stream)
     ) {
       return true;
@@ -222,9 +233,18 @@ const attemptMakeStream = ({
       + ` highest available channel count (${streamWithHighestChannel.channels}). \n`);
   }
 
+  const encoderMaxChannels = MAX_CHANNELS[audioEncoder];
+  if (encoderMaxChannels !== undefined && targetChannels > encoderMaxChannels) {
+    args.jobLog(`${audioEncoder} supports at most ${encoderMaxChannels} channels,`
+      + ` reducing from ${targetChannels}. \n`);
+    targetChannels = encoderMaxChannels;
+  }
+  // A stream marked removed does not satisfy the requirement, otherwise removing an
+  // existing stream earlier in the flow would leave the file with none at all.
   const hasStreamAlready = streams.filter((stream) => {
     if (
       stream.codec_type === 'audio'
+      && !stream.removed
       && langMatch(stream)
       && stream.codec_name === audioCodec
       && stream.channels === targetChannels
@@ -249,7 +269,7 @@ const attemptMakeStream = ({
   streamCopy.codec_name = audioCodec;
   streamCopy.channels = targetChannels;
   streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
-  streamCopy.outputArgs.push('-ac', `${targetChannels}`);
+  streamCopy.outputArgs.push('-ac:{outputIndex}', `${targetChannels}`);
 
   if (enableBitrate) {
     const ffType = getFfType(streamCopy.codec_type);
