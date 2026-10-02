@@ -34,7 +34,7 @@ const details = () :IflowTemplate => ({
       "name": "Begin Command",
       "sourceRepo": "Community",
       "pluginName": "ffmpegCommandStart",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "id": "6a0HyfVUa",
       "position": {
         "x": 394.21161179985006,
@@ -45,7 +45,7 @@ const details = () :IflowTemplate => ({
       "name": "Execute",
       "sourceRepo": "Community",
       "pluginName": "ffmpegCommandExecute",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "id": "OBbLCZ8SO",
       "position": {
         "x": 395.9527129264425,
@@ -56,7 +56,7 @@ const details = () :IflowTemplate => ({
       "name": "Set Video Encoder",
       "sourceRepo": "Community",
       "pluginName": "ffmpegCommandSetVideoEncoder",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "id": "nvhiecc42",
       "position": {
         "x": 395.95271292644225,
