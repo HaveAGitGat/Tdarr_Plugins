@@ -290,6 +290,57 @@ const getFpsFromSpeed = ({
   return Math.round(speed * videoFrameRate);
 };
 
+// rigaya's NVEncC/QSVEncC/VCEEncC share rgy_status.cpp and write progress to stderr
+// terminated with \r (flushed even when redirected), e.g.
+// [12.3%] 1234/56789 frames: 45.67 fps, 3200 kbps, remain 0:08:13, est out size 1234.5MB
+// The percentage and the /total only appear once the total frame count is known, so both
+// are optional. Anchoring on 'frames:' keeps the startup banner ('24000/1001 fps') and the
+// final summary ('encoded N frames, 45.67 fps') from being read as progress.
+const nvenccParser = ({
+  str,
+}:
+  {
+    str: string,
+  }): { percentage: number, fps: number } => {
+  const out = { percentage: 0, fps: 0 };
+
+  if (typeof str !== 'string') {
+    return out;
+  }
+
+  const progressRegex = /(?:\[\s*([\d.]+)%\]\s*)?\d+(?:\/\d+)?\s+frames:\s+([\d.]+)\s+fps/g;
+
+  // A single data event can carry several \r-separated updates; keep the newest.
+  let last: RegExpExecArray | null = null;
+  let match = progressRegex.exec(str);
+  while (match !== null) {
+    last = match;
+    match = progressRegex.exec(str);
+  }
+
+  if (last === null) {
+    return out;
+  }
+
+  const percentage = parseFloat(last[1]);
+  const fps = parseFloat(last[2]);
+
+  // Match the precision the ffmpeg path reports: whole-number fps (it uses parseInt) and
+  // 2dp percentage (getFFmpegPercentage uses toFixed(2)), so the worker columns don't
+  // jump between 2 and 14 decimal places.
+  // eslint-disable-next-line no-restricted-globals
+  if (!isNaN(percentage) && percentage > 0) {
+    out.percentage = parseFloat(Math.min(percentage, 100).toFixed(2));
+  }
+
+  // eslint-disable-next-line no-restricted-globals
+  if (!isNaN(fps) && fps > 0) {
+    out.fps = Math.round(fps);
+  }
+
+  return out;
+};
+
 export {
   handbrakeParser,
   ffmpegParser,
@@ -298,4 +349,5 @@ export {
   getHandBrakeFps,
   getFpsFromSpeed,
   editreadyParser,
+  nvenccParser,
 };
