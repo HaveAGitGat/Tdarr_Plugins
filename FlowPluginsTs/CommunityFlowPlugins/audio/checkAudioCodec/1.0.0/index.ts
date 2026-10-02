@@ -132,7 +132,10 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
   if (args.inputFileObj.ffProbeData.streams) {
     args.inputFileObj.ffProbeData.streams.forEach((stream, index) => {
-      if (stream.codec_type === 'audio' && stream.codec_name === args.inputs.codec) {
+      const codecMatches = stream.codec_name === args.inputs.codec
+        || (args.inputs.codec === 'wma' && stream.codec_name?.startsWith('wma'));
+
+      if (stream.codec_type === 'audio' && codecMatches) {
         if (!checkBitrate) {
           args.jobLog(`File has codec: ${args.inputs.codec}`);
           hasCodec = true;

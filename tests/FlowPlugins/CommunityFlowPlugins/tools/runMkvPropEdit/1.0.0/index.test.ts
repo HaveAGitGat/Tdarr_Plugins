@@ -23,6 +23,7 @@ jest.mock('../../../../../../methods/lib', () => () => ({
 describe('runMkvPropEdit Plugin', () => {
   let baseArgs: IpluginInputArgs;
   let mockRunCli: jest.Mock;
+  let mockCancelled: boolean;
 
   beforeEach(() => {
     // Reset mocks
@@ -31,8 +32,10 @@ describe('runMkvPropEdit Plugin', () => {
     const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
     const mockCLI = CLI as jest.MockedClass<typeof CLI>;
     mockRunCli = jest.fn().mockResolvedValue({ cliExitCode: 0 });
+    mockCancelled = false;
     mockCLI.mockImplementation(() => ({
       runCli: mockRunCli,
+      get cancelled() { return mockCancelled; },
     }));
 
     baseArgs = {
@@ -87,8 +90,22 @@ describe('runMkvPropEdit Plugin', () => {
   });
 
   describe('Error handling', () => {
-    it('should throw error when mkvpropedit returns non-zero exit code', async () => {
+    it('should continue when mkvpropedit completes with warnings', async () => {
       mockRunCli.mockResolvedValueOnce({ cliExitCode: 1 });
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('MKVPropEdit completed with warnings');
+    });
+
+    it.each([
+      ['mkvpropedit error', 2, false],
+      ['CLI execution error', -1, false],
+      ['cancellation', 1, true],
+    ])('should throw on %s', async (scenario, cliExitCode, cancelled) => {
+      mockCancelled = cancelled;
+      mockRunCli.mockResolvedValueOnce({ cliExitCode });
 
       await expect(plugin(baseArgs)).rejects.toThrow('Running MKVPropEdit failed');
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Running MKVPropEdit failed');

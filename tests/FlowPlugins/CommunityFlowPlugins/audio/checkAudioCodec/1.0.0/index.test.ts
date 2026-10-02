@@ -43,6 +43,22 @@ describe('checkAudioCodec Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('File has codec: mp3');
     });
 
+    it.each([
+      'wmav1',
+      'wmav2',
+      'wmapro',
+    ])('should detect %s as WMA', (codec) => {
+      baseArgs.inputs.codec = 'wma';
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[1]) {
+        baseArgs.inputFileObj.ffProbeData.streams[1].codec_name = codec;
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has codec: wma');
+    });
+
     it('should reject non-matching codec', () => {
       baseArgs.inputs.codec = 'mp3'; // Looking for MP3 in AAC file
 

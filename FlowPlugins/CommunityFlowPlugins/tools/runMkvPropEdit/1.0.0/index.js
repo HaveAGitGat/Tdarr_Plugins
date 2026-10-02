@@ -88,7 +88,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 return [4 /*yield*/, cli.runCli()];
             case 1:
                 res = _a.sent();
-                if (res.cliExitCode !== 0) {
+                if (res.cliExitCode === 1 && !cli.cancelled) {
+                    args.jobLog('MKVPropEdit completed with warnings');
+                }
+                else if (res.cliExitCode !== 0) {
                     args.jobLog('Running MKVPropEdit failed');
                     throw new Error('Running MKVPropEdit failed');
                 }

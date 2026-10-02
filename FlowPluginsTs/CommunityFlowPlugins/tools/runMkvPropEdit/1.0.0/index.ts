@@ -53,7 +53,9 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const res = await cli.runCli();
 
-  if (res.cliExitCode !== 0) {
+  if (res.cliExitCode === 1 && !cli.cancelled) {
+    args.jobLog('MKVPropEdit completed with warnings');
+  } else if (res.cliExitCode !== 0) {
     args.jobLog('Running MKVPropEdit failed');
     throw new Error('Running MKVPropEdit failed');
   }
