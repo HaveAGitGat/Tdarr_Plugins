@@ -11,7 +11,7 @@ const details = () => ({
       + 'other options.',
   // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
   // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
-  Version: '1.06',
+  Version: '1.07',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -64,6 +64,12 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
+  if (!file.ffProbeData || !file.ffProbeData.streams) {
+    response.infoLog += 'No streams detected in file FFprobe data. Safely skipping extraction.\n';
+    response.processFile = false;
+    return response;
+  }
+  
   const subtitleCodecs = String(inputs.subtitle_codecs).toLowerCase().split(',')
     .map((codec) => codec.trim())
     .filter((codec) => codec !== '');
