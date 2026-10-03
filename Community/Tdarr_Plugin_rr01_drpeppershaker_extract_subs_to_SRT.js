@@ -64,12 +64,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     return response;
   }
 
-  if (!file.ffProbeData || !file.ffProbeData.streams) {
-    response.infoLog += 'No streams detected in file FFprobe data. Safely skipping extraction.\n';
+  if (!Array.isArray(file.ffProbeData?.streams)) {
+    response.infoLog += '☒ No stream data from FFprobe, file may be corrupt or unreadable. '
+      + 'Skipping subtitle extraction.\n';
     response.processFile = false;
     return response;
   }
-  
+
   const subtitleCodecs = String(inputs.subtitle_codecs).toLowerCase().split(',')
     .map((codec) => codec.trim())
     .filter((codec) => codec !== '');
