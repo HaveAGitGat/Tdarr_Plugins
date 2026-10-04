@@ -45,7 +45,7 @@ var details = function () { return ({
             "name": "Begin Command",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandStart",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "-kY9osnGE",
             "position": {
                 "x": 399.6705241883612,
@@ -56,7 +56,7 @@ var details = function () { return ({
             "name": "Execute",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandExecute",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "pmoPx8W0W",
             "position": {
                 "x": 416.1451226612283,
@@ -67,7 +67,7 @@ var details = function () { return ({
             "name": "Set Container",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandSetContainer",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "-DEIJA3Pf",
             "position": {
                 "x": 401.1862407548717,
@@ -78,7 +78,7 @@ var details = function () { return ({
             "name": "Set Video Encoder",
             "sourceRepo": "Community",
             "pluginName": "ffmpegCommandSetVideoEncoder",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "id": "U0fVPXskr",
             "position": {
                 "x": 400.1862407548716,
