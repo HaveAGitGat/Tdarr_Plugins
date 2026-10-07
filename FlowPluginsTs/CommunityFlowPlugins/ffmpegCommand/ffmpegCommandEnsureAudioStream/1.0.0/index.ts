@@ -163,18 +163,77 @@ const getHighest = (first: IffmpegCommandStream, second: IffmpegCommandStream) =
   return second;
 };
 
+const audioCodecNames: Record<string, string> = {
+  dca: 'dts',
+  libopus: 'opus',
+  libmp3lame: 'mp3',
+};
+
+const audioTrackTitles: Record<string, string> = {
+  libopus: 'Opus',
+  truehd: 'TrueHD',
+};
+
+const channelTitles: Record<number, string> = {
+  1: '1.0',
+  2: '2.0',
+  6: '5.1',
+  8: '7.1',
+};
+
+const channelLayouts: Record<number, string> = {
+  1: 'mono',
+  2: 'stereo',
+  6: '5.1',
+  8: '7.1',
+};
+
+const getAudioCodecName = (audioEncoder: string): string => audioCodecNames[audioEncoder] || audioEncoder;
+const getTrackTitle = (audioEncoder: string, channels: number): string => (
+  `${audioTrackTitles[audioEncoder] || getAudioCodecName(audioEncoder).toUpperCase()}`
+  + ` ${channelTitles[channels] || `${channels} channels`}`
+);
+
+const codecTitlePrefix = new RegExp(
+  '^(?:dts(?:-?hd)?|e-?ac-?3|ac-?3|aac|dca|flac|opus|mp2|mp3|truehd)'
+  + '(?:\\s+(?:hd|ma|hra|master audio|atmos))*'
+  + '(?:\\s+\\d(?:\\.\\d)?(?:\\s*channels?)?)?(?=$|\\s)',
+  'i',
+);
+
+const getOutputTrackTitle = (sourceTitle: string | undefined, audioEncoder: string, channels: number): string => {
+  const trackTitle = getTrackTitle(audioEncoder, channels);
+  const trimmedTitle = sourceTitle?.trim();
+
+  if (!trimmedTitle) {
+    return trackTitle;
+  }
+
+  return trimmedTitle.replace(codecTitlePrefix, trackTitle).trim();
+};
+
+const parseRate = (rate: string): number | undefined => {
+  const normalizedRate = rate.trim().toLowerCase();
+  const rateMatch = normalizedRate.match(/^(\d+(?:\.\d+)?)(k?)$/);
+
+  if (!rateMatch) {
+    return undefined;
+  }
+
+  const multiplier = rateMatch[2] === 'k' ? 1000 : 1;
+  return Math.round(Number(rateMatch[1]) * multiplier);
+};
+
 const attemptMakeStream = ({
   args,
   langTag,
   streams,
-  audioCodec,
   audioEncoder,
   wantedChannelCount,
 }: {
   args: IpluginInputArgs,
   langTag: string
   streams: IffmpegCommandStream[],
-  audioCodec: string,
   audioEncoder: string,
   wantedChannelCount: number,
 }): boolean => {
@@ -182,6 +241,7 @@ const attemptMakeStream = ({
   const bitrate = String(args.inputs.bitrate);
   const enableSamplerate = Boolean(args.inputs.enableSamplerate);
   const samplerate = String(args.inputs.samplerate);
+  const audioCodecName = getAudioCodecName(audioEncoder);
 
   const langMatch = (stream: IffmpegCommandStream) => (
     (langTag === 'und'
@@ -191,16 +251,7 @@ const attemptMakeStream = ({
   );
 
   // filter streams to only include audio streams with the specified lang tag
-  const streamsWithLangTag = streams.filter((stream) => {
-    if (
-      stream.codec_type === 'audio'
-        && langMatch(stream)
-    ) {
-      return true;
-    }
-
-    return false;
-  });
+  const streamsWithLangTag = streams.filter((stream) => stream.codec_type === 'audio' && langMatch(stream));
 
   if (streamsWithLangTag.length === 0) {
     args.jobLog(`No streams with language tag ${langTag} found. Skipping \n`);
@@ -222,20 +273,14 @@ const attemptMakeStream = ({
       + ` highest available channel count (${streamWithHighestChannel.channels}). \n`);
   }
 
-  const hasStreamAlready = streams.filter((stream) => {
-    if (
-      stream.codec_type === 'audio'
-      && langMatch(stream)
-      && stream.codec_name === audioCodec
-      && stream.channels === targetChannels
-    ) {
-      return true;
-    }
+  const hasStreamAlready = streams.some((stream) => (
+    stream.codec_type === 'audio'
+    && langMatch(stream)
+    && stream.codec_name === audioCodecName
+    && stream.channels === targetChannels
+  ));
 
-    return false;
-  });
-
-  if (hasStreamAlready.length > 0) {
+  if (hasStreamAlready) {
     args.jobLog(`File already has ${langTag} stream in ${audioEncoder}, ${targetChannels} channels \n`);
     return true;
   }
@@ -246,18 +291,39 @@ const attemptMakeStream = ({
   streamCopy.removed = false;
   streamCopy.index = streams.length;
   // Keep planned stream metadata aligned for subsequent command plugins.
-  streamCopy.codec_name = audioCodec;
+  const trackTitle = getOutputTrackTitle(streamCopy.tags?.title, audioEncoder, targetChannels);
+  streamCopy.codec_name = audioCodecName;
   streamCopy.channels = targetChannels;
+  if (channelLayouts[targetChannels]) {
+    streamCopy.channel_layout = channelLayouts[targetChannels];
+  } else {
+    delete streamCopy.channel_layout;
+  }
+  streamCopy.tags = {
+    ...(streamCopy.tags || {}),
+    title: trackTitle,
+  };
+  delete streamCopy.codec_long_name;
+  delete streamCopy.profile;
   streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
   streamCopy.outputArgs.push('-ac', `${targetChannels}`);
+  streamCopy.outputArgs.push('-metadata:s:a:{outputTypeIndex}', `title=${trackTitle}`);
 
   if (enableBitrate) {
     const ffType = getFfType(streamCopy.codec_type);
     streamCopy.outputArgs.push(`-b:${ffType}:{outputTypeIndex}`, `${bitrate}`);
+    const parsedBitrate = parseRate(bitrate);
+    if (parsedBitrate !== undefined) {
+      streamCopy.bit_rate = parsedBitrate;
+    }
   }
 
   if (enableSamplerate) {
     streamCopy.outputArgs.push('-ar', `${samplerate}`);
+    const parsedSamplerate = parseRate(samplerate);
+    if (parsedSamplerate !== undefined) {
+      streamCopy.sample_rate = String(parsedSamplerate);
+    }
   }
 
   // eslint-disable-next-line no-param-reassign
@@ -282,25 +348,10 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
 
   const { streams } = args.variables.ffmpegCommand;
 
-  let audioCodec = audioEncoder;
-
-  if (audioEncoder === 'dca') {
-    audioCodec = 'dts';
-  }
-
-  if (audioEncoder === 'libmp3lame') {
-    audioCodec = 'mp3';
-  }
-
-  if (audioEncoder === 'libopus') {
-    audioCodec = 'opus';
-  }
-
   const addedOrExists = attemptMakeStream({
     args,
     langTag,
     streams,
-    audioCodec,
     audioEncoder,
     wantedChannelCount,
   });
@@ -310,7 +361,6 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
       args,
       langTag: 'und',
       streams,
-      audioCodec,
       audioEncoder,
       wantedChannelCount,
     });
