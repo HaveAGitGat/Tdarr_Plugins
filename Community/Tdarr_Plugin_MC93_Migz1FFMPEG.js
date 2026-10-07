@@ -243,6 +243,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
                           .toLowerCase() === 'eia_608'
                         || file.ffProbeData.streams[i].codec_name
                           .toLowerCase() === 'timed_id3'
+                        // ffmpeg cannot mux S_TEXT/WEBVTT into mkv ("Unknown/unsupported AVCodecID
+                        // S_TEXT/WEBVTT"), so -c:s copy fails outright. Drop it instead.
+                        || file.ffProbeData.streams[i].codec_name
+                          .toLowerCase() === 'webvtt'
           ) {
             extraArguments += `-map -0:${i} `;
           }
@@ -263,6 +267,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
                           .toLowerCase() === 'subrip'
                         || file.ffProbeData.streams[i].codec_name
                           .toLowerCase() === 'timed_id3'
+                        // ffmpeg cannot mux S_TEXT/WEBVTT into mp4 either - same failure as the mkv branch.
+                        || file.ffProbeData.streams[i].codec_name
+                          .toLowerCase() === 'webvtt'
           ) {
             extraArguments += `-map -0:${i} `;
           }
