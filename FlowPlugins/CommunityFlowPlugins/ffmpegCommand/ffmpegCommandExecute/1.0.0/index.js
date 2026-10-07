@@ -115,9 +115,9 @@ var shouldAddCopyCodec = function (outputArgs) { return (outputArgs.length === 0
     || (!hasCodecOutputArg(outputArgs) && hasOnlyCopyCompatibleOutputArgs(outputArgs))); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var lib, cliArgs, shouldProcess, shouldMapAllStreams, inputArgs, streams, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -127,18 +127,20 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 cliArgs.push('-y');
                 cliArgs.push('-i');
                 cliArgs.push(args.inputFileObj._id);
-                _a = args.variables.ffmpegCommand, shouldProcess = _a.shouldProcess, streams = _a.streams;
+                shouldProcess = args.variables.ffmpegCommand.shouldProcess;
+                shouldMapAllStreams = args.variables.ffmpegCommand.mapAllStreams !== false;
                 if (args.variables.ffmpegCommand.overallInputArguments.length > 0) {
                     shouldProcess = true;
                 }
                 inputArgs = __spreadArray([], args.variables.ffmpegCommand.overallInputArguments, true);
-                streams = streams.filter(function (stream) {
-                    if (stream.removed) {
-                        shouldProcess = true;
-                    }
-                    return !stream.removed;
-                });
-                if (streams.length === 0) {
+                streams = shouldMapAllStreams
+                    ? args.variables.ffmpegCommand.streams.filter(function (stream) {
+                        if (stream.removed) {
+                            shouldProcess = true;
+                        }
+                        return !stream.removed;
+                    }) : [];
+                if (shouldMapAllStreams && streams.length === 0) {
                     args.jobLog('No streams mapped for new file');
                     throw new Error('No streams mapped for new file');
                 }
@@ -205,7 +207,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
-                res = _b.sent();
+                res = _a.sent();
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running FFmpeg failed');
                     throw new Error('FFmpeg failed');

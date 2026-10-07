@@ -89,8 +89,9 @@ export interface IffmpegCommandStream extends Istreams {
 export interface IffmpegCommand {
     init: boolean,
     inputFiles: string[],
-    streams: IffmpegCommandStream[]
+    streams: IffmpegCommandStream[],
     container: string,
+    mapAllStreams?: boolean,
     hardwareDecoding: boolean,
     shouldProcess: boolean,
     overallInputArguments: string[],

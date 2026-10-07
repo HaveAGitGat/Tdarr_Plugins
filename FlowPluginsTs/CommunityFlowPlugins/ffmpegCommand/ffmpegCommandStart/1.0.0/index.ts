@@ -22,7 +22,19 @@ const details = () :IpluginDetails => ({
   requiresVersion: '2.11.01',
   sidebarPosition: 1,
   icon: '',
-  inputs: [],
+  inputs: [
+    {
+      label: 'Map All Streams',
+      name: 'mapAllStreams',
+      type: 'boolean',
+      defaultValue: 'true',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'Generate mapping and copy arguments for every input stream. Disable this when providing complete '
+        + 'stream mapping and codec arguments with the Custom Arguments plugin.',
+    },
+  ],
   outputs: [
     {
       number: 1,
@@ -73,6 +85,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
       };
     }),
     container,
+    mapAllStreams: args.inputs.mapAllStreams === true,
     hardwareDecoding: false,
     shouldProcess: false,
     overallInputArguments: [],

@@ -108,7 +108,8 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   cliArgs.push('-i');
   cliArgs.push(args.inputFileObj._id);
 
-  let { shouldProcess, streams } = args.variables.ffmpegCommand;
+  let { shouldProcess } = args.variables.ffmpegCommand;
+  const shouldMapAllStreams = args.variables.ffmpegCommand.mapAllStreams !== false;
 
   if (args.variables.ffmpegCommand.overallInputArguments.length > 0) {
     shouldProcess = true;
@@ -118,14 +119,15 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     ...args.variables.ffmpegCommand.overallInputArguments,
   ];
 
-  streams = streams.filter((stream) => {
-    if (stream.removed) {
-      shouldProcess = true;
-    }
-    return !stream.removed;
-  });
+  const streams = shouldMapAllStreams
+    ? args.variables.ffmpegCommand.streams.filter((stream) => {
+      if (stream.removed) {
+        shouldProcess = true;
+      }
+      return !stream.removed;
+    }) : [];
 
-  if (streams.length === 0) {
+  if (shouldMapAllStreams && streams.length === 0) {
     args.jobLog('No streams mapped for new file');
     throw new Error('No streams mapped for new file');
   }
