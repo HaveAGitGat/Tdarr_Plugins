@@ -1,6 +1,6 @@
 import fs from 'fs';
 import {
-  editreadyParser, ffmpegParser, getFpsFromSpeed, getHandBrakeFps, handbrakeParser,
+  editreadyParser, ffmpegParser, getFpsFromSpeed, getHandBrakeFps, handbrakeParser, nvenccParser,
 } from './cliParsers';
 import { Ilog, IpluginInputArgs, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
@@ -335,6 +335,27 @@ class CLI {
         void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
+        });
+      }
+    } else if (
+      this.config.cli.toLowerCase().includes('nvencc')
+      || this.config.cli.toLowerCase().includes('qsvencc')
+      || this.config.cli.toLowerCase().includes('vceencc')
+    ) {
+      const progress = nvenccParser({
+        str,
+      });
+      if (progress.fps > 0) {
+        this.config.updateWorker({
+          fps: progress.fps,
+        });
+      }
+      // updateETA derives the ETA from percentage deltas and reads the output size off
+      // disk, so percentage alone restores the ETA and size/compression columns too.
+      if (progress.percentage > 0) {
+        void this.updateETA(progress.percentage);
+        this.config.updateWorker({
+          percentage: progress.percentage,
         });
       }
     } else if (this.config.cli.toLowerCase().includes('editready')) {
