@@ -77,8 +77,87 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var sleep = function (ms) { return new Promise(function (resolve) { return setTimeout(resolve, ms); }); };
+// Staging a large file on another filesystem is a full copy and can take minutes. Tdarr's worker
+// stall detector cancels a job whose percentage is the same at two consecutive checks, and a plugin
+// starts at 0, so a silent copy can be cancelled after a multi-hour encode. Report the bytes staged
+// so far, starting immediately and never repeating a value, until the move finishes.
+var moveWithProgress = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
+    var total, err_1, last, tick, heartbeat;
+    var args = _b.args, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                total = 0;
+                _c.label = 1;
+            case 1:
+                _c.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, fs_1.promises.stat(sourcePath)];
+            case 2:
+                total = (_c.sent()).size;
+                return [3 /*break*/, 4];
+            case 3:
+                err_1 = _c.sent();
+                total = 0;
+                return [3 /*break*/, 4];
+            case 4:
+                last = 0;
+                tick = function () { return __awaiter(void 0, void 0, void 0, function () {
+                    var done, err_2, staged, err_3;
+                    return __generator(this, function (_a) {
+                        switch (_a.label) {
+                            case 0:
+                                _a.trys.push([0, 5, , 6]);
+                                done = 0;
+                                _a.label = 1;
+                            case 1:
+                                _a.trys.push([1, 3, , 4]);
+                                return [4 /*yield*/, fs_1.promises.stat(destinationPath)];
+                            case 2:
+                                done = (_a.sent()).size;
+                                return [3 /*break*/, 4];
+                            case 3:
+                                err_2 = _a.sent();
+                                done = 0; // destination not created yet
+                                return [3 /*break*/, 4];
+                            case 4:
+                                staged = total > 0 ? Math.min(99.9, (done / total) * 100) : 0;
+                                last = Math.max(last + 0.01, staged);
+                                if (typeof args.updateWorker === 'function') {
+                                    args.updateWorker({ percentage: Math.round(last * 100) / 100 });
+                                }
+                                return [3 /*break*/, 6];
+                            case 5:
+                                err_3 = _a.sent();
+                                return [3 /*break*/, 6];
+                            case 6: return [2 /*return*/];
+                        }
+                    });
+                }); };
+                return [4 /*yield*/, tick()];
+            case 5:
+                _c.sent();
+                heartbeat = setInterval(tick, 15000);
+                _c.label = 6;
+            case 6:
+                _c.trys.push([6, , 8, 9]);
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
+                        sourcePath: sourcePath,
+                        destinationPath: destinationPath,
+                        args: args,
+                    })];
+            case 7:
+                _c.sent();
+                return [3 /*break*/, 9];
+            case 8:
+                clearInterval(heartbeat);
+                return [7 /*endfinally*/];
+            case 9: return [2 /*return*/];
+        }
+    });
+}); };
 var getFileId = function (filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, dev, ino, err_1;
+    var _a, dev, ino, err_4;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -88,7 +167,7 @@ var getFileId = function (filePath) { return __awaiter(void 0, void 0, void 0, f
                 _a = _b.sent(), dev = _a.dev, ino = _a.ino;
                 return [2 /*return*/, { dev: dev, ino: ino }];
             case 2:
-                err_1 = _b.sent();
+                err_4 = _b.sent();
                 return [2 /*return*/, null];
             case 3: return [2 /*return*/];
         }
@@ -100,7 +179,7 @@ var sameFile = function (a, b) { return a.dev === b.dev && (a.ino === b.ino || a
 // filesystems rename() over an existing file is atomic, so the original path never disappears,
 // and any failure before it leaves the original untouched.
 var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var suffix, hiddenTmp, originalIdBefore, _c, err_2, cleanupErr_1, err_3, cleanupErr_2, originalIdAfter, newId, err_4;
+    var suffix, hiddenTmp, originalIdBefore, _c, err_5, cleanupErr_1, err_6, cleanupErr_2, originalIdAfter, newId, err_7;
     var _d;
     var args = _b.args, currentPath = _b.currentPath, originalPath = _b.originalPath, newPath = _b.newPath, originalFolder = _b.originalFolder;
     return __generator(this, function (_e) {
@@ -135,18 +214,17 @@ var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, funct
                 _e.label = 5;
             case 5:
                 _e.trys.push([5, 7, , 13]);
-                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                        operation: 'move',
+                return [4 /*yield*/, moveWithProgress({
+                        args: args,
                         sourcePath: currentPath,
                         destinationPath: hiddenTmp,
-                        args: args,
                     })];
             case 6:
                 _e.sent();
                 return [3 /*break*/, 13];
             case 7:
-                err_2 = _e.sent();
-                args.jobLog("Failed to stage ".concat(currentPath, " as ").concat(hiddenTmp, ", original untouched: ").concat(JSON.stringify(err_2)));
+                err_5 = _e.sent();
+                args.jobLog("Failed to stage ".concat(currentPath, " as ").concat(hiddenTmp, ", original untouched: ").concat(JSON.stringify(err_5)));
                 return [4 /*yield*/, (0, fileUtils_1.fileExists)(hiddenTmp)];
             case 8:
                 if (!_e.sent()) return [3 /*break*/, 12];
@@ -161,7 +239,7 @@ var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, funct
                 cleanupErr_1 = _e.sent();
                 args.jobLog("Failed to clean up temporary file ".concat(hiddenTmp, ": ").concat(JSON.stringify(cleanupErr_1)));
                 return [3 /*break*/, 12];
-            case 12: throw err_2;
+            case 12: throw err_5;
             case 13:
                 _e.trys.push([13, 15, , 20]);
                 return [4 /*yield*/, fs_1.promises.rename(hiddenTmp, newPath)];
@@ -169,8 +247,8 @@ var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, funct
                 _e.sent();
                 return [3 /*break*/, 20];
             case 15:
-                err_3 = _e.sent();
-                args.jobLog("Failed to rename ".concat(hiddenTmp, " to ").concat(newPath, ", original untouched: ").concat(JSON.stringify(err_3)));
+                err_6 = _e.sent();
+                args.jobLog("Failed to rename ".concat(hiddenTmp, " to ").concat(newPath, ", original untouched: ").concat(JSON.stringify(err_6)));
                 _e.label = 16;
             case 16:
                 _e.trys.push([16, 18, , 19]);
@@ -182,7 +260,7 @@ var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, funct
                 cleanupErr_2 = _e.sent();
                 args.jobLog("Failed to clean up temporary file ".concat(hiddenTmp, ": ").concat(JSON.stringify(cleanupErr_2)));
                 return [3 /*break*/, 19];
-            case 19: throw err_3;
+            case 19: throw err_6;
             case 20:
                 args.jobLog("Atomically replaced ".concat(newPath));
                 if (!originalIdBefore) return [3 /*break*/, 28];
@@ -205,8 +283,8 @@ var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, funct
                 _e.sent();
                 return [3 /*break*/, 26];
             case 25:
-                err_4 = _e.sent();
-                args.jobLog("Failed to delete original file ".concat(originalPath, ": ").concat(JSON.stringify(err_4)));
+                err_7 = _e.sent();
+                args.jobLog("Failed to delete original file ".concat(originalPath, ": ").concat(JSON.stringify(err_7)));
                 return [3 /*break*/, 26];
             case 26: return [3 /*break*/, 28];
             case 27:
@@ -220,7 +298,7 @@ var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, funct
 }); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, currentPath, originalPath, orignalFolder, fileName, container, newPath, platform, newPathTmp, originalPathOld, originalFileExists, currentFileIsNotOriginal, shouldRenameOriginal, originalRenamed, staleErr_1, err_5, cleanupErr_3, err_6, restoreErr_1, err_7;
+    var lib, currentPath, originalPath, orignalFolder, fileName, container, newPath, platform, newPathTmp, originalPathOld, originalFileExists, currentFileIsNotOriginal, shouldRenameOriginal, originalRenamed, staleErr_1, err_8, cleanupErr_3, err_9, restoreErr_1, err_10;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -278,11 +356,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 4:
                 _a.sent();
                 // Step 1: move the working/cache file into the original folder as .tmp
-                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                        operation: 'move',
+                return [4 /*yield*/, moveWithProgress({
+                        args: args,
                         sourcePath: currentPath,
                         destinationPath: newPathTmp,
-                        args: args,
                     })];
             case 5:
                 // Step 1: move the working/cache file into the original folder as .tmp
@@ -324,8 +401,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 originalRenamed = true;
                 return [3 /*break*/, 19];
             case 14:
-                err_5 = _a.sent();
-                args.jobLog("Failed to rename original file aside: ".concat(JSON.stringify(err_5)));
+                err_8 = _a.sent();
+                args.jobLog("Failed to rename original file aside: ".concat(JSON.stringify(err_8)));
                 _a.label = 15;
             case 15:
                 _a.trys.push([15, 17, , 18]);
@@ -337,7 +414,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 cleanupErr_3 = _a.sent();
                 args.jobLog("Failed to clean up temporary file ".concat(newPathTmp, ": ").concat(JSON.stringify(cleanupErr_3)));
                 return [3 /*break*/, 18];
-            case 18: throw err_5;
+            case 18: throw err_8;
             case 19: return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 20:
                 _a.sent();
@@ -354,8 +431,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a.sent();
                 return [3 /*break*/, 28];
             case 23:
-                err_6 = _a.sent();
-                args.jobLog("Failed to move ".concat(newPathTmp, " to ").concat(newPath, ": ").concat(JSON.stringify(err_6)));
+                err_9 = _a.sent();
+                args.jobLog("Failed to move ".concat(newPathTmp, " to ").concat(newPath, ": ").concat(JSON.stringify(err_9)));
                 if (!originalRenamed) return [3 /*break*/, 27];
                 args.jobLog("Restoring original file from ".concat(originalPathOld));
                 _a.label = 24;
@@ -369,7 +446,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 restoreErr_1 = _a.sent();
                 args.jobLog("Failed to restore original file: ".concat(JSON.stringify(restoreErr_1)));
                 return [3 /*break*/, 27];
-            case 27: throw err_6;
+            case 27: throw err_9;
             case 28:
                 if (!originalRenamed) return [3 /*break*/, 32];
                 args.jobLog("Deleting renamed original file: ".concat(originalPathOld));
@@ -381,8 +458,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _a.sent();
                 return [3 /*break*/, 32];
             case 31:
-                err_7 = _a.sent();
-                args.jobLog("Failed to delete renamed original file ".concat(originalPathOld, ": ").concat(JSON.stringify(err_7)));
+                err_10 = _a.sent();
+                args.jobLog("Failed to delete renamed original file ".concat(originalPathOld, ": ").concat(JSON.stringify(err_10)));
                 return [3 /*break*/, 32];
             case 32: return [2 /*return*/, {
                     outputFileObj: {

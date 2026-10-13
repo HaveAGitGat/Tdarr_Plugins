@@ -63,6 +63,57 @@ On Windows, rename cannot replace an existing file, so the default behaviour is 
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Staging a large file on another filesystem is a full copy and can take minutes. Tdarr's worker
+// stall detector cancels a job whose percentage is the same at two consecutive checks, and a plugin
+// starts at 0, so a silent copy can be cancelled after a multi-hour encode. Report the bytes staged
+// so far, starting immediately and never repeating a value, until the move finishes.
+const moveWithProgress = async ({
+  args,
+  sourcePath,
+  destinationPath,
+}: {
+  args: IpluginInputArgs,
+  sourcePath: string,
+  destinationPath: string,
+}): Promise<void> => {
+  let total = 0;
+  try {
+    total = (await fsp.stat(sourcePath)).size;
+  } catch (err) {
+    total = 0;
+  }
+  let last = 0;
+  const tick = async () => {
+    try {
+      let done = 0;
+      try {
+        done = (await fsp.stat(destinationPath)).size;
+      } catch (err) {
+        done = 0; // destination not created yet
+      }
+      const staged = total > 0 ? Math.min(99.9, (done / total) * 100) : 0;
+      last = Math.max(last + 0.01, staged);
+      if (typeof args.updateWorker === 'function') {
+        args.updateWorker({ percentage: Math.round(last * 100) / 100 });
+      }
+    } catch (err) {
+      // progress is best-effort
+    }
+  };
+  await tick();
+  const heartbeat = setInterval(tick, 15000);
+  try {
+    await fileMoveOrCopy({
+      operation: 'move',
+      sourcePath,
+      destinationPath,
+      args,
+    });
+  } finally {
+    clearInterval(heartbeat);
+  }
+};
+
 type FileId = { dev: number, ino: number };
 
 const getFileId = async (filePath: string): Promise<FileId | null> => {
@@ -118,11 +169,10 @@ const atomicReplace = async ({
   await sleep(2000);
 
   try {
-    await fileMoveOrCopy({
-      operation: 'move',
+    await moveWithProgress({
+      args,
       sourcePath: currentPath,
       destinationPath: hiddenTmp,
-      args,
     });
   } catch (err) {
     args.jobLog(`Failed to stage ${currentPath} as ${hiddenTmp}, original untouched: ${JSON.stringify(err)}`);
@@ -237,11 +287,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   // Step 1: move the working/cache file into the original folder as .tmp
-  await fileMoveOrCopy({
-    operation: 'move',
+  await moveWithProgress({
+    args,
     sourcePath: currentPath,
     destinationPath: newPathTmp,
-    args,
   });
 
   const originalFileExists = await fileExists(originalPath);
