@@ -58,10 +58,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   var defaultSet = false;
   var ffmpegCommandInsert = "";
 
-  // Check if default audio stream matches user's channel selection. Count
-  // defaults across ALL audio streams (not just matching ones) -- a file
-  // isn't "already correct" just because the matching stream is default,
-  // it's only correct if no OTHER audio stream is also still flagged default.
+  // Check if default audio stream matches user's channel selection. Defaults are
+  // counted across all audio streams so a non-matching default is also caught
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
       var isDefault = file.ffProbeData.streams[i].disposition.default === 1;
@@ -77,10 +75,9 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
+  // Already correct when the only default audio stream is a matching one
   var alreadyCorrect =
-    matchingAudioStreams >= 1 &&
-    matchingDefaultAudioStreams === 1 &&
-    totalDefaultAudioStreams === 1;
+    totalDefaultAudioStreams === 1 && matchingDefaultAudioStreams === 1;
 
   // build command
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
