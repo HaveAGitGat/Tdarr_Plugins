@@ -1,4 +1,5 @@
 /* eslint-disable */
+module.exports.dependencies = ['iso-639-2@2.0.0'];
 
 // tdarrSkipTest
 const details = () => {
@@ -8,19 +9,10 @@ const details = () => {
     Name: "Add Subtitles To MKV Files",
     Type: "Video",
     Operation: 'Transcode',
-    Description: `This plugin will check for subtitles, they should be named according to the ISO 639-2 language code.\nA subtitle could look like this: eng.srt\n If there are subtitles found they will be added with FFMPEG, if there are no subs of that language found.\n On first run node module iso-639-2 will be installed in the documents folder.\n Created by @control#0405`,
-    Version: "1.3",
+    Description: `This plugin will check for subtitles, they should be named according to the ISO 639-2 language code.\nA subtitle could look like this: eng.srt\n If there are subtitles found they will be added with FFMPEG, if there are no subs of that language found.\n Created by @control#0405`,
+    Version: "1.4",
     Tags: "pre-processing,ffmpeg,subtitle only,configurable",
     Inputs: [
-      {
-        name: "install_packages",
-        type: 'string',
-        defaultValue:'no',
-        inputUI: {
-          type: 'text',
-        },
-        tooltip: `Please change this to "yes", it allows the plugin to install the required nodemodule. (iso-639-2) \\nExample:\\n yes`,
-      },
       {
         name: "container",
         type: 'string',
@@ -37,7 +29,7 @@ const details = () => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (file, librarySettings, inputs, otherArguments) => {
   
-  const lib = require('../methods/lib')(); const fs = require("fs"); const execSync = require("child_process").execSync;
+  const lib = require('../methods/lib')(); const fs = require("fs");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   inputs = lib.loadDefaultValues(inputs, details);
   //default response
@@ -56,28 +48,10 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     console.log(`Changed container to: ` + inputs.container);
   }
 
-  if (inputs.install_packages == "yes") {
-    if (
-      !fs.existsSync(`${otherArguments.homePath}/Tdarr/node_modules/iso-639-2`)
-    ) {
-      execSync(`cd ${otherArguments.homePath}/Tdarr \n npm install iso-639-2@2.0.0`);
-    }
-  } else {
-    response.infoLog = `Please take a look at the input options\n A extra nodemodule is required.`;
-    return response;
-  }
-
-  if (fs.existsSync(`/home/Tdarr/Documents/Tdarr/node_modules/iso-639-2`)) {
-    var iso6392 = require("/home/Tdarr/Documents/Tdarr/node_modules/iso-639-2");
-  } else {
-    response.infoLog += `Nodemodule iso-639-2 isn't installed!\nTry Again`;
-    return response;
-  }
-
   var i = 0; //int for counting lang[position]
   var found_subtitle_stream = 0;
   var sub = 0; //becomes first subtitle stream
-  var lang = iso6392; //languages to check against
+  var lang = require("iso-639-2"); //languages to check against
   var path = file.meta.Directory; //path of media folder
   var exist = 0; //if the language exists should be added this becomes 1
   var new_subs = 0; //count the new subs
