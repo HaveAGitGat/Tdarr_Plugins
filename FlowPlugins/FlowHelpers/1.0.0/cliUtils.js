@@ -296,9 +296,7 @@ var CLI = /** @class */ (function () {
                     });
                 }
             }
-            else if (_this.config.cli.toLowerCase().includes('nvencc')
-                || _this.config.cli.toLowerCase().includes('qsvencc')
-                || _this.config.cli.toLowerCase().includes('vceencc')) {
+            else if (/nvencc|qsvencc|vceencc/i.test(_this.config.cli)) {
                 var progress = (0, cliParsers_1.nvenccParser)({
                     str: str,
                 });

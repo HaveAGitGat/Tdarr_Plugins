@@ -337,11 +337,7 @@ class CLI {
           percentage,
         });
       }
-    } else if (
-      this.config.cli.toLowerCase().includes('nvencc')
-      || this.config.cli.toLowerCase().includes('qsvencc')
-      || this.config.cli.toLowerCase().includes('vceencc')
-    ) {
+    } else if (/nvencc|qsvencc|vceencc/i.test(this.config.cli)) {
       const progress = nvenccParser({
         str,
       });
