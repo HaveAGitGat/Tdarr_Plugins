@@ -82,23 +82,18 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     matchingDefaultAudioStreams === 1 &&
     totalDefaultAudioStreams === 1;
 
-  // build command -- use the audio-relative stream index (a:N) rather than
-  // the absolute stream index, since -disposition's plain numeric specifier
-  // refers to the output stream index, not necessarily the same as ffprobe's
-  // absolute index once other stream types are involved.
-  var audioIndex = -1;
+  // build command
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
     if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
-      audioIndex++;
       if (file.ffProbeData.streams[i].channels == inputs.channels) {
         if (!defaultSet) {
-          ffmpegCommandInsert += `-disposition:a:${audioIndex} default `;
+          ffmpegCommandInsert += `-disposition:${i} default `;
           defaultSet = true;
         } else {
-          ffmpegCommandInsert += `-disposition:a:${audioIndex} 0 `;
+          ffmpegCommandInsert += `-disposition:${i} 0 `;
         }
       } else {
-        ffmpegCommandInsert += `-disposition:a:${audioIndex} 0 `;
+        ffmpegCommandInsert += `-disposition:${i} 0 `;
       }
     }
   }
