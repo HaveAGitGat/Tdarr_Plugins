@@ -5,25 +5,6 @@ import {
   IpluginOutputArgs,
 } from '../../../../FlowHelpers/1.0.0/interfaces/interfaces';
 
-/* -------------- helpers -------------- */
-const parseSxxEyy = (fileName: string): { season: number, episode: number } | null => {
-  const m = getFileName(fileName).match(/S(\d{1,2})E(\d{1,3})/i);
-  return m ? { season: Number(m[1]), episode: Number(m[2]) } : null;
-};
-
-// Plex-style {tmdb-1234} (Radarr) / {tvdb-1234} (Sonarr) tag, else an imdb id anywhere in the path
-// (which also covers {imdb-tt1234567}); '' means fall back to the parse API.
-const getLookupTerm = (arrName: string, fileName: string): string => {
-  const db = arrName === 'radarr' ? 'tmdb' : 'tvdb';
-  const dbId = new RegExp(`\\{${db}-(\\d+)\\}`, 'i').exec(fileName)?.[1];
-  if (dbId) {
-    return `${db}:${dbId}`;
-  }
-  const imdbId = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.[0];
-  return imdbId ? `imdb:${imdbId}` : '';
-};
-
-/* -------------- plugin details -------------- */
 const details = (): IpluginDetails => ({
   name: 'Notify Radarr or Sonarr',
   description: 'Notify Radarr or Sonarr to refresh after file change. '
@@ -97,20 +78,17 @@ const details = (): IpluginDetails => ({
   ],
 });
 
-/* -------------- interfaces -------------- */
 interface IHTTPHeaders {
   'Content-Type': string,
   'X-Api-Key': string,
   Accept: string,
 }
-
 interface IParseResponse {
   data: {
     movie?: { id: number },
     series?: { id: number },
   },
 }
-
 interface IArrApp {
   name: string,
   host: string,
@@ -127,6 +105,12 @@ interface ICommandResponse {
     id: number,
     status: string,
   },
+}
+
+interface IEpisode {
+  id: number,
+  seasonNumber: number,
+  episodeNumber: number,
 }
 
 const POLL_INTERVAL_SECONDS = 5;
@@ -177,7 +161,18 @@ const waitForCommand = async (
   }
 };
 
-/* -------------- getId -------------- */
+// Plex-style {tmdb-1234} (Radarr) / {tvdb-1234} (Sonarr) tag, else an imdb id anywhere in the path
+// (which also covers {imdb-tt1234567}); '' means fall back to the parse API.
+const getLookupTerm = (arrName: string, fileName: string): string => {
+  const db = arrName === 'radarr' ? 'tmdb' : 'tvdb';
+  const dbId = new RegExp(`\\{${db}-(\\d+)\\}`, 'i').exec(fileName)?.[1];
+  if (dbId) {
+    return `${db}:${dbId}`;
+  }
+  const imdbId = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.[0];
+  return imdbId ? `imdb:${imdbId}` : '';
+};
+
 const getId = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
@@ -205,7 +200,6 @@ const getId = async (
   return id;
 };
 
-/* -------------- unmonitor helpers -------------- */
 const unmonitorRadarr = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
@@ -225,23 +219,23 @@ const unmonitorSonarrEpisode = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
   seriesId: number,
-  season: number,
-  episode: number,
+  filePath: string,
 ): Promise<void> => {
-  const eps = await args.deps.axios({
+  const sxe = /S(\d{1,2})E(\d{1,3})/i.exec(getFileName(filePath));
+  if (!sxe) {
+    args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(filePath)}"`);
+    return;
+  }
+  const season = Number(sxe[1]);
+  const episode = Number(sxe[2]);
+
+  const { data: episodes }: { data: IEpisode[] } = await args.deps.axios({
     method: 'get',
     url: `${arrApp.host}/api/v3/episode`,
     headers: arrApp.headers,
     params: { seriesId },
   });
-
-  const match = Array.isArray(eps.data)
-    ? eps.data.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (e: any) => Number(e.seasonNumber) === season && Number(e.episodeNumber) === episode,
-    )
-    : null;
-
+  const match = episodes.find((e) => e.seasonNumber === season && e.episodeNumber === episode);
   if (!match) {
     args.jobLog(`Sonarr: episode S${season}E${episode} not found in seriesId ${seriesId}`);
     return;
@@ -256,7 +250,6 @@ const unmonitorSonarrEpisode = async (
   args.jobLog(`✔ Sonarr: unmonitored S${season}E${episode} (episodeId=${match.id})`);
 };
 
-/* -------------- main plugin -------------- */
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -264,10 +257,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   let refreshed = false;
   const arr = String(args.inputs.arr);
-  const arr_host = String(args.inputs.arr_host).trim();
+  const arr_host = String(args.inputs.arr_host);
   const arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-  const unmonitorAfterRefresh = args.inputs.unmonitor_after_refresh === true
-    || args.inputs.unmonitor_after_refresh === 'true';
+  const unmonitorAfterRefresh = Boolean(args.inputs.unmonitor_after_refresh);
   const originalFileName = args.originalLibraryFile?._id ?? '';
   const currentFileName = args.inputFileObj?._id ?? '';
   const headers: IHTTPHeaders = {
@@ -275,7 +267,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     'X-Api-Key': String(args.inputs.arr_api_key),
     Accept: 'application/json',
   };
-
   const arrApp: IArrApp = arr === 'radarr'
     ? {
       name: arr,
@@ -332,13 +323,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           if (arr === 'radarr') {
             await unmonitorRadarr(args, arrApp, id);
           } else {
-            const srcPath = originalFileName || currentFileName;
-            const sxe = parseSxxEyy(srcPath);
-            if (sxe) {
-              await unmonitorSonarrEpisode(args, arrApp, id, sxe.season, sxe.episode);
-            } else {
-              args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(srcPath)}"`);
-            }
+            await unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName);
           }
         } catch (e) {
           args.jobLog(`Unmonitor error (non-fatal): ${(e as Error)?.message || String(e)}`);

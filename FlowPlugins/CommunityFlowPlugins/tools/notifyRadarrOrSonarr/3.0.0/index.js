@@ -38,24 +38,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var fileUtils_1 = require("../../../../FlowHelpers/1.0.0/fileUtils");
-/* -------------- helpers -------------- */
-var parseSxxEyy = function (fileName) {
-    var m = (0, fileUtils_1.getFileName)(fileName).match(/S(\d{1,2})E(\d{1,3})/i);
-    return m ? { season: Number(m[1]), episode: Number(m[2]) } : null;
-};
-// Plex-style {tmdb-1234} (Radarr) / {tvdb-1234} (Sonarr) tag, else an imdb id anywhere in the path
-// (which also covers {imdb-tt1234567}); '' means fall back to the parse API.
-var getLookupTerm = function (arrName, fileName) {
-    var _a, _b;
-    var db = arrName === 'radarr' ? 'tmdb' : 'tvdb';
-    var dbId = (_a = new RegExp("\\{".concat(db, "-(\\d+)\\}"), 'i').exec(fileName)) === null || _a === void 0 ? void 0 : _a[1];
-    if (dbId) {
-        return "".concat(db, ":").concat(dbId);
-    }
-    var imdbId = (_b = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _b === void 0 ? void 0 : _b[0];
-    return imdbId ? "imdb:".concat(imdbId) : '';
-};
-/* -------------- plugin details -------------- */
 var details = function () { return ({
     name: 'Notify Radarr or Sonarr',
     description: 'Notify Radarr or Sonarr to refresh after file change. '
@@ -176,7 +158,18 @@ var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 
         }
     });
 }); };
-/* -------------- getId -------------- */
+// Plex-style {tmdb-1234} (Radarr) / {tvdb-1234} (Sonarr) tag, else an imdb id anywhere in the path
+// (which also covers {imdb-tt1234567}); '' means fall back to the parse API.
+var getLookupTerm = function (arrName, fileName) {
+    var _a, _b;
+    var db = arrName === 'radarr' ? 'tmdb' : 'tvdb';
+    var dbId = (_a = new RegExp("\\{".concat(db, "-(\\d+)\\}"), 'i').exec(fileName)) === null || _a === void 0 ? void 0 : _a[1];
+    if (dbId) {
+        return "".concat(db, ":").concat(dbId);
+    }
+    var imdbId = (_b = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _b === void 0 ? void 0 : _b[0];
+    return imdbId ? "imdb:".concat(imdbId) : '';
+};
 var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
     var term, id, _a, _b, _c, _d;
     var _e, _f, _g;
@@ -215,7 +208,6 @@ var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0,
         }
     });
 }); };
-/* -------------- unmonitor helpers -------------- */
 var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -235,23 +227,27 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
         }
     });
 }); };
-var unmonitorSonarrEpisode = function (args, arrApp, seriesId, season, episode) { return __awaiter(void 0, void 0, void 0, function () {
-    var eps, match;
+var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
+    var sxe, season, episode, episodes, match;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, args.deps.axios({
-                    method: 'get',
-                    url: "".concat(arrApp.host, "/api/v3/episode"),
-                    headers: arrApp.headers,
-                    params: { seriesId: seriesId },
-                })];
+            case 0:
+                sxe = /S(\d{1,2})E(\d{1,3})/i.exec((0, fileUtils_1.getFileName)(filePath));
+                if (!sxe) {
+                    args.jobLog("Sonarr: cannot unmonitor \u2013 SxxEyy not detected in \"".concat((0, fileUtils_1.getFileName)(filePath), "\""));
+                    return [2 /*return*/];
+                }
+                season = Number(sxe[1]);
+                episode = Number(sxe[2]);
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrApp.host, "/api/v3/episode"),
+                        headers: arrApp.headers,
+                        params: { seriesId: seriesId },
+                    })];
             case 1:
-                eps = _a.sent();
-                match = Array.isArray(eps.data)
-                    ? eps.data.find(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    function (e) { return Number(e.seasonNumber) === season && Number(e.episodeNumber) === episode; })
-                    : null;
+                episodes = (_a.sent()).data;
+                match = episodes.find(function (e) { return e.seasonNumber === season && e.episodeNumber === episode; });
                 if (!match) {
                     args.jobLog("Sonarr: episode S".concat(season, "E").concat(episode, " not found in seriesId ").concat(seriesId));
                     return [2 /*return*/];
@@ -269,9 +265,8 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, season, episode) 
         }
     });
 }); };
-/* -------------- main plugin -------------- */
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, srcPath, sxe, e_1;
+    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, e_1;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -281,10 +276,9 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 refreshed = false;
                 arr = String(args.inputs.arr);
-                arr_host = String(args.inputs.arr_host).trim();
+                arr_host = String(args.inputs.arr_host);
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
-                unmonitorAfterRefresh = args.inputs.unmonitor_after_refresh === true
-                    || args.inputs.unmonitor_after_refresh === 'true';
+                unmonitorAfterRefresh = Boolean(args.inputs.unmonitor_after_refresh);
                 originalFileName = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
                 currentFileName = (_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
                 headers = {
@@ -324,7 +318,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 id = _e.sent();
                 _e.label = 3;
             case 3:
-                if (!(id !== -1)) return [3 /*break*/, 14];
+                if (!(id !== -1)) return [3 /*break*/, 13];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'post',
                         url: "".concat(arrApp.host, "/api/v3/command"),
@@ -340,35 +334,28 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 refreshed = _e.sent();
                 if (!!refreshed) return [3 /*break*/, 6];
                 args.jobLog("\u26A0 ".concat(arrApp.content, " '").concat(id, "' scan did not complete within timeout."));
-                return [3 /*break*/, 14];
+                return [3 /*break*/, 13];
             case 6:
                 args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' scan completed in ").concat(arrApp.name, "."));
-                if (!unmonitorAfterRefresh) return [3 /*break*/, 14];
+                if (!unmonitorAfterRefresh) return [3 /*break*/, 13];
                 _e.label = 7;
             case 7:
-                _e.trys.push([7, 13, , 14]);
+                _e.trys.push([7, 12, , 13]);
                 if (!(arr === 'radarr')) return [3 /*break*/, 9];
                 return [4 /*yield*/, unmonitorRadarr(args, arrApp, id)];
             case 8:
                 _e.sent();
-                return [3 /*break*/, 12];
-            case 9:
-                srcPath = originalFileName || currentFileName;
-                sxe = parseSxxEyy(srcPath);
-                if (!sxe) return [3 /*break*/, 11];
-                return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, sxe.season, sxe.episode)];
+                return [3 /*break*/, 11];
+            case 9: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName)];
             case 10:
                 _e.sent();
-                return [3 /*break*/, 12];
-            case 11:
-                args.jobLog("Sonarr: cannot unmonitor \u2013 SxxEyy not detected in \"".concat((0, fileUtils_1.getFileName)(srcPath), "\""));
-                _e.label = 12;
-            case 12: return [3 /*break*/, 14];
-            case 13:
+                _e.label = 11;
+            case 11: return [3 /*break*/, 13];
+            case 12:
                 e_1 = _e.sent();
                 args.jobLog("Unmonitor error (non-fatal): ".concat((e_1 === null || e_1 === void 0 ? void 0 : e_1.message) || String(e_1)));
-                return [3 /*break*/, 14];
-            case 14: return [2 /*return*/, {
+                return [3 /*break*/, 13];
+            case 13: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: refreshed ? 1 : 2,
                     variables: args.variables,

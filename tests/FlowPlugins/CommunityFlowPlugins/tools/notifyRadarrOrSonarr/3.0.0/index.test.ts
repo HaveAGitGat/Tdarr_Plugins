@@ -7,10 +7,6 @@ const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
 
 const mockAxios = jest.fn();
 
-jest.mock('../../../../../../methods/lib', () => () => ({
-  loadDefaultValues: jest.fn((inputs) => inputs),
-}));
-
 // Make setTimeout resolve instantly so polling doesn't actually wait
 const originalSetTimeout = global.setTimeout;
 beforeAll(() => {
