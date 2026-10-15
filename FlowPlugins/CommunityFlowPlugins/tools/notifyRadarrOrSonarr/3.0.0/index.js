@@ -43,17 +43,16 @@ var parseSxxEyy = function (fileName) {
     var m = (0, fileUtils_1.getFileName)(fileName).match(/S(\d{1,2})E(\d{1,3})/i);
     return m ? { season: Number(m[1]), episode: Number(m[2]) } : null;
 };
-// Plex-style {imdb-tt1234567} / {tmdb-1234} / {tvdb-1234} tags, gated per arr:
-// radarr lookup accepts imdb:/tmdb: terms, sonarr accepts imdb:/tvdb:.
-// Falls back to a bare imdb id anywhere in the path; '' means use the parse API.
+// Plex-style {tmdb-1234} (Radarr) / {tvdb-1234} (Sonarr) tag, else an imdb id anywhere in the path
+// (which also covers {imdb-tt1234567}); '' means fall back to the parse API.
 var getLookupTerm = function (arrName, fileName) {
     var _a, _b;
-    var supported = arrName === 'radarr' ? ['imdb', 'tmdb'] : ['imdb', 'tvdb'];
-    var m = /\{(imdb|tmdb|tvdb)-((?:tt|nm|co|ev|ch|ni)\d{7,10}|\d+)\}/i.exec(fileName);
-    if (m && supported.includes(m[1].toLowerCase())) {
-        return "".concat(m[1].toLowerCase(), ":").concat(m[2]);
+    var db = arrName === 'radarr' ? 'tmdb' : 'tvdb';
+    var dbId = (_a = new RegExp("\\{".concat(db, "-(\\d+)\\}"), 'i').exec(fileName)) === null || _a === void 0 ? void 0 : _a[1];
+    if (dbId) {
+        return "".concat(db, ":").concat(dbId);
     }
-    var imdbId = (_b = (_a = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _a === void 0 ? void 0 : _a[0]) !== null && _b !== void 0 ? _b : '';
+    var imdbId = (_b = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _b === void 0 ? void 0 : _b[0];
     return imdbId ? "imdb:".concat(imdbId) : '';
 };
 /* -------------- plugin details -------------- */

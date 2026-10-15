@@ -146,6 +146,32 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '123' found for 'tmdb:603'");
     });
 
+    it('finds {tmdb-} tag even when another tag comes first', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie {tvdb-1234} {tmdb-603}/Test Movie.mkv';
+      mockRefresh({ data: [{ id: 123 }] });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://192.168.1.1:7878/api/v3/movie/lookup?term=tmdb:603',
+        }),
+      );
+    });
+
+    it('looks up by imdb id from Plex-style {imdb-} tag', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie {imdb-tt7777777}/Test Movie.mkv';
+      mockRefresh({ data: [{ id: 123 }] });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'http://192.168.1.1:7878/api/v3/movie/lookup?term=imdb:tt7777777',
+        }),
+      );
+    });
+
     it('ignores {tvdb-} tag for radarr and falls back to parse API', async () => {
       baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie (2023) {tvdb-1234}/Test Movie (2023).mkv';
       baseArgs.inputFileObj._id = baseArgs.originalLibraryFile._id;

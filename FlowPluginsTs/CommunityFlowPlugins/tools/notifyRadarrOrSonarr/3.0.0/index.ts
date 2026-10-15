@@ -11,16 +11,15 @@ const parseSxxEyy = (fileName: string): { season: number, episode: number } | nu
   return m ? { season: Number(m[1]), episode: Number(m[2]) } : null;
 };
 
-// Plex-style {imdb-tt1234567} / {tmdb-1234} / {tvdb-1234} tags, gated per arr:
-// radarr lookup accepts imdb:/tmdb: terms, sonarr accepts imdb:/tvdb:.
-// Falls back to a bare imdb id anywhere in the path; '' means use the parse API.
+// Plex-style {tmdb-1234} (Radarr) / {tvdb-1234} (Sonarr) tag, else an imdb id anywhere in the path
+// (which also covers {imdb-tt1234567}); '' means fall back to the parse API.
 const getLookupTerm = (arrName: string, fileName: string): string => {
-  const supported = arrName === 'radarr' ? ['imdb', 'tmdb'] : ['imdb', 'tvdb'];
-  const m = /\{(imdb|tmdb|tvdb)-((?:tt|nm|co|ev|ch|ni)\d{7,10}|\d+)\}/i.exec(fileName);
-  if (m && supported.includes(m[1].toLowerCase())) {
-    return `${m[1].toLowerCase()}:${m[2]}`;
+  const db = arrName === 'radarr' ? 'tmdb' : 'tvdb';
+  const dbId = new RegExp(`\\{${db}-(\\d+)\\}`, 'i').exec(fileName)?.[1];
+  if (dbId) {
+    return `${db}:${dbId}`;
   }
-  const imdbId = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.[0] ?? '';
+  const imdbId = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)?.[0];
   return imdbId ? `imdb:${imdbId}` : '';
 };
 
