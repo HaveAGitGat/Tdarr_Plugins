@@ -59,8 +59,8 @@ var getLookupTerm = function (arrName, fileName) {
 /* -------------- plugin details -------------- */
 var details = function () { return ({
     name: 'Notify Radarr or Sonarr',
-    description: 'Notify Radarr or Sonarr to refresh after file change. Optionally unmonitor the item afterwards. '
-        + 'Unlike 2.0.0, does not wait for the scan to complete before continuing.',
+    description: 'Notify Radarr or Sonarr to refresh after file change. '
+        + 'Waits for the scan to complete before continuing. Optionally unmonitor the item afterwards.',
     style: {
         borderColor: 'green',
     },
@@ -130,6 +130,53 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+var POLL_INTERVAL_SECONDS = 5;
+var TIMEOUT_SECONDS = 120;
+var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 0, void 0, void 0, function () {
+    var startTime, timeoutMs, pollIntervalMs, elapsed, res, status_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                startTime = Date.now();
+                timeoutMs = TIMEOUT_SECONDS * 1000;
+                pollIntervalMs = POLL_INTERVAL_SECONDS * 1000;
+                args.jobLog("Waiting for command ".concat(commandId, " to complete (timeout: ").concat(TIMEOUT_SECONDS, "s)..."));
+                _a.label = 1;
+            case 1:
+                if (!true) return [3 /*break*/, 4];
+                elapsed = Date.now() - startTime;
+                if (elapsed >= timeoutMs) {
+                    args.jobLog("Command ".concat(commandId, " timed out after ").concat(TIMEOUT_SECONDS, "s."));
+                    return [2 /*return*/, false];
+                }
+                // eslint-disable-next-line no-await-in-loop
+                return [4 /*yield*/, new Promise(function (resolve) {
+                        setTimeout(resolve, pollIntervalMs);
+                    })];
+            case 2:
+                // eslint-disable-next-line no-await-in-loop
+                _a.sent();
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'get',
+                        url: "".concat(arrApp.host, "/api/v3/command/").concat(commandId),
+                        headers: arrApp.headers,
+                    })];
+            case 3:
+                res = _a.sent();
+                status_1 = res.data.status;
+                args.jobLog("Command ".concat(commandId, " status: ").concat(status_1));
+                if (status_1 === 'completed') {
+                    return [2 /*return*/, true];
+                }
+                if (status_1 === 'failed' || status_1 === 'aborted' || status_1 === 'cancelled') {
+                    args.jobLog("Command ".concat(commandId, " ended with status: ").concat(status_1));
+                    return [2 /*return*/, false];
+                }
+                return [3 /*break*/, 1];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 /* -------------- getId -------------- */
 var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
     var term, id, _a, _b, _c, _d;
@@ -174,8 +221,7 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: 
-            // Bulk editor endpoint updates only the monitored flag, so a concurrently
-            // running RefreshMovie command can't be clobbered by a stale full-object PUT.
+            // Editor endpoint only changes the monitored flag, avoiding a full-object PUT
             return [4 /*yield*/, args.deps.axios({
                     method: 'put',
                     url: "".concat(arrApp.host, "/api/v3/movie/editor"),
@@ -183,8 +229,7 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
                     data: JSON.stringify({ movieIds: [movieId], monitored: false }),
                 })];
             case 1:
-                // Bulk editor endpoint updates only the monitored flag, so a concurrently
-                // running RefreshMovie command can't be clobbered by a stale full-object PUT.
+                // Editor endpoint only changes the monitored flag, avoiding a full-object PUT
                 _a.sent();
                 args.jobLog("\u2714 Radarr: movie id=".concat(movieId, " unmonitored"));
                 return [2 /*return*/];
@@ -227,7 +272,7 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, season, episode) 
 }); };
 /* -------------- main plugin -------------- */
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, srcPath, sxe, e_1;
+    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, srcPath, sxe, e_1;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -280,7 +325,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 id = _e.sent();
                 _e.label = 3;
             case 3:
-                if (!(id !== -1)) return [3 /*break*/, 12];
+                if (!(id !== -1)) return [3 /*break*/, 14];
                 return [4 /*yield*/, args.deps.axios({
                         method: 'post',
                         url: "".concat(arrApp.host, "/api/v3/command"),
@@ -288,35 +333,43 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         data: arrApp.delegates.buildRefreshRequestData(id),
                     })];
             case 4:
-                _e.sent();
-                refreshed = true;
-                args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' refreshed in ").concat(arrApp.name, "."));
-                if (!unmonitorAfterRefresh) return [3 /*break*/, 12];
-                _e.label = 5;
+                commandResponse = _e.sent();
+                commandId = commandResponse.data.id;
+                args.jobLog("".concat(arrApp.content, " '").concat(id, "' refresh queued in ").concat(arrApp.name, " (command ").concat(commandId, ")."));
+                return [4 /*yield*/, waitForCommand(args, arrApp, commandId)];
             case 5:
-                _e.trys.push([5, 11, , 12]);
-                if (!(arr === 'radarr')) return [3 /*break*/, 7];
-                return [4 /*yield*/, unmonitorRadarr(args, arrApp, id)];
+                refreshed = _e.sent();
+                if (!!refreshed) return [3 /*break*/, 6];
+                args.jobLog("\u26A0 ".concat(arrApp.content, " '").concat(id, "' scan did not complete within timeout."));
+                return [3 /*break*/, 14];
             case 6:
-                _e.sent();
-                return [3 /*break*/, 10];
+                args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' scan completed in ").concat(arrApp.name, "."));
+                if (!unmonitorAfterRefresh) return [3 /*break*/, 14];
+                _e.label = 7;
             case 7:
-                srcPath = originalFileName || currentFileName;
-                sxe = parseSxxEyy(srcPath);
-                if (!sxe) return [3 /*break*/, 9];
-                return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, sxe.season, sxe.episode)];
+                _e.trys.push([7, 13, , 14]);
+                if (!(arr === 'radarr')) return [3 /*break*/, 9];
+                return [4 /*yield*/, unmonitorRadarr(args, arrApp, id)];
             case 8:
                 _e.sent();
-                return [3 /*break*/, 10];
+                return [3 /*break*/, 12];
             case 9:
-                args.jobLog("Sonarr: cannot unmonitor \u2013 SxxEyy not detected in \"".concat((0, fileUtils_1.getFileName)(srcPath), "\""));
-                _e.label = 10;
-            case 10: return [3 /*break*/, 12];
+                srcPath = originalFileName || currentFileName;
+                sxe = parseSxxEyy(srcPath);
+                if (!sxe) return [3 /*break*/, 11];
+                return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, sxe.season, sxe.episode)];
+            case 10:
+                _e.sent();
+                return [3 /*break*/, 12];
             case 11:
+                args.jobLog("Sonarr: cannot unmonitor \u2013 SxxEyy not detected in \"".concat((0, fileUtils_1.getFileName)(srcPath), "\""));
+                _e.label = 12;
+            case 12: return [3 /*break*/, 14];
+            case 13:
                 e_1 = _e.sent();
                 args.jobLog("Unmonitor error (non-fatal): ".concat((e_1 === null || e_1 === void 0 ? void 0 : e_1.message) || String(e_1)));
-                return [3 /*break*/, 12];
-            case 12: return [2 /*return*/, {
+                return [3 /*break*/, 14];
+            case 14: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: refreshed ? 1 : 2,
                     variables: args.variables,

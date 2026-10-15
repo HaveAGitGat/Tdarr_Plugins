@@ -11,11 +11,38 @@ jest.mock('../../../../../../methods/lib', () => () => ({
   loadDefaultValues: jest.fn((inputs) => inputs),
 }));
 
+// Make setTimeout resolve instantly so polling doesn't actually wait
+const originalSetTimeout = global.setTimeout;
+beforeAll(() => {
+  global.setTimeout = ((fn: () => void) => originalSetTimeout(fn, 0)) as unknown as typeof setTimeout;
+});
+afterAll(() => {
+  global.setTimeout = originalSetTimeout;
+});
+
+const headers = {
+  'Content-Type': 'application/json',
+  'X-Api-Key': 'test_api_key_123',
+  Accept: 'application/json',
+};
+
+// Queue the lookup/parse responses, then a refresh command that completes on the first poll
+const mockRefresh = (...lookupResponses: unknown[]) => {
+  lookupResponses.forEach((res) => mockAxios.mockResolvedValueOnce(res));
+  return mockAxios
+    .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } })
+    .mockResolvedValueOnce({ data: { id: 50, status: 'completed' } });
+};
+
+const lookupUrlCalled = () => mockAxios.mock.calls.some(([req]) => req.url.includes('/lookup'));
+
 describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
   let baseArgs: IpluginInputArgs;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    // Default: arr knows nothing
+    mockAxios.mockResolvedValue({ data: {} });
 
     baseArgs = {
       inputs: {
@@ -35,45 +62,37 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
         axios: mockAxios,
       },
     } as unknown as IpluginInputArgs;
-
-    mockAxios.mockResolvedValue({ data: [{ id: 123 }] });
   });
 
-  // ─── Refresh (inherited from 2.0.0) ───────────────────────────────────────
-
   describe('Radarr refresh', () => {
-    it('should successfully notify Radarr when movie found by IMDB ID', async () => {
+    it('should notify Radarr and wait for the scan when movie found by IMDB ID', async () => {
+      mockRefresh({ data: [{ id: 123 }] });
+
       const result = await plugin(baseArgs);
 
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'get',
         url: 'http://192.168.1.1:7878/api/v3/movie/lookup?term=imdb:tt1234567',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': 'test_api_key_123',
-          Accept: 'application/json',
-        },
+        headers,
       });
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'post',
         url: 'http://192.168.1.1:7878/api/v3/command',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': 'test_api_key_123',
-          Accept: 'application/json',
-        },
+        headers,
         data: JSON.stringify({ name: 'RefreshMovie', movieIds: [123] }),
+      });
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'get',
+        url: 'http://192.168.1.1:7878/api/v3/command/50',
+        headers,
       });
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '123' found for 'imdb:tt1234567'");
-      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Movie '123' refreshed in radarr.");
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Movie '123' scan completed in radarr.");
     });
 
     it('should fallback to parse API when IMDB lookup fails', async () => {
-      mockAxios
-        .mockResolvedValueOnce({ data: [] })
-        .mockResolvedValueOnce({ data: { movie: { id: 456 } } })
-        .mockResolvedValueOnce({});
+      mockRefresh({ data: [] }, { data: { movie: { id: 456 } } });
 
       const result = await plugin(baseArgs);
 
@@ -83,17 +102,26 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
     });
 
     it('should return output 2 when movie not found', async () => {
-      mockAxios
-        .mockResolvedValueOnce({ data: [] })
-        .mockResolvedValueOnce({ data: { movie: null } });
-
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
     });
 
-    it('should handle trailing slash in host URL', async () => {
-      baseArgs.inputs.arr_host = 'http://192.168.1.1:7878/';
+    it('should return output 2 when the scan does not complete', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] })
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } })
+        .mockResolvedValueOnce({ data: { id: 50, status: 'failed' } });
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("⚠ Movie '123' scan did not complete within timeout.");
+    });
+
+    it('should handle trailing slash and whitespace in host URL', async () => {
+      baseArgs.inputs.arr_host = '  http://192.168.1.1:7878/  ';
+      mockRefresh({ data: [{ id: 123 }] });
 
       await plugin(baseArgs);
 
@@ -106,6 +134,7 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
     it('looks up by tmdb id from Plex-style {tmdb-} tag', async () => {
       baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie (2023) {tmdb-603}/Test Movie (2023).mkv';
+      mockRefresh({ data: [{ id: 123 }] });
 
       await plugin(baseArgs);
 
@@ -120,29 +149,15 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
     it('ignores {tvdb-} tag for radarr and falls back to parse API', async () => {
       baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie (2023) {tvdb-1234}/Test Movie (2023).mkv';
       baseArgs.inputFileObj._id = baseArgs.originalLibraryFile._id;
-
-      mockAxios
-        .mockResolvedValueOnce({ data: { movie: { id: 456 } } }) // parse API (no lookup call)
-        .mockResolvedValueOnce({}); // command
+      mockRefresh({ data: { movie: { id: 456 } } });
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
+      expect(lookupUrlCalled()).toBe(false);
       expect(mockAxios).toHaveBeenCalledWith(
         expect.objectContaining({
           url: expect.stringContaining('/api/v3/parse?title='),
-        }),
-      );
-    });
-
-    it('should trim whitespace from host URL', async () => {
-      baseArgs.inputs.arr_host = '  http://192.168.1.1:7878  ';
-
-      await plugin(baseArgs);
-
-      expect(mockAxios).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: 'http://192.168.1.1:7878/api/v3/movie/lookup?term=imdb:tt1234567',
         }),
       );
     });
@@ -158,26 +173,20 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       } as IFileObject;
     });
 
-    it('should successfully notify Sonarr when series found by IMDB ID', async () => {
+    it('should notify Sonarr when series found by IMDB ID', async () => {
+      mockRefresh({ data: [{ id: 123 }] });
+
       const result = await plugin(baseArgs);
 
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'get',
         url: 'http://192.168.1.1:8989/api/v3/series/lookup?term=imdb:tt7654321',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': 'test_api_key_123',
-          Accept: 'application/json',
-        },
+        headers,
       });
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'post',
         url: 'http://192.168.1.1:8989/api/v3/command',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Api-Key': 'test_api_key_123',
-          Accept: 'application/json',
-        },
+        headers,
         data: JSON.stringify({ name: 'RefreshSeries', seriesId: 123 }),
       });
       expect(result.outputNumber).toBe(1);
@@ -185,6 +194,7 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
     it('looks up by tvdb id from Plex-style {tvdb-} tag', async () => {
       baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series {tvdb-123456}/Season 01/Test Series S01E01.mkv';
+      mockRefresh({ data: [{ id: 123 }] });
 
       await plugin(baseArgs);
 
@@ -196,76 +206,68 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
     });
   });
 
-  // ─── Radarr unmonitor ──────────────────────────────────────────────────────
-
   describe('Radarr unmonitor', () => {
     beforeEach(() => {
       baseArgs.inputs.unmonitor_after_refresh = 'true';
     });
 
     it('unmonitors movie after refresh via PUT /movie/editor', async () => {
-      mockAxios
-        .mockResolvedValueOnce({ data: [{ id: 123 }] }) // IMDB lookup
-        .mockResolvedValueOnce({}) // RefreshMovie command
-        .mockResolvedValueOnce({}); // PUT movie/editor
+      mockRefresh({ data: [{ id: 123 }] }).mockResolvedValueOnce({});
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(mockAxios).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'put',
-          url: 'http://192.168.1.1:7878/api/v3/movie/editor',
-          data: JSON.stringify({ movieIds: [123], monitored: false }),
-        }),
-      );
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'put',
+        url: 'http://192.168.1.1:7878/api/v3/movie/editor',
+        headers,
+        data: JSON.stringify({ movieIds: [123], monitored: false }),
+      });
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Radarr: movie id=123 unmonitored');
     });
 
     it('does not unmonitor when flag is false', async () => {
       baseArgs.inputs.unmonitor_after_refresh = 'false';
-
-      mockAxios
-        .mockResolvedValueOnce({ data: [{ id: 123 }] })
-        .mockResolvedValueOnce({});
+      mockRefresh({ data: [{ id: 123 }] });
 
       await plugin(baseArgs);
 
-      // Only 2 calls: lookup + command. No GET/PUT for unmonitor.
-      expect(mockAxios).toHaveBeenCalledTimes(2);
+      // lookup + command + poll only
+      expect(mockAxios).toHaveBeenCalledTimes(3);
       expect(baseArgs.jobLog).not.toHaveBeenCalledWith(expect.stringContaining('unmonitored'));
     });
 
-    it('does not unmonitor when refresh fails (id not found)', async () => {
-      // Ensure no currentFileName fallback by making both paths the same
+    it('does not unmonitor when id not found', async () => {
       baseArgs.inputFileObj._id = baseArgs.originalLibraryFile._id;
-
-      mockAxios
-        .mockResolvedValueOnce({ data: [] })
-        .mockResolvedValueOnce({ data: { movie: null } });
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(2);
+      // lookup + parse only
       expect(mockAxios).toHaveBeenCalledTimes(2);
     });
 
-    it('unmonitor errors are non-fatal — still returns output 1', async () => {
+    it('does not unmonitor when the scan does not complete', async () => {
       mockAxios
         .mockResolvedValueOnce({ data: [{ id: 123 }] })
-        .mockResolvedValueOnce({}) // command
-        .mockRejectedValueOnce(new Error('PUT movie/editor failed')); // unmonitor PUT fails
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } })
+        .mockResolvedValueOnce({ data: { id: 50, status: 'failed' } });
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(mockAxios).toHaveBeenCalledTimes(3);
+    });
+
+    it('unmonitor errors are non-fatal and still return output 1', async () => {
+      mockRefresh({ data: [{ id: 123 }] }).mockRejectedValueOnce(new Error('PUT movie/editor failed'));
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining('Unmonitor error (non-fatal): PUT movie/editor failed'),
-      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Unmonitor error (non-fatal): PUT movie/editor failed');
     });
   });
-
-  // ─── Sonarr unmonitor ──────────────────────────────────────────────────────
 
   describe('Sonarr unmonitor', () => {
     beforeEach(() => {
@@ -279,71 +281,54 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
     });
 
     it('unmonitors episode via PUT /episode/monitor', async () => {
-      mockAxios
-        .mockResolvedValueOnce({ data: [{ id: 42 }] }) // series lookup
-        .mockResolvedValueOnce({}) // RefreshSeries command
-        .mockResolvedValueOnce({ // GET /episode
-          data: [{ id: 99, seasonNumber: 1, episodeNumber: 5 }],
-        })
-        .mockResolvedValueOnce({}); // PUT /episode/monitor
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce({ data: [{ id: 99, seasonNumber: 1, episodeNumber: 5 }] })
+        .mockResolvedValueOnce({});
 
       await plugin(baseArgs);
 
-      expect(mockAxios).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'put',
-          url: 'http://192.168.1.1:8989/api/v3/episode/monitor',
-          data: JSON.stringify({ monitored: false, episodeIds: [99] }),
-        }),
-      );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining('unmonitored S1E5 (episodeId=99)'),
-      );
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'get',
+        url: 'http://192.168.1.1:8989/api/v3/episode',
+        headers,
+        params: { seriesId: 42 },
+      });
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'put',
+        url: 'http://192.168.1.1:8989/api/v3/episode/monitor',
+        headers,
+        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
+      });
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
     });
 
     it('logs and skips unmonitor when SxxEyy not found in filename', async () => {
       baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series [tt7654321]/Test Series.mkv';
-
-      mockAxios
-        .mockResolvedValueOnce({ data: [{ id: 42 }] })
-        .mockResolvedValueOnce({});
+      mockRefresh({ data: [{ id: 42 }] });
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining('SxxEyy not detected'),
-      );
-      // No episode unmonitor calls
-      expect(mockAxios).toHaveBeenCalledTimes(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('SxxEyy not detected'));
+      // lookup + command + poll only
+      expect(mockAxios).toHaveBeenCalledTimes(3);
     });
 
     it('logs and skips unmonitor when episode not found in series', async () => {
-      mockAxios
-        .mockResolvedValueOnce({ data: [{ id: 42 }] })
-        .mockResolvedValueOnce({}) // command
-        .mockResolvedValueOnce({ data: [] }); // GET /episode → empty
+      mockRefresh({ data: [{ id: 42 }] }).mockResolvedValueOnce({ data: [] });
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringContaining('not found in seriesId 42'),
-      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Sonarr: episode S1E5 not found in seriesId 42');
     });
   });
 
-  // ─── Misc ──────────────────────────────────────────────────────────────────
-
   describe('misc', () => {
     it('uses currentFileName as fallback when originalFileName lookup fails', async () => {
-      baseArgs.originalLibraryFile._id = 'C:/old/path/movie.mkv'; // no IMDB ID
+      baseArgs.originalLibraryFile._id = 'C:/old/path/movie.mkv'; // no IMDB ID, so parse only
       baseArgs.inputFileObj._id = 'C:/new/path/movie.tt9999999.mkv';
-
-      mockAxios
-        .mockResolvedValueOnce({ data: { movie: null } }) // original: parse not found (no IMDB so no lookup)
-        .mockResolvedValueOnce({ data: [{ id: 777 }] }) // current: IMDB lookup found
-        .mockResolvedValueOnce({}); // command
+      mockRefresh({ data: { movie: null } }, { data: [{ id: 777 }] });
 
       const result = await plugin(baseArgs);
 
