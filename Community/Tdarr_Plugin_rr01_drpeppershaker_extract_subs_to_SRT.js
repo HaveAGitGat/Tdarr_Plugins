@@ -1,4 +1,3 @@
-// tdarrSkipTest
 const details = () => ({
   id: 'Tdarr_Plugin_rr01_drpeppershaker_extract_subs_to_SRT',
   Stage: 'Pre-processing',
@@ -11,7 +10,7 @@ const details = () => ({
       + 'other options.',
   // Created by drpeppershaker with help from reddit user /u/jakejones48, lots of
   // improvements made after looking at "Tdarr_Plugin_078d" by HaveAGitGat.
-  Version: '1.06',
+  Version: '1.07',
   Tags: 'pre-processing,subtitle only,ffmpeg,configurable',
   Inputs: [
     {
@@ -61,6 +60,13 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   if (inputs.remove_subs === undefined) {
     response.processFile = false;
     response.infoLog += '☒ Inputs not entered! \n';
+    return response;
+  }
+
+  if (!Array.isArray(file.ffProbeData?.streams)) {
+    response.infoLog += '☒ No stream data from FFprobe, file may be corrupt or unreadable. '
+      + 'Skipping subtitle extraction.\n';
+    response.processFile = false;
     return response;
   }
 
