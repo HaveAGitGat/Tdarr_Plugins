@@ -113,13 +113,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (matchingAudioStreams < 1) {
       response.infoLog +=
         "☑ No " + inputs.channels + " channel audio stream exists. \n ";
-    } else if (alreadyCorrect) {
+    } else {
       response.infoLog +=
         "☑ Default " +
         inputs.channels +
         " channel audio stream already exists. \n ";
-    } else {
-      response.infoLog += "☑ Unexpected: Did not process \n ";
     }
 
     response.processFile = false;
