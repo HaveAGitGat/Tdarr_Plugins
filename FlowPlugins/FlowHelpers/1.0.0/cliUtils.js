@@ -296,6 +296,22 @@ var CLI = /** @class */ (function () {
                     });
                 }
             }
+            else if (/nvencc|qsvencc|vceencc/i.test(_this.config.cli)) {
+                var progress = (0, cliParsers_1.nvenccParser)({
+                    str: str,
+                });
+                if (progress.fps > 0) {
+                    _this.config.updateWorker({
+                        fps: progress.fps,
+                    });
+                }
+                if (progress.percentage > 0) {
+                    void _this.updateETA(progress.percentage);
+                    _this.config.updateWorker({
+                        percentage: progress.percentage,
+                    });
+                }
+            }
             else if (_this.config.cli.toLowerCase().includes('editready')) {
                 var percentage = (0, cliParsers_1.editreadyParser)({
                     str: str,
