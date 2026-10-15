@@ -290,6 +290,52 @@ const getFpsFromSpeed = ({
   return Math.round(speed * videoFrameRate);
 };
 
+// NVEncC/QSVEncC/VCEEncC (rigaya) progress, e.g.
+// [12.3%] 1234/56789 frames: 45.67 fps, 3200 kbps, remain 0:08:13, est out size 1234.5MB
+// The percentage and /total are absent until the total frame count is known. Requiring
+// 'frames:' skips the banner ('24000/1001 fps') and final summary ('encoded N frames, ...').
+const nvenccParser = ({
+  str,
+}:
+  {
+    str: string,
+  }): { percentage: number, fps: number } => {
+  const out = { percentage: 0, fps: 0 };
+
+  if (typeof str !== 'string') {
+    return out;
+  }
+
+  const progressRegex = /(?:\[\s*([\d.]+)%\]\s*)?\d+(?:\/\d+)?\s+frames:\s+([\d.]+)\s+fps/g;
+
+  // A single data event can carry several \r-separated updates; keep the newest.
+  let last: RegExpExecArray | null = null;
+  let match = progressRegex.exec(str);
+  while (match !== null) {
+    last = match;
+    match = progressRegex.exec(str);
+  }
+
+  if (last === null) {
+    return out;
+  }
+
+  const percentage = parseFloat(last[1]);
+  const fps = parseFloat(last[2]);
+
+  // Same precision as the ffmpeg path: 2dp percentage, whole-number fps.
+  // NaN > 0 is false, so unparseable values stay 0.
+  if (percentage > 0) {
+    out.percentage = parseFloat(Math.min(percentage, 100).toFixed(2));
+  }
+
+  if (fps > 0) {
+    out.fps = Math.round(fps);
+  }
+
+  return out;
+};
+
 export {
   handbrakeParser,
   ffmpegParser,
@@ -298,4 +344,5 @@ export {
   getHandBrakeFps,
   getFpsFromSpeed,
   editreadyParser,
+  nvenccParser,
 };
