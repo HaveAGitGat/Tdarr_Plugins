@@ -52,23 +52,32 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
   };
 
   var shouldProcess = false;
-  var defaultAudioStreams = 0;
+  var totalDefaultAudioStreams = 0;
   var matchingAudioStreams = 0;
+  var matchingDefaultAudioStreams = 0;
   var defaultSet = false;
   var ffmpegCommandInsert = "";
 
-  // Check if default audio stream matches user's channel selection
+  // Check if default audio stream matches user's channel selection. Defaults are
+  // counted across all audio streams so a non-matching default is also caught
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
-    if (
-      file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio" &&
-      file.ffProbeData.streams[i].channels == inputs.channels
-    ) {
-      matchingAudioStreams++;
-      if (file.ffProbeData.streams[i].disposition.default === 1) {
-        defaultAudioStreams++;
+    if (file.ffProbeData.streams[i].codec_type.toLowerCase() === "audio") {
+      var isDefault = file.ffProbeData.streams[i].disposition.default === 1;
+      if (isDefault) {
+        totalDefaultAudioStreams++;
+      }
+      if (file.ffProbeData.streams[i].channels == inputs.channels) {
+        matchingAudioStreams++;
+        if (isDefault) {
+          matchingDefaultAudioStreams++;
+        }
       }
     }
   }
+
+  // Already correct when the only default audio stream is a matching one
+  var alreadyCorrect =
+    totalDefaultAudioStreams === 1 && matchingDefaultAudioStreams === 1;
 
   // build command
   for (var i = 0; i < file.ffProbeData.streams.length; i++) {
@@ -86,9 +95,8 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     }
   }
 
-  // Only process when there is a matching stream and
-  // when there is either no default or more than 1 default stream set
-  if (matchingAudioStreams >= 1 && defaultAudioStreams !== 1) {
+  // Only process when there is a matching stream and the file isn't already correct
+  if (matchingAudioStreams >= 1 && !alreadyCorrect) {
     shouldProcess = true;
     response.infoLog += "☒ Matching audio stream is not set to default. \n";
   }
@@ -105,13 +113,11 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
     if (matchingAudioStreams < 1) {
       response.infoLog +=
         "☑ No " + inputs.channels + " channel audio stream exists. \n ";
-    } else if (defaultAudioStreams === 1) {
+    } else {
       response.infoLog +=
         "☑ Default " +
         inputs.channels +
         " channel audio stream already exists. \n ";
-    } else {
-      response.infoLog += "☑ Unexpected: Did not process \n ";
     }
 
     response.processFile = false;
