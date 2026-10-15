@@ -245,12 +245,11 @@ var nvenccParser = function (_a) {
     // Match the precision the ffmpeg path reports: whole-number fps (it uses parseInt) and
     // 2dp percentage (getFFmpegPercentage uses toFixed(2)), so the worker columns don't
     // jump between 2 and 14 decimal places.
-    // eslint-disable-next-line no-restricted-globals
-    if (!isNaN(percentage) && percentage > 0) {
+    // NaN > 0 is false, so unparseable values stay 0.
+    if (percentage > 0) {
         out.percentage = parseFloat(Math.min(percentage, 100).toFixed(2));
     }
-    // eslint-disable-next-line no-restricted-globals
-    if (!isNaN(fps) && fps > 0) {
+    if (fps > 0) {
         out.fps = Math.round(fps);
     }
     return out;
