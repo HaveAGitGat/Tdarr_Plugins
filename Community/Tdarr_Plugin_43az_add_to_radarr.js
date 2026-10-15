@@ -1,4 +1,5 @@
 /* eslint-disable */
+module.exports.dependencies = ['request@2.88.2'];
 // tdarrSkipTest
 const details = () => {
   return {
