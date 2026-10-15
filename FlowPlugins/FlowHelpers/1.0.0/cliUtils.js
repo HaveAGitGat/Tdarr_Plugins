@@ -305,8 +305,6 @@ var CLI = /** @class */ (function () {
                         fps: progress.fps,
                     });
                 }
-                // updateETA derives the ETA from percentage deltas and reads the output size off
-                // disk, so percentage alone restores the ETA and size/compression columns too.
                 if (progress.percentage > 0) {
                     void _this.updateETA(progress.percentage);
                     _this.config.updateWorker({

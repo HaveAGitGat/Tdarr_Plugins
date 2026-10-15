@@ -217,12 +217,10 @@ var getFpsFromSpeed = function (_a) {
     return Math.round(speed * videoFrameRate);
 };
 exports.getFpsFromSpeed = getFpsFromSpeed;
-// rigaya's NVEncC/QSVEncC/VCEEncC share rgy_status.cpp and write progress to stderr
-// terminated with \r (flushed even when redirected), e.g.
+// NVEncC/QSVEncC/VCEEncC (rigaya) progress, e.g.
 // [12.3%] 1234/56789 frames: 45.67 fps, 3200 kbps, remain 0:08:13, est out size 1234.5MB
-// The percentage and the /total only appear once the total frame count is known, so both
-// are optional. Anchoring on 'frames:' keeps the startup banner ('24000/1001 fps') and the
-// final summary ('encoded N frames, 45.67 fps') from being read as progress.
+// The percentage and /total are absent until the total frame count is known. Requiring
+// 'frames:' skips the banner ('24000/1001 fps') and final summary ('encoded N frames, ...').
 var nvenccParser = function (_a) {
     var str = _a.str;
     var out = { percentage: 0, fps: 0 };
@@ -242,9 +240,7 @@ var nvenccParser = function (_a) {
     }
     var percentage = parseFloat(last[1]);
     var fps = parseFloat(last[2]);
-    // Match the precision the ffmpeg path reports: whole-number fps (it uses parseInt) and
-    // 2dp percentage (getFFmpegPercentage uses toFixed(2)), so the worker columns don't
-    // jump between 2 and 14 decimal places.
+    // Same precision as the ffmpeg path: 2dp percentage, whole-number fps.
     // NaN > 0 is false, so unparseable values stay 0.
     if (percentage > 0) {
         out.percentage = parseFloat(Math.min(percentage, 100).toFixed(2));
