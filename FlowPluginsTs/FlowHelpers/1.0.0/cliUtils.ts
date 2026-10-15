@@ -1,6 +1,6 @@
 import fs from 'fs';
 import {
-  editreadyParser, ffmpegParser, getFpsFromSpeed, getHandBrakeFps, handbrakeParser,
+  editreadyParser, ffmpegParser, getFpsFromSpeed, getHandBrakeFps, handbrakeParser, nvenccParser,
 } from './cliParsers';
 import { Ilog, IpluginInputArgs, IupdateWorker } from './interfaces/interfaces';
 import { IFileObject, Istreams } from './interfaces/synced/IFileObject';
@@ -335,6 +335,21 @@ class CLI {
         void this.updateETA(percentage);
         this.config.updateWorker({
           percentage,
+        });
+      }
+    } else if (/nvencc|qsvencc|vceencc/i.test(this.config.cli)) {
+      const progress = nvenccParser({
+        str,
+      });
+      if (progress.fps > 0) {
+        this.config.updateWorker({
+          fps: progress.fps,
+        });
+      }
+      if (progress.percentage > 0) {
+        void this.updateETA(progress.percentage);
+        this.config.updateWorker({
+          percentage: progress.percentage,
         });
       }
     } else if (this.config.cli.toLowerCase().includes('editready')) {
