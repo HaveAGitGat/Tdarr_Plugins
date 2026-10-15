@@ -37,6 +37,12 @@ describe('nvenccParser', () => {
     })).toEqual({ percentage: 45.5, fps: 125 });
   });
 
+  it('ignores a percentage cut off by a chunk boundary', () => {
+    expect(nvenccParser({
+      str: '.3%] 1234/56789 frames: 45.67 fps',
+    })).toEqual({ percentage: 0, fps: 46 });
+  });
+
   it('clamps percentage to 100', () => {
     expect(nvenccParser({
       str: '[100.4%] 601/600 frames: 60.00 fps',
