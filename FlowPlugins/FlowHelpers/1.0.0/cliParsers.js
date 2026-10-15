@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.editreadyParser = exports.getFpsFromSpeed = exports.getHandBrakeFps = exports.getFFmpegVar = exports.getFFmpegPercentage = exports.ffmpegParser = exports.handbrakeParser = void 0;
+exports.nvenccParser = exports.editreadyParser = exports.getFpsFromSpeed = exports.getHandBrakeFps = exports.getFFmpegVar = exports.getFFmpegPercentage = exports.ffmpegParser = exports.handbrakeParser = void 0;
 var handbrakeParser = function (_a) {
     var str = _a.str, hbPass = _a.hbPass;
     if (typeof str !== 'string') {
@@ -217,3 +217,37 @@ var getFpsFromSpeed = function (_a) {
     return Math.round(speed * videoFrameRate);
 };
 exports.getFpsFromSpeed = getFpsFromSpeed;
+// NVEncC/QSVEncC/VCEEncC (rigaya) progress, e.g.
+// [12.3%] 1234/56789 frames: 45.67 fps, 3200 kbps, remain 0:08:13, est out size 1234.5MB
+// The percentage and /total are absent until the total frame count is known. Requiring
+// 'frames:' skips the banner ('24000/1001 fps') and final summary ('encoded N frames, ...').
+var nvenccParser = function (_a) {
+    var str = _a.str;
+    var out = { percentage: 0, fps: 0 };
+    if (typeof str !== 'string') {
+        return out;
+    }
+    var progressRegex = /(?:\[\s*([\d.]+)%\]\s*)?\d+(?:\/\d+)?\s+frames:\s+([\d.]+)\s+fps/g;
+    // A single data event can carry several \r-separated updates; keep the newest.
+    var last = null;
+    var match = progressRegex.exec(str);
+    while (match !== null) {
+        last = match;
+        match = progressRegex.exec(str);
+    }
+    if (last === null) {
+        return out;
+    }
+    var percentage = parseFloat(last[1]);
+    var fps = parseFloat(last[2]);
+    // Same precision as the ffmpeg path: 2dp percentage, whole-number fps.
+    // NaN > 0 is false, so unparseable values stay 0.
+    if (percentage > 0) {
+        out.percentage = parseFloat(Math.min(percentage, 100).toFixed(2));
+    }
+    if (fps > 0) {
+        out.fps = Math.round(fps);
+    }
+    return out;
+};
+exports.nvenccParser = nvenccParser;
