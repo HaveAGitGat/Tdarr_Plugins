@@ -33,7 +33,7 @@ describe('nvenccParser', () => {
 
   it('handles the ANSI escapes present in real output', () => {
     expect(nvenccParser({
-      str: '[39m[45.5%] 252/600 frames: 125.48 fps, 714 kbps, GPU 73%, VE 40%',
+      str: '\u001b[39m[45.5%] 252/600 frames: 125.48 fps, 714 kbps, GPU 73%, VE 40%',
     })).toEqual({ percentage: 45.5, fps: 125 });
   });
 
