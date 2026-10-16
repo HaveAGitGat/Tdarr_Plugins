@@ -53,6 +53,24 @@ const details = (): IpluginDetails => ({
       + 'https://radarr.domain.com\\n'
       + 'https://sonarr.domain.com\\n',
     },
+    {
+      label: 'Unmonitor After Refresh',
+      name: 'unmonitor',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: `Also set the item to unmonitored, so the arr stops searching for upgrades and will
+not replace this file. Useful once a transcode is the final version you want to keep,
+e.g. gated by Check Flow Variable so only files that were actually re-encoded are unmonitored.
+
+Radarr: the movie is unmonitored.
+Sonarr: only the episodes in this file are unmonitored, never the series or season, so new
+episodes of an airing series are still downloaded.
+
+A failure to unmonitor is logged and does not fail the flow.`,
+    },
   ],
   outputs: [
     {
@@ -62,12 +80,23 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+// Short error text for the job log. Never logs the request config, which holds the API key.
+const describeError = (err: unknown): string => {
+  const e = err as { message?: string, response?: { status?: number, data?: unknown } };
+  if (e?.response?.status) {
+    const body = e.response.data === undefined ? '' : ` ${JSON.stringify(e.response.data)}`;
+    return `HTTP ${e.response.status}${body}`.slice(0, 500);
+  }
+  return e?.message || String(err);
+};
+
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const lib = require('../../../../../methods/lib')();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
   const { arr, arr_api_key } = args.inputs;
+  const unmonitor = args.inputs.unmonitor === true;
   const arr_host = String(args.inputs.arr_host).trim();
 
   const fileName = args.originalLibraryFile?.meta?.FileName || '';
@@ -107,6 +136,23 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     await args.deps.axios(requestConfig2);
 
     args.jobLog(`✔ Refreshed movie ${movieId} in Radarr.`);
+
+    if (unmonitor) {
+      try {
+        await args.deps.axios({
+          method: 'put',
+          url: `${arrHost}/api/v3/movie/editor`,
+          headers,
+          data: JSON.stringify({
+            movieIds: [movieId],
+            monitored: false,
+          }),
+        });
+        args.jobLog(`✔ Unmonitored movie ${movieId} in Radarr.`);
+      } catch (err) {
+        args.jobLog(`Failed to unmonitor movie ${movieId} in Radarr: ${describeError(err)}`);
+      }
+    }
   } else if (arr === 'sonarr') {
     args.jobLog('Refreshing Sonarr...');
 
@@ -132,6 +178,29 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     await args.deps.axios(requestConfig2);
 
     args.jobLog(`✔ Refreshed series ${seriesId} in Sonarr.`);
+
+    if (unmonitor) {
+      const episodes: { id?: unknown }[] = Array.isArray(res.data.episodes) ? res.data.episodes : [];
+      const episodeIds = episodes.map((episode) => episode?.id).filter(Number.isInteger) as number[];
+      if (episodeIds.length === 0) {
+        args.jobLog('No episodes matched this file, nothing to unmonitor in Sonarr.');
+      } else {
+        try {
+          await args.deps.axios({
+            method: 'put',
+            url: `${arrHost}/api/v3/episode/monitor`,
+            headers,
+            data: JSON.stringify({
+              episodeIds,
+              monitored: false,
+            }),
+          });
+          args.jobLog(`✔ Unmonitored episode(s) ${episodeIds.join(', ')} in Sonarr.`);
+        } catch (err) {
+          args.jobLog(`Failed to unmonitor episode(s) ${episodeIds.join(', ')} in Sonarr: ${describeError(err)}`);
+        }
+      }
+    }
   } else {
     args.jobLog('No arr specified in plugin inputs.');
   }

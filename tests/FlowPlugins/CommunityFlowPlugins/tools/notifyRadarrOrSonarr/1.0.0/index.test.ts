@@ -418,4 +418,173 @@ describe('notifyRadarrOrSonarr Plugin', () => {
       }));
     });
   });
+
+  describe('Unmonitor After Refresh', () => {
+    it('should not unmonitor by default', async () => {
+      mockAxios.mockResolvedValueOnce({ data: { movie: { movieFile: { movieId: 123 } } } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+    });
+
+    it('should unmonitor the movie in Radarr', async () => {
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { movie: { movieFile: { movieId: 123 } } } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+      mockAxios.mockResolvedValueOnce({ data: [] });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(3);
+      expect(mockAxios).toHaveBeenNthCalledWith(3, {
+        method: 'put',
+        url: 'http://192.168.1.100:7878/api/v3/movie/editor',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Api-Key': 'test-api-key-123',
+          Accept: 'application/json',
+        },
+        data: JSON.stringify({ movieIds: [123], monitored: false }),
+      });
+      expect(mockJobLog).toHaveBeenCalledWith('✔ Unmonitored movie 123 in Radarr.');
+    });
+
+    it('should unmonitor only the file\'s episodes in Sonarr', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.arr_host = 'http://192.168.1.100:8989';
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 }, episodes: [{ id: 7 }, { id: 8 }] } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+      mockAxios.mockResolvedValueOnce({ data: [] });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(3);
+      expect(mockAxios).toHaveBeenNthCalledWith(3, {
+        method: 'put',
+        url: 'http://192.168.1.100:8989/api/v3/episode/monitor',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Api-Key': 'test-api-key-123',
+          Accept: 'application/json',
+        },
+        data: JSON.stringify({ episodeIds: [7, 8], monitored: false }),
+      });
+      expect(mockJobLog).toHaveBeenCalledWith('✔ Unmonitored episode(s) 7, 8 in Sonarr.');
+    });
+
+    it('should skip the Sonarr unmonitor when no episodes matched', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 }, episodes: [] } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+      expect(mockJobLog).toHaveBeenCalledWith('No episodes matched this file, nothing to unmonitor in Sonarr.');
+    });
+
+    it('should log and continue when the Radarr unmonitor fails', async () => {
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { movie: { movieFile: { movieId: 123 } } } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+      mockAxios.mockRejectedValueOnce(new Error('Request failed with status code 500'));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(mockJobLog).toHaveBeenCalledWith(
+        'Failed to unmonitor movie 123 in Radarr: Request failed with status code 500',
+      );
+    });
+
+    it('should log and continue when the Sonarr unmonitor fails', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 }, episodes: [{ id: 7 }] } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+      mockAxios.mockRejectedValueOnce(new Error('timeout'));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(mockJobLog).toHaveBeenCalledWith('Failed to unmonitor episode(s) 7 in Sonarr: timeout');
+    });
+
+    it('should accept the string "true" from older saved flows', async () => {
+      baseArgs.inputs.unmonitor = 'true';
+      mockAxios.mockResolvedValueOnce({ data: { movie: { movieFile: { movieId: 123 } } } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+      mockAxios.mockResolvedValueOnce({ data: [] });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(3);
+    });
+
+    it('should not unmonitor Sonarr episodes when the switch is off', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 }, episodes: [{ id: 7 }] } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+    });
+
+    it('should still refresh Sonarr when the parse response has malformed episodes', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 }, episodes: 'unexpected' } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+      expect(mockJobLog).toHaveBeenCalledWith('✔ Refreshed series 42 in Sonarr.');
+    });
+
+    it('should ignore episodes without a numeric id and skip when none remain', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 }, episodes: [null, {}, { id: 'x' }] } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+      expect(mockJobLog).toHaveBeenCalledWith('No episodes matched this file, nothing to unmonitor in Sonarr.');
+    });
+
+    it('should skip the Sonarr unmonitor when the parse response has no episodes', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { series: { id: 42 } } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledTimes(2);
+      expect(mockJobLog).toHaveBeenCalledWith('No episodes matched this file, nothing to unmonitor in Sonarr.');
+    });
+
+    it('should log the HTTP status and body, never the API key, when unmonitor is rejected', async () => {
+      baseArgs.inputs.unmonitor = true;
+      mockAxios.mockResolvedValueOnce({ data: { movie: { movieFile: { movieId: 123 } } } });
+      mockAxios.mockResolvedValueOnce({ data: {} });
+      mockAxios.mockRejectedValueOnce(Object.assign(new Error('Request failed with status code 400'), {
+        response: { status: 400, data: { message: 'bad request' } },
+        config: { headers: { 'X-Api-Key': 'test-api-key-123' } },
+      }));
+
+      await plugin(baseArgs);
+
+      expect(mockJobLog).toHaveBeenCalledWith(
+        'Failed to unmonitor movie 123 in Radarr: HTTP 400 {"message":"bad request"}',
+      );
+      expect(JSON.stringify(mockJobLog.mock.calls)).not.toContain('test-api-key-123');
+    });
+  });
 });

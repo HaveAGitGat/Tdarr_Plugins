@@ -86,6 +86,16 @@ var details = function () { return ({
                 + 'https://radarr.domain.com\\n'
                 + 'https://sonarr.domain.com\\n',
         },
+        {
+            label: 'Unmonitor After Refresh',
+            name: 'unmonitor',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: "Also set the item to unmonitored, so the arr stops searching for upgrades and will\nnot replace this file. Useful once a transcode is the final version you want to keep,\ne.g. gated by Check Flow Variable so only files that were actually re-encoded are unmonitored.\n\nRadarr: the movie is unmonitored.\nSonarr: only the episodes in this file are unmonitored, never the series or season, so new\nepisodes of an airing series are still downloaded.\n\nA failure to unmonitor is logged and does not fail the flow.",
+        },
     ],
     outputs: [
         {
@@ -95,8 +105,18 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+// Short error text for the job log. Never logs the request config, which holds the API key.
+var describeError = function (err) {
+    var _a;
+    var e = err;
+    if ((_a = e === null || e === void 0 ? void 0 : e.response) === null || _a === void 0 ? void 0 : _a.status) {
+        var body = e.response.data === undefined ? '' : " ".concat(JSON.stringify(e.response.data));
+        return "HTTP ".concat(e.response.status).concat(body).slice(0, 500);
+    }
+    return (e === null || e === void 0 ? void 0 : e.message) || String(err);
+};
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, arr, arr_api_key, arr_host, fileName, arrHost, headers, requestConfig, res, movieId, requestConfig2, requestConfig, res, seriesId, requestConfig2;
+    var lib, _a, arr, arr_api_key, unmonitor, arr_host, fileName, arrHost, headers, requestConfig, res, movieId, requestConfig2, err_1, requestConfig, res, seriesId, requestConfig2, episodes, episodeIds, err_2;
     var _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -105,6 +125,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 _a = args.inputs, arr = _a.arr, arr_api_key = _a.arr_api_key;
+                unmonitor = args.inputs.unmonitor === true;
                 arr_host = String(args.inputs.arr_host).trim();
                 fileName = ((_c = (_b = args.originalLibraryFile) === null || _b === void 0 ? void 0 : _b.meta) === null || _c === void 0 ? void 0 : _c.FileName) || '';
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
@@ -114,7 +135,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     Accept: 'application/json',
                 };
                 args.jobLog('Going to force scan');
-                if (!(arr === 'radarr')) return [3 /*break*/, 3];
+                if (!(arr === 'radarr')) return [3 /*break*/, 7];
                 args.jobLog('Refreshing Radarr...');
                 requestConfig = {
                     method: 'get',
@@ -138,9 +159,30 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 2:
                 _d.sent();
                 args.jobLog("\u2714 Refreshed movie ".concat(movieId, " in Radarr."));
-                return [3 /*break*/, 7];
+                if (!unmonitor) return [3 /*break*/, 6];
+                _d.label = 3;
             case 3:
-                if (!(arr === 'sonarr')) return [3 /*break*/, 6];
+                _d.trys.push([3, 5, , 6]);
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'put',
+                        url: "".concat(arrHost, "/api/v3/movie/editor"),
+                        headers: headers,
+                        data: JSON.stringify({
+                            movieIds: [movieId],
+                            monitored: false,
+                        }),
+                    })];
+            case 4:
+                _d.sent();
+                args.jobLog("\u2714 Unmonitored movie ".concat(movieId, " in Radarr."));
+                return [3 /*break*/, 6];
+            case 5:
+                err_1 = _d.sent();
+                args.jobLog("Failed to unmonitor movie ".concat(movieId, " in Radarr: ").concat(describeError(err_1)));
+                return [3 /*break*/, 6];
+            case 6: return [3 /*break*/, 15];
+            case 7:
+                if (!(arr === 'sonarr')) return [3 /*break*/, 14];
                 args.jobLog('Refreshing Sonarr...');
                 requestConfig = {
                     method: 'get',
@@ -148,7 +190,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     headers: headers,
                 };
                 return [4 /*yield*/, args.deps.axios(requestConfig)];
-            case 4:
+            case 8:
                 res = _d.sent();
                 seriesId = res.data.series.id;
                 requestConfig2 = {
@@ -161,14 +203,39 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     }),
                 };
                 return [4 /*yield*/, args.deps.axios(requestConfig2)];
-            case 5:
+            case 9:
                 _d.sent();
                 args.jobLog("\u2714 Refreshed series ".concat(seriesId, " in Sonarr."));
-                return [3 /*break*/, 7];
-            case 6:
+                if (!unmonitor) return [3 /*break*/, 13];
+                episodes = Array.isArray(res.data.episodes) ? res.data.episodes : [];
+                episodeIds = episodes.map(function (episode) { return episode === null || episode === void 0 ? void 0 : episode.id; }).filter(Number.isInteger);
+                if (!(episodeIds.length === 0)) return [3 /*break*/, 10];
+                args.jobLog('No episodes matched this file, nothing to unmonitor in Sonarr.');
+                return [3 /*break*/, 13];
+            case 10:
+                _d.trys.push([10, 12, , 13]);
+                return [4 /*yield*/, args.deps.axios({
+                        method: 'put',
+                        url: "".concat(arrHost, "/api/v3/episode/monitor"),
+                        headers: headers,
+                        data: JSON.stringify({
+                            episodeIds: episodeIds,
+                            monitored: false,
+                        }),
+                    })];
+            case 11:
+                _d.sent();
+                args.jobLog("\u2714 Unmonitored episode(s) ".concat(episodeIds.join(', '), " in Sonarr."));
+                return [3 /*break*/, 13];
+            case 12:
+                err_2 = _d.sent();
+                args.jobLog("Failed to unmonitor episode(s) ".concat(episodeIds.join(', '), " in Sonarr: ").concat(describeError(err_2)));
+                return [3 /*break*/, 13];
+            case 13: return [3 /*break*/, 15];
+            case 14:
                 args.jobLog('No arr specified in plugin inputs.');
-                _d.label = 7;
-            case 7: return [2 /*return*/, {
+                _d.label = 15;
+            case 15: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: 1,
                     variables: args.variables,
