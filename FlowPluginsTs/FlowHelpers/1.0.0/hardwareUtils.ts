@@ -335,7 +335,10 @@ export const getEncoder = async ({
       {
         encoder: 'av1_nvenc',
         enabled: false,
-        inputArgs: [],
+        inputArgs: [
+          '-hwaccel',
+          'cuda',
+        ],
         outputArgs: [],
         filter: '',
       },
@@ -349,7 +352,12 @@ export const getEncoder = async ({
       {
         encoder: 'av1_qsv',
         enabled: false,
-        inputArgs: [],
+        inputArgs: [
+          '-hwaccel',
+          'qsv',
+          '-hwaccel_output_format',
+          'qsv',
+        ],
         outputArgs: [],
         filter: '',
       },
