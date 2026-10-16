@@ -16,8 +16,13 @@ const getInputArgs = async (targetCodec: string, hardwareType: string): Promise<
 );
 
 describe('getEncoder', () => {
-  it.each(['hevc', 'h264', 'av1'])('should use hardware decode input args for %s', async (targetCodec) => {
+  it.each(['hevc', 'h264', 'av1'])('should use CUDA hardware decode for %s nvenc', async (targetCodec) => {
     expect(await getInputArgs(targetCodec, 'nvenc')).toEqual(['-hwaccel', 'cuda']);
-    expect(await getInputArgs(targetCodec, 'qsv')).toEqual(['-hwaccel', 'qsv', '-hwaccel_output_format', 'qsv']);
+  });
+
+  // -hwaccel qsv fails on sources the GPU cannot decode and on software filters,
+  // so av1_qsv keeps software decoding
+  it('should not use QSV hardware decode for av1 qsv', async () => {
+    expect(await getInputArgs('av1', 'qsv')).toEqual([]);
   });
 });

@@ -372,12 +372,7 @@ var getEncoder = function (_a) { return __awaiter(void 0, [_a], void 0, function
                     {
                         encoder: 'av1_qsv',
                         enabled: false,
-                        inputArgs: [
-                            '-hwaccel',
-                            'qsv',
-                            '-hwaccel_output_format',
-                            'qsv',
-                        ],
+                        inputArgs: [],
                         outputArgs: [],
                         filter: '',
                     },

@@ -352,12 +352,7 @@ export const getEncoder = async ({
       {
         encoder: 'av1_qsv',
         enabled: false,
-        inputArgs: [
-          '-hwaccel',
-          'qsv',
-          '-hwaccel_output_format',
-          'qsv',
-        ],
+        inputArgs: [],
         outputArgs: [],
         filter: '',
       },
