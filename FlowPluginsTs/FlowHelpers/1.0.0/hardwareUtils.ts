@@ -335,7 +335,10 @@ export const getEncoder = async ({
       {
         encoder: 'av1_nvenc',
         enabled: false,
-        inputArgs: [],
+        inputArgs: [
+          '-hwaccel',
+          'cuda',
+        ],
         outputArgs: [],
         filter: '',
       },
