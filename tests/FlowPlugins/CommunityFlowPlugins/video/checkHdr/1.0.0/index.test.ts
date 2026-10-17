@@ -72,11 +72,58 @@ describe('checkHdr Plugin', () => {
       expect(result.outputNumber).toBe(2);
     });
 
-    it('should not detect HDR without tv color range', () => {
+    it('should detect HDR with full range (pc) colour', () => {
       if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
         baseArgs.inputFileObj.ffProbeData.streams[0].color_transfer = 'smpte2084';
         baseArgs.inputFileObj.ffProbeData.streams[0].color_primaries = 'bt2020';
         baseArgs.inputFileObj.ffProbeData.streams[0].color_range = 'pc';
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should detect HDR when color_range is absent', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_transfer = 'smpte2084';
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_primaries = 'bt2020';
+        delete baseArgs.inputFileObj.ffProbeData.streams[0].color_range;
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should detect HLG as HDR', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_transfer = 'arib-std-b67';
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_primaries = 'bt2020';
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_range = 'tv';
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should not detect HLG with non-bt2020 primaries', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_transfer = 'arib-std-b67';
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_primaries = 'bt709';
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+    });
+
+    it('should not detect bt2020-10 (SDR wide gamut) as HDR', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_transfer = 'bt2020-10';
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_primaries = 'bt2020';
+        baseArgs.inputFileObj.ffProbeData.streams[0].color_range = 'tv';
       }
 
       const result = plugin(baseArgs);
@@ -134,6 +181,47 @@ describe('checkHdr Plugin', () => {
       const result = plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
+    });
+  });
+
+  describe('HDR Detection via Side Data', () => {
+    it('should detect Dolby Vision signalled in stream side data', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
+        baseArgs.inputFileObj.ffProbeData.streams[0].side_data_list = [
+          { side_data_type: 'DOVI configuration record', dv_profile: 7 },
+        ];
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+    });
+
+    it('should ignore unrelated side data', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams?.[0]) {
+        baseArgs.inputFileObj.ffProbeData.streams[0].side_data_list = [
+          { side_data_type: 'Display Matrix', rotation: 90 },
+        ];
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+    });
+
+    it('should ignore Dolby Vision side data on a non-video stream', () => {
+      if (baseArgs.inputFileObj.ffProbeData.streams) {
+        baseArgs.inputFileObj.ffProbeData.streams.push({
+          index: 2,
+          codec_name: 'aac',
+          codec_type: 'audio',
+          side_data_list: [{ side_data_type: 'DOVI configuration record', dv_profile: 5 }],
+        });
+      }
+
+      const result = plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
     });
   });
 
