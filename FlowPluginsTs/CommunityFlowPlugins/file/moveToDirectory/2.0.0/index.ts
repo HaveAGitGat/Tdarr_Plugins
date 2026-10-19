@@ -62,8 +62,21 @@ For example:
 
 \\n Keep Relative Path enabled:
 \\n C:/output/test1/test2/qsv_h264.mkv
-      
+
       `,
+    },
+    {
+      label: 'Keep Original As Library File',
+      name: 'keepOriginalAsLibraryFile',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'When enabled, after the move the original library file is handed back to Tdarr instead of the'
+        + ' moved file, if the original still exists. Use it as the last plugin of a flow that keeps the source and'
+        + ' moves the output outside the library folder: otherwise the next scan drops the moved file from the'
+        + ' library and queues the original again as a new file. The job then reports no size change.',
     },
   ],
   outputs: [
@@ -82,6 +95,7 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
 
   const {
     keepRelativePath,
+    keepOriginalAsLibraryFile,
   } = args.inputs;
 
   const outputDirectory = String(args.inputs.outputDirectory);
@@ -140,6 +154,18 @@ const plugin = async (args:IpluginInputArgs):Promise<IpluginOutputArgs> => {
     args,
     requireSourceDeletion: true,
   });
+
+  if (keepOriginalAsLibraryFile && args.deps.fsextra.existsSync(args.originalLibraryFile._id)) {
+    args.jobLog(`Keeping original as library file: ${args.originalLibraryFile._id}`);
+
+    return {
+      outputFileObj: {
+        _id: args.originalLibraryFile._id,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
+  }
 
   return {
     outputFileObj: {

@@ -178,4 +178,40 @@ describe('moveToDirectory Plugin', () => {
       expect(result.outputFileObj._id).toBe(`/output/directory/file.${expectedContainer}`);
     });
   });
+
+  describe('Keep Original As Library File', () => {
+    it('should move the file and return the original when enabled and the original exists', async () => {
+      baseArgs.inputs.keepOriginalAsLibraryFile = 'true';
+      baseArgs.deps.fsextra.existsSync = jest.fn().mockReturnValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(fileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({
+        destinationPath: '/output/directory/SampleVideo_1280x720_1mb.mp4',
+      }));
+      expect(baseArgs.deps.fsextra.existsSync).toHaveBeenCalledWith(baseArgs.originalLibraryFile._id);
+      expect(result.outputFileObj._id).toBe(baseArgs.originalLibraryFile._id);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        `Keeping original as library file: ${baseArgs.originalLibraryFile._id}`,
+      );
+    });
+
+    it('should return the moved file when enabled but the original no longer exists', async () => {
+      baseArgs.inputs.keepOriginalAsLibraryFile = 'true';
+      baseArgs.deps.fsextra.existsSync = jest.fn().mockReturnValue(false);
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputFileObj._id).toBe('/output/directory/SampleVideo_1280x720_1mb.mp4');
+    });
+
+    it('should return the moved file by default', async () => {
+      baseArgs.deps.fsextra.existsSync = jest.fn().mockReturnValue(true);
+
+      const result = await plugin(baseArgs);
+
+      expect(baseArgs.deps.fsextra.existsSync).not.toHaveBeenCalled();
+      expect(result.outputFileObj._id).toBe('/output/directory/SampleVideo_1280x720_1mb.mp4');
+    });
+  });
 });

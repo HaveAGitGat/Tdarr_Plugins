@@ -75,7 +75,20 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: "\n      \nSpecify whether to keep the relative path.\n\nFor example:\n\n\\n Source folder:\n\\n C:/input/\n\n\\n Source file:\n\\n C:/input/test1/test2/qsv_h264.mkv\n\n\\n Move to Directory Output Directory\n\\n C:/output/\n\n\\n Keep Relative Path disabled:\n\\n C:/output/qsv_h264.mkv\n\n\\n Keep Relative Path enabled:\n\\n C:/output/test1/test2/qsv_h264.mkv\n      \n      ",
+            tooltip: "\n      \nSpecify whether to keep the relative path.\n\nFor example:\n\n\\n Source folder:\n\\n C:/input/\n\n\\n Source file:\n\\n C:/input/test1/test2/qsv_h264.mkv\n\n\\n Move to Directory Output Directory\n\\n C:/output/\n\n\\n Keep Relative Path disabled:\n\\n C:/output/qsv_h264.mkv\n\n\\n Keep Relative Path enabled:\n\\n C:/output/test1/test2/qsv_h264.mkv\n\n      ",
+        },
+        {
+            label: 'Keep Original As Library File',
+            name: 'keepOriginalAsLibraryFile',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'When enabled, after the move the original library file is handed back to Tdarr instead of the'
+                + ' moved file, if the original still exists. Use it as the last plugin of a flow that keeps the source and'
+                + ' moves the output outside the library folder: otherwise the next scan drops the moved file from the'
+                + ' library and queues the original again as a new file. The job then reports no size change.',
         },
     ],
     outputs: [
@@ -88,14 +101,14 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, keepRelativePath, outputDirectory, originalFileName, newContainer, outputPath, subStem, ouputFilePath;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, _a, keepRelativePath, keepOriginalAsLibraryFile, outputDirectory, originalFileName, newContainer, outputPath, subStem, ouputFilePath;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
-                keepRelativePath = args.inputs.keepRelativePath;
+                _a = args.inputs, keepRelativePath = _a.keepRelativePath, keepOriginalAsLibraryFile = _a.keepOriginalAsLibraryFile;
                 outputDirectory = String(args.inputs.outputDirectory);
                 originalFileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 newContainer = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
@@ -144,7 +157,17 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         requireSourceDeletion: true,
                     })];
             case 1:
-                _a.sent();
+                _b.sent();
+                if (keepOriginalAsLibraryFile && args.deps.fsextra.existsSync(args.originalLibraryFile._id)) {
+                    args.jobLog("Keeping original as library file: ".concat(args.originalLibraryFile._id));
+                    return [2 /*return*/, {
+                            outputFileObj: {
+                                _id: args.originalLibraryFile._id,
+                            },
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
                 return [2 /*return*/, {
                         outputFileObj: {
                             _id: ouputFilePath,
