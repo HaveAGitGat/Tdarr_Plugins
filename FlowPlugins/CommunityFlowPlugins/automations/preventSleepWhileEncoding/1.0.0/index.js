@@ -64,6 +64,18 @@ var details = function () { return ({
             },
             tooltip: 'How often to check if other workers are still running.',
         },
+        {
+            label: 'Allow Display To Turn Off',
+            name: 'allowDisplayOff',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+            },
+            tooltip: 'Windows only. When enabled, the system is kept awake but the display is allowed to turn off'
+                + ' (ES_SYSTEM_REQUIRED without ES_DISPLAY_REQUIRED). Useful for unattended nodes, for example after'
+                + ' a Wake-on-LAN wake. When disabled (default), the display is kept on as well.',
+        },
     ],
     outputs: [
         {
@@ -77,7 +89,8 @@ exports.details = details;
 // Returns a cleanup function to stop it.
 var startSleepPrevention = function (platform, childProcess, 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-jobLog) {
+jobLog, allowDisplayOff) {
+    if (allowDisplayOff === void 0) { allowDisplayOff = false; }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     var proc = null;
     try {
@@ -88,13 +101,14 @@ jobLog) {
             // the state every 30 seconds.
             // ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED = 0x80000003
             // ES_CONTINUOUS only (clear) = 0x80000000
+            var executionState = allowDisplayOff ? 2147483649 : 2147483651;
             var psScript = 'Add-Type -MemberDefinition '
                 + '\'[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint f);\' '
                 + '-Name SleepUtil -Namespace Win32; '
-                + 'while ($true) { [Win32.SleepUtil]::SetThreadExecutionState(2147483651) | Out-Null; '
+                + "while ($true) { [Win32.SleepUtil]::SetThreadExecutionState(".concat(executionState, ") | Out-Null; ")
                 + 'Start-Sleep -Seconds 30 }';
             proc = childProcess.spawn('powershell', ['-NoProfile', '-Command', psScript], { stdio: 'ignore', windowsHide: true, detached: false });
-            jobLog('Sleep prevention active (Windows SetThreadExecutionState, refreshing)');
+            jobLog("Sleep prevention active (Windows SetThreadExecutionState, refreshing, display ".concat(allowDisplayOff ? 'allowed to turn off' : 'kept on', ")"));
             var winProc_1 = proc;
             return function () {
                 try {
@@ -172,7 +186,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 childProcess = require('child_process');
                 pollInterval = Math.max(10, Number(args.inputs.pollIntervalSeconds) || 15) * 1000;
                 args.jobLog('Starting sleep prevention loop');
-                stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog);
+                stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog, args.inputs.allowDisplayOff === true);
                 confirmCount = 3;
                 _a.label = 1;
             case 1:

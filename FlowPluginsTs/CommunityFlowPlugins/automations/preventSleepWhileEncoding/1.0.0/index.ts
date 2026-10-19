@@ -35,6 +35,18 @@ const details = (): IpluginDetails => ({
       },
       tooltip: 'How often to check if other workers are still running.',
     },
+    {
+      label: 'Allow Display To Turn Off',
+      name: 'allowDisplayOff',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: 'Windows only. When enabled, the system is kept awake but the display is allowed to turn off'
+        + ' (ES_SYSTEM_REQUIRED without ES_DISPLAY_REQUIRED). Useful for unattended nodes, for example after'
+        + ' a Wake-on-LAN wake. When disabled (default), the display is kept on as well.',
+    },
   ],
   outputs: [
     {
@@ -52,6 +64,7 @@ const startSleepPrevention = (
   any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   jobLog: (text: string) => void,
+  allowDisplayOff = false,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): (() => void
 ) => {
@@ -66,17 +79,19 @@ const startSleepPrevention = (
       // the state every 30 seconds.
       // ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED = 0x80000003
       // ES_CONTINUOUS only (clear) = 0x80000000
+      const executionState = allowDisplayOff ? 2147483649 : 2147483651;
       const psScript = 'Add-Type -MemberDefinition '
         + '\'[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint f);\' '
         + '-Name SleepUtil -Namespace Win32; '
-        + 'while ($true) { [Win32.SleepUtil]::SetThreadExecutionState(2147483651) | Out-Null; '
+        + `while ($true) { [Win32.SleepUtil]::SetThreadExecutionState(${executionState}) | Out-Null; `
         + 'Start-Sleep -Seconds 30 }';
       proc = childProcess.spawn(
         'powershell',
         ['-NoProfile', '-Command', psScript],
         { stdio: 'ignore', windowsHide: true, detached: false },
       );
-      jobLog('Sleep prevention active (Windows SetThreadExecutionState, refreshing)');
+      jobLog(`Sleep prevention active (Windows SetThreadExecutionState, refreshing, display ${
+        allowDisplayOff ? 'allowed to turn off' : 'kept on'})`);
 
       const winProc = proc;
       return () => {
@@ -158,7 +173,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const pollInterval = Math.max(10, Number(args.inputs.pollIntervalSeconds) || 15) * 1000;
 
   args.jobLog('Starting sleep prevention loop');
-  const stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog);
+  const stopSleepPrevention = startSleepPrevention(
+    args.platform,
+    childProcess,
+    args.jobLog,
+    args.inputs.allowDisplayOff === true,
+  );
 
   const confirmCount = 3;
 
