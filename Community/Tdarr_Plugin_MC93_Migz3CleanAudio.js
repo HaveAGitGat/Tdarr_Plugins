@@ -176,6 +176,23 @@ const plugin = (file, librarySettings, inputs, otherArguments) => {
       ffmpegCommandInsert += `-map -0:a:${audioIdx} `;
       convert = true;
     }
+
+    // Catch error here incase codec_type/codec_name metadata is completely missing.
+    try {
+      // ffmpeg cannot mux S_TEXT/WEBVTT subtitles ("Unknown/unsupported AVCodecID S_TEXT/WEBVTT"),
+      // so the "-c copy" this plugin uses whenever it needs to touch the file for another reason
+      // would fail outright if one is present. Drop it rather than crash. Only relevant once
+      // "convert" is already true for another reason - if nothing else needs changing, this
+      // plugin doesn't touch the file at all, so a WebVTT stream alone won't trigger this branch.
+      if (
+        file.ffProbeData.streams[i].codec_type.toLowerCase() === 'subtitle'
+        && file.ffProbeData.streams[i].codec_name.toLowerCase() === 'webvtt'
+      ) {
+        ffmpegCommandInsert += `-map -0:${i} `;
+      }
+    } catch (err) {
+      // Error
+    }
     // Check if inputs.tag_language has something entered
     // (Entered means user actually wants something to happen, empty would disable this)
     // AND checks that stream is audio.
