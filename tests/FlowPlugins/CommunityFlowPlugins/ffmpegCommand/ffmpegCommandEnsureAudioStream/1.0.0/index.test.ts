@@ -426,6 +426,22 @@ describe('ffmpegCommandEnsureAudioStream Plugin', () => {
       expect(streams[2]).toMatchObject({ codec_name: 'ac3', channels: 6 });
     });
 
+    it.each([
+      [2, '6', 'eac3'],
+      [6, '8', 'aac'],
+    ])('should never upmix a %i channel source when %s channels are wanted (%s)', (source, wanted, encoder) => {
+      const streams = setupSource(source);
+      baseArgs.inputs.audioEncoder = encoder;
+      baseArgs.inputs.channels = wanted;
+
+      plugin(baseArgs);
+
+      expect(streams[2]).toMatchObject({ codec_name: encoder, channels: source });
+      expect(streams[2].outputArgs).toEqual(
+        expect.arrayContaining(['-ac:{outputIndex}', String(source)]),
+      );
+    });
+
     it('should not reduce channels for encoders without a limit', () => {
       const streams = setupSource(8);
       baseArgs.inputs.audioEncoder = 'aac';
