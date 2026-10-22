@@ -78,6 +78,11 @@ const details = (): IpluginDetails => ({
                   value: 'true',
                   condition: '===',
                 },
+                {
+                  name: 'ffmpegPresetNumeric',
+                  value: 'true',
+                  condition: '!==',
+                },
               ],
             },
           ],
@@ -88,10 +93,36 @@ const details = (): IpluginDetails => ({
         + ' Ignored for VAAPI/rkmpp/videotoolbox.',
     },
     {
-      label: 'SVT-AV1 Preset',
-      name: 'svtAv1Preset',
-      type: 'string',
-      defaultValue: '',
+      label: 'Use Numeric Preset',
+      name: 'ffmpegPresetNumeric',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'ffmpegPresetEnabled',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: 'Use a numeric preset instead of the FFmpeg Preset names, for encoders whose presets are'
+        + ' numbers, such as libsvtav1. The FFmpeg Preset names are not applied to AV1.',
+    },
+    {
+      label: 'Numeric Preset',
+      name: 'ffmpegPresetNumber',
+      type: 'number',
+      defaultValue: '6',
       inputUI: {
         type: 'text',
         displayConditions: {
@@ -101,8 +132,13 @@ const details = (): IpluginDetails => ({
               logic: 'AND',
               inputs: [
                 {
-                  name: 'outputCodec',
-                  value: 'av1',
+                  name: 'ffmpegPresetEnabled',
+                  value: 'true',
+                  condition: '===',
+                },
+                {
+                  name: 'ffmpegPresetNumeric',
+                  value: 'true',
                   condition: '===',
                 },
               ],
@@ -110,12 +146,9 @@ const details = (): IpluginDetails => ({
           ],
         },
       },
-      tooltip: `Numeric preset for the software AV1 encoder (libsvtav1), from -1 to 13, e.g. 4.
-Lower is slower and more efficient. Leave blank to use the encoder default.
+      tooltip: `Passed to the encoder unchanged as -preset, for any codec. The encoder checks the range.
 
-The FFmpeg Preset above does not apply to AV1, because SVT-AV1 uses numbers
-rather than names. Only used when the encoder is libsvtav1; hardware AV1 encoders ignore it.
-A global -preset added with Custom Arguments comes later in the command and takes precedence.`,
+libsvtav1 (AV1): -1 to 13, e.g. 4. Lower is slower and more efficient.`,
     },
     {
       label: 'Enable FFmpeg Quality',
@@ -217,14 +250,10 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   checkFfmpegCommandInit(args);
 
-  let svtAv1Preset = String(args.inputs.svtAv1Preset ?? '').trim();
-  if (svtAv1Preset !== '' && String(args.inputs.outputCodec) === 'av1') {
-    // ffmpeg accepts -2..13, where -2 means "unset"; -1 is SVT-AV1's slowest research preset.
-    const presetNumber = Number(svtAv1Preset);
-    if (!/^-?\d+$/.test(svtAv1Preset) || presetNumber < -1 || presetNumber > 13) {
-      throw new Error(`SVT-AV1 Preset must be a whole number from -1 to 13, got "${svtAv1Preset}"`);
-    }
-    svtAv1Preset = String(presetNumber);
+  const ffmpegPresetNumeric = args.inputs.ffmpegPresetEnabled === true && args.inputs.ffmpegPresetNumeric === true;
+  const ffmpegPresetNumber = Number(args.inputs.ffmpegPresetNumber);
+  if (ffmpegPresetNumeric && !Number.isInteger(ffmpegPresetNumber)) {
+    throw new Error(`Numeric Preset must be a whole number, got "${args.inputs.ffmpegPresetNumber}"`);
   }
 
   const hardwareDecoding = args.inputs.hardwareDecoding === true;
@@ -270,7 +299,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           }
         }
 
-        if (ffmpegPresetEnabled) {
+        if (ffmpegPresetNumeric) {
+          stream.outputArgs.push('-preset:{outputIndex}', String(ffmpegPresetNumber));
+        } else if (ffmpegPresetEnabled) {
           if (targetCodec !== 'av1' && ffmpegPreset) {
             let presetToUse: string | null = ffmpegPreset;
             // Convert CPU preset names to GPU-specific presets for hardware encoders
@@ -312,10 +343,6 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
               stream.outputArgs.push('-preset', presetToUse);
             }
           }
-        }
-
-        if (svtAv1Preset !== '' && encoderProperties.encoder === 'libsvtav1') {
-          stream.outputArgs.push('-preset:{outputIndex}', svtAv1Preset);
         }
 
         if (hardwareDecoding) {

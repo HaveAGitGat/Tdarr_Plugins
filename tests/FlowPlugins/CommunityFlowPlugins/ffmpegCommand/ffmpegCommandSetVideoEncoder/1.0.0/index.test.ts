@@ -292,25 +292,25 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
-    describe('SVT-AV1 preset', () => {
-      const useSvtAv1 = () => {
+    describe('Numeric Preset', () => {
+      const useEncoder = (encoder: string, isGpu = false) => {
         baseArgs.inputs.outputCodec = 'av1';
         mockGetEncoder.mockResolvedValue({
-          encoder: 'libsvtav1',
+          encoder,
           inputArgs: [],
           outputArgs: [],
-          isGpu: false,
+          isGpu,
           enabledDevices: [],
         });
       };
+      const useNumber = (value: string | number) => {
+        baseArgs.inputs.ffmpegPresetNumeric = true;
+        baseArgs.inputs.ffmpegPresetNumber = value;
+      };
 
-      it.each([
-        ['unset', undefined],
-        ['empty', ''],
-        ['whitespace', '  '],
-      ])('should produce the existing args when %s (default)', async (_label, value) => {
-        useSvtAv1();
-        baseArgs.inputs.svtAv1Preset = value as string;
+      it('should produce the existing args when off (default)', async () => {
+        useEncoder('libsvtav1');
+        baseArgs.inputs.ffmpegPresetNumber = '4';
 
         const result = await plugin(baseArgs);
 
@@ -319,8 +319,8 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       });
 
       it('should add a stream-scoped numeric preset for libsvtav1', async () => {
-        useSvtAv1();
-        baseArgs.inputs.svtAv1Preset = '4';
+        useEncoder('libsvtav1');
+        useNumber('4');
 
         const result = await plugin(baseArgs);
 
@@ -329,20 +329,49 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([]);
       });
 
-      it('should apply independently of the FFmpeg Preset switch', async () => {
-        useSvtAv1();
-        baseArgs.inputs.ffmpegPresetEnabled = false;
-        baseArgs.inputs.svtAv1Preset = '6';
+      it('should use the default of 6 when the number is blank', async () => {
+        useEncoder('libsvtav1');
+        useNumber('');
 
         const result = await plugin(baseArgs);
 
-        expect(result.variables.ffmpegCommand.streams[0].outputArgs).toContain('-preset:{outputIndex}');
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '6']);
+      });
+
+      it('should be used instead of the named preset for other codecs', async () => {
+        baseArgs.inputs.ffmpegPreset = 'slow';
+        useNumber('-1');
+
+        const result = await plugin(baseArgs);
+
+        const { outputArgs } = result.variables.ffmpegCommand.streams[0];
+        expect(outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '-1']);
+        expect(outputArgs).not.toContain('slow');
+      });
+
+      it('should be passed to hardware encoders unchanged', async () => {
+        useEncoder('av1_qsv', true);
+        useNumber(20);
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '20']);
+      });
+
+      it('should do nothing when the FFmpeg Preset switch is off', async () => {
+        useEncoder('libsvtav1');
+        useNumber('6');
+        baseArgs.inputs.ffmpegPresetEnabled = false;
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs.some((a) => a.startsWith('-preset'))).toBe(false);
       });
 
       it('should add nothing when the source is already AV1 and encoding is not forced', async () => {
-        useSvtAv1();
+        useEncoder('libsvtav1');
+        useNumber('4');
         baseArgs.inputs.forceEncoding = false;
-        baseArgs.inputs.svtAv1Preset = '4';
         baseArgs.variables.ffmpegCommand.streams[0].codec_name = 'av1';
 
         const result = await plugin(baseArgs);
@@ -351,70 +380,11 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
       });
 
-      it('should accept a numeric input value', async () => {
-        useSvtAv1();
-        baseArgs.inputs.svtAv1Preset = 6;
+      it('should reject a fractional preset', async () => {
+        useEncoder('libsvtav1');
+        useNumber('4.5');
 
-        const result = await plugin(baseArgs);
-
-        expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual(
-          expect.arrayContaining(['-preset:{outputIndex}', '6']),
-        );
-      });
-
-      it('should ignore the SVT-AV1 preset for hardware AV1 encoders', async () => {
-        baseArgs.inputs.outputCodec = 'av1';
-        baseArgs.inputs.svtAv1Preset = '4';
-        mockGetEncoder.mockResolvedValue({
-          encoder: 'av1_qsv',
-          inputArgs: [],
-          outputArgs: [],
-          isGpu: true,
-          enabledDevices: [],
-        });
-
-        const result = await plugin(baseArgs);
-
-        const { outputArgs } = result.variables.ffmpegCommand.streams[0];
-        expect(outputArgs.some((a) => a.startsWith('-preset'))).toBe(false);
-      });
-
-      it('should ignore the SVT-AV1 preset for other codecs', async () => {
-        baseArgs.inputs.svtAv1Preset = '4';
-
-        const result = await plugin(baseArgs);
-
-        expect(result.variables.ffmpegCommand.streams[0].outputArgs).not.toContain('-preset:{outputIndex}');
-      });
-
-      it.each(['slow', '4.5', '14', '-2'])('should reject %s', async (value) => {
-        useSvtAv1();
-        baseArgs.inputs.svtAv1Preset = value;
-
-        await expect(plugin(baseArgs)).rejects.toThrow('SVT-AV1 Preset must be a whole number from -1 to 13');
-      });
-
-      it('should reject an invalid preset even when a hardware encoder is selected', async () => {
-        baseArgs.inputs.outputCodec = 'av1';
-        baseArgs.inputs.svtAv1Preset = 'slow';
-        mockGetEncoder.mockResolvedValue({
-          encoder: 'av1_qsv',
-          inputArgs: [],
-          outputArgs: [],
-          isGpu: true,
-          enabledDevices: [],
-        });
-
-        await expect(plugin(baseArgs)).rejects.toThrow('SVT-AV1 Preset must be a whole number from -1 to 13');
-      });
-
-      it('should normalise the preset number', async () => {
-        useSvtAv1();
-        baseArgs.inputs.svtAv1Preset = '04';
-
-        const result = await plugin(baseArgs);
-
-        expect(result.variables.ffmpegCommand.streams[0].outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '4']);
+        await expect(plugin(baseArgs)).rejects.toThrow('Numeric Preset must be a whole number');
       });
     });
 
