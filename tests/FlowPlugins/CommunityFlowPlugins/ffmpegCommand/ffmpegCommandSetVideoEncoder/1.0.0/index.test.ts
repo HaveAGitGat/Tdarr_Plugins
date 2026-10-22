@@ -253,6 +253,73 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
         args: baseArgs,
       });
     });
+
+    it('should establish a standalone VAAPI device and apply the upload filter '
+      + 'when hardware decoding is disabled but the encoder needs a filter', async () => {
+      baseArgs.inputs.hardwareType = 'vaapi';
+      baseArgs.inputs.hardwareDecoding = false;
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_vaapi',
+        inputArgs: ['-hwaccel', 'vaapi', '-hwaccel_device', '/dev/dri/renderD128', '-hwaccel_output_format', 'vaapi'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+        filter: '-vf format=nv12,hwupload',
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      // Should NOT include the full hwaccel-decode args (that would force hardware
+      // decode, contradicting hardwareDecoding=false) - only a standalone device ref.
+      expect(videoStream.inputArgs).toEqual(['-vaapi_device', '/dev/dri/renderD128']);
+      // The filter that getEncoder() computes but the plugin previously never
+      // applied should now reach outputArgs, split into separate tokens.
+      expect(videoStream.outputArgs).toContain('-vf');
+      expect(videoStream.outputArgs).toContain('format=nv12,hwupload');
+    });
+
+    it('should not add a device or filter when hardware decoding is disabled '
+      + 'and the encoder has no filter (e.g. NVENC)', async () => {
+      baseArgs.inputs.hardwareType = 'nvenc';
+      baseArgs.inputs.hardwareDecoding = false;
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_nvenc',
+        inputArgs: ['-hwaccel', 'cuda'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+        filter: '',
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.inputArgs).toHaveLength(0);
+      expect(videoStream.outputArgs).not.toContain('-vf');
+    });
+
+    it('should not apply the filter when hardware decoding is enabled '
+      + '(hwaccel_output_format already produces the right frame format)', async () => {
+      baseArgs.inputs.hardwareType = 'vaapi';
+      baseArgs.inputs.hardwareDecoding = true;
+      mockGetEncoder.mockResolvedValue({
+        encoder: 'hevc_vaapi',
+        inputArgs: ['-hwaccel', 'vaapi', '-hwaccel_device', '/dev/dri/renderD128', '-hwaccel_output_format', 'vaapi'],
+        outputArgs: [],
+        isGpu: true,
+        enabledDevices: [],
+        filter: '-vf format=nv12,hwupload',
+      });
+
+      const result = await plugin(baseArgs);
+
+      const videoStream = result.variables.ffmpegCommand.streams[0];
+      expect(videoStream.inputArgs).toEqual([
+        '-hwaccel', 'vaapi', '-hwaccel_device', '/dev/dri/renderD128', '-hwaccel_output_format', 'vaapi',
+      ]);
+      expect(videoStream.outputArgs).not.toContain('-vf');
+    });
   });
 
   describe('Quality and Preset Settings', () => {
