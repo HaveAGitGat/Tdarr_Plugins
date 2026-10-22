@@ -115,7 +115,7 @@ var shouldAddCopyCodec = function (outputArgs) { return (outputArgs.length === 0
     || (!hasCodecOutputArg(outputArgs) && hasOnlyCopyCompatibleOutputArgs(outputArgs))); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res;
+    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res, outputTail;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -207,8 +207,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 1:
                 res = _b.sent();
                 if (res.cliExitCode !== 0) {
-                    args.jobLog('Running FFmpeg failed');
-                    throw new Error('FFmpeg failed');
+                    outputTail = (res.errorLogFull || [])
+                        .join('')
+                        .split('\n')
+                        .map(function (line) { return line.trim(); })
+                        .filter(function (line) { return line !== ''; })
+                        .slice(-20)
+                        .join('\n');
+                    args.jobLog("Running FFmpeg failed with exit code ".concat(res.cliExitCode));
+                    throw new Error("FFmpeg failed with exit code ".concat(res.cliExitCode).concat(outputTail ? ":\n".concat(outputTail) : ''));
                 }
                 args.logOutcome('tSuc');
                 // eslint-disable-next-line no-param-reassign
