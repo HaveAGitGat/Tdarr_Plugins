@@ -155,4 +155,114 @@ describe('fileMoveOrCopy', () => {
       );
     });
   });
+
+  describe('copy progress', () => {
+    let ticks: (() => Promise<void>)[];
+    let updateWorker: jest.Mock;
+    // The first report is sent without waiting; let it land before the copy writes anything.
+    const firstReport = async () => {
+      while (updateWorker.mock.calls.length === 0) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+    };
+    const percentages = () => updateWorker.mock.calls.map(([o]) => (o as { percentage: number }).percentage);
+
+    beforeEach(() => {
+      ticks = [];
+      updateWorker = jest.fn();
+      args.updateWorker = updateWorker;
+      fs.writeFileSync(sourcePath, Buffer.alloc(1000, 1));
+      jest.spyOn(global, 'setInterval').mockImplementation(((cb: () => Promise<void>) => {
+        ticks.push(cb);
+        return 1 as unknown as NodeJS.Timeout;
+      }) as unknown as typeof setInterval);
+      jest.spyOn(global, 'clearInterval').mockImplementation(() => undefined);
+      jest.spyOn(fs.promises, 'rename').mockRejectedValue({ code: 'EXDEV', syscall: 'rename' });
+    });
+
+    it('should report the share of bytes copied while a cross-device move copies', async () => {
+      args.deps.ncp = jest.fn(async (src: string, dest: string, cb: (err?: Error) => void) => {
+        await firstReport();
+        fs.writeFileSync(dest, Buffer.alloc(250, 1));
+        await ticks[0]();
+        fs.writeFileSync(dest, Buffer.alloc(900, 1));
+        await ticks[0]();
+        fs.copyFileSync(src, dest);
+        cb();
+      });
+
+      await expect(fileMoveOrCopy({
+        operation: 'move',
+        sourcePath,
+        destinationPath,
+        args,
+      })).resolves.toBe(true);
+
+      expect(percentages()).toEqual([0, 25, 90]);
+      expect(ticks).toHaveLength(1);
+      expect(global.clearInterval).toHaveBeenCalledWith(1);
+    });
+
+    it('should stay flat while a copy is hung, so a stalled worker can still be cancelled', async () => {
+      args.deps.ncp = jest.fn(async (src: string, dest: string, cb: (err?: Error) => void) => {
+        await firstReport();
+        fs.writeFileSync(dest, Buffer.alloc(400, 1));
+        await ticks[0]();
+        await ticks[0]();
+        fs.copyFileSync(src, dest);
+        cb();
+      });
+
+      await fileMoveOrCopy({
+        operation: 'copy',
+        sourcePath,
+        destinationPath,
+        args,
+      });
+
+      expect(percentages()).toEqual([0, 40, 40]);
+    });
+
+    it('should stop reporting when every copy method fails', async () => {
+      args.deps.ncp = jest.fn((src: string, dest: string, cb: (err?: Error) => void) => cb(new Error('ncp failed')));
+      jest.spyOn(fs.promises, 'copyFile').mockRejectedValue({ code: 'EIO', syscall: 'copyfile' });
+
+      await expect(fileMoveOrCopy({
+        operation: 'move',
+        sourcePath,
+        destinationPath,
+        args,
+      })).rejects.toThrow('Failed to move file');
+
+      expect(global.clearInterval).toHaveBeenCalledWith(1);
+    });
+
+    it('should not report progress for a plain rename', async () => {
+      (fs.promises.rename as jest.Mock).mockRestore();
+
+      await fileMoveOrCopy({
+        operation: 'move',
+        sourcePath,
+        destinationPath,
+        args,
+      });
+
+      expect(updateWorker).not.toHaveBeenCalled();
+      expect(global.setInterval).not.toHaveBeenCalled();
+    });
+
+    it('should copy normally when updateWorker is unavailable', async () => {
+      delete (args as Partial<IpluginInputArgs>).updateWorker;
+
+      await expect(fileMoveOrCopy({
+        operation: 'copy',
+        sourcePath,
+        destinationPath,
+        args,
+      })).resolves.toBe(true);
+
+      expect(global.setInterval).not.toHaveBeenCalled();
+    });
+  });
 });

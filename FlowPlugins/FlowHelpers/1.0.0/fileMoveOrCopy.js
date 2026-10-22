@@ -269,8 +269,42 @@ var tryNormalCopy = function (_a) { return __awaiter(void 0, [_a], void 0, funct
         }
     });
 }); };
+// A copy to another file system can take minutes. With "Auto cancel stalled workers" on, Tdarr
+// cancels a worker whose percentage has not changed between two checks (every 300 s by default),
+// so a silent copy of a large file can be cancelled at the end of a long job. Report the share of
+// bytes copied, at once and then every 15 s. A copy that is genuinely hung stays flat and is still
+// cancelled.
+var startCopyProgress = function (_a) {
+    var destinationPath = _a.destinationPath, sourceFileSize = _a.sourceFileSize, args = _a.args;
+    if (typeof args.updateWorker !== 'function') {
+        return function () { return undefined; };
+    }
+    var last = 0;
+    var report = function () { return __awaiter(void 0, void 0, void 0, function () {
+        var copied, err_6;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, getSizeBytes(destinationPath)];
+                case 1:
+                    copied = _a.sent();
+                    last = Math.max(last, Math.min(99.99, (copied / sourceFileSize) * 100));
+                    args.updateWorker({ percentage: Math.round(last * 100) / 100 });
+                    return [3 /*break*/, 3];
+                case 2:
+                    err_6 = _a.sent();
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    }); };
+    void report();
+    var interval = setInterval(report, 15000);
+    return function () { return clearInterval(interval); };
+};
 var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var err_6, message;
+    var err_7, message;
     var args = _b.args, sourcePath = _b.sourcePath, requireSourceDeletion = _b.requireSourceDeletion;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -282,8 +316,8 @@ var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, fun
                 _c.sent();
                 return [3 /*break*/, 3];
             case 2:
-                err_6 = _c.sent();
-                message = "Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_6));
+                err_7 = _c.sent();
+                message = "Failed to delete source file ".concat(sourcePath, ": ").concat(JSON.stringify(err_7));
                 args.jobLog(message);
                 if (requireSourceDeletion) {
                     throw new Error(message);
@@ -294,7 +328,7 @@ var cleanSourceFile = function (_a) { return __awaiter(void 0, [_a], void 0, fun
     });
 }); };
 var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var sourceFileSize, moved, ncpd, copied;
+    var sourceFileSize, moved, stopCopyProgress, ncpd, copied;
     var operation = _b.operation, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath, args = _b.args, _c = _b.requireSourceDeletion, requireSourceDeletion = _c === void 0 ? false : _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -331,45 +365,58 @@ var fileMoveOrCopy = function (_a) { return __awaiter(void 0, [_a], void 0, func
                 // }
                 args.jobLog('Failed to move file, trying copy');
                 _d.label = 3;
-            case 3: return [4 /*yield*/, tyNcp({
-                    sourcePath: sourcePath,
+            case 3:
+                stopCopyProgress = startCopyProgress({
                     destinationPath: destinationPath,
-                    args: args,
                     sourceFileSize: sourceFileSize,
-                })];
+                    args: args,
+                });
+                _d.label = 4;
             case 4:
-                ncpd = _d.sent();
-                if (!ncpd) return [3 /*break*/, 7];
-                if (!(operation === 'move')) return [3 /*break*/, 6];
-                return [4 /*yield*/, cleanSourceFile({
-                        args: args,
+                _d.trys.push([4, , 13, 14]);
+                return [4 /*yield*/, tyNcp({
                         sourcePath: sourcePath,
-                        requireSourceDeletion: requireSourceDeletion,
+                        destinationPath: destinationPath,
+                        args: args,
+                        sourceFileSize: sourceFileSize,
                     })];
             case 5:
-                _d.sent();
-                _d.label = 6;
-            case 6: return [2 /*return*/, true];
-            case 7: return [4 /*yield*/, tryNormalCopy({
-                    sourcePath: sourcePath,
-                    destinationPath: destinationPath,
-                    args: args,
-                    sourceFileSize: sourceFileSize,
-                })];
-            case 8:
-                copied = _d.sent();
-                if (!copied) return [3 /*break*/, 11];
-                if (!(operation === 'move')) return [3 /*break*/, 10];
+                ncpd = _d.sent();
+                if (!ncpd) return [3 /*break*/, 8];
+                if (!(operation === 'move')) return [3 /*break*/, 7];
                 return [4 /*yield*/, cleanSourceFile({
                         args: args,
                         sourcePath: sourcePath,
                         requireSourceDeletion: requireSourceDeletion,
                     })];
-            case 9:
+            case 6:
                 _d.sent();
-                _d.label = 10;
-            case 10: return [2 /*return*/, true];
-            case 11: throw new Error("Failed to ".concat(operation, " file"));
+                _d.label = 7;
+            case 7: return [2 /*return*/, true];
+            case 8: return [4 /*yield*/, tryNormalCopy({
+                    sourcePath: sourcePath,
+                    destinationPath: destinationPath,
+                    args: args,
+                    sourceFileSize: sourceFileSize,
+                })];
+            case 9:
+                copied = _d.sent();
+                if (!copied) return [3 /*break*/, 12];
+                if (!(operation === 'move')) return [3 /*break*/, 11];
+                return [4 /*yield*/, cleanSourceFile({
+                        args: args,
+                        sourcePath: sourcePath,
+                        requireSourceDeletion: requireSourceDeletion,
+                    })];
+            case 10:
+                _d.sent();
+                _d.label = 11;
+            case 11: return [2 /*return*/, true];
+            case 12: return [3 /*break*/, 14];
+            case 13:
+                stopCopyProgress();
+                return [7 /*endfinally*/];
+            case 14: throw new Error("Failed to ".concat(operation, " file"));
         }
     });
 }); };

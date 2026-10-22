@@ -222,6 +222,38 @@ const tryNormalCopy = async ({
   return true;
 };
 
+// A copy to another file system can take minutes. With "Auto cancel stalled workers" on, Tdarr
+// cancels a worker whose percentage has not changed between two checks (every 300 s by default),
+// so a silent copy of a large file can be cancelled at the end of a long job. Report the share of
+// bytes copied, at once and then every 15 s. A copy that is genuinely hung stays flat and is still
+// cancelled.
+const startCopyProgress = ({
+  destinationPath,
+  sourceFileSize,
+  args,
+}:{
+    destinationPath: string,
+    sourceFileSize: number,
+    args: IpluginInputArgs,
+}): () => void => {
+  if (typeof args.updateWorker !== 'function') {
+    return () => undefined;
+  }
+  let last = 0;
+  const report = async () => {
+    try {
+      const copied = await getSizeBytes(destinationPath);
+      last = Math.max(last, Math.min(99.99, (copied / sourceFileSize) * 100));
+      args.updateWorker({ percentage: Math.round(last * 100) / 100 });
+    } catch (err) {
+      // progress is best-effort
+    }
+  };
+  void report();
+  const interval = setInterval(report, 15000);
+  return () => clearInterval(interval);
+};
+
 const cleanSourceFile = async ({
   args,
   sourcePath,
@@ -286,42 +318,52 @@ const fileMoveOrCopy = async ({
     args.jobLog('Failed to move file, trying copy');
   }
 
-  const ncpd = await tyNcp({
-    sourcePath,
+  const stopCopyProgress = startCopyProgress({
     destinationPath,
-    args,
     sourceFileSize,
+    args,
   });
 
-  if (ncpd) {
-    if (operation === 'move') {
-      await cleanSourceFile({
-        args,
-        sourcePath,
-        requireSourceDeletion,
-      });
+  try {
+    const ncpd = await tyNcp({
+      sourcePath,
+      destinationPath,
+      args,
+      sourceFileSize,
+    });
+
+    if (ncpd) {
+      if (operation === 'move') {
+        await cleanSourceFile({
+          args,
+          sourcePath,
+          requireSourceDeletion,
+        });
+      }
+
+      return true;
     }
 
-    return true;
-  }
+    const copied = await tryNormalCopy({
+      sourcePath,
+      destinationPath,
+      args,
+      sourceFileSize,
+    });
 
-  const copied = await tryNormalCopy({
-    sourcePath,
-    destinationPath,
-    args,
-    sourceFileSize,
-  });
+    if (copied) {
+      if (operation === 'move') {
+        await cleanSourceFile({
+          args,
+          sourcePath,
+          requireSourceDeletion,
+        });
+      }
 
-  if (copied) {
-    if (operation === 'move') {
-      await cleanSourceFile({
-        args,
-        sourcePath,
-        requireSourceDeletion,
-      });
+      return true;
     }
-
-    return true;
+  } finally {
+    stopCopyProgress();
   }
 
   throw new Error(`Failed to ${operation} file`);
