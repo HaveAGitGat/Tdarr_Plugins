@@ -458,4 +458,72 @@ describe('ffmpegCommandExecute Plugin', () => {
       expect(baseArgs.variables.ffmpegCommand.shouldProcess).toBe(true);
     });
   });
+
+  describe('Only Apply If Processing Arguments', () => {
+    const getSpawnArgs = (): string[] => {
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      const [cliOptions] = CLI.mock.calls[0];
+      return cliOptions.spawnArgs;
+    };
+
+    it('should not process a file just to apply them', async () => {
+      baseArgs.variables.ffmpegCommand.shouldProcess = false;
+      baseArgs.variables.ffmpegCommand.overallInputArgumentsIfProcessing = ['-analyzeduration', '100M'];
+      baseArgs.variables.ffmpegCommand.overallOutputArgumentsIfProcessing = ['-metadata', 'title='];
+
+      const result = await plugin(baseArgs);
+
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      expect(CLI).not.toHaveBeenCalled();
+      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Skipping "only apply if processing" arguments: nothing else requires processing',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No need to process file, already as required');
+    });
+
+    it('should apply them when another plugin requires processing', async () => {
+      baseArgs.variables.ffmpegCommand.shouldProcess = true;
+      baseArgs.variables.ffmpegCommand.overallInputArgumentsIfProcessing = ['-analyzeduration', '100M'];
+      baseArgs.variables.ffmpegCommand.overallOutputArgumentsIfProcessing = ['-metadata', 'title='];
+
+      await plugin(baseArgs);
+
+      const spawnArgs = getSpawnArgs();
+      expect(spawnArgs.indexOf('-analyzeduration')).toBeLessThan(spawnArgs.indexOf('-i'));
+      expect(spawnArgs.slice(-3, -1)).toEqual(['-metadata', 'title=']);
+    });
+
+    it('should apply them when a stream removal triggers processing', async () => {
+      baseArgs.variables.ffmpegCommand.shouldProcess = false;
+      baseArgs.variables.ffmpegCommand.streams[1].removed = true;
+      baseArgs.variables.ffmpegCommand.overallOutputArgumentsIfProcessing = ['-metadata', 'title='];
+
+      await plugin(baseArgs);
+
+      expect(getSpawnArgs()).toEqual(expect.arrayContaining(['-metadata', 'title=']));
+    });
+
+    it('should apply them alongside regular overall output arguments', async () => {
+      baseArgs.variables.ffmpegCommand.shouldProcess = false;
+      baseArgs.variables.ffmpegCommand.overallOuputArguments = ['-movflags', '+faststart'];
+      baseArgs.variables.ffmpegCommand.overallOutputArgumentsIfProcessing = ['-metadata', 'title='];
+
+      await plugin(baseArgs);
+
+      expect(getSpawnArgs().slice(-5, -1)).toEqual(['-movflags', '+faststart', '-metadata', 'title=']);
+    });
+
+    it('should place held input arguments after regular ones, before -i', async () => {
+      baseArgs.variables.ffmpegCommand.shouldProcess = false;
+      baseArgs.variables.ffmpegCommand.overallInputArguments = ['-threads', '4'];
+      baseArgs.variables.ffmpegCommand.overallInputArgumentsIfProcessing = ['-analyzeduration', '100M'];
+
+      await plugin(baseArgs);
+
+      const spawnArgs = getSpawnArgs();
+      const i = spawnArgs.indexOf('-i');
+      expect(spawnArgs.slice(i - 4, i)).toEqual(['-threads', '4', '-analyzeduration', '100M']);
+    });
+  });
 });

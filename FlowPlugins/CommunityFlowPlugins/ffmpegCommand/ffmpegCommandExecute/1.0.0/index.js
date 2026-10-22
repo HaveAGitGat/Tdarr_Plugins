@@ -115,9 +115,9 @@ var shouldAddCopyCodec = function (outputArgs) { return (outputArgs.length === 0
     || (!hasCodecOutputArg(outputArgs) && hasOnlyCopyCompatibleOutputArgs(outputArgs))); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, outputFilePath, spawnArgs, cli, res;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var lib, cliArgs, _a, shouldProcess, streams, inputArgs, _loop_1, i, idx, _b, _c, overallInputArgumentsIfProcessing, _d, overallOutputArgumentsIfProcessing, outputFilePath, spawnArgs, cli, res;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -171,6 +171,15 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     cliArgs.push.apply(cliArgs, args.variables.ffmpegCommand.overallOuputArguments);
                     shouldProcess = true;
                 }
+                _b = args.variables.ffmpegCommand, _c = _b.overallInputArgumentsIfProcessing, overallInputArgumentsIfProcessing = _c === void 0 ? [] : _c, _d = _b.overallOutputArgumentsIfProcessing, overallOutputArgumentsIfProcessing = _d === void 0 ? [] : _d;
+                if (shouldProcess) {
+                    // Input options go before the first input, after overallInputArguments.
+                    cliArgs.splice.apply(cliArgs, __spreadArray([cliArgs.indexOf('-i'), 0], overallInputArgumentsIfProcessing, false));
+                    cliArgs.push.apply(cliArgs, overallOutputArgumentsIfProcessing);
+                }
+                else if (overallInputArgumentsIfProcessing.length > 0 || overallOutputArgumentsIfProcessing.length > 0) {
+                    args.jobLog('Skipping "only apply if processing" arguments: nothing else requires processing');
+                }
                 if (!shouldProcess) {
                     args.jobLog('No need to process file, already as required');
                     return [2 /*return*/, {
@@ -205,7 +214,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 });
                 return [4 /*yield*/, cli.runCli()];
             case 1:
-                res = _b.sent();
+                res = _e.sent();
                 if (res.cliExitCode !== 0) {
                     args.jobLog('Running FFmpeg failed');
                     throw new Error('FFmpeg failed');

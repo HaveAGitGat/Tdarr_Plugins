@@ -40,6 +40,26 @@ const details = () :IpluginDetails => ({
       },
       tooltip: 'Specify output arguments',
     },
+    {
+      label: 'Only Apply If Processing',
+      name: 'onlyApplyIfProcessing',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+      },
+      tooltip: `By default, any custom argument makes the file get processed.
+
+Enable this to add the arguments only when another plugin already requires processing
+(for example a stream was removed or is being re-encoded).
+
+Use it for arguments that should ride along with real work but are not a reason to rewrite
+the file on their own, such as metadata, colour tags or encoder tuning. Otherwise a file
+that already matches the flow is re-processed on every pass just to re-apply them.
+
+Do not use it for codec selection (e.g. -c:v): a remux triggered by another plugin would
+then become a full re-encode.`,
+    },
   ],
   outputs: [
     {
@@ -59,13 +79,32 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
 
   const inputArguments = String(args.inputs.inputArguments);
   const outputArguments = String(args.inputs.outputArguments);
+  const onlyApplyIfProcessing = Boolean(args.inputs.onlyApplyIfProcessing);
 
-  if (inputArguments) {
-    args.variables.ffmpegCommand.overallInputArguments.push(...inputArguments.split(' '));
-  }
+  const { ffmpegCommand } = args.variables;
 
-  if (outputArguments) {
-    args.variables.ffmpegCommand.overallOuputArguments.push(...outputArguments.split(' '));
+  if (onlyApplyIfProcessing) {
+    if (inputArguments) {
+      if (!ffmpegCommand.overallInputArgumentsIfProcessing) {
+        ffmpegCommand.overallInputArgumentsIfProcessing = [];
+      }
+      ffmpegCommand.overallInputArgumentsIfProcessing.push(...inputArguments.split(' '));
+    }
+
+    if (outputArguments) {
+      if (!ffmpegCommand.overallOutputArgumentsIfProcessing) {
+        ffmpegCommand.overallOutputArgumentsIfProcessing = [];
+      }
+      ffmpegCommand.overallOutputArgumentsIfProcessing.push(...outputArguments.split(' '));
+    }
+  } else {
+    if (inputArguments) {
+      ffmpegCommand.overallInputArguments.push(...inputArguments.split(' '));
+    }
+
+    if (outputArguments) {
+      ffmpegCommand.overallOuputArguments.push(...outputArguments.split(' '));
+    }
   }
 
   return {
