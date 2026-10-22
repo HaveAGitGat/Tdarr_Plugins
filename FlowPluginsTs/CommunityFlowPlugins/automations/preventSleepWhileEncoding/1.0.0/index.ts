@@ -177,7 +177,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     args.platform,
     childProcess,
     args.jobLog,
-    args.inputs.allowDisplayOff === true,
+    args.inputs.allowDisplayOff as boolean,
   );
 
   const confirmCount = 3;

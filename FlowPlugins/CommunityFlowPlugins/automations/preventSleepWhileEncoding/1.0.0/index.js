@@ -186,7 +186,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 childProcess = require('child_process');
                 pollInterval = Math.max(10, Number(args.inputs.pollIntervalSeconds) || 15) * 1000;
                 args.jobLog('Starting sleep prevention loop');
-                stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog, args.inputs.allowDisplayOff === true);
+                stopSleepPrevention = startSleepPrevention(args.platform, childProcess, args.jobLog, args.inputs.allowDisplayOff);
                 confirmCount = 3;
                 _a.label = 1;
             case 1:
