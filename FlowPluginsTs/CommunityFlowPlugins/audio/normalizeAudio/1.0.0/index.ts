@@ -176,6 +176,41 @@ const plugin = async (args: INormalizeAudioPluginInputArgs): Promise<IpluginOutp
 
   args.jobLog(`Loudnorm first pass values returned:  \n${JSON.stringify(loudNormValues)}`);
 
+  // Keep the source audio codec and bitrate where possible. The output retains
+  // the source container, so hardcoding AAC fails for containers such as MP3.
+  const audioStreamLine = res.errorLogFull.find((line) => /Stream #\d+:\d+.*Audio:/i.test(line));
+  if (!audioStreamLine) {
+    throw new Error('Failed to identify the source audio stream');
+  }
+
+  const audioCodecMatch = audioStreamLine.match(/Audio:\s*([^,\s]+)/i);
+  if (!audioCodecMatch) {
+    throw new Error('Failed to identify the source audio codec');
+  }
+
+  const sourceAudioCodec = audioCodecMatch[1].toLowerCase();
+  const audioEncoderByCodec: Record<string, string> = {
+    mp3: 'libmp3lame',
+    vorbis: 'libvorbis',
+    opus: 'libopus',
+    wma: 'wmav2',
+  };
+  const audioEncoder = audioEncoderByCodec[sourceAudioCodec] || sourceAudioCodec;
+
+  // FFmpeg reports stream bitrates in the input stream description when known.
+  // Match that bitrate for lossy audio; don't force a bitrate for lossless audio.
+  const sourceBitrateMatch = audioStreamLine.match(/(\d+)\s*kb\/s/i);
+  const sourceBitrateKbps = sourceBitrateMatch ? Number(sourceBitrateMatch[1]) : undefined;
+  const losslessCodecs = new Set([
+    'flac', 'alac', 'tta', 'wavpack', 'ape',
+    'pcm_s16le', 'pcm_s16be', 'pcm_s24le', 'pcm_s24be',
+    'pcm_s32le', 'pcm_s32be', 'pcm_f32le', 'pcm_f32be',
+    'pcm_f64le', 'pcm_f64be',
+  ]);
+  const audioBitrateArgs = sourceBitrateKbps && !losslessCodecs.has(sourceAudioCodec)
+    ? ['-b:a', `${sourceBitrateKbps}k`]
+    : [];
+
   const gainNeeded = parseFloat(inputs_i) - parseFloat(loudNormValues.input_i);
   args.jobLog(`Gain required: ${gainNeeded.toFixed(2)} LU (max allowed: ${maxGain} LU)`);
 
@@ -199,9 +234,8 @@ const plugin = async (args: INormalizeAudioPluginInputArgs): Promise<IpluginOutp
     '-c',
     'copy',
     '-c:a',
-    'aac',
-    '-b:a',
-    '192k',
+    audioEncoder,
+    ...audioBitrateArgs,
     '-af',
     `loudnorm=print_format=summary:linear=true:I=${inputs_i}:LRA=${inputs_lra}:TP=${inputs_tp}:`
     + `measured_i=${loudNormValues.input_i}:`

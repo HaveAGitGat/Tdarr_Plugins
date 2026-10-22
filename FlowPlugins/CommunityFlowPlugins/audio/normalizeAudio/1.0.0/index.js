@@ -35,6 +35,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.plugin = exports.details = void 0;
 var cliUtils_1 = require("../../../../FlowHelpers/1.0.0/cliUtils");
@@ -104,7 +113,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, _a, inputs_i, inputs_lra, inputs_tp, maxGain, container, outputFilePath, normArgs1, cli, res, lines, idx, fullTail, targetOffsetIdx, closingBraceIdx, openingBraceIdx, loudNormValues, gainNeeded, normArgs2, cli2, res2;
+    var lib, _a, inputs_i, inputs_lra, inputs_tp, maxGain, container, outputFilePath, normArgs1, cli, res, lines, idx, fullTail, targetOffsetIdx, closingBraceIdx, openingBraceIdx, loudNormValues, audioStreamLine, audioCodecMatch, sourceAudioCodec, audioEncoderByCodec, audioEncoder, sourceBitrateMatch, sourceBitrateKbps, losslessCodecs, audioBitrateArgs, gainNeeded, normArgs2, cli2, res2;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -168,6 +177,33 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 loudNormValues = JSON.parse(fullTail.slice(openingBraceIdx, closingBraceIdx + 1));
                 args.jobLog("Loudnorm first pass values returned:  \n".concat(JSON.stringify(loudNormValues)));
+                audioStreamLine = res.errorLogFull.find(function (line) { return /Stream #\d+:\d+.*Audio:/i.test(line); });
+                if (!audioStreamLine) {
+                    throw new Error('Failed to identify the source audio stream');
+                }
+                audioCodecMatch = audioStreamLine.match(/Audio:\s*([^,\s]+)/i);
+                if (!audioCodecMatch) {
+                    throw new Error('Failed to identify the source audio codec');
+                }
+                sourceAudioCodec = audioCodecMatch[1].toLowerCase();
+                audioEncoderByCodec = {
+                    mp3: 'libmp3lame',
+                    vorbis: 'libvorbis',
+                    opus: 'libopus',
+                    wma: 'wmav2',
+                };
+                audioEncoder = audioEncoderByCodec[sourceAudioCodec] || sourceAudioCodec;
+                sourceBitrateMatch = audioStreamLine.match(/(\d+)\s*kb\/s/i);
+                sourceBitrateKbps = sourceBitrateMatch ? Number(sourceBitrateMatch[1]) : undefined;
+                losslessCodecs = new Set([
+                    'flac', 'alac', 'tta', 'wavpack', 'ape',
+                    'pcm_s16le', 'pcm_s16be', 'pcm_s24le', 'pcm_s24be',
+                    'pcm_s32le', 'pcm_s32be', 'pcm_f32le', 'pcm_f32be',
+                    'pcm_f64le', 'pcm_f64be',
+                ]);
+                audioBitrateArgs = sourceBitrateKbps && !losslessCodecs.has(sourceAudioCodec)
+                    ? ['-b:a', "".concat(sourceBitrateKbps, "k")]
+                    : [];
                 gainNeeded = parseFloat(inputs_i) - parseFloat(loudNormValues.input_i);
                 args.jobLog("Gain required: ".concat(gainNeeded.toFixed(2), " LU (max allowed: ").concat(maxGain, " LU)"));
                 if (gainNeeded > maxGain) {
@@ -179,7 +215,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                             variables: args.variables,
                         }];
                 }
-                normArgs2 = [
+                normArgs2 = __spreadArray(__spreadArray([
                     '-i',
                     args.inputFileObj._id,
                     '-map',
@@ -187,9 +223,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     '-c',
                     'copy',
                     '-c:a',
-                    'aac',
-                    '-b:a',
-                    '192k',
+                    audioEncoder
+                ], audioBitrateArgs, true), [
                     '-af',
                     "loudnorm=print_format=summary:linear=true:I=".concat(inputs_i, ":LRA=").concat(inputs_lra, ":TP=").concat(inputs_tp, ":")
                         + "measured_i=".concat(loudNormValues.input_i, ":")
@@ -197,7 +232,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         + "measured_tp=".concat(loudNormValues.input_tp, ":")
                         + "measured_thresh=".concat(loudNormValues.input_thresh, ":offset=").concat(loudNormValues.target_offset),
                     outputFilePath,
-                ];
+                ], false);
                 cli2 = new cliUtils_1.CLI({
                     cli: args.ffmpegPath,
                     spawnArgs: normArgs2,
