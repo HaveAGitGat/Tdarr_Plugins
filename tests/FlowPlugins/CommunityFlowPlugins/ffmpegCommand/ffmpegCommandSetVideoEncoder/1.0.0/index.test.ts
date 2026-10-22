@@ -292,6 +292,102 @@ describe('ffmpegCommandSetVideoEncoder Plugin', () => {
       expect(videoStream.outputArgs).not.toContain('-preset');
     });
 
+    describe('Numeric Preset', () => {
+      const useEncoder = (encoder: string, isGpu = false) => {
+        baseArgs.inputs.outputCodec = 'av1';
+        mockGetEncoder.mockResolvedValue({
+          encoder,
+          inputArgs: [],
+          outputArgs: [],
+          isGpu,
+          enabledDevices: [],
+        });
+      };
+      const useNumber = (value: string | number) => {
+        baseArgs.inputs.ffmpegPresetNumeric = true;
+        baseArgs.inputs.ffmpegPresetNumber = value;
+      };
+
+      it('should produce the existing args when off (default)', async () => {
+        useEncoder('libsvtav1');
+        baseArgs.inputs.ffmpegPresetNumber = '4';
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs)
+          .toEqual(['-c:{outputIndex}', 'libsvtav1', '-crf', '25']);
+      });
+
+      it('should add a stream-scoped numeric preset for libsvtav1', async () => {
+        useEncoder('libsvtav1');
+        useNumber('4');
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs)
+          .toEqual(['-c:{outputIndex}', 'libsvtav1', '-crf', '25', '-preset:{outputIndex}', '4']);
+        expect(result.variables.ffmpegCommand.streams[1].outputArgs).toEqual([]);
+      });
+
+      it('should use the default of 6 when the number is blank', async () => {
+        useEncoder('libsvtav1');
+        useNumber('');
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '6']);
+      });
+
+      it('should be used instead of the named preset for other codecs', async () => {
+        baseArgs.inputs.ffmpegPreset = 'slow';
+        useNumber('-1');
+
+        const result = await plugin(baseArgs);
+
+        const { outputArgs } = result.variables.ffmpegCommand.streams[0];
+        expect(outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '-1']);
+        expect(outputArgs).not.toContain('slow');
+      });
+
+      it('should be passed to hardware encoders unchanged', async () => {
+        useEncoder('av1_qsv', true);
+        useNumber(20);
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs.slice(-2)).toEqual(['-preset:{outputIndex}', '20']);
+      });
+
+      it('should do nothing when the FFmpeg Preset switch is off', async () => {
+        useEncoder('libsvtav1');
+        useNumber('6');
+        baseArgs.inputs.ffmpegPresetEnabled = false;
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs.some((a) => a.startsWith('-preset'))).toBe(false);
+      });
+
+      it('should add nothing when the source is already AV1 and encoding is not forced', async () => {
+        useEncoder('libsvtav1');
+        useNumber('4');
+        baseArgs.inputs.forceEncoding = false;
+        baseArgs.variables.ffmpegCommand.streams[0].codec_name = 'av1';
+
+        const result = await plugin(baseArgs);
+
+        expect(result.variables.ffmpegCommand.streams[0].outputArgs).toEqual([]);
+        expect(result.variables.ffmpegCommand.shouldProcess).toBe(false);
+      });
+
+      it('should reject a fractional preset', async () => {
+        useEncoder('libsvtav1');
+        useNumber('4.5');
+
+        await expect(plugin(baseArgs)).rejects.toThrow('Numeric Preset must be a whole number');
+      });
+    });
+
     it('should handle different preset values for CPU encoders', async () => {
       const presets = ['veryslow', 'slower', 'slow', 'medium', 'fast', 'faster', 'veryfast', 'superfast', 'ultrafast'];
 
