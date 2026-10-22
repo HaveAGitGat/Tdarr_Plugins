@@ -617,6 +617,12 @@ describe('replaceOriginalFile Plugin', () => {
       expect(callOrder).toContain('rename:/original/path/video.mp4->/original/path/video.mp4.partial.old');
     });
 
+    it('should not wait before staging', async () => {
+      await plugin(baseArgs);
+
+      expect(global.setTimeout).not.toHaveBeenCalled();
+    });
+
     it('should keep the default replace when the switch is off', async () => {
       baseArgs.inputs = { atomicSwap: false };
 
@@ -632,75 +638,6 @@ describe('replaceOriginalFile Plugin', () => {
 
       expect(callOrder).toEqual([]);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('File has not changed, no need to replace file');
-    });
-  });
-
-  describe('Staging Progress', () => {
-    // The staging move can be a long cross-filesystem copy; the worker stall detector cancels a job
-    // whose percentage does not change between two checks.
-    let sizes: Record<string, number>;
-    let ticks: (() => Promise<void>)[];
-
-    beforeEach(() => {
-      sizes = { '/working/path/video_transcoded.mkv': 1000 };
-      ticks = [];
-      baseArgs.updateWorker = jest.fn();
-      baseArgs.platform = 'linux';
-      baseArgs.job = { jobId: 'job123' } as IpluginInputArgs['job'];
-      mockFsPromises.stat.mockImplementation((p: string) => (p in sizes
-        ? Promise.resolve({ size: sizes[p], dev: 1, ino: 1 })
-        : Promise.reject(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))));
-      jest.spyOn(global, 'setInterval').mockImplementation(((cb: () => Promise<void>) => {
-        ticks.push(cb);
-        return {} as NodeJS.Timeout;
-      }) as unknown as typeof setInterval);
-      jest.spyOn(global, 'clearInterval').mockImplementation(() => undefined);
-    });
-
-    const percentages = () => (baseArgs.updateWorker as jest.Mock).mock.calls
-      .map(([o]) => (o as { percentage: number }).percentage);
-
-    it.each([
-      ['default replace', false, '/original/path/video_transcoded.mkv.tmp'],
-      ['atomic swap', true, '/original/path/.tdarr-replace-job123.partial.tmp'],
-    ])('should report staged bytes during the move (%s)', async (_label, atomicSwap, staging) => {
-      baseArgs.inputs = { atomicSwap };
-      mockFileMoveOrCopy.mockImplementation(async ({ destinationPath }) => {
-        if (destinationPath !== staging) return true; // default path's final same-folder move
-        sizes[destinationPath] = 250;
-        await ticks[0]();
-        sizes[destinationPath] = 250; // stalled read: same size again
-        await ticks[0]();
-        sizes[destinationPath] = 900;
-        await ticks[0]();
-        return true;
-      });
-
-      await plugin(baseArgs);
-
-      expect(mockFileMoveOrCopy).toHaveBeenCalledWith(expect.objectContaining({ destinationPath: staging }));
-      const p = percentages();
-      expect(p[0]).toBeGreaterThan(0); // reported before the copy starts
-      expect(p.slice(1, 4)).toEqual([25, 25.01, 90]);
-      p.slice(1).forEach((v, i) => expect(v).toBeGreaterThan(p[i]));
-      expect(global.clearInterval).toHaveBeenCalled();
-    });
-
-    it('should stop the heartbeat when the move fails', async () => {
-      baseArgs.inputs = { atomicSwap: true };
-      mockFileExists.mockResolvedValue(false);
-      mockFileMoveOrCopy.mockRejectedValue(new Error('copy failed'));
-
-      await expect(plugin(baseArgs)).rejects.toThrow('copy failed');
-      expect(global.clearInterval).toHaveBeenCalled();
-    });
-
-    it('should not fail when updateWorker is unavailable', async () => {
-      baseArgs.inputs = { atomicSwap: true };
-      delete (baseArgs as Partial<IpluginInputArgs>).updateWorker;
-
-      const result = await plugin(baseArgs);
-      expect(result.outputNumber).toBe(1);
     });
   });
 });

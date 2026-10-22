@@ -61,59 +61,6 @@ On Windows, rename cannot replace an existing file, so the default behaviour is 
   ],
 });
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Staging a large file on another filesystem is a full copy and can take minutes. Tdarr's worker
-// stall detector cancels a job whose percentage is the same at two consecutive checks, and a plugin
-// starts at 0, so a silent copy can be cancelled after a multi-hour encode. Report the bytes staged
-// so far, starting immediately and never repeating a value, until the move finishes.
-const moveWithProgress = async ({
-  args,
-  sourcePath,
-  destinationPath,
-}: {
-  args: IpluginInputArgs,
-  sourcePath: string,
-  destinationPath: string,
-}): Promise<void> => {
-  let total = 0;
-  try {
-    total = (await fsp.stat(sourcePath)).size;
-  } catch (err) {
-    total = 0;
-  }
-  let last = 0;
-  const tick = async () => {
-    try {
-      let done = 0;
-      try {
-        done = (await fsp.stat(destinationPath)).size;
-      } catch (err) {
-        done = 0; // destination not created yet
-      }
-      const staged = total > 0 ? Math.min(99.9, (done / total) * 100) : 0;
-      last = Math.max(last + 0.01, staged);
-      if (typeof args.updateWorker === 'function') {
-        args.updateWorker({ percentage: Math.round(last * 100) / 100 });
-      }
-    } catch (err) {
-      // progress is best-effort
-    }
-  };
-  await tick();
-  const heartbeat = setInterval(tick, 15000);
-  try {
-    await fileMoveOrCopy({
-      operation: 'move',
-      sourcePath,
-      destinationPath,
-      args,
-    });
-  } finally {
-    clearInterval(heartbeat);
-  }
-};
-
 type FileId = { dev: number, ino: number };
 
 const getFileId = async (filePath: string): Promise<FileId | null> => {
@@ -128,96 +75,12 @@ const getFileId = async (filePath: string): Promise<FileId | null> => {
 // Treat unknown (0) inode numbers as "same file" so we err on the side of not deleting.
 const sameFile = (a: FileId, b: FileId): boolean => a.dev === b.dev && (a.ino === b.ino || a.ino === 0 || b.ino === 0);
 
-// Stage under a hidden name, then replace the original with one rename(). On local POSIX
-// filesystems rename() over an existing file is atomic, so the original path never disappears,
-// and any failure before it leaves the original untouched.
-const atomicReplace = async ({
-  args,
-  currentPath,
-  originalPath,
-  newPath,
-  originalFolder,
-}: {
-  args: IpluginInputArgs,
-  currentPath: string,
-  originalPath: string,
-  newPath: string,
-  originalFolder: string,
-}): Promise<void> => {
-  // The working file already is the destination (e.g. edited in place): there is nothing to move,
-  // and staging it would take the only copy out of the library.
-  if (currentPath === newPath || currentPath === originalPath) {
-    args.jobLog('Working file is already in place, nothing to swap');
-    return;
-  }
-
-  const suffix = args.job?.jobId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  // Includes `.partial`, like the default path's sentinel, so Tdarr's folder watcher ignores it.
-  const hiddenTmp = `${originalFolder}/.tdarr-replace-${suffix}.partial.tmp`;
-
-  args.jobLog(JSON.stringify({
-    currentPath,
-    newPath,
-    hiddenTmp,
-  }));
-
-  // Identity of the original before the swap. On a case-insensitive filesystem a name that differs
-  // only by case (video.MKV -> video.mkv) is the same directory entry, so after the rename
-  // originalPath resolves to the NEW file and must not be deleted.
-  const originalIdBefore = newPath !== originalPath ? await getFileId(originalPath) : null;
-
-  await sleep(2000);
-
-  try {
-    await moveWithProgress({
-      args,
-      sourcePath: currentPath,
-      destinationPath: hiddenTmp,
-    });
-  } catch (err) {
-    args.jobLog(`Failed to stage ${currentPath} as ${hiddenTmp}, original untouched: ${JSON.stringify(err)}`);
-    if (await fileExists(hiddenTmp)) {
-      try {
-        await fsp.unlink(hiddenTmp);
-      } catch (cleanupErr) {
-        args.jobLog(`Failed to clean up temporary file ${hiddenTmp}: ${JSON.stringify(cleanupErr)}`);
-      }
-    }
-    throw err;
-  }
-
-  try {
-    await fsp.rename(hiddenTmp, newPath);
-  } catch (err) {
-    args.jobLog(`Failed to rename ${hiddenTmp} to ${newPath}, original untouched: ${JSON.stringify(err)}`);
+const removeStaged = async (args: IpluginInputArgs, stagedPath: string): Promise<void> => {
+  if (await fileExists(stagedPath)) {
     try {
-      await fsp.unlink(hiddenTmp);
+      await fsp.unlink(stagedPath);
     } catch (cleanupErr) {
-      args.jobLog(`Failed to clean up temporary file ${hiddenTmp}: ${JSON.stringify(cleanupErr)}`);
-    }
-    throw err;
-  }
-  args.jobLog(`Atomically replaced ${newPath}`);
-
-  // The name or container changed, so the new file did not overwrite the original: remove the
-  // original, but only if originalPath is still the same file it was before and not the new one.
-  if (originalIdBefore) {
-    const originalIdAfter = await getFileId(originalPath);
-    const newId = await getFileId(newPath);
-    if (
-      originalIdAfter
-      && newId
-      && sameFile(originalIdAfter, originalIdBefore)
-      && !sameFile(originalIdAfter, newId)
-    ) {
-      args.jobLog(`Deleting original file: ${originalPath}`);
-      try {
-        await fsp.unlink(originalPath);
-      } catch (err) {
-        args.jobLog(`Failed to delete original file ${originalPath}: ${JSON.stringify(err)}`);
-      }
-    } else if (originalIdAfter) {
-      args.jobLog(`Not deleting ${originalPath}: it now resolves to the new file (case-insensitive filesystem?)`);
+      args.jobLog(`Failed to clean up temporary file ${stagedPath}: ${JSON.stringify(cleanupErr)}`);
     }
   }
 };
@@ -250,29 +113,31 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   const newPath = `${orignalFolder}/${fileName}.${container}`;
 
-  if (args.inputs.atomicSwap === true) {
-    const platform = args.platform || process.platform;
-    if (platform !== 'win32') {
-      await atomicReplace({
-        args,
-        currentPath,
-        originalPath,
-        newPath,
-        originalFolder: orignalFolder,
-      });
-
-      return {
-        outputFileObj: {
-          _id: newPath,
-        },
-        outputNumber: 1,
-        variables: args.variables,
-      };
-    }
+  // Atomic swap: one rename() replaces the original, so its path never disappears. Windows rename
+  // cannot replace an existing file, so it keeps the default rename-aside steps.
+  let atomicSwap = args.inputs.atomicSwap === true;
+  if (atomicSwap && (args.platform || process.platform) === 'win32') {
     args.jobLog('Atomic swap is not supported on Windows, using the default replace');
+    atomicSwap = false;
+  }
+  if (atomicSwap && (currentPath === newPath || currentPath === originalPath)) {
+    // Edited in place: staging it would take the only copy out of the library.
+    args.jobLog('Working file is already in place, nothing to swap');
+    return {
+      outputFileObj: {
+        _id: newPath,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
   }
 
-  const newPathTmp = `${newPath}.tmp`;
+  // The atomic staging name is hidden and not derived from the original, so arr rescans do not
+  // treat it as an extra file of the original and delete it.
+  const jobSuffix = args.job?.jobId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const newPathTmp = atomicSwap
+    ? `${orignalFolder}/.tdarr-replace-${jobSuffix}.partial.tmp`
+    : `${newPath}.tmp`;
   // Suffix includes `.partial` so Tdarr's folder watcher ignores this sentinel if a crash
   // between rename-aside and final move leaves it on disk.
   const originalPathOld = `${originalPath}.partial.old`;
@@ -284,18 +149,34 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
     originalPathOld,
   }));
 
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Identity of the original before the swap. On a case-insensitive filesystem a name that differs
+  // only by case (video.MKV -> video.mkv) is the same directory entry, so after the rename
+  // originalPath resolves to the NEW file and must not be deleted.
+  const originalIdBefore = atomicSwap && newPath !== originalPath ? await getFileId(originalPath) : null;
+
+  if (!atomicSwap) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
 
   // Step 1: move the working/cache file into the original folder as .tmp
-  await moveWithProgress({
-    args,
-    sourcePath: currentPath,
-    destinationPath: newPathTmp,
-  });
+  try {
+    await fileMoveOrCopy({
+      operation: 'move',
+      sourcePath: currentPath,
+      destinationPath: newPathTmp,
+      args,
+    });
+  } catch (err) {
+    if (atomicSwap) {
+      args.jobLog(`Failed to stage ${currentPath} as ${newPathTmp}, original untouched`);
+      await removeStaged(args, newPathTmp);
+    }
+    throw err;
+  }
 
   const originalFileExists = await fileExists(originalPath);
   const currentFileIsNotOriginal = originalPath !== currentPath;
-  const shouldRenameOriginal = originalFileExists && currentFileIsNotOriginal;
+  const shouldRenameOriginal = !atomicSwap && originalFileExists && currentFileIsNotOriginal;
 
   args.jobLog(JSON.stringify({
     originalFileExists,
@@ -330,6 +211,48 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       }
       throw err;
     }
+  }
+
+  if (atomicSwap) {
+    // Step 3 (atomic): replace the original with one rename in the same folder
+    try {
+      await fsp.rename(newPathTmp, newPath);
+    } catch (err) {
+      args.jobLog(`Failed to rename ${newPathTmp} to ${newPath}, original untouched: ${JSON.stringify(err)}`);
+      await removeStaged(args, newPathTmp);
+      throw err;
+    }
+    args.jobLog(`Atomically replaced ${newPath}`);
+
+    // Step 4 (atomic): the name or container changed, so the new file did not overwrite the
+    // original. Remove it, but only if originalPath is still the same file and not the new one.
+    if (originalIdBefore) {
+      const originalIdAfter = await getFileId(originalPath);
+      const newId = await getFileId(newPath);
+      if (
+        originalIdAfter
+        && newId
+        && sameFile(originalIdAfter, originalIdBefore)
+        && !sameFile(originalIdAfter, newId)
+      ) {
+        args.jobLog(`Deleting original file: ${originalPath}`);
+        try {
+          await fsp.unlink(originalPath);
+        } catch (err) {
+          args.jobLog(`Failed to delete original file ${originalPath}: ${JSON.stringify(err)}`);
+        }
+      } else if (originalIdAfter) {
+        args.jobLog(`Not deleting ${originalPath}: it now resolves to the new file (case-insensitive filesystem?)`);
+      }
+    }
+
+    return {
+      outputFileObj: {
+        _id: newPath,
+      },
+      outputNumber: 1,
+      variables: args.variables,
+    };
   }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));

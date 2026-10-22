@@ -76,88 +76,8 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
-var sleep = function (ms) { return new Promise(function (resolve) { return setTimeout(resolve, ms); }); };
-// Staging a large file on another filesystem is a full copy and can take minutes. Tdarr's worker
-// stall detector cancels a job whose percentage is the same at two consecutive checks, and a plugin
-// starts at 0, so a silent copy can be cancelled after a multi-hour encode. Report the bytes staged
-// so far, starting immediately and never repeating a value, until the move finishes.
-var moveWithProgress = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var total, err_1, last, tick, heartbeat;
-    var args = _b.args, sourcePath = _b.sourcePath, destinationPath = _b.destinationPath;
-    return __generator(this, function (_c) {
-        switch (_c.label) {
-            case 0:
-                total = 0;
-                _c.label = 1;
-            case 1:
-                _c.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, fs_1.promises.stat(sourcePath)];
-            case 2:
-                total = (_c.sent()).size;
-                return [3 /*break*/, 4];
-            case 3:
-                err_1 = _c.sent();
-                total = 0;
-                return [3 /*break*/, 4];
-            case 4:
-                last = 0;
-                tick = function () { return __awaiter(void 0, void 0, void 0, function () {
-                    var done, err_2, staged, err_3;
-                    return __generator(this, function (_a) {
-                        switch (_a.label) {
-                            case 0:
-                                _a.trys.push([0, 5, , 6]);
-                                done = 0;
-                                _a.label = 1;
-                            case 1:
-                                _a.trys.push([1, 3, , 4]);
-                                return [4 /*yield*/, fs_1.promises.stat(destinationPath)];
-                            case 2:
-                                done = (_a.sent()).size;
-                                return [3 /*break*/, 4];
-                            case 3:
-                                err_2 = _a.sent();
-                                done = 0; // destination not created yet
-                                return [3 /*break*/, 4];
-                            case 4:
-                                staged = total > 0 ? Math.min(99.9, (done / total) * 100) : 0;
-                                last = Math.max(last + 0.01, staged);
-                                if (typeof args.updateWorker === 'function') {
-                                    args.updateWorker({ percentage: Math.round(last * 100) / 100 });
-                                }
-                                return [3 /*break*/, 6];
-                            case 5:
-                                err_3 = _a.sent();
-                                return [3 /*break*/, 6];
-                            case 6: return [2 /*return*/];
-                        }
-                    });
-                }); };
-                return [4 /*yield*/, tick()];
-            case 5:
-                _c.sent();
-                heartbeat = setInterval(tick, 15000);
-                _c.label = 6;
-            case 6:
-                _c.trys.push([6, , 8, 9]);
-                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
-                        operation: 'move',
-                        sourcePath: sourcePath,
-                        destinationPath: destinationPath,
-                        args: args,
-                    })];
-            case 7:
-                _c.sent();
-                return [3 /*break*/, 9];
-            case 8:
-                clearInterval(heartbeat);
-                return [7 /*endfinally*/];
-            case 9: return [2 /*return*/];
-        }
-    });
-}); };
 var getFileId = function (filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, dev, ino, err_4;
+    var _a, dev, ino, err_1;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -167,7 +87,7 @@ var getFileId = function (filePath) { return __awaiter(void 0, void 0, void 0, f
                 _a = _b.sent(), dev = _a.dev, ino = _a.ino;
                 return [2 /*return*/, { dev: dev, ino: ino }];
             case 2:
-                err_4 = _b.sent();
+                err_1 = _b.sent();
                 return [2 /*return*/, null];
             case 3: return [2 /*return*/];
         }
@@ -175,132 +95,34 @@ var getFileId = function (filePath) { return __awaiter(void 0, void 0, void 0, f
 }); };
 // Treat unknown (0) inode numbers as "same file" so we err on the side of not deleting.
 var sameFile = function (a, b) { return a.dev === b.dev && (a.ino === b.ino || a.ino === 0 || b.ino === 0); };
-// Stage under a hidden name, then replace the original with one rename(). On local POSIX
-// filesystems rename() over an existing file is atomic, so the original path never disappears,
-// and any failure before it leaves the original untouched.
-var atomicReplace = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b) {
-    var suffix, hiddenTmp, originalIdBefore, _c, err_5, cleanupErr_1, err_6, cleanupErr_2, originalIdAfter, newId, err_7;
-    var _d;
-    var args = _b.args, currentPath = _b.currentPath, originalPath = _b.originalPath, newPath = _b.newPath, originalFolder = _b.originalFolder;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
-            case 0:
-                // The working file already is the destination (e.g. edited in place): there is nothing to move,
-                // and staging it would take the only copy out of the library.
-                if (currentPath === newPath || currentPath === originalPath) {
-                    args.jobLog('Working file is already in place, nothing to swap');
-                    return [2 /*return*/];
-                }
-                suffix = ((_d = args.job) === null || _d === void 0 ? void 0 : _d.jobId) || "".concat(Date.now(), "-").concat(Math.random().toString(36).slice(2, 8));
-                hiddenTmp = "".concat(originalFolder, "/.tdarr-replace-").concat(suffix, ".partial.tmp");
-                args.jobLog(JSON.stringify({
-                    currentPath: currentPath,
-                    newPath: newPath,
-                    hiddenTmp: hiddenTmp,
-                }));
-                if (!(newPath !== originalPath)) return [3 /*break*/, 2];
-                return [4 /*yield*/, getFileId(originalPath)];
+var removeStaged = function (args, stagedPath) { return __awaiter(void 0, void 0, void 0, function () {
+    var cleanupErr_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, (0, fileUtils_1.fileExists)(stagedPath)];
             case 1:
-                _c = _e.sent();
-                return [3 /*break*/, 3];
+                if (!_a.sent()) return [3 /*break*/, 5];
+                _a.label = 2;
             case 2:
-                _c = null;
-                _e.label = 3;
+                _a.trys.push([2, 4, , 5]);
+                return [4 /*yield*/, fs_1.promises.unlink(stagedPath)];
             case 3:
-                originalIdBefore = _c;
-                return [4 /*yield*/, sleep(2000)];
+                _a.sent();
+                return [3 /*break*/, 5];
             case 4:
-                _e.sent();
-                _e.label = 5;
-            case 5:
-                _e.trys.push([5, 7, , 13]);
-                return [4 /*yield*/, moveWithProgress({
-                        args: args,
-                        sourcePath: currentPath,
-                        destinationPath: hiddenTmp,
-                    })];
-            case 6:
-                _e.sent();
-                return [3 /*break*/, 13];
-            case 7:
-                err_5 = _e.sent();
-                args.jobLog("Failed to stage ".concat(currentPath, " as ").concat(hiddenTmp, ", original untouched: ").concat(JSON.stringify(err_5)));
-                return [4 /*yield*/, (0, fileUtils_1.fileExists)(hiddenTmp)];
-            case 8:
-                if (!_e.sent()) return [3 /*break*/, 12];
-                _e.label = 9;
-            case 9:
-                _e.trys.push([9, 11, , 12]);
-                return [4 /*yield*/, fs_1.promises.unlink(hiddenTmp)];
-            case 10:
-                _e.sent();
-                return [3 /*break*/, 12];
-            case 11:
-                cleanupErr_1 = _e.sent();
-                args.jobLog("Failed to clean up temporary file ".concat(hiddenTmp, ": ").concat(JSON.stringify(cleanupErr_1)));
-                return [3 /*break*/, 12];
-            case 12: throw err_5;
-            case 13:
-                _e.trys.push([13, 15, , 20]);
-                return [4 /*yield*/, fs_1.promises.rename(hiddenTmp, newPath)];
-            case 14:
-                _e.sent();
-                return [3 /*break*/, 20];
-            case 15:
-                err_6 = _e.sent();
-                args.jobLog("Failed to rename ".concat(hiddenTmp, " to ").concat(newPath, ", original untouched: ").concat(JSON.stringify(err_6)));
-                _e.label = 16;
-            case 16:
-                _e.trys.push([16, 18, , 19]);
-                return [4 /*yield*/, fs_1.promises.unlink(hiddenTmp)];
-            case 17:
-                _e.sent();
-                return [3 /*break*/, 19];
-            case 18:
-                cleanupErr_2 = _e.sent();
-                args.jobLog("Failed to clean up temporary file ".concat(hiddenTmp, ": ").concat(JSON.stringify(cleanupErr_2)));
-                return [3 /*break*/, 19];
-            case 19: throw err_6;
-            case 20:
-                args.jobLog("Atomically replaced ".concat(newPath));
-                if (!originalIdBefore) return [3 /*break*/, 28];
-                return [4 /*yield*/, getFileId(originalPath)];
-            case 21:
-                originalIdAfter = _e.sent();
-                return [4 /*yield*/, getFileId(newPath)];
-            case 22:
-                newId = _e.sent();
-                if (!(originalIdAfter
-                    && newId
-                    && sameFile(originalIdAfter, originalIdBefore)
-                    && !sameFile(originalIdAfter, newId))) return [3 /*break*/, 27];
-                args.jobLog("Deleting original file: ".concat(originalPath));
-                _e.label = 23;
-            case 23:
-                _e.trys.push([23, 25, , 26]);
-                return [4 /*yield*/, fs_1.promises.unlink(originalPath)];
-            case 24:
-                _e.sent();
-                return [3 /*break*/, 26];
-            case 25:
-                err_7 = _e.sent();
-                args.jobLog("Failed to delete original file ".concat(originalPath, ": ").concat(JSON.stringify(err_7)));
-                return [3 /*break*/, 26];
-            case 26: return [3 /*break*/, 28];
-            case 27:
-                if (originalIdAfter) {
-                    args.jobLog("Not deleting ".concat(originalPath, ": it now resolves to the new file (case-insensitive filesystem?)"));
-                }
-                _e.label = 28;
-            case 28: return [2 /*return*/];
+                cleanupErr_1 = _a.sent();
+                args.jobLog("Failed to clean up temporary file ".concat(stagedPath, ": ").concat(JSON.stringify(cleanupErr_1)));
+                return [3 /*break*/, 5];
+            case 5: return [2 /*return*/];
         }
     });
 }); };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, currentPath, originalPath, orignalFolder, fileName, container, newPath, platform, newPathTmp, originalPathOld, originalFileExists, currentFileIsNotOriginal, shouldRenameOriginal, originalRenamed, staleErr_1, err_8, cleanupErr_3, err_9, restoreErr_1, err_10;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+    var lib, currentPath, originalPath, orignalFolder, fileName, container, newPath, atomicSwap, jobSuffix, newPathTmp, originalPathOld, originalIdBefore, _a, err_2, originalFileExists, currentFileIsNotOriginal, shouldRenameOriginal, originalRenamed, staleErr_1, err_3, cleanupErr_2, err_4, originalIdAfter, newId, err_5, err_6, restoreErr_1, err_7;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -321,30 +143,26 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 fileName = (0, fileUtils_1.getFileName)(args.inputFileObj._id);
                 container = (0, fileUtils_1.getContainer)(args.inputFileObj._id);
                 newPath = "".concat(orignalFolder, "/").concat(fileName, ".").concat(container);
-                if (!(args.inputs.atomicSwap === true)) return [3 /*break*/, 3];
-                platform = args.platform || process.platform;
-                if (!(platform !== 'win32')) return [3 /*break*/, 2];
-                return [4 /*yield*/, atomicReplace({
-                        args: args,
-                        currentPath: currentPath,
-                        originalPath: originalPath,
-                        newPath: newPath,
-                        originalFolder: orignalFolder,
-                    })];
-            case 1:
-                _a.sent();
-                return [2 /*return*/, {
-                        outputFileObj: {
-                            _id: newPath,
-                        },
-                        outputNumber: 1,
-                        variables: args.variables,
-                    }];
-            case 2:
-                args.jobLog('Atomic swap is not supported on Windows, using the default replace');
-                _a.label = 3;
-            case 3:
-                newPathTmp = "".concat(newPath, ".tmp");
+                atomicSwap = args.inputs.atomicSwap === true;
+                if (atomicSwap && (args.platform || process.platform) === 'win32') {
+                    args.jobLog('Atomic swap is not supported on Windows, using the default replace');
+                    atomicSwap = false;
+                }
+                if (atomicSwap && (currentPath === newPath || currentPath === originalPath)) {
+                    // Edited in place: staging it would take the only copy out of the library.
+                    args.jobLog('Working file is already in place, nothing to swap');
+                    return [2 /*return*/, {
+                            outputFileObj: {
+                                _id: newPath,
+                            },
+                            outputNumber: 1,
+                            variables: args.variables,
+                        }];
+                }
+                jobSuffix = ((_b = args.job) === null || _b === void 0 ? void 0 : _b.jobId) || "".concat(Date.now(), "-").concat(Math.random().toString(36).slice(2, 8));
+                newPathTmp = atomicSwap
+                    ? "".concat(orignalFolder, "/.tdarr-replace-").concat(jobSuffix, ".partial.tmp")
+                    : "".concat(newPath, ".tmp");
                 originalPathOld = "".concat(originalPath, ".partial.old");
                 args.jobLog(JSON.stringify({
                     currentPath: currentPath,
@@ -352,116 +170,193 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     newPathTmp: newPathTmp,
                     originalPathOld: originalPathOld,
                 }));
+                if (!(atomicSwap && newPath !== originalPath)) return [3 /*break*/, 2];
+                return [4 /*yield*/, getFileId(originalPath)];
+            case 1:
+                _a = _c.sent();
+                return [3 /*break*/, 3];
+            case 2:
+                _a = null;
+                _c.label = 3;
+            case 3:
+                originalIdBefore = _a;
+                if (!!atomicSwap) return [3 /*break*/, 5];
                 return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
             case 4:
-                _a.sent();
-                // Step 1: move the working/cache file into the original folder as .tmp
-                return [4 /*yield*/, moveWithProgress({
-                        args: args,
+                _c.sent();
+                _c.label = 5;
+            case 5:
+                _c.trys.push([5, 7, , 10]);
+                return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
+                        operation: 'move',
                         sourcePath: currentPath,
                         destinationPath: newPathTmp,
+                        args: args,
                     })];
-            case 5:
-                // Step 1: move the working/cache file into the original folder as .tmp
-                _a.sent();
-                return [4 /*yield*/, (0, fileUtils_1.fileExists)(originalPath)];
             case 6:
-                originalFileExists = _a.sent();
+                _c.sent();
+                return [3 /*break*/, 10];
+            case 7:
+                err_2 = _c.sent();
+                if (!atomicSwap) return [3 /*break*/, 9];
+                args.jobLog("Failed to stage ".concat(currentPath, " as ").concat(newPathTmp, ", original untouched"));
+                return [4 /*yield*/, removeStaged(args, newPathTmp)];
+            case 8:
+                _c.sent();
+                _c.label = 9;
+            case 9: throw err_2;
+            case 10: return [4 /*yield*/, (0, fileUtils_1.fileExists)(originalPath)];
+            case 11:
+                originalFileExists = _c.sent();
                 currentFileIsNotOriginal = originalPath !== currentPath;
-                shouldRenameOriginal = originalFileExists && currentFileIsNotOriginal;
+                shouldRenameOriginal = !atomicSwap && originalFileExists && currentFileIsNotOriginal;
                 args.jobLog(JSON.stringify({
                     originalFileExists: originalFileExists,
                     currentFileIsNotOriginal: currentFileIsNotOriginal,
                 }));
                 originalRenamed = false;
-                if (!shouldRenameOriginal) return [3 /*break*/, 19];
+                if (!shouldRenameOriginal) return [3 /*break*/, 24];
                 return [4 /*yield*/, (0, fileUtils_1.fileExists)(originalPathOld)];
-            case 7:
-                if (!_a.sent()) return [3 /*break*/, 11];
-                args.jobLog("Removing stale file at ".concat(originalPathOld));
-                _a.label = 8;
-            case 8:
-                _a.trys.push([8, 10, , 11]);
-                return [4 /*yield*/, fs_1.promises.unlink(originalPathOld)];
-            case 9:
-                _a.sent();
-                return [3 /*break*/, 11];
-            case 10:
-                staleErr_1 = _a.sent();
-                args.jobLog("Failed to remove stale file ".concat(originalPathOld, ": ").concat(JSON.stringify(staleErr_1)));
-                return [3 /*break*/, 11];
-            case 11:
-                args.jobLog("Renaming original file to: ".concat(originalPathOld));
-                _a.label = 12;
             case 12:
-                _a.trys.push([12, 14, , 19]);
-                return [4 /*yield*/, fs_1.promises.rename(originalPath, originalPathOld)];
+                if (!_c.sent()) return [3 /*break*/, 16];
+                args.jobLog("Removing stale file at ".concat(originalPathOld));
+                _c.label = 13;
             case 13:
-                _a.sent();
-                originalRenamed = true;
-                return [3 /*break*/, 19];
+                _c.trys.push([13, 15, , 16]);
+                return [4 /*yield*/, fs_1.promises.unlink(originalPathOld)];
             case 14:
-                err_8 = _a.sent();
-                args.jobLog("Failed to rename original file aside: ".concat(JSON.stringify(err_8)));
-                _a.label = 15;
+                _c.sent();
+                return [3 /*break*/, 16];
             case 15:
-                _a.trys.push([15, 17, , 18]);
-                return [4 /*yield*/, fs_1.promises.unlink(newPathTmp)];
+                staleErr_1 = _c.sent();
+                args.jobLog("Failed to remove stale file ".concat(originalPathOld, ": ").concat(JSON.stringify(staleErr_1)));
+                return [3 /*break*/, 16];
             case 16:
-                _a.sent();
-                return [3 /*break*/, 18];
+                args.jobLog("Renaming original file to: ".concat(originalPathOld));
+                _c.label = 17;
             case 17:
-                cleanupErr_3 = _a.sent();
-                args.jobLog("Failed to clean up temporary file ".concat(newPathTmp, ": ").concat(JSON.stringify(cleanupErr_3)));
-                return [3 /*break*/, 18];
-            case 18: throw err_8;
-            case 19: return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
+                _c.trys.push([17, 19, , 24]);
+                return [4 /*yield*/, fs_1.promises.rename(originalPath, originalPathOld)];
+            case 18:
+                _c.sent();
+                originalRenamed = true;
+                return [3 /*break*/, 24];
+            case 19:
+                err_3 = _c.sent();
+                args.jobLog("Failed to rename original file aside: ".concat(JSON.stringify(err_3)));
+                _c.label = 20;
             case 20:
-                _a.sent();
-                _a.label = 21;
+                _c.trys.push([20, 22, , 23]);
+                return [4 /*yield*/, fs_1.promises.unlink(newPathTmp)];
             case 21:
-                _a.trys.push([21, 23, , 28]);
+                _c.sent();
+                return [3 /*break*/, 23];
+            case 22:
+                cleanupErr_2 = _c.sent();
+                args.jobLog("Failed to clean up temporary file ".concat(newPathTmp, ": ").concat(JSON.stringify(cleanupErr_2)));
+                return [3 /*break*/, 23];
+            case 23: throw err_3;
+            case 24:
+                if (!atomicSwap) return [3 /*break*/, 38];
+                _c.label = 25;
+            case 25:
+                _c.trys.push([25, 27, , 29]);
+                return [4 /*yield*/, fs_1.promises.rename(newPathTmp, newPath)];
+            case 26:
+                _c.sent();
+                return [3 /*break*/, 29];
+            case 27:
+                err_4 = _c.sent();
+                args.jobLog("Failed to rename ".concat(newPathTmp, " to ").concat(newPath, ", original untouched: ").concat(JSON.stringify(err_4)));
+                return [4 /*yield*/, removeStaged(args, newPathTmp)];
+            case 28:
+                _c.sent();
+                throw err_4;
+            case 29:
+                args.jobLog("Atomically replaced ".concat(newPath));
+                if (!originalIdBefore) return [3 /*break*/, 37];
+                return [4 /*yield*/, getFileId(originalPath)];
+            case 30:
+                originalIdAfter = _c.sent();
+                return [4 /*yield*/, getFileId(newPath)];
+            case 31:
+                newId = _c.sent();
+                if (!(originalIdAfter
+                    && newId
+                    && sameFile(originalIdAfter, originalIdBefore)
+                    && !sameFile(originalIdAfter, newId))) return [3 /*break*/, 36];
+                args.jobLog("Deleting original file: ".concat(originalPath));
+                _c.label = 32;
+            case 32:
+                _c.trys.push([32, 34, , 35]);
+                return [4 /*yield*/, fs_1.promises.unlink(originalPath)];
+            case 33:
+                _c.sent();
+                return [3 /*break*/, 35];
+            case 34:
+                err_5 = _c.sent();
+                args.jobLog("Failed to delete original file ".concat(originalPath, ": ").concat(JSON.stringify(err_5)));
+                return [3 /*break*/, 35];
+            case 35: return [3 /*break*/, 37];
+            case 36:
+                if (originalIdAfter) {
+                    args.jobLog("Not deleting ".concat(originalPath, ": it now resolves to the new file (case-insensitive filesystem?)"));
+                }
+                _c.label = 37;
+            case 37: return [2 /*return*/, {
+                    outputFileObj: {
+                        _id: newPath,
+                    },
+                    outputNumber: 1,
+                    variables: args.variables,
+                }];
+            case 38: return [4 /*yield*/, new Promise(function (resolve) { return setTimeout(resolve, 2000); })];
+            case 39:
+                _c.sent();
+                _c.label = 40;
+            case 40:
+                _c.trys.push([40, 42, , 47]);
                 return [4 /*yield*/, (0, fileMoveOrCopy_1.default)({
                         operation: 'move',
                         sourcePath: newPathTmp,
                         destinationPath: newPath,
                         args: args,
                     })];
-            case 22:
-                _a.sent();
-                return [3 /*break*/, 28];
-            case 23:
-                err_9 = _a.sent();
-                args.jobLog("Failed to move ".concat(newPathTmp, " to ").concat(newPath, ": ").concat(JSON.stringify(err_9)));
-                if (!originalRenamed) return [3 /*break*/, 27];
+            case 41:
+                _c.sent();
+                return [3 /*break*/, 47];
+            case 42:
+                err_6 = _c.sent();
+                args.jobLog("Failed to move ".concat(newPathTmp, " to ").concat(newPath, ": ").concat(JSON.stringify(err_6)));
+                if (!originalRenamed) return [3 /*break*/, 46];
                 args.jobLog("Restoring original file from ".concat(originalPathOld));
-                _a.label = 24;
-            case 24:
-                _a.trys.push([24, 26, , 27]);
+                _c.label = 43;
+            case 43:
+                _c.trys.push([43, 45, , 46]);
                 return [4 /*yield*/, fs_1.promises.rename(originalPathOld, originalPath)];
-            case 25:
-                _a.sent();
-                return [3 /*break*/, 27];
-            case 26:
-                restoreErr_1 = _a.sent();
+            case 44:
+                _c.sent();
+                return [3 /*break*/, 46];
+            case 45:
+                restoreErr_1 = _c.sent();
                 args.jobLog("Failed to restore original file: ".concat(JSON.stringify(restoreErr_1)));
-                return [3 /*break*/, 27];
-            case 27: throw err_9;
-            case 28:
-                if (!originalRenamed) return [3 /*break*/, 32];
+                return [3 /*break*/, 46];
+            case 46: throw err_6;
+            case 47:
+                if (!originalRenamed) return [3 /*break*/, 51];
                 args.jobLog("Deleting renamed original file: ".concat(originalPathOld));
-                _a.label = 29;
-            case 29:
-                _a.trys.push([29, 31, , 32]);
+                _c.label = 48;
+            case 48:
+                _c.trys.push([48, 50, , 51]);
                 return [4 /*yield*/, fs_1.promises.unlink(originalPathOld)];
-            case 30:
-                _a.sent();
-                return [3 /*break*/, 32];
-            case 31:
-                err_10 = _a.sent();
-                args.jobLog("Failed to delete renamed original file ".concat(originalPathOld, ": ").concat(JSON.stringify(err_10)));
-                return [3 /*break*/, 32];
-            case 32: return [2 /*return*/, {
+            case 49:
+                _c.sent();
+                return [3 /*break*/, 51];
+            case 50:
+                err_7 = _c.sent();
+                args.jobLog("Failed to delete renamed original file ".concat(originalPathOld, ": ").concat(JSON.stringify(err_7)));
+                return [3 /*break*/, 51];
+            case 51: return [2 /*return*/, {
                     outputFileObj: {
                         _id: newPath,
                     },
