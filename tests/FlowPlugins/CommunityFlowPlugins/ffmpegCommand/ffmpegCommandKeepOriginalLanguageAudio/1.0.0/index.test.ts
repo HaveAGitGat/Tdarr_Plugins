@@ -110,6 +110,60 @@ describe('ffmpegCommandKeepOriginalLanguageAudio Plugin', () => {
     expect(removed()).toEqual([3]);
   });
 
+  it('should retry a Sonarr miss with the path below the library folder', async () => {
+    baseArgs.inputs.arr = 'sonarr';
+    baseArgs.librarySettings = { folder: '/library/tv/' };
+    baseArgs.originalLibraryFile = { _id: '/library/tv/Frieren (2023)/Season 01/S01E01 - Journey\'s End.mkv' } as never;
+    setAudio('jpn', 'eng', 'ger');
+    axios
+      .mockResolvedValueOnce({ data: {} })
+      .mockResolvedValueOnce({ data: { series: { originalLanguage: { name: 'Japanese' } } } });
+
+    await plugin(baseArgs);
+
+    expect(axios).toHaveBeenCalledTimes(2);
+    expect(axios.mock.calls[1][0].url).toBe('http://192.168.1.100:7878/api/v3/parse?title='
+      + `${encodeURIComponent('Frieren (2023)/Season 01/S01E01 - Journey\'s End.mkv')}`);
+    expect(removed()).toEqual([3]);
+  });
+
+  it('should handle Windows library paths when retrying a Sonarr miss', async () => {
+    baseArgs.inputs.arr = 'sonarr';
+    baseArgs.librarySettings = { folder: 'D:\\TV' };
+    baseArgs.originalLibraryFile = { _id: 'D:/TV/Show/Season 02/02.mkv' } as never;
+    setAudio('kor', 'eng');
+    axios.mockResolvedValue({ data: {} });
+
+    await plugin(baseArgs);
+
+    expect(axios.mock.calls[1][0].url).toContain(encodeURIComponent('Show/Season 02/02.mkv'));
+    expect(removed()).toEqual([]);
+  });
+
+  it('should not retry when Sonarr finds the series by file name', async () => {
+    baseArgs.inputs.arr = 'sonarr';
+    baseArgs.librarySettings = { folder: '/library' };
+    setAudio('kor', 'eng');
+    axios.mockResolvedValue({ data: { series: { originalLanguage: { name: 'Korean' } } } });
+
+    await plugin(baseArgs);
+
+    expect(axios).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not retry Radarr misses or files outside the library folder', async () => {
+    setAudio('eng', 'fre');
+    baseArgs.librarySettings = { folder: '/library' };
+    axios.mockResolvedValue({ data: {} });
+    await plugin(baseArgs);
+    expect(axios).toHaveBeenCalledTimes(1);
+
+    baseArgs.inputs.arr = 'sonarr';
+    baseArgs.librarySettings = { folder: '/elsewhere' };
+    await plugin(baseArgs);
+    expect(axios).toHaveBeenCalledTimes(2);
+  });
+
   it('should match regional language names such as Portuguese (Brazil)', async () => {
     setAudio('por', 'eng', 'spa');
     movieLanguage('Portuguese (Brazil)');

@@ -204,11 +204,21 @@ var expandLanguageCode = function (code) {
         .flat();
     return variants.length > 0 ? variants : [code];
 };
+// 'Show/Season 01/01.mkv': the path below the library folder. Sonarr needs the series folder to
+// match files whose names leave out the series title, which is common with anime.
+var getLibraryRelativePath = function (filePath, libraryFolder) {
+    var file = filePath.replace(/\\/g, '/');
+    var folder = String(libraryFolder || '').replace(/\\/g, '/').replace(/\/+$/, '');
+    if (folder === '' || !file.startsWith("".concat(folder, "/"))) {
+        return '';
+    }
+    return file.slice(folder.length + 1);
+};
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, result, audioStreams, arr, arrHostInput, arrHost, fileName, originalLanguage, response, media, err_1, status_1, originalCodes, keep, keepUntagged, isKept, toRemove, i, stream;
-    var _a, _b, _c, _d, _e, _f;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
+    var lib, result, audioStreams, arr, arrHostInput, arrHost, filePath, fileName, parse, originalLanguage, response, media, relativePath, err_1, status_1, originalCodes, keep, keepUntagged, isKept, toRemove, i, stream;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    return __generator(this, function (_k) {
+        switch (_k.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -228,35 +238,45 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arr = String(args.inputs.arr);
                 arrHostInput = String(args.inputs.arr_host).trim();
                 arrHost = arrHostInput.endsWith('/') ? arrHostInput.slice(0, -1) : arrHostInput;
-                fileName = (0, fileUtils_1.getFileName)(((_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) || args.inputFileObj._id);
+                filePath = ((_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) || args.inputFileObj._id;
+                fileName = (0, fileUtils_1.getFileName)(filePath);
+                parse = function (title) { return args.deps.axios({
+                    method: 'get',
+                    url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(title)),
+                    headers: {
+                        'X-Api-Key': String(args.inputs.arr_api_key),
+                        Accept: 'application/json',
+                    },
+                }); };
                 originalLanguage = '';
-                _g.label = 1;
+                _k.label = 1;
             case 1:
-                _g.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, args.deps.axios({
-                        method: 'get',
-                        url: "".concat(arrHost, "/api/v3/parse?title=").concat(encodeURIComponent(fileName)),
-                        headers: {
-                            'X-Api-Key': String(args.inputs.arr_api_key),
-                            Accept: 'application/json',
-                        },
-                    })];
+                _k.trys.push([1, 5, , 6]);
+                return [4 /*yield*/, parse(fileName)];
             case 2:
-                response = _g.sent();
+                response = _k.sent();
                 media = arr === 'radarr' ? (_b = response === null || response === void 0 ? void 0 : response.data) === null || _b === void 0 ? void 0 : _b.movie : (_c = response === null || response === void 0 ? void 0 : response.data) === null || _c === void 0 ? void 0 : _c.series;
+                relativePath = getLibraryRelativePath(filePath, (_d = args.librarySettings) === null || _d === void 0 ? void 0 : _d.folder);
+                if (!(!media && arr === 'sonarr' && relativePath !== '')) return [3 /*break*/, 4];
+                args.jobLog("'".concat(fileName, "' was not found in sonarr, retrying with '").concat(relativePath, "'"));
+                return [4 /*yield*/, parse(relativePath)];
+            case 3:
+                media = (_f = (_e = (_k.sent())) === null || _e === void 0 ? void 0 : _e.data) === null || _f === void 0 ? void 0 : _f.series;
+                _k.label = 4;
+            case 4:
                 if (!media) {
                     args.jobLog("'".concat(fileName, "' was not found in ").concat(arr, ", keeping all audio"));
                     return [2 /*return*/, result];
                 }
-                originalLanguage = String(((_d = media.originalLanguage) === null || _d === void 0 ? void 0 : _d.name) || '');
-                return [3 /*break*/, 4];
-            case 3:
-                err_1 = _g.sent();
-                status_1 = (_e = err_1 === null || err_1 === void 0 ? void 0 : err_1.response) === null || _e === void 0 ? void 0 : _e.status;
+                originalLanguage = String(((_g = media.originalLanguage) === null || _g === void 0 ? void 0 : _g.name) || '');
+                return [3 /*break*/, 6];
+            case 5:
+                err_1 = _k.sent();
+                status_1 = (_h = err_1 === null || err_1 === void 0 ? void 0 : err_1.response) === null || _h === void 0 ? void 0 : _h.status;
                 args.jobLog("".concat(arr, " lookup failed (").concat(status_1 ? "HTTP ".concat(status_1) : err_1.message, "),")
                     + ' keeping all audio');
                 return [2 /*return*/, result];
-            case 4:
+            case 6:
                 if (!originalLanguage) {
                     args.jobLog("".concat(arr, " did not return an original language for '").concat(fileName, "', keeping all audio"));
                     return [2 /*return*/, result];
@@ -292,7 +312,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 }
                 for (i = 0; i < toRemove.length; i++) {
                     stream = toRemove[i];
-                    args.jobLog("Removing audio stream ".concat(stream.index, " (").concat(((_f = stream.tags) === null || _f === void 0 ? void 0 : _f.language) || 'untagged', ",")
+                    args.jobLog("Removing audio stream ".concat(stream.index, " (").concat(((_j = stream.tags) === null || _j === void 0 ? void 0 : _j.language) || 'untagged', ",")
                         + " ".concat(stream.codec_name, ")"));
                     stream.removed = true;
                 }

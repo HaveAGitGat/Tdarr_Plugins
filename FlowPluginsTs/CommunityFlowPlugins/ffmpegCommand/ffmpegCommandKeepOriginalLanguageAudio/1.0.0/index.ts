@@ -186,6 +186,17 @@ const expandLanguageCode = (code: string): string[] => {
   return variants.length > 0 ? variants : [code];
 };
 
+// 'Show/Season 01/01.mkv': the path below the library folder. Sonarr needs the series folder to
+// match files whose names leave out the series title, which is common with anime.
+const getLibraryRelativePath = (filePath: string, libraryFolder: unknown): string => {
+  const file = filePath.replace(/\\/g, '/');
+  const folder = String(libraryFolder || '').replace(/\\/g, '/').replace(/\/+$/, '');
+  if (folder === '' || !file.startsWith(`${folder}/`)) {
+    return '';
+  }
+  return file.slice(folder.length + 1);
+};
+
 interface IParseResponse {
   data?: {
     movie?: { originalLanguage?: { name?: string } },
@@ -216,19 +227,27 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const arr = String(args.inputs.arr);
   const arrHostInput = String(args.inputs.arr_host).trim();
   const arrHost = arrHostInput.endsWith('/') ? arrHostInput.slice(0, -1) : arrHostInput;
-  const fileName = getFileName(args.originalLibraryFile?._id || args.inputFileObj._id);
+  const filePath = args.originalLibraryFile?._id || args.inputFileObj._id;
+  const fileName = getFileName(filePath);
+
+  const parse = (title: string): Promise<IParseResponse> => args.deps.axios({
+    method: 'get',
+    url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(title)}`,
+    headers: {
+      'X-Api-Key': String(args.inputs.arr_api_key),
+      Accept: 'application/json',
+    },
+  });
 
   let originalLanguage = '';
   try {
-    const response: IParseResponse = await args.deps.axios({
-      method: 'get',
-      url: `${arrHost}/api/v3/parse?title=${encodeURIComponent(fileName)}`,
-      headers: {
-        'X-Api-Key': String(args.inputs.arr_api_key),
-        Accept: 'application/json',
-      },
-    });
-    const media = arr === 'radarr' ? response?.data?.movie : response?.data?.series;
+    const response = await parse(fileName);
+    let media = arr === 'radarr' ? response?.data?.movie : response?.data?.series;
+    const relativePath = getLibraryRelativePath(filePath, args.librarySettings?.folder);
+    if (!media && arr === 'sonarr' && relativePath !== '') {
+      args.jobLog(`'${fileName}' was not found in sonarr, retrying with '${relativePath}'`);
+      media = (await parse(relativePath))?.data?.series;
+    }
     if (!media) {
       args.jobLog(`'${fileName}' was not found in ${arr}, keeping all audio`);
       return result;
