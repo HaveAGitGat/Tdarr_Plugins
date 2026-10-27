@@ -90,7 +90,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, code, outputFilePath, func, response;
+    var lib, code, pluginWorkDir, outputFilePath, func, response;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -98,13 +98,21 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 code = String(args.inputs.code);
-                outputFilePath = "".concat((0, fileUtils_1.getPluginWorkDir)(args), "/script.js");
-                return [4 /*yield*/, fs_1.promises.writeFile(outputFilePath, code)];
+                pluginWorkDir = (0, fileUtils_1.getPluginWorkDir)(args);
+                // Stops Node searching parent folders for a package.json when loading script.js. On a UNC
+                // work dir that search reaches \\?\UNC\<server>\package.json, which Node 24.22.1 can't read.
+                return [4 /*yield*/, fs_1.promises.writeFile("".concat(pluginWorkDir, "/package.json"), '{}')];
             case 1:
+                // Stops Node searching parent folders for a package.json when loading script.js. On a UNC
+                // work dir that search reaches \\?\UNC\<server>\package.json, which Node 24.22.1 can't read.
+                _a.sent();
+                outputFilePath = "".concat(pluginWorkDir, "/script.js");
+                return [4 /*yield*/, fs_1.promises.writeFile(outputFilePath, code)];
+            case 2:
                 _a.sent();
                 func = require(outputFilePath);
                 return [4 /*yield*/, func(args)];
-            case 2:
+            case 3:
                 response = _a.sent();
                 return [2 /*return*/, response];
         }

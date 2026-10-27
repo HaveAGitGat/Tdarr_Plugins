@@ -92,7 +92,11 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.inputs = lib.loadDefaultValues(args.inputs, details);
   const code = String(args.inputs.code);
 
-  const outputFilePath = `${getPluginWorkDir(args)}/script.js`;
+  const pluginWorkDir = getPluginWorkDir(args);
+  // Stops Node searching parent folders for a package.json when loading script.js. On a UNC
+  // work dir that search reaches \\?\UNC\<server>\package.json, which Node 24.22.1 can't read.
+  await fsp.writeFile(`${pluginWorkDir}/package.json`, '{}');
+  const outputFilePath = `${pluginWorkDir}/script.js`;
   await fsp.writeFile(outputFilePath, code);
   // eslint-disable-next-line import/no-dynamic-require
   const func = require(outputFilePath);

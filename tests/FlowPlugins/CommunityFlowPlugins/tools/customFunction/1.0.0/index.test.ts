@@ -100,6 +100,16 @@ describe('Custom Function Plugin', () => {
       );
     });
 
+    it('should write a package.json next to script.js', async () => {
+      try {
+        await plugin(baseArgs);
+      } catch (error) {
+        // Expected to fail at require step, that's ok
+      }
+
+      expect(fsp.writeFile).toHaveBeenCalledWith('/tmp/test-workdir/123/package.json', '{}');
+    });
+
     it('should handle different input code', async () => {
       const customCode = `
         module.exports = async (args) => {
