@@ -78,6 +78,11 @@ const details = (): IpluginDetails => ({
                   value: 'true',
                   condition: '===',
                 },
+                {
+                  name: 'ffmpegPresetNumeric',
+                  value: 'true',
+                  condition: '!==',
+                },
               ],
             },
           ],
@@ -86,6 +91,64 @@ const details = (): IpluginDetails => ({
       tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7,'
         + ' AMF uses quality/balanced/speed, QSV uses CPU names directly.'
         + ' Ignored for VAAPI/rkmpp/videotoolbox.',
+    },
+    {
+      label: 'Use Numeric Preset',
+      name: 'ffmpegPresetNumeric',
+      type: 'boolean',
+      defaultValue: 'false',
+      inputUI: {
+        type: 'switch',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'ffmpegPresetEnabled',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: 'Use a numeric preset instead of the FFmpeg Preset names, for encoders whose presets are'
+        + ' numbers, such as libsvtav1. The FFmpeg Preset names are not applied to AV1.',
+    },
+    {
+      label: 'Numeric Preset',
+      name: 'ffmpegPresetNumber',
+      type: 'number',
+      defaultValue: '6',
+      inputUI: {
+        type: 'text',
+        displayConditions: {
+          logic: 'AND',
+          sets: [
+            {
+              logic: 'AND',
+              inputs: [
+                {
+                  name: 'ffmpegPresetEnabled',
+                  value: 'true',
+                  condition: '===',
+                },
+                {
+                  name: 'ffmpegPresetNumeric',
+                  value: 'true',
+                  condition: '===',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      tooltip: `Passed to the encoder unchanged as -preset, for any codec. The encoder checks the range.
+
+libsvtav1 (AV1): -1 to 13, e.g. 4. Lower is slower and more efficient.`,
     },
     {
       label: 'Enable FFmpeg Quality',
@@ -187,6 +250,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
 
   checkFfmpegCommandInit(args);
 
+  const ffmpegPresetNumeric = args.inputs.ffmpegPresetEnabled === true && args.inputs.ffmpegPresetNumeric === true;
+  const ffmpegPresetNumber = Number(args.inputs.ffmpegPresetNumber);
+  if (ffmpegPresetNumeric && !Number.isInteger(ffmpegPresetNumber)) {
+    throw new Error(`Numeric Preset must be a whole number, got "${args.inputs.ffmpegPresetNumber}"`);
+  }
+
   const hardwareDecoding = args.inputs.hardwareDecoding === true;
   const hardwareType = String(args.inputs.hardwareType);
   args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
@@ -230,7 +299,9 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           }
         }
 
-        if (ffmpegPresetEnabled) {
+        if (ffmpegPresetNumeric) {
+          stream.outputArgs.push('-preset:{outputIndex}', String(ffmpegPresetNumber));
+        } else if (ffmpegPresetEnabled) {
           if (targetCodec !== 'av1' && ffmpegPreset) {
             let presetToUse: string | null = ffmpegPreset;
             // Convert CPU preset names to GPU-specific presets for hardware encoders

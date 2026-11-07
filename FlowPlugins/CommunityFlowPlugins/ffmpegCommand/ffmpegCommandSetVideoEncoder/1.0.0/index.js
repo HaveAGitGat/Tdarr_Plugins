@@ -110,6 +110,11 @@ var details = function () { return ({
                                     value: 'true',
                                     condition: '===',
                                 },
+                                {
+                                    name: 'ffmpegPresetNumeric',
+                                    value: 'true',
+                                    condition: '!==',
+                                },
                             ],
                         },
                     ],
@@ -118,6 +123,62 @@ var details = function () { return ({
             tooltip: 'FFmpeg preset. Auto-converts for GPU encoders: NVENC uses p1-p7,'
                 + ' AMF uses quality/balanced/speed, QSV uses CPU names directly.'
                 + ' Ignored for VAAPI/rkmpp/videotoolbox.',
+        },
+        {
+            label: 'Use Numeric Preset',
+            name: 'ffmpegPresetNumeric',
+            type: 'boolean',
+            defaultValue: 'false',
+            inputUI: {
+                type: 'switch',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'ffmpegPresetEnabled',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: 'Use a numeric preset instead of the FFmpeg Preset names, for encoders whose presets are'
+                + ' numbers, such as libsvtav1. The FFmpeg Preset names are not applied to AV1.',
+        },
+        {
+            label: 'Numeric Preset',
+            name: 'ffmpegPresetNumber',
+            type: 'number',
+            defaultValue: '6',
+            inputUI: {
+                type: 'text',
+                displayConditions: {
+                    logic: 'AND',
+                    sets: [
+                        {
+                            logic: 'AND',
+                            inputs: [
+                                {
+                                    name: 'ffmpegPresetEnabled',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                                {
+                                    name: 'ffmpegPresetNumeric',
+                                    value: 'true',
+                                    condition: '===',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            tooltip: "Passed to the encoder unchanged as -preset, for any codec. The encoder checks the range.\n\nlibsvtav1 (AV1): -1 to 13, e.g. 4. Lower is slower and more efficient.",
         },
         {
             label: 'Enable FFmpeg Quality',
@@ -213,7 +274,7 @@ var details = function () { return ({
 exports.details = details;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
+    var lib, ffmpegPresetNumeric, ffmpegPresetNumber, hardwareDecoding, hardwareType, i, stream, targetCodec, _a, ffmpegPresetEnabled, ffmpegQualityEnabled, ffmpegPreset, ffmpegQuality, forceEncoding, hardwarEncoding, encoderProperties, presetToUse, nvencPresetMap, amfPresetMap;
     var _b, _c;
     return __generator(this, function (_d) {
         switch (_d.label) {
@@ -222,6 +283,11 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
                 args.inputs = lib.loadDefaultValues(args.inputs, details);
                 (0, flowUtils_1.checkFfmpegCommandInit)(args);
+                ffmpegPresetNumeric = args.inputs.ffmpegPresetEnabled === true && args.inputs.ffmpegPresetNumeric === true;
+                ffmpegPresetNumber = Number(args.inputs.ffmpegPresetNumber);
+                if (ffmpegPresetNumeric && !Number.isInteger(ffmpegPresetNumber)) {
+                    throw new Error("Numeric Preset must be a whole number, got \"".concat(args.inputs.ffmpegPresetNumber, "\""));
+                }
                 hardwareDecoding = args.inputs.hardwareDecoding === true;
                 hardwareType = String(args.inputs.hardwareType);
                 args.variables.ffmpegCommand.hardwareDecoding = hardwareDecoding;
@@ -262,7 +328,10 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         stream.outputArgs.push('-crf', ffmpegQuality);
                     }
                 }
-                if (ffmpegPresetEnabled) {
+                if (ffmpegPresetNumeric) {
+                    stream.outputArgs.push('-preset:{outputIndex}', String(ffmpegPresetNumber));
+                }
+                else if (ffmpegPresetEnabled) {
                     if (targetCodec !== 'av1' && ffmpegPreset) {
                         presetToUse = ffmpegPreset;
                         // Convert CPU preset names to GPU-specific presets for hardware encoders
