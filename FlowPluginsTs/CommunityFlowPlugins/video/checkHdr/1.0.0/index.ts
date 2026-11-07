@@ -30,6 +30,13 @@ const details = (): IpluginDetails => ({
   ],
 });
 
+// PQ (smpte2084) and HLG (arib-std-b67) are both HDR transfer functions.
+const hdrTransfers = ['smpte2084', 'arib-std-b67'];
+
+// Dolby Vision codec tags only ever appear in MP4/MOV. Matroska signals
+// Dolby Vision through stream side data instead, handled separately below.
+const dvCodecTags = ['dvhe', 'dvav', 'dav1', 'dvh11'];
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   const lib = require('../../../../../methods/lib')();
@@ -41,18 +48,23 @@ const plugin = (args: IpluginInputArgs): IpluginOutputArgs => {
   if (Array.isArray(args?.inputFileObj?.ffProbeData?.streams)) {
     for (let i = 0; i < args.inputFileObj.ffProbeData.streams.length; i += 1) {
       const stream = args.inputFileObj.ffProbeData.streams[i];
-      if (
-        stream.codec_type === 'video'
-            && (
-              (stream.color_transfer === 'smpte2084'
-                    && stream.color_primaries === 'bt2020'
-                    && stream.color_range === 'tv')
-                || (stream.codec_tag_string?.includes('dvhe'))
-                || (stream.codec_tag_string?.includes('dvav'))
-                || (stream.codec_tag_string?.includes('dav1'))
-                || (stream.codec_tag_string?.includes('dvh11'))
-            )
-      ) {
+
+      // color_range is deliberately not required: full range ('pc') HDR masters
+      // exist, and some muxes omit the field entirely. Neither makes a
+      // PQ/BT.2020 or HLG/BT.2020 stream any less HDR.
+      const hasHdrColours = hdrTransfers.includes(stream.color_transfer as string)
+        && stream.color_primaries === 'bt2020';
+
+      const hasDvCodecTag = dvCodecTags
+        .some((tag) => stream.codec_tag_string?.includes(tag));
+
+      // Matroska carries Dolby Vision as a DOVI configuration record in side
+      // data, where no Dolby Vision codec tag is present.
+      const hasDvSideData = Array.isArray(stream.side_data_list)
+        && stream.side_data_list
+          .some((sideData) => sideData?.dv_profile !== undefined);
+
+      if (stream.codec_type === 'video' && (hasHdrColours || hasDvCodecTag || hasDvSideData)) {
         isHdr = true;
       }
     }
