@@ -144,6 +144,13 @@ var details = function () { return ({
     ],
 }); };
 exports.details = details;
+// Encoders that cannot represent every channel layout. Asking ffmpeg for more than
+// this is a hard failure, e.g. "Specified channel layout '7.1' is not supported by
+// the eac3 encoder", so the request is reduced to what the encoder accepts.
+var MAX_CHANNELS = {
+    ac3: 6,
+    eac3: 6,
+};
 var getHighest = function (first, second) {
     // @ts-expect-error channels
     if ((first === null || first === void 0 ? void 0 : first.channels) > (second === null || second === void 0 ? void 0 : second.channels)) {
@@ -163,9 +170,12 @@ var attemptMakeStream = function (_a) {
             && (stream.tags === undefined || stream.tags.language === undefined))
             || (((_a = stream === null || stream === void 0 ? void 0 : stream.tags) === null || _a === void 0 ? void 0 : _a.language) && stream.tags.language.toLowerCase().includes(langTag)));
     };
-    // filter streams to only include audio streams with the specified lang tag
+    // filter streams to only include audio streams with the specified lang tag.
+    // Streams marked removed by an earlier plugin are excluded, otherwise a stream
+    // that is being stripped would still be treated as available.
     var streamsWithLangTag = streams.filter(function (stream) {
         if (stream.codec_type === 'audio'
+            && !stream.removed
             && langMatch(stream)) {
             return true;
         }
@@ -189,8 +199,17 @@ var attemptMakeStream = function (_a) {
         args.jobLog("The wanted channel count ".concat(wantedChannelCount, " is higher than the")
             + " highest available channel count (".concat(streamWithHighestChannel.channels, "). \n"));
     }
+    var encoderMaxChannels = MAX_CHANNELS[audioEncoder];
+    if (encoderMaxChannels !== undefined && targetChannels > encoderMaxChannels) {
+        args.jobLog("".concat(audioEncoder, " supports at most ").concat(encoderMaxChannels, " channels,")
+            + " reducing from ".concat(targetChannels, ". \n"));
+        targetChannels = encoderMaxChannels;
+    }
+    // A stream marked removed does not satisfy the requirement, otherwise removing an
+    // existing stream earlier in the flow would leave the file with none at all.
     var hasStreamAlready = streams.filter(function (stream) {
         if (stream.codec_type === 'audio'
+            && !stream.removed
             && langMatch(stream)
             && stream.codec_name === audioCodec
             && stream.channels === targetChannels) {
@@ -210,7 +229,7 @@ var attemptMakeStream = function (_a) {
     streamCopy.codec_name = audioCodec;
     streamCopy.channels = targetChannels;
     streamCopy.outputArgs.push('-c:{outputIndex}', audioEncoder);
-    streamCopy.outputArgs.push('-ac', "".concat(targetChannels));
+    streamCopy.outputArgs.push('-ac:{outputIndex}', "".concat(targetChannels));
     if (enableBitrate) {
         var ffType = (0, fileUtils_1.getFfType)(streamCopy.codec_type);
         streamCopy.outputArgs.push("-b:".concat(ffType, ":{outputTypeIndex}"), "".concat(bitrate));
