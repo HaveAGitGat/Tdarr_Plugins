@@ -73,7 +73,7 @@ const details = (): IpluginDetails => ({
     },
     {
       number: 2,
-      tooltip: 'Radarr or Sonarr do not know this file',
+      tooltip: 'Radarr or Sonarr do not know this file, or the request failed (see job log)',
     },
   ],
 });
@@ -113,7 +113,65 @@ interface IEpisode {
   episodeNumber: number,
 }
 
+interface IArrRequest {
+  method: 'get' | 'post',
+  path: string,
+  query?: string,
+  data?: string,
+}
+
 const POLL_INTERVAL_SECONDS = 5;
+
+// Request details kept for the failure log; headers (and so the API key) are never included
+interface IArrRequestFailure {
+  method: string,
+  path: string,
+  status?: number,
+  message: string,
+}
+
+const isArrRequestFailure = (err: unknown): err is IArrRequestFailure => (
+  typeof err === 'object' && err !== null && 'path' in err && 'method' in err && 'message' in err
+);
+
+const arrRequest = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  req: IArrRequest,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> => {
+  try {
+    return await args.deps.axios({
+      method: req.method,
+      url: `${arrApp.host}${req.path}${req.query ?? ''}`,
+      headers: arrApp.headers,
+      ...(req.data !== undefined ? { data: req.data } : {}),
+    });
+  } catch (err) {
+    const e = err as { message?: string, response?: { status?: number } };
+    const failure: IArrRequestFailure = {
+      method: req.method.toUpperCase(),
+      path: req.path,
+      status: e?.response?.status,
+      message: e?.message || String(err),
+    };
+    throw failure;
+  }
+};
+
+const logFailure = (args: IpluginInputArgs, arrApp: IArrApp, err: unknown): void => {
+  const arrName = arrApp.name === 'radarr' ? 'Radarr' : 'Sonarr';
+  if (isArrRequestFailure(err)) {
+    const status = err.status !== undefined ? `HTTP ${err.status} ` : '';
+    args.jobLog(`✖ ${arrName} request failed: ${status}on ${err.method} ${err.path}: ${err.message}`);
+    if (err.status === 401) {
+      args.jobLog('Hint: check the API key and that the host points at the correct arr (Sonarr vs Radarr).');
+    }
+  } else {
+    args.jobLog(`✖ ${arrName} notify failed: ${(err as Error)?.message || String(err)}`);
+  }
+  args.jobLog(`${arrName} was not notified. Continuing on output 2; the file is unchanged.`);
+};
 const TIMEOUT_SECONDS = 120;
 
 const waitForCommand = async (
@@ -141,10 +199,9 @@ const waitForCommand = async (
     });
 
     // eslint-disable-next-line no-await-in-loop
-    const res: ICommandResponse = await args.deps.axios({
+    const res: ICommandResponse = await arrRequest(args, arrApp, {
       method: 'get',
-      url: `${arrApp.host}/api/v3/command/${commandId}`,
-      headers: arrApp.headers,
+      path: `/api/v3/command/${commandId}`,
     });
 
     const { status } = res.data;
@@ -179,20 +236,23 @@ const getId = async (
   fileName: string,
 ): Promise<number> => {
   const term = getLookupTerm(arrApp.name, fileName);
-  let id = (term !== '')
-    ? Number((await args.deps.axios({
+  let id = -1;
+  if (term !== '') {
+    id = Number((await arrRequest(args, arrApp, {
       method: 'get',
-      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=${term}`,
-      headers: arrApp.headers,
-    })).data?.[0]?.id ?? -1)
-    : -1;
-  args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${term}'`);
+      path: `/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup`,
+      query: `?term=${term}`,
+    })).data?.[0]?.id ?? -1);
+    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${term}'`);
+  } else {
+    args.jobLog('No tvdb/tmdb/imdb tag in path, using parse API');
+  }
   if (id === -1) {
     id = arrApp.delegates.getIdFromParseResponse(
-      (await args.deps.axios({
+      (await arrRequest(args, arrApp, {
         method: 'get',
-        url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
-        headers: arrApp.headers,
+        path: '/api/v3/parse',
+        query: `?title=${encodeURIComponent(getFileName(fileName))}`,
       })),
     );
     args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${getFileName(fileName)}'`);
@@ -284,7 +344,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       name: arr,
       host: arrHost,
       headers,
-      content: 'Serie',
+      content: 'Series',
       delegates: {
         getIdFromParseResponse:
           (parseResponse: IParseResponse) => Number(parseResponse?.data?.series?.id ?? -1),
@@ -296,23 +356,36 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
 
-  let id = await getId(args, arrApp, originalFileName);
-  if (id === -1 && currentFileName !== originalFileName) {
-    id = await getId(args, arrApp, currentFileName);
+  // This usually runs after the file has been replaced, so a failed notify must not fail the job
+  let id = -1;
+  try {
+    id = await getId(args, arrApp, originalFileName);
+    if (id === -1 && currentFileName !== originalFileName) {
+      id = await getId(args, arrApp, currentFileName);
+    }
+
+    if (id !== -1) {
+      const commandResponse: ICommandResponse = await arrRequest(args, arrApp, {
+        method: 'post',
+        path: '/api/v3/command',
+        data: arrApp.delegates.buildRefreshRequestData(id),
+      });
+
+      const commandId = commandResponse.data.id;
+      args.jobLog(`${arrApp.content} '${id}' refresh queued in ${arrApp.name} (command ${commandId}).`);
+
+      refreshed = await waitForCommand(args, arrApp, commandId);
+    }
+  } catch (err) {
+    logFailure(args, arrApp, err);
+    return {
+      outputFileObj: args.inputFileObj,
+      outputNumber: 2,
+      variables: args.variables,
+    };
   }
 
   if (id !== -1) {
-    const commandResponse: ICommandResponse = await args.deps.axios({
-      method: 'post',
-      url: `${arrApp.host}/api/v3/command`,
-      headers,
-      data: arrApp.delegates.buildRefreshRequestData(id),
-    });
-
-    const commandId = commandResponse.data.id;
-    args.jobLog(`${arrApp.content} '${id}' refresh queued in ${arrApp.name} (command ${commandId}).`);
-
-    refreshed = await waitForCommand(args, arrApp, commandId);
     if (!refreshed) {
       args.jobLog(`⚠ ${arrApp.content} '${id}' scan did not complete within timeout.`);
     } else {
