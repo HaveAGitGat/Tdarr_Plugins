@@ -121,6 +121,7 @@ interface IArrRequest {
 }
 
 const POLL_INTERVAL_SECONDS = 5;
+const TIMEOUT_SECONDS = 120;
 
 // Request details kept for the failure log; headers (and so the API key) are never included
 interface IArrRequestFailure {
@@ -172,7 +173,6 @@ const logFailure = (args: IpluginInputArgs, arrApp: IArrApp, err: unknown): void
   }
   args.jobLog(`${arrName} was not notified. Continuing on output 2; the file is unchanged.`);
 };
-const TIMEOUT_SECONDS = 120;
 
 const waitForCommand = async (
   args: IpluginInputArgs,

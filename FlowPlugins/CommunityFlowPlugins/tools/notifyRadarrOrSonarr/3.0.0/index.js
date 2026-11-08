@@ -123,6 +123,7 @@ var details = function () { return ({
 }); };
 exports.details = details;
 var POLL_INTERVAL_SECONDS = 5;
+var TIMEOUT_SECONDS = 120;
 var isArrRequestFailure = function (err) { return (typeof err === 'object' && err !== null && 'path' in err && 'method' in err && 'message' in err); };
 var arrRequest = function (args, arrApp, req) { return __awaiter(void 0, void 0, void 0, function () {
     var err_1, e, failure;
@@ -161,7 +162,6 @@ var logFailure = function (args, arrApp, err) {
     }
     args.jobLog("".concat(arrName, " was not notified. Continuing on output 2; the file is unchanged."));
 };
-var TIMEOUT_SECONDS = 120;
 var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 0, void 0, void 0, function () {
     var startTime, timeoutMs, pollIntervalMs, elapsed, res, status_2;
     return __generator(this, function (_a) {
