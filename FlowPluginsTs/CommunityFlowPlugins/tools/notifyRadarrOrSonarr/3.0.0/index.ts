@@ -63,7 +63,8 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'If enabled: unmonitor the movie (Radarr) or episode (Sonarr) after refreshing.',
+      tooltip: 'If enabled: unmonitor the movie (Radarr) or the episodes in this file (Sonarr) '
+        + 'after refreshing.',
     },
   ],
   outputs: [
@@ -275,19 +276,48 @@ const unmonitorRadarr = async (
   args.jobLog(`✔ Radarr: movie id=${movieId} unmonitored`);
 };
 
-const unmonitorSonarrEpisode = async (
+// Sonarr's parse API knows the episodes in a file, including multi-episode, daily and anime
+// absolute names; only episodes of the series we refreshed are kept.
+const getEpisodesFromParse = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
-): Promise<void> => {
-  const sxe = /S(\d{1,2})E(\d{1,3})/i.exec(getFileName(filePath));
+): Promise<IEpisode[]> => {
+  try {
+    const res = await arrRequest(args, arrApp, {
+      method: 'get',
+      path: '/api/v3/parse',
+      query: `?title=${encodeURIComponent(getFileName(filePath))}`,
+    });
+    const episodes: Partial<IEpisode & { seriesId: number }>[] = Array.isArray(res?.data?.episodes)
+      ? res.data.episodes
+      : [];
+    return episodes.filter((e): e is IEpisode & { seriesId?: number } => Number.isInteger(e?.id)
+      && (e.seriesId === undefined || e.seriesId === seriesId));
+  } catch (err) {
+    const reason = isArrRequestFailure(err)
+      ? `${err.status !== undefined ? `HTTP ${err.status} ` : ''}${err.message}`
+      : String(err);
+    args.jobLog(`Sonarr: parse failed (${reason}), falling back to SxxEyy in the file name`);
+    return [];
+  }
+};
+
+// Fallback when parse matches nothing: SxxEyy from the file name, including S01E01E02 and S01E01-E02
+const getEpisodesFromFileName = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  seriesId: number,
+  filePath: string,
+): Promise<IEpisode[] | null> => {
+  const sxe = /S(\d{1,2})((?:[-_ ]?E\d{1,3})+)/i.exec(getFileName(filePath));
   if (!sxe) {
     args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(filePath)}"`);
-    return;
+    return null;
   }
   const season = Number(sxe[1]);
-  const episode = Number(sxe[2]);
+  const episodeNumbers = (sxe[2].match(/\d{1,3}/g) ?? []).map(Number);
 
   const { data: episodes }: { data: IEpisode[] } = await args.deps.axios({
     method: 'get',
@@ -295,19 +325,41 @@ const unmonitorSonarrEpisode = async (
     headers: arrApp.headers,
     params: { seriesId },
   });
-  const match = episodes.find((e) => e.seasonNumber === season && e.episodeNumber === episode);
-  if (!match) {
-    args.jobLog(`Sonarr: episode S${season}E${episode} not found in seriesId ${seriesId}`);
+  const matches = (Array.isArray(episodes) ? episodes : []).filter((e) => e.seasonNumber === season
+    && episodeNumbers.includes(e.episodeNumber));
+  if (matches.length === 0) {
+    const wanted = episodeNumbers.map((n) => `S${season}E${n}`).join(', ');
+    args.jobLog(`Sonarr: episode ${wanted} not found in seriesId ${seriesId}`);
+  }
+  return matches;
+};
+
+const unmonitorSonarrEpisode = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  seriesId: number,
+  filePath: string,
+): Promise<void> => {
+  let episodes = await getEpisodesFromParse(args, arrApp, seriesId, filePath);
+  if (episodes.length === 0) {
+    episodes = await getEpisodesFromFileName(args, arrApp, seriesId, filePath) ?? [];
+  }
+  if (episodes.length === 0) {
     return;
   }
 
+  const episodeIds = episodes.map((e) => e.id);
   await args.deps.axios({
     method: 'put',
     url: `${arrApp.host}/api/v3/episode/monitor`,
     headers: arrApp.headers,
-    data: JSON.stringify({ monitored: false, episodeIds: [match.id] }),
+    data: JSON.stringify({ monitored: false, episodeIds }),
   });
-  args.jobLog(`✔ Sonarr: unmonitored S${season}E${episode} (episodeId=${match.id})`);
+  const names = episodes.map((e) => `S${e.seasonNumber}E${e.episodeNumber}`).join(', ');
+  const ids = episodeIds.length === 1
+    ? `episodeId=${episodeIds[0]}`
+    : `episodeIds=${episodeIds.join(', ')}`;
+  args.jobLog(`✔ Sonarr: unmonitored ${names} (${ids})`);
 };
 
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {

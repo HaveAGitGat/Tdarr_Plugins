@@ -107,7 +107,8 @@ var details = function () { return ({
             inputUI: {
                 type: 'switch',
             },
-            tooltip: 'If enabled: unmonitor the movie (Radarr) or episode (Sonarr) after refreshing.',
+            tooltip: 'If enabled: unmonitor the movie (Radarr) or the episodes in this file (Sonarr) '
+                + 'after refreshing.',
         },
     ],
     outputs: [
@@ -275,18 +276,52 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
         }
     });
 }); };
-var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var sxe, season, episode, episodes, match;
-    return __generator(this, function (_a) {
-        switch (_a.label) {
+// Sonarr's parse API knows the episodes in a file, including multi-episode, daily and anime
+// absolute names; only episodes of the series we refreshed are kept.
+var getEpisodesFromParse = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
+    var res, episodes, err_2, reason;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
             case 0:
-                sxe = /S(\d{1,2})E(\d{1,3})/i.exec((0, fileUtils_1.getFileName)(filePath));
+                _b.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, arrRequest(args, arrApp, {
+                        method: 'get',
+                        path: '/api/v3/parse',
+                        query: "?title=".concat(encodeURIComponent((0, fileUtils_1.getFileName)(filePath))),
+                    })];
+            case 1:
+                res = _b.sent();
+                episodes = Array.isArray((_a = res === null || res === void 0 ? void 0 : res.data) === null || _a === void 0 ? void 0 : _a.episodes)
+                    ? res.data.episodes
+                    : [];
+                return [2 /*return*/, episodes.filter(function (e) { return Number.isInteger(e === null || e === void 0 ? void 0 : e.id)
+                        && (e.seriesId === undefined || e.seriesId === seriesId); })];
+            case 2:
+                err_2 = _b.sent();
+                reason = isArrRequestFailure(err_2)
+                    ? "".concat(err_2.status !== undefined ? "HTTP ".concat(err_2.status, " ") : '').concat(err_2.message)
+                    : String(err_2);
+                args.jobLog("Sonarr: parse failed (".concat(reason, "), falling back to SxxEyy in the file name"));
+                return [2 /*return*/, []];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); };
+// Fallback when parse matches nothing: SxxEyy from the file name, including S01E01E02 and S01E01-E02
+var getEpisodesFromFileName = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
+    var sxe, season, episodeNumbers, episodes, matches, wanted;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                sxe = /S(\d{1,2})((?:[-_ ]?E\d{1,3})+)/i.exec((0, fileUtils_1.getFileName)(filePath));
                 if (!sxe) {
                     args.jobLog("Sonarr: cannot unmonitor \u2013 SxxEyy not detected in \"".concat((0, fileUtils_1.getFileName)(filePath), "\""));
-                    return [2 /*return*/];
+                    return [2 /*return*/, null];
                 }
                 season = Number(sxe[1]);
-                episode = Number(sxe[2]);
+                episodeNumbers = ((_a = sxe[2].match(/\d{1,3}/g)) !== null && _a !== void 0 ? _a : []).map(Number);
                 return [4 /*yield*/, args.deps.axios({
                         method: 'get',
                         url: "".concat(arrApp.host, "/api/v3/episode"),
@@ -294,27 +329,54 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { retur
                         params: { seriesId: seriesId },
                     })];
             case 1:
-                episodes = (_a.sent()).data;
-                match = episodes.find(function (e) { return e.seasonNumber === season && e.episodeNumber === episode; });
-                if (!match) {
-                    args.jobLog("Sonarr: episode S".concat(season, "E").concat(episode, " not found in seriesId ").concat(seriesId));
+                episodes = (_b.sent()).data;
+                matches = (Array.isArray(episodes) ? episodes : []).filter(function (e) { return e.seasonNumber === season
+                    && episodeNumbers.includes(e.episodeNumber); });
+                if (matches.length === 0) {
+                    wanted = episodeNumbers.map(function (n) { return "S".concat(season, "E").concat(n); }).join(', ');
+                    args.jobLog("Sonarr: episode ".concat(wanted, " not found in seriesId ").concat(seriesId));
+                }
+                return [2 /*return*/, matches];
+        }
+    });
+}); };
+var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
+    var episodes, episodeIds, names, ids;
+    var _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0: return [4 /*yield*/, getEpisodesFromParse(args, arrApp, seriesId, filePath)];
+            case 1:
+                episodes = _b.sent();
+                if (!(episodes.length === 0)) return [3 /*break*/, 3];
+                return [4 /*yield*/, getEpisodesFromFileName(args, arrApp, seriesId, filePath)];
+            case 2:
+                episodes = (_a = _b.sent()) !== null && _a !== void 0 ? _a : [];
+                _b.label = 3;
+            case 3:
+                if (episodes.length === 0) {
                     return [2 /*return*/];
                 }
+                episodeIds = episodes.map(function (e) { return e.id; });
                 return [4 /*yield*/, args.deps.axios({
                         method: 'put',
                         url: "".concat(arrApp.host, "/api/v3/episode/monitor"),
                         headers: arrApp.headers,
-                        data: JSON.stringify({ monitored: false, episodeIds: [match.id] }),
+                        data: JSON.stringify({ monitored: false, episodeIds: episodeIds }),
                     })];
-            case 2:
-                _a.sent();
-                args.jobLog("\u2714 Sonarr: unmonitored S".concat(season, "E").concat(episode, " (episodeId=").concat(match.id, ")"));
+            case 4:
+                _b.sent();
+                names = episodes.map(function (e) { return "S".concat(e.seasonNumber, "E").concat(e.episodeNumber); }).join(', ');
+                ids = episodeIds.length === 1
+                    ? "episodeId=".concat(episodeIds[0])
+                    : "episodeIds=".concat(episodeIds.join(', '));
+                args.jobLog("\u2714 Sonarr: unmonitored ".concat(names, " (").concat(ids, ")"));
                 return [2 /*return*/];
         }
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, err_2, e_1;
+    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, err_3, e_1;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -386,8 +448,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 _e.label = 7;
             case 7: return [3 /*break*/, 9];
             case 8:
-                err_2 = _e.sent();
-                logFailure(args, arrApp, err_2);
+                err_3 = _e.sent();
+                logFailure(args, arrApp, err_3);
                 return [2 /*return*/, {
                         outputFileObj: args.inputFileObj,
                         outputNumber: 2,

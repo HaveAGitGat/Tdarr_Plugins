@@ -302,8 +302,91 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       } as IFileObject;
     });
 
-    it('unmonitors episode via PUT /episode/monitor', async () => {
+    const parseEpisodes = (...episodes: unknown[]) => ({ data: { series: { id: 42 }, episodes } });
+
+    it('unmonitors the episode from the parse API via PUT /episode/monitor', async () => {
       mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes({
+          id: 99, seriesId: 42, seasonNumber: 1, episodeNumber: 5,
+        }))
+        .mockResolvedValueOnce({});
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'get',
+        url: 'http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05',
+        headers,
+      });
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'put',
+        url: 'http://192.168.1.1:8989/api/v3/episode/monitor',
+        headers,
+        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
+      });
+      // parse matched, so the episode list is never fetched
+      expect(mockAxios).not.toHaveBeenCalledWith(
+        expect.objectContaining({ url: 'http://192.168.1.1:8989/api/v3/episode' }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
+    });
+
+    it('unmonitors every episode of a multi-episode file', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series [tt7654321]/Season 01/Test Series S01E01E02.mkv';
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes(
+          {
+            id: 10, seriesId: 42, seasonNumber: 1, episodeNumber: 1,
+          },
+          {
+            id: 11, seriesId: 42, seasonNumber: 1, episodeNumber: 2,
+          },
+        ))
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds: [10, 11] }),
+      }));
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E1, S1E2 (episodeIds=10, 11)');
+    });
+
+    it('unmonitors a date-named episode found by the parse API', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Daily Show [tt7654321]/Daily Show 2026-01-05.mkv';
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes({
+          id: 77, seriesId: 42, seasonNumber: 2026, episodeNumber: 3,
+        }))
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S2026E3 (episodeId=77)');
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(expect.stringContaining('SxxEyy not detected'));
+    });
+
+    it('ignores parse episodes that belong to another series', async () => {
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes({
+          id: 500, seriesId: 7, seasonNumber: 1, episodeNumber: 5,
+        }))
+        .mockResolvedValueOnce({ data: [{ id: 99, seasonNumber: 1, episodeNumber: 5 }] })
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
+      }));
+    });
+
+    it('falls back to SxxEyy when parse matches no episodes', async () => {
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce({ data: {} })
         .mockResolvedValueOnce({ data: [{ id: 99, seasonNumber: 1, episodeNumber: 5 }] })
         .mockResolvedValueOnce({});
 
@@ -315,13 +398,35 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
         headers,
         params: { seriesId: 42 },
       });
-      expect(mockAxios).toHaveBeenCalledWith({
-        method: 'put',
-        url: 'http://192.168.1.1:8989/api/v3/episode/monitor',
-        headers,
-        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
-      });
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
+    });
+
+    it('falls back to SxxEyy when parse fails, and matches multi-episode names', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series [tt7654321]/Season 01/Test Series S01E05-E06.mkv';
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockRejectedValueOnce(Object.assign(
+          new Error('Request failed with status code 500'),
+          { response: { status: 500 } },
+        ))
+        .mockResolvedValueOnce({
+          data: [
+            { id: 98, seasonNumber: 1, episodeNumber: 4 },
+            { id: 99, seasonNumber: 1, episodeNumber: 5 },
+            { id: 100, seasonNumber: 1, episodeNumber: 6 },
+          ],
+        })
+        .mockResolvedValueOnce({});
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Sonarr: parse failed (HTTP 500 Request failed with status code 500), falling back to SxxEyy in the file name',
+      );
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds: [99, 100] }),
+      }));
     });
 
     it('logs and skips unmonitor when SxxEyy not found in filename', async () => {
@@ -332,17 +437,20 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('SxxEyy not detected'));
-      // lookup + command + poll only
-      expect(mockAxios).toHaveBeenCalledTimes(3);
+      // lookup + command + poll + parse only
+      expect(mockAxios).toHaveBeenCalledTimes(4);
     });
 
     it('logs and skips unmonitor when episode not found in series', async () => {
-      mockRefresh({ data: [{ id: 42 }] }).mockResolvedValueOnce({ data: [] });
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce({ data: {} })
+        .mockResolvedValueOnce({ data: [] });
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Sonarr: episode S1E5 not found in seriesId 42');
+      expect(mockAxios).not.toHaveBeenCalledWith(expect.objectContaining({ method: 'put' }));
     });
   });
 
