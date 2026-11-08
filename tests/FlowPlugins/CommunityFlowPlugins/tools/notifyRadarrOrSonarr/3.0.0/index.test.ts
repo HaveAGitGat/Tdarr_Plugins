@@ -302,8 +302,91 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       } as IFileObject;
     });
 
-    it('unmonitors episode via PUT /episode/monitor', async () => {
+    const parseEpisodes = (...episodes: unknown[]) => ({ data: { series: { id: 42 }, episodes } });
+
+    it('unmonitors the episode from the parse API via PUT /episode/monitor', async () => {
       mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes({
+          id: 99, seriesId: 42, seasonNumber: 1, episodeNumber: 5,
+        }))
+        .mockResolvedValueOnce({});
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'get',
+        url: 'http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05',
+        headers,
+      });
+      expect(mockAxios).toHaveBeenCalledWith({
+        method: 'put',
+        url: 'http://192.168.1.1:8989/api/v3/episode/monitor',
+        headers,
+        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
+      });
+      // parse matched, so the episode list is never fetched
+      expect(mockAxios).not.toHaveBeenCalledWith(
+        expect.objectContaining({ url: 'http://192.168.1.1:8989/api/v3/episode' }),
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
+    });
+
+    it('unmonitors every episode of a multi-episode file', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series [tt7654321]/Season 01/Test Series S01E01E02.mkv';
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes(
+          {
+            id: 10, seriesId: 42, seasonNumber: 1, episodeNumber: 1,
+          },
+          {
+            id: 11, seriesId: 42, seasonNumber: 1, episodeNumber: 2,
+          },
+        ))
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds: [10, 11] }),
+      }));
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E1, S1E2 (episodeIds=10, 11)');
+    });
+
+    it('unmonitors a date-named episode found by the parse API', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Daily Show [tt7654321]/Daily Show 2026-01-05.mkv';
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes({
+          id: 77, seriesId: 42, seasonNumber: 2026, episodeNumber: 3,
+        }))
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S2026E3 (episodeId=77)');
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(expect.stringContaining('SxxEyy not detected'));
+    });
+
+    it('ignores parse episodes that belong to another series', async () => {
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce(parseEpisodes({
+          id: 500, seriesId: 7, seasonNumber: 1, episodeNumber: 5,
+        }))
+        .mockResolvedValueOnce({ data: [{ id: 99, seasonNumber: 1, episodeNumber: 5 }] })
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
+      }));
+    });
+
+    it('falls back to SxxEyy when parse matches no episodes', async () => {
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce({ data: {} })
         .mockResolvedValueOnce({ data: [{ id: 99, seasonNumber: 1, episodeNumber: 5 }] })
         .mockResolvedValueOnce({});
 
@@ -315,13 +398,35 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
         headers,
         params: { seriesId: 42 },
       });
-      expect(mockAxios).toHaveBeenCalledWith({
-        method: 'put',
-        url: 'http://192.168.1.1:8989/api/v3/episode/monitor',
-        headers,
-        data: JSON.stringify({ monitored: false, episodeIds: [99] }),
-      });
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
+    });
+
+    it('falls back to SxxEyy when parse fails, and matches multi-episode names', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series [tt7654321]/Season 01/Test Series S01E05-E06.mkv';
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockRejectedValueOnce(Object.assign(
+          new Error('Request failed with status code 500'),
+          { response: { status: 500 } },
+        ))
+        .mockResolvedValueOnce({
+          data: [
+            { id: 98, seasonNumber: 1, episodeNumber: 4 },
+            { id: 99, seasonNumber: 1, episodeNumber: 5 },
+            { id: 100, seasonNumber: 1, episodeNumber: 6 },
+          ],
+        })
+        .mockResolvedValueOnce({});
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Sonarr: parse failed (HTTP 500 Request failed with status code 500), falling back to SxxEyy in the file name',
+      );
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds: [99, 100] }),
+      }));
     });
 
     it('logs and skips unmonitor when SxxEyy not found in filename', async () => {
@@ -332,17 +437,20 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('SxxEyy not detected'));
-      // lookup + command + poll only
-      expect(mockAxios).toHaveBeenCalledTimes(3);
+      // lookup + command + poll + parse only
+      expect(mockAxios).toHaveBeenCalledTimes(4);
     });
 
     it('logs and skips unmonitor when episode not found in series', async () => {
-      mockRefresh({ data: [{ id: 42 }] }).mockResolvedValueOnce({ data: [] });
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce({ data: {} })
+        .mockResolvedValueOnce({ data: [] });
 
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Sonarr: episode S1E5 not found in seriesId 42');
+      expect(mockAxios).not.toHaveBeenCalledWith(expect.objectContaining({ method: 'put' }));
     });
   });
 
@@ -358,10 +466,129 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '777' found for 'imdb:tt9999999'");
     });
 
-    it('handles API errors by throwing', async () => {
+    it('logs the parse API fallback when the path has no id tag', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie (2023)/Test Movie (2023).mkv';
+      baseArgs.inputFileObj._id = baseArgs.originalLibraryFile._id;
+      mockRefresh({ data: { movie: { id: 456 } } });
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('No tvdb/tmdb/imdb tag in path, using parse API');
+      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(expect.stringContaining("not found for ''"));
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("Movie '456' found for 'Test Movie (2023)'");
+    });
+
+    it('says Series, not Serie, for Sonarr', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.arr_host = 'http://192.168.1.1:8989';
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series {tvdb-123456}/Season 01/Test Series S01E01.mkv';
+      mockRefresh({ data: [{ id: 123 }] });
+
+      await plugin(baseArgs);
+
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("Series '123' found for 'tvdb:123456'");
+      expect(baseArgs.jobLog).toHaveBeenCalledWith("✔ Series '123' scan completed in sonarr.");
+    });
+  });
+
+  describe('request failures', () => {
+    const httpError = (status: number) => Object.assign(
+      new Error(`Request failed with status code ${status}`),
+      { response: { status }, config: { headers } },
+    );
+    const logLines = () => (baseArgs.jobLog as jest.Mock).mock.calls.map(([line]) => line).join('\n');
+
+    it('returns output 2 with a 401 hint when the lookup is rejected', async () => {
+      baseArgs.inputs.arr = 'sonarr';
+      baseArgs.inputs.arr_host = 'http://192.168.1.1:7878';
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series {tvdb-123456}/Season 01/Test Series S01E01.mkv';
+      mockAxios.mockRejectedValueOnce(httpError(401));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
+      expect(mockAxios).toHaveBeenCalledTimes(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        '✖ Sonarr request failed: HTTP 401 on GET /api/v3/series/lookup: Request failed with status code 401',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Hint: check the API key and that the host points at the correct arr (Sonarr vs Radarr).',
+      );
+      expect(logLines()).not.toContain('test_api_key_123');
+    });
+
+    it('returns output 2 on a 500 from the parse API, without the 401 hint', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie (2023)/Test Movie (2023).mkv';
+      baseArgs.inputFileObj._id = baseArgs.originalLibraryFile._id;
+      mockAxios.mockRejectedValueOnce(httpError(500));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        '✖ Radarr request failed: HTTP 500 on GET /api/v3/parse: Request failed with status code 500',
+      );
+      expect(logLines()).not.toContain('Hint:');
+    });
+
+    it('returns output 2 when the POST command hits ECONNREFUSED', async () => {
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] })
+        .mockRejectedValueOnce(Object.assign(
+          new Error('connect ECONNREFUSED 192.168.1.1:7878'),
+          { code: 'ECONNREFUSED', config: { headers } },
+        ));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        '✖ Radarr request failed: on POST /api/v3/command: connect ECONNREFUSED 192.168.1.1:7878',
+      );
+      expect(logLines()).not.toContain('test_api_key_123');
+    });
+
+    it('returns output 2 when polling the command status fails', async () => {
+      baseArgs.inputs.unmonitor_after_refresh = 'true';
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] })
+        .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } })
+        .mockRejectedValueOnce(httpError(404));
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        '✖ Radarr request failed: HTTP 404 on GET /api/v3/command/50: Request failed with status code 404',
+      );
+      // no unmonitor after a failed refresh
+      expect(mockAxios).toHaveBeenCalledTimes(3);
+    });
+
+    it('returns output 2 on an unexpected error that is not a request failure', async () => {
+      // command response without data makes reading the command id throw
+      mockAxios
+        .mockResolvedValueOnce({ data: [{ id: 123 }] })
+        .mockResolvedValueOnce({});
+
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringMatching(/^✖ Radarr notify failed: /));
+    });
+
+    it('never throws when every request fails', async () => {
       mockAxios.mockRejectedValue(new Error('Network error'));
 
-      await expect(plugin(baseArgs)).rejects.toThrow('Network error');
+      const result = await plugin(baseArgs);
+
+      expect(result.outputNumber).toBe(2);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        '✖ Radarr request failed: on GET /api/v3/movie/lookup: Network error',
+      );
     });
   });
 });
