@@ -61,7 +61,7 @@ describe('preventSleepWhileEncoding Plugin', () => {
   it('should export details with correct structure', () => {
     const d = details();
     expect(d.name).toBe('Prevent Sleep While Encoding');
-    expect(d.inputs.length).toBe(1);
+    expect(d.inputs.length).toBe(2);
     expect(d.outputs.length).toBe(1);
     expect(d.tags).toContain('automations');
   });
@@ -214,6 +214,46 @@ describe('preventSleepWhileEncoding Plugin', () => {
         expect.stringContaining('SetThreadExecutionState'),
         expect.any(Object),
       );
+    });
+
+    it('should keep the display on by default on win32', async () => {
+      baseArgs.platform = 'win32';
+
+      mockAxiosGet.mockResolvedValue({
+        data: { 123: { workers: { w1: { job: { jobId: 'my-job-1' } } } } },
+      });
+
+      const pluginPromise = plugin(baseArgs);
+      await flush();
+      for (let i = 0; i < 3; i += 1) {
+        await advanceOnePoll(); // eslint-disable-line no-await-in-loop
+      }
+      await pluginPromise;
+
+      const psScript = mockSpawn.mock.calls[0][1][2];
+      expect(psScript).toContain('SetThreadExecutionState(2147483651)');
+      expect(psScript).not.toContain('SetThreadExecutionState(2147483649)');
+    });
+
+    it('should let the display turn off on win32 when allowDisplayOff is enabled', async () => {
+      baseArgs.platform = 'win32';
+      baseArgs.inputs.allowDisplayOff = 'true';
+
+      mockAxiosGet.mockResolvedValue({
+        data: { 123: { workers: { w1: { job: { jobId: 'my-job-1' } } } } },
+      });
+
+      const pluginPromise = plugin(baseArgs);
+      await flush();
+      for (let i = 0; i < 3; i += 1) {
+        await advanceOnePoll(); // eslint-disable-line no-await-in-loop
+      }
+      await pluginPromise;
+
+      const psScript = mockSpawn.mock.calls[0][1][2];
+      expect(psScript).toContain('SetThreadExecutionState(2147483649)');
+      expect(psScript).not.toContain('SetThreadExecutionState(2147483651)');
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringContaining('display allowed to turn off'));
     });
 
     it('should use caffeinate on darwin', async () => {
