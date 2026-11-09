@@ -1,413 +1,246 @@
 /* eslint-disable import/first */
+import { createHash } from 'crypto';
+import { promises as fsp } from 'fs';
+import os from 'os';
+import path from 'path';
 import { IpluginInputArgs } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/interfaces';
-import { IFileObject } from '../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/interfaces/synced/IFileObject';
 
-// Mock fileMoveOrCopy
-const mockFileMoveOrCopy = jest.fn();
-
-// Mock fs promises
-const mockFsPromises = {
-  unlink: jest.fn(),
-  rename: jest.fn(),
-};
-
-// Mock fileExists
-const mockFileExists = jest.fn();
-
-// Mock lib
-const mockLib = {
-  loadDefaultValues: jest.fn((inputs) => inputs),
-};
-
-jest.mock('fs', () => ({
-  promises: mockFsPromises,
-}));
-
-jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileMoveOrCopy', () => ({
-  __esModule: true,
-  default: mockFileMoveOrCopy,
-}));
-
-jest.mock('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils', () => ({
-  ...jest.requireActual('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/fileUtils'),
-  fileExists: mockFileExists,
-}));
-
+const mockLib = { loadDefaultValues: jest.fn((inputs) => inputs) };
 jest.mock('../../../../../../methods/lib', () => () => mockLib);
 
-import { plugin } from
+import { plugin, sha256 } from
   '../../../../../../FlowPluginsTs/CommunityFlowPlugins/file/replaceOriginalFile/1.0.0/index';
 
-const sampleH264 = require('../../../../../sampleData/media/sampleH264_1.json');
+const digest = (value: string): string => createHash('sha256').update(value).digest('hex');
+
+const makeArgs = (sourcePath: string, workingPath: string, ownership?: Record<string, unknown>): IpluginInputArgs => ({
+  inputs: {},
+  variables: { user: ownership ? { replaceOwnership: JSON.stringify(ownership) } : {} },
+  inputFileObj: { _id: workingPath, file_size: 1 },
+  originalLibraryFile: { _id: sourcePath, file_size: 2 },
+  jobLog: jest.fn(),
+} as unknown as IpluginInputArgs);
+
+const replaceOwnership = (
+  sourcePath: string,
+  workingPath: string,
+  destinationPath: string,
+  root: string,
+): Record<string, unknown> => ({
+  schema: 'tdarr/file-replacement/v1',
+  sourcePath,
+  sourceSha256: digest('original'),
+  workingPath,
+  workingSha256: digest('replacement'),
+  destinationPath,
+  scratchDir: path.join(path.dirname(sourcePath), '.mmh-test.partial'),
+  journalPath: path.join(root, 'journal.json'),
+  retainOriginal: true,
+});
 
 describe('replaceOriginalFile Plugin', () => {
-  let baseArgs: IpluginInputArgs;
-  let originalFileObj: IFileObject;
-  let inputFileObj: IFileObject;
+  let root: string;
 
-  beforeEach(() => {
-    // Reset all mocks
+  beforeEach(async () => {
     jest.clearAllMocks();
-
-    // Setup default mock implementations
-    mockFileMoveOrCopy.mockResolvedValue(true);
-    // Default: the original file exists, the .old sentinel does not.
-    // Individual tests that need different behavior override this.
-    mockFileExists.mockImplementation(
-      (p: string) => Promise.resolve(p === '/original/path/video.mp4'),
-    );
-    mockFsPromises.unlink.mockResolvedValue(undefined);
-    mockFsPromises.rename.mockResolvedValue(undefined);
-
-    // Create base file objects
-    originalFileObj = JSON.parse(JSON.stringify(sampleH264)) as IFileObject;
-    originalFileObj._id = '/original/path/video.mp4';
-    originalFileObj.file_size = 100;
-
-    inputFileObj = JSON.parse(JSON.stringify(sampleH264)) as IFileObject;
-    inputFileObj._id = '/working/path/video_transcoded.mkv';
-    inputFileObj.file_size = 80;
-
-    baseArgs = {
-      inputs: {},
-      variables: {} as IpluginInputArgs['variables'],
-      inputFileObj,
-      originalLibraryFile: originalFileObj,
-      jobLog: jest.fn(),
-    } as Partial<IpluginInputArgs> as IpluginInputArgs;
-
-    // Mock setTimeout to resolve immediately
-    jest.spyOn(global, 'setTimeout').mockImplementation((callback: () => void) => {
-      callback();
-      return {} as NodeJS.Timeout;
-    });
+    root = await fsp.mkdtemp(path.join(os.tmpdir(), 'replace-original-'));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     jest.restoreAllMocks();
+    await fsp.rm(root, { recursive: true, force: true });
   });
 
-  describe('File Unchanged Cases', () => {
-    it('should skip replacement when file ID and size are unchanged', async () => {
-      // Same file ID and size
-      baseArgs.inputFileObj._id = originalFileObj._id;
-      baseArgs.inputFileObj.file_size = originalFileObj.file_size;
+  it('streams hashes for sparse files larger than 2 GiB', async () => {
+    const sparsePath = path.join(root, 'large.mkv');
+    await fsp.writeFile(sparsePath, 'x');
+    await fsp.truncate(sparsePath, (2 * 1024 * 1024 * 1024) + 1024);
 
-      const result = await plugin(baseArgs);
+    await expect(sha256(sparsePath)).resolves.toMatch(/^[a-f0-9]{64}$/);
+  }, 120000);
 
-      expect(result.outputNumber).toBe(1);
-      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has not changed, no need to replace file');
-      expect(mockFileMoveOrCopy).not.toHaveBeenCalled();
-      expect(mockFsPromises.unlink).not.toHaveBeenCalled();
-      expect(mockFsPromises.rename).not.toHaveBeenCalled();
-    });
+  it('returns unchanged files without filesystem work', async () => {
+    const sourcePath = path.join(root, 'video.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    const args = makeArgs(sourcePath, sourcePath);
+    args.inputFileObj.file_size = args.originalLibraryFile.file_size;
 
-    it('should proceed with replacement when file ID is same but size changed', async () => {
-      baseArgs.inputFileObj._id = originalFileObj._id;
-      baseArgs.inputFileObj.file_size = 50; // Different size
+    const result = await plugin(args);
 
-      const result = await plugin(baseArgs);
-
-      expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has changed, replacing original file');
-      expect(mockFileMoveOrCopy).toHaveBeenCalledTimes(2);
-    });
-
-    it('should proceed with replacement when file size is same but ID changed', async () => {
-      baseArgs.inputFileObj._id = '/different/path/video.mp4';
-      baseArgs.inputFileObj.file_size = originalFileObj.file_size; // Same size
-
-      const result = await plugin(baseArgs);
-
-      expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has changed, replacing original file');
-      expect(mockFileMoveOrCopy).toHaveBeenCalledTimes(2);
-    });
+    expect(result.outputFileObj).toBe(args.inputFileObj);
+    expect(args.jobLog).toHaveBeenCalledWith('File has not changed, no need to replace file');
   });
 
-  describe('File Replacement Process', () => {
-    it('should replace original file with working file using safe swap order', async () => {
-      const callOrder: string[] = [];
-      mockFileMoveOrCopy.mockImplementation(({ sourcePath, destinationPath }) => {
-        callOrder.push(`move:${sourcePath}->${destinationPath}`);
-        return Promise.resolve(true);
-      });
-      mockFsPromises.rename.mockImplementation((from: string, to: string) => {
-        callOrder.push(`rename:${from}->${to}`);
-        return Promise.resolve();
-      });
-      mockFsPromises.unlink.mockImplementation((target: string) => {
-        callOrder.push(`unlink:${target}`);
-        return Promise.resolve();
-      });
+  it('uses the guarded private journaled directory and retains the owned original', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    const ownership = replaceOwnership(sourcePath, workingPath, sourcePath, root);
 
-      const result = await plugin(baseArgs);
+    await plugin(makeArgs(sourcePath, workingPath, ownership));
 
-      expect(result.outputNumber).toBe(1);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has changed, replacing original file');
-
-      // Should log the paths (including originalPathOld)
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringMatching(/currentPath.*newPath.*newPathTmp.*originalPathOld/),
-      );
-
-      // Should move working file into origin folder as .tmp first
-      expect(mockFileMoveOrCopy).toHaveBeenNthCalledWith(1, {
-        operation: 'move',
-        sourcePath: '/working/path/video_transcoded.mkv',
-        destinationPath: '/original/path/video_transcoded.mkv.tmp',
-        args: baseArgs,
-      });
-
-      // Should move tmp to final location
-      expect(mockFileMoveOrCopy).toHaveBeenNthCalledWith(2, {
-        operation: 'move',
-        sourcePath: '/original/path/video_transcoded.mkv.tmp',
-        destinationPath: '/original/path/video_transcoded.mkv',
-        args: baseArgs,
-      });
-
-      // Verify safe-swap ordering: tmp staged -> original renamed aside -> tmp into place -> .old deleted
-      expect(callOrder).toEqual([
-        'move:/working/path/video_transcoded.mkv->/original/path/video_transcoded.mkv.tmp',
-        'rename:/original/path/video.mp4->/original/path/video.mp4.partial.old',
-        'move:/original/path/video_transcoded.mkv.tmp->/original/path/video_transcoded.mkv',
-        'unlink:/original/path/video.mp4.partial.old',
-      ]);
-
-      expect(result.outputFileObj._id).toBe('/original/path/video_transcoded.mkv');
-    });
-
-    it('should rename original aside and delete it after successful swap', async () => {
-      mockFileExists.mockResolvedValue(true);
-
-      const result = await plugin(baseArgs);
-
-      expect(mockFileExists).toHaveBeenCalledWith('/original/path/video.mp4');
-      expect(mockFsPromises.rename).toHaveBeenCalledWith(
-        '/original/path/video.mp4',
-        '/original/path/video.mp4.partial.old',
-      );
-      expect(mockFsPromises.unlink).toHaveBeenCalledWith('/original/path/video.mp4.partial.old');
-      // Original path must never be unlinked directly - only the .old copy
-      expect(mockFsPromises.unlink).not.toHaveBeenCalledWith('/original/path/video.mp4');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Renaming original file to: /original/path/video.mp4.partial.old',
-      );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Deleting renamed original file: /original/path/video.mp4.partial.old',
-      );
-      expect(result.outputNumber).toBe(1);
-    });
-
-    it('should not rename or delete original file when it does not exist', async () => {
-      mockFileExists.mockResolvedValue(false);
-
-      const result = await plugin(baseArgs);
-
-      expect(mockFileExists).toHaveBeenCalledWith('/original/path/video.mp4');
-      expect(mockFsPromises.rename).not.toHaveBeenCalled();
-      expect(mockFsPromises.unlink).not.toHaveBeenCalled();
-      expect(result.outputNumber).toBe(1);
-    });
-
-    it('should not rename original when current file path is the same as original', async () => {
-      baseArgs.inputFileObj._id = originalFileObj._id;
-      baseArgs.inputFileObj.file_size = 50; // Different size to trigger replacement
-      mockFileExists.mockResolvedValue(true);
-
-      const result = await plugin(baseArgs);
-
-      expect(mockFileExists).toHaveBeenCalledWith('/original/path/video.mp4');
-      expect(mockFsPromises.rename).not.toHaveBeenCalled();
-      expect(mockFsPromises.unlink).not.toHaveBeenCalled();
-      expect(result.outputNumber).toBe(1);
-    });
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('replacement');
+    await expect(fsp.readFile(path.join(root, '.mmh-test.partial', 'original'), 'utf8')).resolves.toBe('original');
+    const journal = await fsp.readFile(path.join(root, 'journal.json'), 'utf8');
+    expect(journal).toContain('"retain"');
   });
 
-  describe('Stale .old Cleanup', () => {
-    it('should unlink a stale .old file before renaming the original aside', async () => {
-      // fileExists is called for originalPath AND originalPathOld; stub both
-      mockFileExists.mockImplementation((p: string) => {
-        if (p === '/original/path/video.mp4') return Promise.resolve(true);
-        if (p === '/original/path/video.mp4.partial.old') return Promise.resolve(true);
-        return Promise.resolve(false);
-      });
+  it('rejects mismatched, symlinked, and occupied guarded scratch directories', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    const ownership = replaceOwnership(sourcePath, workingPath, sourcePath, root);
+    ownership.scratchDir = path.join(root, 'other', '.mmh-test.partial');
 
-      const callOrder: string[] = [];
-      mockFsPromises.unlink.mockImplementation((target: string) => {
-        callOrder.push(`unlink:${target}`);
-        return Promise.resolve();
-      });
-      mockFsPromises.rename.mockImplementation((from: string, to: string) => {
-        callOrder.push(`rename:${from}->${to}`);
-        return Promise.resolve();
-      });
-
-      await plugin(baseArgs);
-
-      // Stale .old must be removed BEFORE the rename-aside
-      expect(callOrder).toEqual([
-        'unlink:/original/path/video.mp4.partial.old',
-        'rename:/original/path/video.mp4->/original/path/video.mp4.partial.old',
-        'unlink:/original/path/video.mp4.partial.old',
-      ]);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Removing stale file at /original/path/video.mp4.partial.old',
-      );
-    });
-
-    it('should not attempt to unlink .old when it does not exist', async () => {
-      mockFileExists.mockImplementation(
-        (p: string) => Promise.resolve(p === '/original/path/video.mp4'),
-      );
-
-      await plugin(baseArgs);
-
-      // Only the final cleanup unlink of .old, not a pre-rename one
-      expect(mockFsPromises.unlink).toHaveBeenCalledTimes(1);
-      expect(mockFsPromises.unlink).toHaveBeenCalledWith('/original/path/video.mp4.partial.old');
-      expect(baseArgs.jobLog).not.toHaveBeenCalledWith(
-        expect.stringContaining('Removing stale file'),
-      );
-    });
+    await expect(plugin(makeArgs(sourcePath, workingPath, ownership))).rejects.toThrow('unsafe private directory');
+    ownership.scratchDir = path.join(root, '.mmh-test.partial');
+    await fsp.mkdir(ownership.scratchDir as string);
+    await expect(plugin(makeArgs(sourcePath, workingPath, ownership))).rejects.toThrow('private directory already occupied');
+    await fsp.rmdir(ownership.scratchDir as string);
+    await fsp.symlink(root, ownership.scratchDir as string);
+    await expect(plugin(makeArgs(sourcePath, workingPath, ownership))).rejects.toThrow('private directory already occupied');
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('original');
   });
 
-  describe('Failure and Rollback', () => {
-    it('should restore original from .old if final move fails, and rethrow', async () => {
-      // First move (cache -> tmp) succeeds, second move (tmp -> final) fails
-      mockFileMoveOrCopy
-        .mockResolvedValueOnce(true)
-        .mockRejectedValueOnce(new Error('final move failed'));
+  it('refuses an occupied supplied journal leaf without altering it or media', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    const journalPath = path.join(root, 'journal.json');
+    const journalContent = 'pre-existing untrusted journal';
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    await fsp.writeFile(journalPath, journalContent, { mode: 0o600 });
 
-      await expect(plugin(baseArgs)).rejects.toThrow('final move failed');
-
-      // Original should have been renamed aside
-      expect(mockFsPromises.rename).toHaveBeenCalledWith(
-        '/original/path/video.mp4',
-        '/original/path/video.mp4.partial.old',
-      );
-      // And restored on failure
-      expect(mockFsPromises.rename).toHaveBeenCalledWith(
-        '/original/path/video.mp4.partial.old',
-        '/original/path/video.mp4',
-      );
-      // The .old file must NOT be deleted when the swap failed
-      expect(mockFsPromises.unlink).not.toHaveBeenCalledWith('/original/path/video.mp4.partial.old');
-    });
-
-    it('should clean up staged .tmp and rethrow if renaming original aside fails', async () => {
-      mockFileExists.mockResolvedValue(true);
-      mockFsPromises.rename.mockRejectedValueOnce(new Error('rename aside failed'));
-
-      await expect(plugin(baseArgs)).rejects.toThrow('rename aside failed');
-
-      // Only first fileMoveOrCopy (stage to tmp) should have been attempted
-      expect(mockFileMoveOrCopy).toHaveBeenCalledTimes(1);
-      // Staged tmp should be cleaned up
-      expect(mockFsPromises.unlink).toHaveBeenCalledWith(
-        '/original/path/video_transcoded.mkv.tmp',
-      );
-    });
+    await expect(plugin(makeArgs(sourcePath, workingPath, replaceOwnership(
+      sourcePath, workingPath, sourcePath, root,
+    )))).rejects.toThrow('plugin journal path already occupied');
+    await expect(fsp.readFile(journalPath, 'utf8')).resolves.toBe(journalContent);
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('original');
+    await expect(fsp.readFile(workingPath, 'utf8')).resolves.toBe('replacement');
   });
 
-  describe('Path and Container Handling', () => {
-    it('should handle different file containers correctly', async () => {
-      baseArgs.inputFileObj._id = '/working/path/video_transcoded.avi';
-      originalFileObj._id = '/original/folder/original.mp4';
-
-      const result = await plugin(baseArgs);
-
-      // Should use the input file's name and container in the original directory
-      expect(mockFileMoveOrCopy).toHaveBeenNthCalledWith(2, {
-        operation: 'move',
-        sourcePath: '/original/folder/video_transcoded.avi.tmp',
-        destinationPath: '/original/folder/video_transcoded.avi',
-        args: baseArgs,
-      });
-
-      expect(result.outputFileObj._id).toBe('/original/folder/video_transcoded.avi');
+  it('falls back to exclusive copy when staging crosses filesystems', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    const realLink = fsp.link;
+    jest.spyOn(fsp, 'link').mockImplementation(async (from, to) => {
+      if (path.basename(to.toString()) === 'stage') throw Object.assign(new Error('cross-device'), { code: 'EXDEV' });
+      return realLink(from, to);
     });
 
-    it('should handle complex file paths with multiple dots', async () => {
-      baseArgs.inputFileObj._id = '/working/path/video.file.name.mkv';
-      originalFileObj._id = '/original/folder/old.video.mp4';
-
-      const result = await plugin(baseArgs);
-
-      expect(result.outputFileObj._id).toBe('/original/folder/video.file.name.mkv');
-    });
-
-    it('should handle Windows-style paths', async () => {
-      baseArgs.inputFileObj._id = 'C:\\working\\path\\video.mkv';
-      originalFileObj._id = 'C:\\original\\folder\\old.mp4';
-
-      const result = await plugin(baseArgs);
-
-      // Note: The plugin's path utilities don't handle Windows paths correctly
-      // They split on '/' only, so Windows paths get mangled
-      expect(result.outputFileObj._id).toBe('/C:\\working\\path\\video.mkv');
-    });
+    await plugin(makeArgs(sourcePath, workingPath, replaceOwnership(sourcePath, workingPath, sourcePath, root)));
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('replacement');
   });
 
-  describe('Edge Cases', () => {
-    it('should handle files with no extension', async () => {
-      baseArgs.inputFileObj._id = '/working/path/videofile';
-      originalFileObj._id = '/original/folder/original.mp4';
-
-      const result = await plugin(baseArgs);
-
-      // Files with no extension result in empty filename and the full path as container
-      expect(result.outputFileObj._id).toBe('/original/folder/./working/path/videofile');
-    });
-
-    it('should wait for delays as implemented in the plugin', async () => {
-      const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
-
-      await plugin(baseArgs);
-
-      // Should have two setTimeout calls with 2000ms delay
-      expect(setTimeoutSpy).toHaveBeenCalledTimes(2);
-    });
-
-    it('should preserve variables in the output', async () => {
-      const testVariables = {
-        ...baseArgs.variables,
-        user: { customProperty: 'testValue' },
-      };
-      baseArgs.variables = testVariables;
-
-      const result = await plugin(baseArgs);
-
-      expect(result.variables).toBe(testVariables);
-    });
+  it('refuses symlink working inputs and same-size changed source bytes', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.symlink(sourcePath, workingPath);
+    await expect(plugin(makeArgs(sourcePath, workingPath, replaceOwnership(
+      sourcePath, workingPath, sourcePath, root,
+    )))).rejects.toThrow('expected regular file');
+    await fsp.unlink(workingPath);
+    await fsp.writeFile(sourcePath, 'changed!!');
+    await fsp.writeFile(workingPath, 'replacement');
+    await expect(plugin(makeArgs(sourcePath, workingPath, replaceOwnership(
+      sourcePath, workingPath, sourcePath, root,
+    )))).rejects.toThrow('source or working file drifted');
   });
 
-  describe('Logging', () => {
-    it('should log file operation details', async () => {
-      await plugin(baseArgs);
+  it('rolls back via no-clobber link after publish fails and can restart safely', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    const realLink = fsp.link;
+    const link = jest.spyOn(fsp, 'link').mockImplementation(async (from, to) => {
+      if (path.basename(from.toString()) === 'stage') throw new Error('injected publish failure');
+      return realLink(from, to);
+    });
+    const args = makeArgs(sourcePath, workingPath, replaceOwnership(sourcePath, workingPath, sourcePath, root));
 
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('File has changed, replacing original file');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringMatching(/currentPath.*newPath.*newPathTmp/),
-      );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        expect.stringMatching(/originalFileExists.*currentFileIsNotOriginal/),
-      );
+    await expect(plugin(args)).rejects.toThrow('injected publish failure');
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('original');
+    await fsp.unlink(path.join(root, 'journal.json'));
+    link.mockRestore();
+    await fsp.rm(path.join(root, '.mmh-test.partial'), { recursive: true });
+    await plugin(args);
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('replacement');
+  });
+
+  it('preserves both paths when a late arrival occupies the rollback slot', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    const destinationPath = path.join(root, 'final.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    const realLink = fsp.link;
+    jest.spyOn(fsp, 'link').mockImplementation(async (from, to) => {
+      if (path.basename(to.toString()) === 'stage') return realLink(from, to);
+      if (from.toString().endsWith('/stage')) {
+        await fsp.writeFile(destinationPath, 'late-final');
+      } else {
+        await fsp.writeFile(sourcePath, 'late-arr');
+      }
+      throw Object.assign(new Error('occupied'), { code: 'EEXIST' });
+    });
+    const args = makeArgs(sourcePath, workingPath, replaceOwnership(sourcePath, workingPath, destinationPath, root));
+    await expect(plugin(args)).rejects.toThrow('RECOVERY_REQUIRED: publish and rollback occupants preserved');
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('late-arr');
+    await expect(fsp.readFile(destinationPath, 'utf8')).resolves.toBe('late-final');
+    await expect(fsp.readFile(path.join(root, '.mmh-test.partial', 'original'), 'utf8')).resolves.toBe('original');
+    expect(args.jobLog).toHaveBeenCalledWith(expect.stringContaining('RECOVERY_REQUIRED'));
+    expect(await fsp.readFile(path.join(root, 'journal.json'), 'utf8')).toContain('preserved-both-occupants');
+  });
+
+  it('journals an unexpected aside race and preserves a late original-slot arrival', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    const realRename = fsp.rename;
+    jest.spyOn(fsp, 'rename').mockImplementation(async (from, to) => {
+      await realRename(from, to);
+      if (path.basename(to.toString()) === 'original') await fsp.writeFile(to, 'late-arr');
     });
 
-    it('should log rename-aside and final delete when applicable', async () => {
-      mockFileExists.mockResolvedValue(true);
+    await expect(plugin(makeArgs(sourcePath, workingPath, replaceOwnership(
+      sourcePath, workingPath, sourcePath, root,
+    )))).rejects.toThrow('unexpected bytes moved aside');
+    await expect(fsp.readFile(sourcePath, 'utf8')).resolves.toBe('late-arr');
+    expect(await fsp.readFile(path.join(root, 'journal.json'), 'utf8')).toContain('"restore"');
+  });
 
-      await plugin(baseArgs);
+  it('refuses a guarded restart with a pre-existing private aside without touching it', async () => {
+    const sourcePath = path.join(root, 'video.mp4');
+    const workingPath = path.join(root, 'working.mkv');
+    const scratchDir = path.join(root, '.mmh-test.partial');
+    await fsp.writeFile(sourcePath, 'original');
+    await fsp.writeFile(workingPath, 'replacement');
+    await fsp.mkdir(scratchDir);
+    await fsp.writeFile(path.join(scratchDir, 'original'), 'original');
 
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Renaming original file to: /original/path/video.mp4.partial.old',
-      );
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Deleting renamed original file: /original/path/video.mp4.partial.old',
-      );
-    });
+    await expect(plugin(makeArgs(sourcePath, workingPath, replaceOwnership(
+      sourcePath, workingPath, sourcePath, root,
+    )))).rejects.toThrow('private directory already occupied');
+    await expect(fsp.readFile(path.join(scratchDir, 'original'), 'utf8')).resolves.toBe('original');
+  });
+
+  it('publishes standalone work when the original is absent and retires all private artifacts', async () => {
+    const sourcePath = path.join(root, 'missing.mp4');
+    const cacheDirectory = path.join(root, 'cache');
+    const workingPath = path.join(cacheDirectory, 'working.mkv');
+    await fsp.mkdir(cacheDirectory);
+    await fsp.writeFile(workingPath, 'replacement');
+
+    const result = await plugin(makeArgs(sourcePath, workingPath));
+
+    await expect(fsp.readFile(result.outputFileObj._id, 'utf8')).resolves.toBe('replacement');
+    expect((await fsp.readdir(root)).filter((entry) => entry.startsWith('.mmh-'))).toEqual([]);
   });
 });
