@@ -12,7 +12,7 @@ const details = () => ({
     'Native' languages are the ones that are listed on imdb. It does an API call to 
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
     falls back to the IMDB id in the filename.`,
-  Version: '1.2',
+  Version: '1.3',
   Tags: 'pre-processing,configurable',
   Inputs: [
     {
@@ -117,6 +117,38 @@ const normalizeUrl = (url) => {
   return `http://${url}`;
 };
 
+// Map ISO 639-2/T codes and Norwegian variants to the codes alpha2ToAlpha3B() returns
+const langAliases = {
+  zho: 'chi',
+  fra: 'fre',
+  deu: 'ger',
+  nld: 'dut',
+  ces: 'cze',
+  slk: 'slo',
+  ron: 'rum',
+  fas: 'per',
+  sqi: 'alb',
+  hye: 'arm',
+  eus: 'baq',
+  mya: 'bur',
+  kat: 'geo',
+  isl: 'ice',
+  mkd: 'mac',
+  msa: 'may',
+  mri: 'mao',
+  bod: 'tib',
+  cym: 'wel',
+  nob: 'nor',
+  nno: 'nor',
+};
+
+const normalizeLang = (languages, code) => {
+  if (!code) return '';
+  const base = String(code).trim().toLowerCase().split(/[-_]/)[0];
+  const alpha3 = base.length === 2 ? languages.alpha2ToAlpha3B(base) || base : base;
+  return langAliases[alpha3] || alpha3;
+};
+
 const processStreams = (result, file, user_langs) => {
   // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
   const languages = require('@cospired/i18n-iso-languages');
@@ -132,15 +164,14 @@ const processStreams = (result, file, user_langs) => {
 
   let langs = [];
 
-  langs.push(languages.alpha2ToAlpha3B(langsTemp));
+  const nativeLang = normalizeLang(languages, langsTemp);
+  langs.push(nativeLang);
 
   // Some console reporting for clarification of what the plugin is using and reporting.
-  response.infoLog += `Original language: ${langsTemp}, Using code: ${languages.alpha2ToAlpha3B(
-    langsTemp,
-  )}\n`;
+  response.infoLog += `Original language: ${langsTemp}, Using code: ${nativeLang}\n`;
 
   if (user_langs) {
-    langs = langs.concat(user_langs);
+    langs = langs.concat(user_langs.map((l) => normalizeLang(languages, l)));
   }
   if (!langs.includes('eng')) langs.push('eng');
   if (!langs.includes('und')) langs.push('und');
@@ -164,7 +195,7 @@ const processStreams = (result, file, user_langs) => {
         continue;
       }
       if (stream.tags.language) {
-        if (langs.includes(stream.tags.language)) {
+        if (langs.includes(normalizeLang(languages, stream.tags.language))) {
           tracks.keep.push(streamIndex);
         } else {
           tracks.remove.push(streamIndex);
@@ -177,6 +208,8 @@ const processStreams = (result, file, user_langs) => {
         streamIndex += 1;
       } else {
         response.infoLog += `☒No language tag found on audio track ${streamIndex}. Keeping it. \n`;
+        tracks.keep.push(streamIndex);
+        streamIndex += 1;
       }
     }
   }
