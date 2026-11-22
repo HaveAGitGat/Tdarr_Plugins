@@ -95,6 +95,9 @@ export interface IffmpegCommand {
     shouldProcess: boolean,
     overallInputArguments: string[],
     overallOuputArguments: string[],
+    // Applied only when something else already requires processing (see Custom Arguments).
+    overallInputArgumentsIfProcessing?: string[],
+    overallOutputArgumentsIfProcessing?: string[],
 }
 
 export interface IliveSizeCompare {
