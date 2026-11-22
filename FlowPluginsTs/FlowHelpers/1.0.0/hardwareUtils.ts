@@ -311,6 +311,13 @@ export const getEncoder = async ({
         filter: '',
       },
       {
+        encoder: 'h264_vaapi',
+        inputArgs: vaapiInputArgs,
+        outputArgs: [],
+        enabled: false,
+        filter: vaapiFilter,
+      },
+      {
         encoder: 'h264_rkmpp',
         enabled: false,
         inputArgs: [
