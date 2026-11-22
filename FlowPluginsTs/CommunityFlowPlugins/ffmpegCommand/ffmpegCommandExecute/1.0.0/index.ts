@@ -208,8 +208,24 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   const res = await cli.runCli();
 
   if (res.cliExitCode !== 0) {
-    args.jobLog('Running FFmpeg failed');
-    throw new Error('FFmpeg failed');
+    // The full output is already captured in res.errorLogFull and logged via
+    // jobLog inside runCli, but the thrown error itself previously carried no
+    // detail - meaning the exit code and actual ffmpeg output weren't visible
+    // at the point of failure without separately searching the job log for it.
+    // Include a tail of the real output directly in the error so it's visible
+    // wherever this exception surfaces (e.g. in the job report's stack trace).
+    const outputTail = (res.errorLogFull || [])
+      .join('')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '')
+      .slice(-20)
+      .join('\n');
+
+    args.jobLog(`Running FFmpeg failed with exit code ${res.cliExitCode}`);
+    throw new Error(
+      `FFmpeg failed with exit code ${res.cliExitCode}${outputTail ? `:\n${outputTail}` : ''}`,
+    );
   }
 
   args.logOutcome('tSuc');

@@ -405,15 +405,30 @@ describe('ffmpegCommandExecute Plugin', () => {
       await expect(plugin(baseArgs)).rejects.toThrow(expectedError);
     });
 
-    it('should throw error when CLI fails', async () => {
+    it('should throw error with exit code and output tail when CLI fails', async () => {
       // Mock the CLI to return failure
       const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
       CLI.mockImplementation(() => ({
-        runCli: jest.fn().mockResolvedValue({ cliExitCode: 1 }),
+        runCli: jest.fn().mockResolvedValue({
+          cliExitCode: 1,
+          errorLogFull: ['Unknown encoder ', "'hevc_bogus'\n", 'Conversion failed!\n'],
+        }),
       }));
 
-      await expect(plugin(baseArgs)).rejects.toThrow('FFmpeg failed');
-      expect(baseArgs.jobLog).toHaveBeenCalledWith('Running FFmpeg failed');
+      await expect(plugin(baseArgs)).rejects.toThrow(
+        "FFmpeg failed with exit code 1:\nUnknown encoder 'hevc_bogus'\nConversion failed!",
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('Running FFmpeg failed with exit code 1');
+    });
+
+    it('should throw error with just the exit code when no output was captured', async () => {
+      const { CLI } = require('../../../../../../FlowPluginsTs/FlowHelpers/1.0.0/cliUtils');
+      CLI.mockImplementation(() => ({
+        runCli: jest.fn().mockResolvedValue({ cliExitCode: 1, errorLogFull: [] }),
+      }));
+
+      await expect(plugin(baseArgs)).rejects.toThrow('FFmpeg failed with exit code 1');
+      await expect(plugin(baseArgs)).rejects.not.toThrow(/:\n/);
     });
   });
 
