@@ -499,16 +499,14 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
     );
     const logLines = () => (baseArgs.jobLog as jest.Mock).mock.calls.map(([line]) => line).join('\n');
 
-    it('returns output 2 with a 401 hint when the lookup is rejected', async () => {
+    it('fails the flow with a 401 hint when the lookup is rejected', async () => {
       baseArgs.inputs.arr = 'sonarr';
       baseArgs.inputs.arr_host = 'http://192.168.1.1:7878';
       baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series {tvdb-123456}/Season 01/Test Series S01E01.mkv';
       mockAxios.mockRejectedValueOnce(httpError(401));
 
-      const result = await plugin(baseArgs);
+      await expect(plugin(baseArgs)).rejects.toThrow('Request failed with status code 401');
 
-      expect(result.outputNumber).toBe(2);
-      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(mockAxios).toHaveBeenCalledTimes(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         '✖ Sonarr request failed: HTTP 401 on GET /api/v3/series/lookup: Request failed with status code 401',
@@ -519,21 +517,20 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(logLines()).not.toContain('test_api_key_123');
     });
 
-    it('returns output 2 on a 500 from the parse API, without the 401 hint', async () => {
+    it('fails the flow on a 500 from the parse API, without the 401 hint', async () => {
       baseArgs.originalLibraryFile._id = 'C:/Movies/Test Movie (2023)/Test Movie (2023).mkv';
       baseArgs.inputFileObj._id = baseArgs.originalLibraryFile._id;
       mockAxios.mockRejectedValueOnce(httpError(500));
 
-      const result = await plugin(baseArgs);
+      await expect(plugin(baseArgs)).rejects.toThrow('Request failed with status code 500');
 
-      expect(result.outputNumber).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         '✖ Radarr request failed: HTTP 500 on GET /api/v3/parse: Request failed with status code 500',
       );
       expect(logLines()).not.toContain('Hint:');
     });
 
-    it('returns output 2 when the POST command hits ECONNREFUSED', async () => {
+    it('fails the flow when the POST command hits ECONNREFUSED', async () => {
       mockAxios
         .mockResolvedValueOnce({ data: [{ id: 123 }] })
         .mockRejectedValueOnce(Object.assign(
@@ -541,26 +538,23 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
           { code: 'ECONNREFUSED', config: { headers } },
         ));
 
-      const result = await plugin(baseArgs);
+      await expect(plugin(baseArgs)).rejects.toThrow('connect ECONNREFUSED 192.168.1.1:7878');
 
-      expect(result.outputNumber).toBe(2);
-      expect(result.outputFileObj).toBe(baseArgs.inputFileObj);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         '✖ Radarr request failed: on POST /api/v3/command: connect ECONNREFUSED 192.168.1.1:7878',
       );
       expect(logLines()).not.toContain('test_api_key_123');
     });
 
-    it('returns output 2 when polling the command status fails', async () => {
+    it('fails the flow when polling the command status fails', async () => {
       baseArgs.inputs.unmonitor_after_refresh = 'true';
       mockAxios
         .mockResolvedValueOnce({ data: [{ id: 123 }] })
         .mockResolvedValueOnce({ data: { id: 50, status: 'queued' } })
         .mockRejectedValueOnce(httpError(404));
 
-      const result = await plugin(baseArgs);
+      await expect(plugin(baseArgs)).rejects.toThrow('Request failed with status code 404');
 
-      expect(result.outputNumber).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         '✖ Radarr request failed: HTTP 404 on GET /api/v3/command/50: Request failed with status code 404',
       );
@@ -568,24 +562,11 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(mockAxios).toHaveBeenCalledTimes(3);
     });
 
-    it('returns output 2 on an unexpected error that is not a request failure', async () => {
-      // command response without data makes reading the command id throw
-      mockAxios
-        .mockResolvedValueOnce({ data: [{ id: 123 }] })
-        .mockResolvedValueOnce({});
-
-      const result = await plugin(baseArgs);
-
-      expect(result.outputNumber).toBe(2);
-      expect(baseArgs.jobLog).toHaveBeenCalledWith(expect.stringMatching(/^✖ Radarr notify failed: /));
-    });
-
-    it('never throws when every request fails', async () => {
+    it('handles API errors by throwing', async () => {
       mockAxios.mockRejectedValue(new Error('Network error'));
 
-      const result = await plugin(baseArgs);
+      await expect(plugin(baseArgs)).rejects.toThrow('Network error');
 
-      expect(result.outputNumber).toBe(2);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
         '✖ Radarr request failed: on GET /api/v3/movie/lookup: Network error',
       );

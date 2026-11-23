@@ -118,16 +118,18 @@ var details = function () { return ({
         },
         {
             number: 2,
-            tooltip: 'Radarr or Sonarr do not know this file, or the request failed (see job log)',
+            tooltip: 'Radarr or Sonarr do not know this file',
         },
     ],
 }); };
 exports.details = details;
 var POLL_INTERVAL_SECONDS = 5;
 var TIMEOUT_SECONDS = 120;
-var isArrRequestFailure = function (err) { return (typeof err === 'object' && err !== null && 'path' in err && 'method' in err && 'message' in err); };
+// Lookup, parse and refresh requests: a failure is logged with the arr, status, method and path,
+// then rethrown so the flow fails as before (use Reset Flow Error after this plugin to carry on).
+// Headers (and so the API key) are never logged.
 var arrRequest = function (args, arrApp, req) { return __awaiter(void 0, void 0, void 0, function () {
-    var err_1, e, failure;
+    var err_1, e, arrName, status_1;
     var _a, _b;
     return __generator(this, function (_c) {
         switch (_c.label) {
@@ -138,31 +140,18 @@ var arrRequest = function (args, arrApp, req) { return __awaiter(void 0, void 0,
             case 2:
                 err_1 = _c.sent();
                 e = err_1;
-                failure = {
-                    method: req.method.toUpperCase(),
-                    path: req.path,
-                    status: (_b = e === null || e === void 0 ? void 0 : e.response) === null || _b === void 0 ? void 0 : _b.status,
-                    message: (e === null || e === void 0 ? void 0 : e.message) || String(err_1),
-                };
-                throw failure;
+                arrName = arrApp.name === 'radarr' ? 'Radarr' : 'Sonarr';
+                status_1 = (_b = e === null || e === void 0 ? void 0 : e.response) === null || _b === void 0 ? void 0 : _b.status;
+                args.jobLog("\u2716 ".concat(arrName, " request failed: ").concat(status_1 !== undefined ? "HTTP ".concat(status_1, " ") : '')
+                    + "on ".concat(req.method.toUpperCase(), " ").concat(req.path, ": ").concat((e === null || e === void 0 ? void 0 : e.message) || String(err_1)));
+                if (status_1 === 401) {
+                    args.jobLog('Hint: check the API key and that the host points at the correct arr (Sonarr vs Radarr).');
+                }
+                throw err_1;
             case 3: return [2 /*return*/];
         }
     });
 }); };
-var logFailure = function (args, arrApp, err) {
-    var arrName = arrApp.name === 'radarr' ? 'Radarr' : 'Sonarr';
-    if (isArrRequestFailure(err)) {
-        var status_1 = err.status !== undefined ? "HTTP ".concat(err.status, " ") : '';
-        args.jobLog("\u2716 ".concat(arrName, " request failed: ").concat(status_1, "on ").concat(err.method, " ").concat(err.path, ": ").concat(err.message));
-        if (err.status === 401) {
-            args.jobLog('Hint: check the API key and that the host points at the correct arr (Sonarr vs Radarr).');
-        }
-    }
-    else {
-        args.jobLog("\u2716 ".concat(arrName, " notify failed: ").concat((err === null || err === void 0 ? void 0 : err.message) || String(err)));
-    }
-    args.jobLog("".concat(arrName, " was not notified. Continuing on output 2; the file is unchanged."));
-};
 var waitForCommand = function (args, arrApp, commandId) { return __awaiter(void 0, void 0, void 0, function () {
     var startTime, timeoutMs, pollIntervalMs, elapsed, res, status_2;
     return __generator(this, function (_a) {
@@ -279,29 +268,29 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
 // Sonarr's parse API knows the episodes in a file, including multi-episode, daily and anime
 // absolute names; only episodes of the series we refreshed are kept.
 var getEpisodesFromParse = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var res, episodes, err_2, reason;
-    var _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+    var res, episodes, err_2, e, status_3, reason;
+    var _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
-                _b.trys.push([0, 2, , 3]);
-                return [4 /*yield*/, arrRequest(args, arrApp, {
+                _c.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, args.deps.axios({
                         method: 'get',
-                        path: '/api/v3/parse',
-                        query: "?title=".concat(encodeURIComponent((0, fileUtils_1.getFileName)(filePath))),
+                        url: "".concat(arrApp.host, "/api/v3/parse?title=").concat(encodeURIComponent((0, fileUtils_1.getFileName)(filePath))),
+                        headers: arrApp.headers,
                     })];
             case 1:
-                res = _b.sent();
+                res = _c.sent();
                 episodes = Array.isArray((_a = res === null || res === void 0 ? void 0 : res.data) === null || _a === void 0 ? void 0 : _a.episodes)
                     ? res.data.episodes
                     : [];
                 return [2 /*return*/, episodes.filter(function (e) { return Number.isInteger(e === null || e === void 0 ? void 0 : e.id)
                         && (e.seriesId === undefined || e.seriesId === seriesId); })];
             case 2:
-                err_2 = _b.sent();
-                reason = isArrRequestFailure(err_2)
-                    ? "".concat(err_2.status !== undefined ? "HTTP ".concat(err_2.status, " ") : '').concat(err_2.message)
-                    : String(err_2);
+                err_2 = _c.sent();
+                e = err_2;
+                status_3 = (_b = e === null || e === void 0 ? void 0 : e.response) === null || _b === void 0 ? void 0 : _b.status;
+                reason = "".concat(status_3 !== undefined ? "HTTP ".concat(status_3, " ") : '').concat((e === null || e === void 0 ? void 0 : e.message) || String(err_2));
                 args.jobLog("Sonarr: parse failed (".concat(reason, "), falling back to SxxEyy in the file name"));
                 return [2 /*return*/, []];
             case 3: return [2 /*return*/];
@@ -376,7 +365,7 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { retur
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, err_3, e_1;
+    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, e_1;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -419,68 +408,52 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     };
                 args.jobLog('Going to force scan');
                 args.jobLog("Refreshing ".concat(arrApp.name, "..."));
-                id = -1;
-                _e.label = 1;
-            case 1:
-                _e.trys.push([1, 8, , 9]);
                 return [4 /*yield*/, getId(args, arrApp, originalFileName)];
+            case 1:
+                id = _e.sent();
+                if (!(id === -1 && currentFileName !== originalFileName)) return [3 /*break*/, 3];
+                return [4 /*yield*/, getId(args, arrApp, currentFileName)];
             case 2:
                 id = _e.sent();
-                if (!(id === -1 && currentFileName !== originalFileName)) return [3 /*break*/, 4];
-                return [4 /*yield*/, getId(args, arrApp, currentFileName)];
+                _e.label = 3;
             case 3:
-                id = _e.sent();
-                _e.label = 4;
-            case 4:
-                if (!(id !== -1)) return [3 /*break*/, 7];
+                if (!(id !== -1)) return [3 /*break*/, 13];
                 return [4 /*yield*/, arrRequest(args, arrApp, {
                         method: 'post',
                         path: '/api/v3/command',
                         data: arrApp.delegates.buildRefreshRequestData(id),
                     })];
-            case 5:
+            case 4:
                 commandResponse = _e.sent();
                 commandId = commandResponse.data.id;
                 args.jobLog("".concat(arrApp.content, " '").concat(id, "' refresh queued in ").concat(arrApp.name, " (command ").concat(commandId, ")."));
                 return [4 /*yield*/, waitForCommand(args, arrApp, commandId)];
-            case 6:
+            case 5:
                 refreshed = _e.sent();
-                _e.label = 7;
-            case 7: return [3 /*break*/, 9];
-            case 8:
-                err_3 = _e.sent();
-                logFailure(args, arrApp, err_3);
-                return [2 /*return*/, {
-                        outputFileObj: args.inputFileObj,
-                        outputNumber: 2,
-                        variables: args.variables,
-                    }];
-            case 9:
-                if (!(id !== -1)) return [3 /*break*/, 17];
-                if (!!refreshed) return [3 /*break*/, 10];
+                if (!!refreshed) return [3 /*break*/, 6];
                 args.jobLog("\u26A0 ".concat(arrApp.content, " '").concat(id, "' scan did not complete within timeout."));
-                return [3 /*break*/, 17];
-            case 10:
+                return [3 /*break*/, 13];
+            case 6:
                 args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' scan completed in ").concat(arrApp.name, "."));
-                if (!unmonitorAfterRefresh) return [3 /*break*/, 17];
-                _e.label = 11;
-            case 11:
-                _e.trys.push([11, 16, , 17]);
-                if (!(arr === 'radarr')) return [3 /*break*/, 13];
+                if (!unmonitorAfterRefresh) return [3 /*break*/, 13];
+                _e.label = 7;
+            case 7:
+                _e.trys.push([7, 12, , 13]);
+                if (!(arr === 'radarr')) return [3 /*break*/, 9];
                 return [4 /*yield*/, unmonitorRadarr(args, arrApp, id)];
+            case 8:
+                _e.sent();
+                return [3 /*break*/, 11];
+            case 9: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName)];
+            case 10:
+                _e.sent();
+                _e.label = 11;
+            case 11: return [3 /*break*/, 13];
             case 12:
-                _e.sent();
-                return [3 /*break*/, 15];
-            case 13: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName)];
-            case 14:
-                _e.sent();
-                _e.label = 15;
-            case 15: return [3 /*break*/, 17];
-            case 16:
                 e_1 = _e.sent();
                 args.jobLog("Unmonitor error (non-fatal): ".concat((e_1 === null || e_1 === void 0 ? void 0 : e_1.message) || String(e_1)));
-                return [3 /*break*/, 17];
-            case 17: return [2 /*return*/, {
+                return [3 /*break*/, 13];
+            case 13: return [2 /*return*/, {
                     outputFileObj: args.inputFileObj,
                     outputNumber: refreshed ? 1 : 2,
                     variables: args.variables,

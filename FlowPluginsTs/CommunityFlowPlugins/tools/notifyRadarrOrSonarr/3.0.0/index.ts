@@ -74,7 +74,7 @@ const details = (): IpluginDetails => ({
     },
     {
       number: 2,
-      tooltip: 'Radarr or Sonarr do not know this file, or the request failed (see job log)',
+      tooltip: 'Radarr or Sonarr do not know this file',
     },
   ],
 });
@@ -124,18 +124,9 @@ interface IArrRequest {
 const POLL_INTERVAL_SECONDS = 5;
 const TIMEOUT_SECONDS = 120;
 
-// Request details kept for the failure log; headers (and so the API key) are never included
-interface IArrRequestFailure {
-  method: string,
-  path: string,
-  status?: number,
-  message: string,
-}
-
-const isArrRequestFailure = (err: unknown): err is IArrRequestFailure => (
-  typeof err === 'object' && err !== null && 'path' in err && 'method' in err && 'message' in err
-);
-
+// Lookup, parse and refresh requests: a failure is logged with the arr, status, method and path,
+// then rethrown so the flow fails as before (use Reset Flow Error after this plugin to carry on).
+// Headers (and so the API key) are never logged.
 const arrRequest = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
@@ -151,28 +142,17 @@ const arrRequest = async (
     });
   } catch (err) {
     const e = err as { message?: string, response?: { status?: number } };
-    const failure: IArrRequestFailure = {
-      method: req.method.toUpperCase(),
-      path: req.path,
-      status: e?.response?.status,
-      message: e?.message || String(err),
-    };
-    throw failure;
-  }
-};
-
-const logFailure = (args: IpluginInputArgs, arrApp: IArrApp, err: unknown): void => {
-  const arrName = arrApp.name === 'radarr' ? 'Radarr' : 'Sonarr';
-  if (isArrRequestFailure(err)) {
-    const status = err.status !== undefined ? `HTTP ${err.status} ` : '';
-    args.jobLog(`✖ ${arrName} request failed: ${status}on ${err.method} ${err.path}: ${err.message}`);
-    if (err.status === 401) {
+    const arrName = arrApp.name === 'radarr' ? 'Radarr' : 'Sonarr';
+    const status = e?.response?.status;
+    args.jobLog(
+      `✖ ${arrName} request failed: ${status !== undefined ? `HTTP ${status} ` : ''}`
+      + `on ${req.method.toUpperCase()} ${req.path}: ${e?.message || String(err)}`,
+    );
+    if (status === 401) {
       args.jobLog('Hint: check the API key and that the host points at the correct arr (Sonarr vs Radarr).');
     }
-  } else {
-    args.jobLog(`✖ ${arrName} notify failed: ${(err as Error)?.message || String(err)}`);
+    throw err;
   }
-  args.jobLog(`${arrName} was not notified. Continuing on output 2; the file is unchanged.`);
 };
 
 const waitForCommand = async (
@@ -285,10 +265,10 @@ const getEpisodesFromParse = async (
   filePath: string,
 ): Promise<IEpisode[]> => {
   try {
-    const res = await arrRequest(args, arrApp, {
+    const res = await args.deps.axios({
       method: 'get',
-      path: '/api/v3/parse',
-      query: `?title=${encodeURIComponent(getFileName(filePath))}`,
+      url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(filePath))}`,
+      headers: arrApp.headers,
     });
     const episodes: Partial<IEpisode & { seriesId: number }>[] = Array.isArray(res?.data?.episodes)
       ? res.data.episodes
@@ -296,9 +276,9 @@ const getEpisodesFromParse = async (
     return episodes.filter((e): e is IEpisode & { seriesId?: number } => Number.isInteger(e?.id)
       && (e.seriesId === undefined || e.seriesId === seriesId));
   } catch (err) {
-    const reason = isArrRequestFailure(err)
-      ? `${err.status !== undefined ? `HTTP ${err.status} ` : ''}${err.message}`
-      : String(err);
+    const e = err as { message?: string, response?: { status?: number } };
+    const status = e?.response?.status;
+    const reason = `${status !== undefined ? `HTTP ${status} ` : ''}${e?.message || String(err)}`;
     args.jobLog(`Sonarr: parse failed (${reason}), falling back to SxxEyy in the file name`);
     return [];
   }
@@ -408,36 +388,22 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
 
-  // This usually runs after the file has been replaced, so a failed notify must not fail the job
-  let id = -1;
-  try {
-    id = await getId(args, arrApp, originalFileName);
-    if (id === -1 && currentFileName !== originalFileName) {
-      id = await getId(args, arrApp, currentFileName);
-    }
-
-    if (id !== -1) {
-      const commandResponse: ICommandResponse = await arrRequest(args, arrApp, {
-        method: 'post',
-        path: '/api/v3/command',
-        data: arrApp.delegates.buildRefreshRequestData(id),
-      });
-
-      const commandId = commandResponse.data.id;
-      args.jobLog(`${arrApp.content} '${id}' refresh queued in ${arrApp.name} (command ${commandId}).`);
-
-      refreshed = await waitForCommand(args, arrApp, commandId);
-    }
-  } catch (err) {
-    logFailure(args, arrApp, err);
-    return {
-      outputFileObj: args.inputFileObj,
-      outputNumber: 2,
-      variables: args.variables,
-    };
+  let id = await getId(args, arrApp, originalFileName);
+  if (id === -1 && currentFileName !== originalFileName) {
+    id = await getId(args, arrApp, currentFileName);
   }
 
   if (id !== -1) {
+    const commandResponse: ICommandResponse = await arrRequest(args, arrApp, {
+      method: 'post',
+      path: '/api/v3/command',
+      data: arrApp.delegates.buildRefreshRequestData(id),
+    });
+
+    const commandId = commandResponse.data.id;
+    args.jobLog(`${arrApp.content} '${id}' refresh queued in ${arrApp.name} (command ${commandId}).`);
+
+    refreshed = await waitForCommand(args, arrApp, commandId);
     if (!refreshed) {
       args.jobLog(`⚠ ${arrApp.content} '${id}' scan did not complete within timeout.`);
     } else {
