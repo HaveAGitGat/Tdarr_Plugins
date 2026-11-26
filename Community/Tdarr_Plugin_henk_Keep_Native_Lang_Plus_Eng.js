@@ -8,7 +8,7 @@ const details = () => ({
   Type: 'Audio',
   Operation: 'Transcode',
   Description: `This plugin will remove all language audio tracks except the 'native'
-     (requires TMDB api key) and English.
+     (from Radarr/Sonarr, or TMDB as a fallback) and English.
     'Native' languages are the ones that are listed on imdb. It does an API call to 
     Radarr, Sonarr to check if the movie/series exists and grabs the IMDB id. As a last resort it 
     falls back to the IMDB id in the filename.`,
@@ -48,7 +48,8 @@ const details = () => ({
         type: 'text',
       },
       tooltip:
-        'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)',
+        'Input your TMDB api (v3) key here. (https://www.themoviedb.org/)'
+        + ' Only used when Sonarr does not return the original language (e.g. Sonarr v3).',
     },
     {
       name: 'radarr_api_key',
@@ -298,11 +299,18 @@ const plugin = async (file, librarySettings, inputs, otherArguments) => {
           if (sonarrResult) {
             imdbId = sonarrResult.imdbId;
             response.infoLog += `Grabbed ID (${imdbId}) from Sonarr \n`;
+            // Sonarr v4 returns the original language like Radarr, so TMDB is only a fallback
+            if (sonarrResult.originalLanguage) {
+              // eslint-disable-next-line import/no-unresolved,import/no-extraneous-dependencies
+              const languages = require('@cospired/i18n-iso-languages');
+              const originalLanguage = languages.getAlpha2Code(sonarrResult.originalLanguage.name, 'en');
+              if (originalLanguage) tmdbResult = { original_language: originalLanguage };
+            }
           } else {
             response.infoLog += "Couldn't grab ID from Sonarr \n";
             imdbId = fileNameEncoded;
           }
-          tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
+          if (!tmdbResult) tmdbResult = await tmdbApi(imdbId, inputs.api_key, axios);
         }
     }
   }
