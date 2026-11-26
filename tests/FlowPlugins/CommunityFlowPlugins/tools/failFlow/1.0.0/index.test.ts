@@ -43,6 +43,19 @@ describe('failFlow Plugin', () => {
       expect(() => {
         plugin(baseArgs);
       }).toThrow('Forcing flow to fail!');
+
+      // Test with an empty reason
+      baseArgs.inputs = { reason: '' };
+      expect(() => {
+        plugin(baseArgs);
+      }).toThrow('Forcing flow to fail!');
+    });
+
+    it('should throw the configured reason', () => {
+      baseArgs.inputs = { reason: ' Video is longer than 2 hours ' };
+      expect(() => {
+        plugin(baseArgs);
+      }).toThrow(new Error('Video is longer than 2 hours'));
     });
   });
 });
