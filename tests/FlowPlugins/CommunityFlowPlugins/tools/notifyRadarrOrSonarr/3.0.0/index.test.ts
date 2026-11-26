@@ -438,6 +438,29 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
     });
 
+    it.each([
+      ['S01E05-06', [99, 100]],
+      ['S01E05-E07', [99, 100, 101]],
+      ['S01E05E06', [99, 100]],
+      ['S01E05-720p', [99]],
+      ['S01E05-100 Things', [99]],
+    ])('falls back to every episode from the first to the last in %s', async (sxe, episodeIds) => {
+      baseArgs.originalLibraryFile._id = `C:/TV Shows/Test Series [tt7654321]/Season 01/Test Series ${sxe}.mkv`;
+      mockRefresh({ data: [{ id: 42 }] })
+        .mockResolvedValueOnce({ data: {} })
+        .mockResolvedValueOnce({
+          data: [4, 5, 6, 7, 8].map((n) => ({ id: 94 + n, seasonNumber: 1, episodeNumber: n })),
+        })
+        .mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
+        method: 'put',
+        data: JSON.stringify({ monitored: false, episodeIds }),
+      }));
+    });
+
     it('falls back to SxxEyy when parse fails, and matches multi-episode names', async () => {
       baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series [tt7654321]/Season 01/Test Series S01E05-E06.mkv';
       mockRefresh({ data: [{ id: 42 }] })

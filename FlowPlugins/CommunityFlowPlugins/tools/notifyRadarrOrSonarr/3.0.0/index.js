@@ -292,20 +292,26 @@ var getEpisodesFromParse = function (args, arrApp, seriesId, filePath, parsed) {
         }
     });
 }); };
-// Fallback when parse matches nothing: SxxEyy from the file name, including S01E01E02 and S01E01-E02
+// SxxEyy, then any further episodes: S01E01E02, S01E01-E02 or S01E01-02. A bare dash takes at most two
+// digits, so S01E05-720p and S01E05-100 Things stay one episode instead of a range.
+var SXE_REGEX = /S(\d{1,2})[-_ ]?E(\d{1,3})(?:(?:-(?=\d{1,2}(?!\d))|[-_ ]?E)(\d{1,3})(?![\da-z]))*/i;
+// Fallback when parse matches nothing. Like Sonarr's parser, a multi-episode name covers every
+// episode from the first to the last, so S01E01-E03 is episodes 1, 2 and 3.
 var getEpisodesFromFileName = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var sxe, season, episodeNumbers, episodes, matches, wanted;
+    var sxe, season, first, last, episodeNumbers, episodes, matches, wanted;
     var _a;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
-                sxe = /S(\d{1,2})((?:[-_ ]?E\d{1,3})+)/i.exec((0, fileUtils_1.getFileName)(filePath));
+                sxe = SXE_REGEX.exec((0, fileUtils_1.getFileName)(filePath));
                 if (!sxe) {
                     args.jobLog("Sonarr: cannot unmonitor \u2013 SxxEyy not detected in \"".concat((0, fileUtils_1.getFileName)(filePath), "\""));
                     return [2 /*return*/, []];
                 }
                 season = Number(sxe[1]);
-                episodeNumbers = ((_a = sxe[2].match(/\d{1,3}/g)) !== null && _a !== void 0 ? _a : []).map(Number);
+                first = Number(sxe[2]);
+                last = Math.max(first, Number((_a = sxe[3]) !== null && _a !== void 0 ? _a : first));
+                episodeNumbers = Array.from({ length: last - first + 1 }, function (_, i) { return first + i; });
                 return [4 /*yield*/, arrRequest(args, arrApp, {
                         method: 'get',
                         path: '/api/v3/episode',

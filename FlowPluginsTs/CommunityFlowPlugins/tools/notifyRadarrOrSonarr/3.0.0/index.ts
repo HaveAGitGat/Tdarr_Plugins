@@ -275,20 +275,27 @@ const getEpisodesFromParse = async (
     && (e.seriesId === undefined || e.seriesId === seriesId));
 };
 
-// Fallback when parse matches nothing: SxxEyy from the file name, including S01E01E02 and S01E01-E02
+// SxxEyy, then any further episodes: S01E01E02, S01E01-E02 or S01E01-02. A bare dash takes at most two
+// digits, so S01E05-720p and S01E05-100 Things stay one episode instead of a range.
+const SXE_REGEX = /S(\d{1,2})[-_ ]?E(\d{1,3})(?:(?:-(?=\d{1,2}(?!\d))|[-_ ]?E)(\d{1,3})(?![\da-z]))*/i;
+
+// Fallback when parse matches nothing. Like Sonarr's parser, a multi-episode name covers every
+// episode from the first to the last, so S01E01-E03 is episodes 1, 2 and 3.
 const getEpisodesFromFileName = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
 ): Promise<IEpisode[]> => {
-  const sxe = /S(\d{1,2})((?:[-_ ]?E\d{1,3})+)/i.exec(getFileName(filePath));
+  const sxe = SXE_REGEX.exec(getFileName(filePath));
   if (!sxe) {
     args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(filePath)}"`);
     return [];
   }
   const season = Number(sxe[1]);
-  const episodeNumbers = (sxe[2].match(/\d{1,3}/g) ?? []).map(Number);
+  const first = Number(sxe[2]);
+  const last = Math.max(first, Number(sxe[3] ?? first));
+  const episodeNumbers = Array.from({ length: last - first + 1 }, (_, i) => first + i);
 
   const { data: episodes }: { data: IEpisode[] } = await arrRequest(args, arrApp, {
     method: 'get',
