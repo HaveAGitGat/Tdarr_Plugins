@@ -63,7 +63,8 @@ const details = (): IpluginDetails => ({
       inputUI: {
         type: 'switch',
       },
-      tooltip: 'If enabled: unmonitor the movie (Radarr) or episode (Sonarr) after refreshing.',
+      tooltip: 'If enabled: unmonitor the movie (Radarr) or the episodes in this file (Sonarr) '
+        + 'after refreshing.',
     },
   ],
   outputs: [
@@ -83,10 +84,16 @@ interface IHTTPHeaders {
   'X-Api-Key': string,
   Accept: string,
 }
+interface IEpisode {
+  id: number,
+  seasonNumber: number,
+  episodeNumber: number,
+}
 interface IParseResponse {
   data: {
     movie?: { id: number },
     series?: { id: number },
+    episodes?: (IEpisode & { seriesId?: number })[],
   },
 }
 interface IArrApp {
@@ -107,14 +114,46 @@ interface ICommandResponse {
   },
 }
 
-interface IEpisode {
-  id: number,
-  seasonNumber: number,
-  episodeNumber: number,
+interface IArrRequest {
+  method: 'get' | 'post' | 'put',
+  path: string,
+  query?: string,
+  data?: string,
 }
 
 const POLL_INTERVAL_SECONDS = 5;
 const TIMEOUT_SECONDS = 120;
+
+// Every arr request goes through here: a failure is logged with the arr, status, method and path, then
+// rethrown. Refresh failures fail the flow as before (use Reset Flow Error after this plugin to carry on);
+// unmonitor failures are non-fatal. Headers (and so the API key) are never logged.
+const arrRequest = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  req: IArrRequest,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> => {
+  try {
+    return await args.deps.axios({
+      method: req.method,
+      url: `${arrApp.host}${req.path}${req.query ?? ''}`,
+      headers: arrApp.headers,
+      ...(req.data !== undefined ? { data: req.data } : {}),
+    });
+  } catch (err) {
+    const e = err as { message?: string, response?: { status?: number } };
+    const arrName = arrApp.name === 'radarr' ? 'Radarr' : 'Sonarr';
+    const status = e?.response?.status;
+    args.jobLog(
+      `✖ ${arrName} request failed: ${status !== undefined ? `HTTP ${status} ` : ''}`
+      + `on ${req.method.toUpperCase()} ${req.path}: ${e?.message || String(err)}`,
+    );
+    if (status === 401) {
+      args.jobLog('Hint: check the API key and that the host points at the correct arr (Sonarr vs Radarr).');
+    }
+    throw err;
+  }
+};
 
 const waitForCommand = async (
   args: IpluginInputArgs,
@@ -141,10 +180,9 @@ const waitForCommand = async (
     });
 
     // eslint-disable-next-line no-await-in-loop
-    const res: ICommandResponse = await args.deps.axios({
+    const res: ICommandResponse = await arrRequest(args, arrApp, {
       method: 'get',
-      url: `${arrApp.host}/api/v3/command/${commandId}`,
-      headers: arrApp.headers,
+      path: `/api/v3/command/${commandId}`,
     });
 
     const { status } = res.data;
@@ -173,31 +211,35 @@ const getLookupTerm = (arrName: string, fileName: string): string => {
   return imdbId ? `imdb:${imdbId}` : '';
 };
 
+// Also returns the parse response when the parse API was used, so Sonarr unmonitor can reuse its episodes
 const getId = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
   fileName: string,
-): Promise<number> => {
+): Promise<{ id: number, parsed?: IParseResponse }> => {
   const term = getLookupTerm(arrApp.name, fileName);
-  let id = (term !== '')
-    ? Number((await args.deps.axios({
+  let id = -1;
+  if (term !== '') {
+    id = Number((await arrRequest(args, arrApp, {
       method: 'get',
-      url: `${arrApp.host}/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup?term=${term}`,
-      headers: arrApp.headers,
-    })).data?.[0]?.id ?? -1)
-    : -1;
-  args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${term}'`);
-  if (id === -1) {
-    id = arrApp.delegates.getIdFromParseResponse(
-      (await args.deps.axios({
-        method: 'get',
-        url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(fileName))}`,
-        headers: arrApp.headers,
-      })),
-    );
-    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${getFileName(fileName)}'`);
+      path: `/api/v3/${arrApp.name === 'radarr' ? 'movie' : 'series'}/lookup`,
+      query: `?term=${term}`,
+    })).data?.[0]?.id ?? -1);
+    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${term}'`);
+  } else {
+    args.jobLog('No tvdb/tmdb/imdb tag in path, using parse API');
   }
-  return id;
+  if (id === -1) {
+    const parsed: IParseResponse = await arrRequest(args, arrApp, {
+      method: 'get',
+      path: '/api/v3/parse',
+      query: `?title=${encodeURIComponent(getFileName(fileName))}`,
+    });
+    id = arrApp.delegates.getIdFromParseResponse(parsed);
+    args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${getFileName(fileName)}'`);
+    return { id, parsed };
+  }
+  return { id };
 };
 
 const unmonitorRadarr = async (
@@ -206,13 +248,67 @@ const unmonitorRadarr = async (
   movieId: number,
 ): Promise<void> => {
   // Editor endpoint only changes the monitored flag, avoiding a full-object PUT
-  await args.deps.axios({
+  await arrRequest(args, arrApp, {
     method: 'put',
-    url: `${arrApp.host}/api/v3/movie/editor`,
-    headers: arrApp.headers,
+    path: '/api/v3/movie/editor',
     data: JSON.stringify({ movieIds: [movieId], monitored: false }),
   });
   args.jobLog(`✔ Radarr: movie id=${movieId} unmonitored`);
+};
+
+// Sonarr's parse API knows the episodes in a file, including multi-episode, daily and anime
+// absolute names; only episodes of the series we refreshed are kept. A failed parse returns none.
+const getEpisodesFromParse = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  seriesId: number,
+  filePath: string,
+  parsed?: IParseResponse,
+): Promise<IEpisode[]> => {
+  const res: IParseResponse | undefined = parsed ?? await arrRequest(args, arrApp, {
+    method: 'get',
+    path: '/api/v3/parse',
+    query: `?title=${encodeURIComponent(getFileName(filePath))}`,
+  }).catch(() => undefined);
+  const episodes = res?.data?.episodes;
+  return (Array.isArray(episodes) ? episodes : []).filter((e) => Number.isInteger(e?.id)
+    && (e.seriesId === undefined || e.seriesId === seriesId));
+};
+
+// SxxEyy, then any further episodes: S01E01E02, S01E01-E02 or S01E01-02. A bare dash takes at most two
+// digits, so S01E05-720p and S01E05-100 Things stay one episode instead of a range.
+const SXE_REGEX = /S(\d{1,2})[-_ ]?E(\d{1,3})(?:(?:-(?=\d{1,2}(?!\d))|[-_ ]?E)(\d{1,3})(?![\da-z]))*/i;
+
+// Fallback when parse matches nothing. Like Sonarr's parser, a multi-episode name covers every
+// episode from the first to the last, so S01E01-E03 is episodes 1, 2 and 3.
+const getEpisodesFromFileName = async (
+  args: IpluginInputArgs,
+  arrApp: IArrApp,
+  seriesId: number,
+  filePath: string,
+): Promise<IEpisode[]> => {
+  const sxe = SXE_REGEX.exec(getFileName(filePath));
+  if (!sxe) {
+    args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(filePath)}"`);
+    return [];
+  }
+  const season = Number(sxe[1]);
+  const first = Number(sxe[2]);
+  const last = Math.max(first, Number(sxe[3] ?? first));
+  const episodeNumbers = Array.from({ length: last - first + 1 }, (_, i) => first + i);
+
+  const { data: episodes }: { data: IEpisode[] } = await arrRequest(args, arrApp, {
+    method: 'get',
+    path: '/api/v3/episode',
+    query: `?seriesId=${seriesId}`,
+  });
+  const matches = (Array.isArray(episodes) ? episodes : []).filter((e) => e.seasonNumber === season
+    && episodeNumbers.includes(e.episodeNumber));
+  if (matches.length === 0) {
+    const wanted = episodeNumbers.map((n) => `S${season}E${n}`).join(', ');
+    args.jobLog(`Sonarr: episode ${wanted} not found in seriesId ${seriesId}`);
+  }
+  return matches;
 };
 
 const unmonitorSonarrEpisode = async (
@@ -220,34 +316,28 @@ const unmonitorSonarrEpisode = async (
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
+  parsed?: IParseResponse,
 ): Promise<void> => {
-  const sxe = /S(\d{1,2})E(\d{1,3})/i.exec(getFileName(filePath));
-  if (!sxe) {
-    args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(filePath)}"`);
-    return;
+  let episodes = await getEpisodesFromParse(args, arrApp, seriesId, filePath, parsed);
+  if (episodes.length === 0) {
+    args.jobLog('Sonarr: no episodes from parse, falling back to SxxEyy in the file name');
+    episodes = await getEpisodesFromFileName(args, arrApp, seriesId, filePath);
   }
-  const season = Number(sxe[1]);
-  const episode = Number(sxe[2]);
-
-  const { data: episodes }: { data: IEpisode[] } = await args.deps.axios({
-    method: 'get',
-    url: `${arrApp.host}/api/v3/episode`,
-    headers: arrApp.headers,
-    params: { seriesId },
-  });
-  const match = episodes.find((e) => e.seasonNumber === season && e.episodeNumber === episode);
-  if (!match) {
-    args.jobLog(`Sonarr: episode S${season}E${episode} not found in seriesId ${seriesId}`);
+  if (episodes.length === 0) {
     return;
   }
 
-  await args.deps.axios({
+  const episodeIds = episodes.map((e) => e.id);
+  await arrRequest(args, arrApp, {
     method: 'put',
-    url: `${arrApp.host}/api/v3/episode/monitor`,
-    headers: arrApp.headers,
-    data: JSON.stringify({ monitored: false, episodeIds: [match.id] }),
+    path: '/api/v3/episode/monitor',
+    data: JSON.stringify({ monitored: false, episodeIds }),
   });
-  args.jobLog(`✔ Sonarr: unmonitored S${season}E${episode} (episodeId=${match.id})`);
+  const names = episodes.map((e) => `S${e.seasonNumber}E${e.episodeNumber}`).join(', ');
+  const ids = episodeIds.length === 1
+    ? `episodeId=${episodeIds[0]}`
+    : `episodeIds=${episodeIds.join(', ')}`;
+  args.jobLog(`✔ Sonarr: unmonitored ${names} (${ids})`);
 };
 
 const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
@@ -284,7 +374,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
       name: arr,
       host: arrHost,
       headers,
-      content: 'Serie',
+      content: 'Series',
       delegates: {
         getIdFromParseResponse:
           (parseResponse: IParseResponse) => Number(parseResponse?.data?.series?.id ?? -1),
@@ -296,16 +386,18 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
 
-  let id = await getId(args, arrApp, originalFileName);
+  // Unmonitor works on the file the arr matched, reusing its parse response if there is one
+  let matchedFileName = originalFileName;
+  let { id, parsed } = await getId(args, arrApp, matchedFileName);
   if (id === -1 && currentFileName !== originalFileName) {
-    id = await getId(args, arrApp, currentFileName);
+    matchedFileName = currentFileName;
+    ({ id, parsed } = await getId(args, arrApp, matchedFileName));
   }
 
   if (id !== -1) {
-    const commandResponse: ICommandResponse = await args.deps.axios({
+    const commandResponse: ICommandResponse = await arrRequest(args, arrApp, {
       method: 'post',
-      url: `${arrApp.host}/api/v3/command`,
-      headers,
+      path: '/api/v3/command',
       data: arrApp.delegates.buildRefreshRequestData(id),
     });
 
@@ -323,7 +415,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           if (arr === 'radarr') {
             await unmonitorRadarr(args, arrApp, id);
           } else {
-            await unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName);
+            await unmonitorSonarrEpisode(args, arrApp, id, matchedFileName, parsed);
           }
         } catch (e) {
           args.jobLog(`Unmonitor error (non-fatal): ${(e as Error)?.message || String(e)}`);
