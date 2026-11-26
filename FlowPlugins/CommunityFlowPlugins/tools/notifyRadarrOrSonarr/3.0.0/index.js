@@ -208,11 +208,12 @@ var getLookupTerm = function (arrName, fileName) {
     var imdbId = (_b = /\b(?:tt|nm|co|ev|ch|ni)\d{7,10}?\b/i.exec(fileName)) === null || _b === void 0 ? void 0 : _b[0];
     return imdbId ? "imdb:".concat(imdbId) : '';
 };
+// Also returns the parse response when the parse API was used, so Sonarr unmonitor can reuse its episodes
 var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0, void 0, function () {
-    var term, id, _a, _b, _c;
-    var _d, _e, _f;
-    return __generator(this, function (_g) {
-        switch (_g.label) {
+    var term, id, _a, parsed;
+    var _b, _c, _d;
+    return __generator(this, function (_e) {
+        switch (_e.label) {
             case 0:
                 term = getLookupTerm(arrApp.name, fileName);
                 id = -1;
@@ -224,25 +225,25 @@ var getId = function (args, arrApp, fileName) { return __awaiter(void 0, void 0,
                         query: "?term=".concat(term),
                     })];
             case 1:
-                id = _a.apply(void 0, [(_f = (_e = (_d = (_g.sent()).data) === null || _d === void 0 ? void 0 : _d[0]) === null || _e === void 0 ? void 0 : _e.id) !== null && _f !== void 0 ? _f : -1]);
+                id = _a.apply(void 0, [(_d = (_c = (_b = (_e.sent()).data) === null || _b === void 0 ? void 0 : _b[0]) === null || _c === void 0 ? void 0 : _c.id) !== null && _d !== void 0 ? _d : -1]);
                 args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for '").concat(term, "'"));
                 return [3 /*break*/, 3];
             case 2:
                 args.jobLog('No tvdb/tmdb/imdb tag in path, using parse API');
-                _g.label = 3;
+                _e.label = 3;
             case 3:
                 if (!(id === -1)) return [3 /*break*/, 5];
-                _c = (_b = arrApp.delegates).getIdFromParseResponse;
                 return [4 /*yield*/, arrRequest(args, arrApp, {
                         method: 'get',
                         path: '/api/v3/parse',
                         query: "?title=".concat(encodeURIComponent((0, fileUtils_1.getFileName)(fileName))),
                     })];
             case 4:
-                id = _c.apply(_b, [(_g.sent())]);
+                parsed = _e.sent();
+                id = arrApp.delegates.getIdFromParseResponse(parsed);
                 args.jobLog("".concat(arrApp.content, " ").concat(id !== -1 ? "'".concat(id, "' found") : 'not found', " for '").concat((0, fileUtils_1.getFileName)(fileName), "'"));
-                _g.label = 5;
-            case 5: return [2 /*return*/, id];
+                return [2 /*return*/, { id: id, parsed: parsed }];
+            case 5: return [2 /*return*/, { id: id }];
         }
     });
 }); };
@@ -266,19 +267,26 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
 }); };
 // Sonarr's parse API knows the episodes in a file, including multi-episode, daily and anime
 // absolute names; only episodes of the series we refreshed are kept. A failed parse returns none.
-var getEpisodesFromParse = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
-    var res, episodes;
-    var _a;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
-            case 0: return [4 /*yield*/, arrRequest(args, arrApp, {
+var getEpisodesFromParse = function (args, arrApp, seriesId, filePath, parsed) { return __awaiter(void 0, void 0, void 0, function () {
+    var res, _a, episodes;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                if (!(parsed !== null && parsed !== void 0)) return [3 /*break*/, 1];
+                _a = parsed;
+                return [3 /*break*/, 3];
+            case 1: return [4 /*yield*/, arrRequest(args, arrApp, {
                     method: 'get',
                     path: '/api/v3/parse',
                     query: "?title=".concat(encodeURIComponent((0, fileUtils_1.getFileName)(filePath))),
                 }).catch(function () { return undefined; })];
-            case 1:
-                res = _b.sent();
-                episodes = (_a = res === null || res === void 0 ? void 0 : res.data) === null || _a === void 0 ? void 0 : _a.episodes;
+            case 2:
+                _a = _c.sent();
+                _c.label = 3;
+            case 3:
+                res = _a;
+                episodes = (_b = res === null || res === void 0 ? void 0 : res.data) === null || _b === void 0 ? void 0 : _b.episodes;
                 return [2 /*return*/, (Array.isArray(episodes) ? episodes : []).filter(function (e) { return Number.isInteger(e === null || e === void 0 ? void 0 : e.id)
                         && (e.seriesId === undefined || e.seriesId === seriesId); })];
         }
@@ -315,11 +323,11 @@ var getEpisodesFromFileName = function (args, arrApp, seriesId, filePath) { retu
         }
     });
 }); };
-var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { return __awaiter(void 0, void 0, void 0, function () {
+var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath, parsed) { return __awaiter(void 0, void 0, void 0, function () {
     var episodes, episodeIds, names, ids;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, getEpisodesFromParse(args, arrApp, seriesId, filePath)];
+            case 0: return [4 /*yield*/, getEpisodesFromParse(args, arrApp, seriesId, filePath, parsed)];
             case 1:
                 episodes = _a.sent();
                 if (!(episodes.length === 0)) return [3 /*break*/, 3];
@@ -350,10 +358,11 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { retur
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, matchedFileName, id, commandResponse, commandId, e_1;
-    var _a, _b, _c, _d;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, matchedFileName, _a, id, parsed, commandResponse, commandId, e_1;
+    var _b;
+    var _c, _d, _e, _f;
+    return __generator(this, function (_g) {
+        switch (_g.label) {
             case 0:
                 lib = require('../../../../../methods/lib')();
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
@@ -363,8 +372,8 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 arr_host = String(args.inputs.arr_host);
                 arrHost = arr_host.endsWith('/') ? arr_host.slice(0, -1) : arr_host;
                 unmonitorAfterRefresh = Boolean(args.inputs.unmonitor_after_refresh);
-                originalFileName = (_b = (_a = args.originalLibraryFile) === null || _a === void 0 ? void 0 : _a._id) !== null && _b !== void 0 ? _b : '';
-                currentFileName = (_d = (_c = args.inputFileObj) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
+                originalFileName = (_d = (_c = args.originalLibraryFile) === null || _c === void 0 ? void 0 : _c._id) !== null && _d !== void 0 ? _d : '';
+                currentFileName = (_f = (_e = args.inputFileObj) === null || _e === void 0 ? void 0 : _e._id) !== null && _f !== void 0 ? _f : '';
                 headers = {
                     'Content-Type': 'application/json',
                     'X-Api-Key': String(args.inputs.arr_api_key),
@@ -396,13 +405,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                 matchedFileName = originalFileName;
                 return [4 /*yield*/, getId(args, arrApp, matchedFileName)];
             case 1:
-                id = _e.sent();
+                _a = _g.sent(), id = _a.id, parsed = _a.parsed;
                 if (!(id === -1 && currentFileName !== originalFileName)) return [3 /*break*/, 3];
                 matchedFileName = currentFileName;
                 return [4 /*yield*/, getId(args, arrApp, matchedFileName)];
             case 2:
-                id = _e.sent();
-                _e.label = 3;
+                (_b = _g.sent(), id = _b.id, parsed = _b.parsed);
+                _g.label = 3;
             case 3:
                 if (!(id !== -1)) return [3 /*break*/, 13];
                 return [4 /*yield*/, arrRequest(args, arrApp, {
@@ -411,33 +420,33 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                         data: arrApp.delegates.buildRefreshRequestData(id),
                     })];
             case 4:
-                commandResponse = _e.sent();
+                commandResponse = _g.sent();
                 commandId = commandResponse.data.id;
                 args.jobLog("".concat(arrApp.content, " '").concat(id, "' refresh queued in ").concat(arrApp.name, " (command ").concat(commandId, ")."));
                 return [4 /*yield*/, waitForCommand(args, arrApp, commandId)];
             case 5:
-                refreshed = _e.sent();
+                refreshed = _g.sent();
                 if (!!refreshed) return [3 /*break*/, 6];
                 args.jobLog("\u26A0 ".concat(arrApp.content, " '").concat(id, "' scan did not complete within timeout."));
                 return [3 /*break*/, 13];
             case 6:
                 args.jobLog("\u2714 ".concat(arrApp.content, " '").concat(id, "' scan completed in ").concat(arrApp.name, "."));
                 if (!unmonitorAfterRefresh) return [3 /*break*/, 13];
-                _e.label = 7;
+                _g.label = 7;
             case 7:
-                _e.trys.push([7, 12, , 13]);
+                _g.trys.push([7, 12, , 13]);
                 if (!(arr === 'radarr')) return [3 /*break*/, 9];
                 return [4 /*yield*/, unmonitorRadarr(args, arrApp, id)];
             case 8:
-                _e.sent();
+                _g.sent();
                 return [3 /*break*/, 11];
-            case 9: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, matchedFileName)];
+            case 9: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, matchedFileName, parsed)];
             case 10:
-                _e.sent();
-                _e.label = 11;
+                _g.sent();
+                _g.label = 11;
             case 11: return [3 /*break*/, 13];
             case 12:
-                e_1 = _e.sent();
+                e_1 = _g.sent();
                 args.jobLog("Unmonitor error (non-fatal): ".concat((e_1 === null || e_1 === void 0 ? void 0 : e_1.message) || String(e_1)));
                 return [3 /*break*/, 13];
             case 13: return [2 /*return*/, {

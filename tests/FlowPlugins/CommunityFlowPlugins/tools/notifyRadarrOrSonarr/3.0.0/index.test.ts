@@ -338,19 +338,30 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
     });
 
-    it('unmonitors from the current file when only it is known to Sonarr', async () => {
-      baseArgs.originalLibraryFile._id = 'C:/old/Old Name S01E05.mkv';
-      baseArgs.inputFileObj._id = 'C:/TV Shows/Test Series/Season 01/Test Series S01E05.mkv';
-      const found = parseEpisodes({
+    it('reuses the parse response from the series lookup when the path has no id tag', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/TV Shows/Test Series/Season 01/Test Series S01E05.mkv';
+      mockRefresh(parseEpisodes({
         id: 99, seriesId: 42, seasonNumber: 1, episodeNumber: 5,
-      });
-      mockRefresh({ data: {} }, found).mockResolvedValueOnce(found).mockResolvedValueOnce({});
+      })).mockResolvedValueOnce({});
 
       await plugin(baseArgs);
 
+      expect(parseUrls()).toEqual(['http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05']);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
+    });
+
+    it('unmonitors from the current file when only it is known to Sonarr', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/old/Old Name S01E05.mkv';
+      baseArgs.inputFileObj._id = 'C:/TV Shows/Test Series/Season 01/Test Series S01E05.mkv';
+      mockRefresh({ data: {} }, parseEpisodes({
+        id: 99, seriesId: 42, seasonNumber: 1, episodeNumber: 5,
+      })).mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      // the current file's parse response is reused, not fetched again
       expect(parseUrls()).toEqual([
         'http://192.168.1.1:8989/api/v3/parse?title=Old%20Name%20S01E05',
-        'http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05',
         'http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05',
       ]);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');

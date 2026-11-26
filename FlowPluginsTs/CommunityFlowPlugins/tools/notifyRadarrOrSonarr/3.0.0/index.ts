@@ -211,11 +211,12 @@ const getLookupTerm = (arrName: string, fileName: string): string => {
   return imdbId ? `imdb:${imdbId}` : '';
 };
 
+// Also returns the parse response when the parse API was used, so Sonarr unmonitor can reuse its episodes
 const getId = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
   fileName: string,
-): Promise<number> => {
+): Promise<{ id: number, parsed?: IParseResponse }> => {
   const term = getLookupTerm(arrApp.name, fileName);
   let id = -1;
   if (term !== '') {
@@ -229,16 +230,16 @@ const getId = async (
     args.jobLog('No tvdb/tmdb/imdb tag in path, using parse API');
   }
   if (id === -1) {
-    id = arrApp.delegates.getIdFromParseResponse(
-      (await arrRequest(args, arrApp, {
-        method: 'get',
-        path: '/api/v3/parse',
-        query: `?title=${encodeURIComponent(getFileName(fileName))}`,
-      })),
-    );
+    const parsed: IParseResponse = await arrRequest(args, arrApp, {
+      method: 'get',
+      path: '/api/v3/parse',
+      query: `?title=${encodeURIComponent(getFileName(fileName))}`,
+    });
+    id = arrApp.delegates.getIdFromParseResponse(parsed);
     args.jobLog(`${arrApp.content} ${id !== -1 ? `'${id}' found` : 'not found'} for '${getFileName(fileName)}'`);
+    return { id, parsed };
   }
-  return id;
+  return { id };
 };
 
 const unmonitorRadarr = async (
@@ -262,8 +263,9 @@ const getEpisodesFromParse = async (
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
+  parsed?: IParseResponse,
 ): Promise<IEpisode[]> => {
-  const res: IParseResponse | undefined = await arrRequest(args, arrApp, {
+  const res: IParseResponse | undefined = parsed ?? await arrRequest(args, arrApp, {
     method: 'get',
     path: '/api/v3/parse',
     query: `?title=${encodeURIComponent(getFileName(filePath))}`,
@@ -307,8 +309,9 @@ const unmonitorSonarrEpisode = async (
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
+  parsed?: IParseResponse,
 ): Promise<void> => {
-  let episodes = await getEpisodesFromParse(args, arrApp, seriesId, filePath);
+  let episodes = await getEpisodesFromParse(args, arrApp, seriesId, filePath, parsed);
   if (episodes.length === 0) {
     args.jobLog('Sonarr: no episodes from parse, falling back to SxxEyy in the file name');
     episodes = await getEpisodesFromFileName(args, arrApp, seriesId, filePath);
@@ -376,12 +379,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
 
-  // Unmonitor works on the file the arr matched
+  // Unmonitor works on the file the arr matched, reusing its parse response if there is one
   let matchedFileName = originalFileName;
-  let id = await getId(args, arrApp, matchedFileName);
+  let { id, parsed } = await getId(args, arrApp, matchedFileName);
   if (id === -1 && currentFileName !== originalFileName) {
     matchedFileName = currentFileName;
-    id = await getId(args, arrApp, matchedFileName);
+    ({ id, parsed } = await getId(args, arrApp, matchedFileName));
   }
 
   if (id !== -1) {
@@ -405,7 +408,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           if (arr === 'radarr') {
             await unmonitorRadarr(args, arrApp, id);
           } else {
-            await unmonitorSonarrEpisode(args, arrApp, id, matchedFileName);
+            await unmonitorSonarrEpisode(args, arrApp, id, matchedFileName, parsed);
           }
         } catch (e) {
           args.jobLog(`Unmonitor error (non-fatal): ${(e as Error)?.message || String(e)}`);
