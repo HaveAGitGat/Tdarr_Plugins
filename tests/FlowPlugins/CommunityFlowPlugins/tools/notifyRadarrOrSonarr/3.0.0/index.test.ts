@@ -395,6 +395,9 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
       await plugin(baseArgs);
 
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Sonarr: no episodes from parse, falling back to SxxEyy in the file name',
+      );
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'get',
         url: 'http://192.168.1.1:8989/api/v3/episode?seriesId=42',
@@ -423,7 +426,10 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
       expect(result.outputNumber).toBe(1);
       expect(baseArgs.jobLog).toHaveBeenCalledWith(
-        'Sonarr: parse failed (HTTP 500 Request failed with status code 500), falling back to SxxEyy in the file name',
+        '✖ Sonarr request failed: HTTP 500 on GET /api/v3/parse: Request failed with status code 500',
+      );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        'Sonarr: no episodes from parse, falling back to SxxEyy in the file name',
       );
       expect(mockAxios).toHaveBeenCalledWith(expect.objectContaining({
         method: 'put',

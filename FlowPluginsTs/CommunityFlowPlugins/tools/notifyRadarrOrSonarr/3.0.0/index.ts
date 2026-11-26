@@ -84,10 +84,16 @@ interface IHTTPHeaders {
   'X-Api-Key': string,
   Accept: string,
 }
+interface IEpisode {
+  id: number,
+  seasonNumber: number,
+  episodeNumber: number,
+}
 interface IParseResponse {
   data: {
     movie?: { id: number },
     series?: { id: number },
+    episodes?: (IEpisode & { seriesId?: number })[],
   },
 }
 interface IArrApp {
@@ -106,12 +112,6 @@ interface ICommandResponse {
     id: number,
     status: string,
   },
-}
-
-interface IEpisode {
-  id: number,
-  seasonNumber: number,
-  episodeNumber: number,
 }
 
 interface IArrRequest {
@@ -256,31 +256,21 @@ const unmonitorRadarr = async (
 };
 
 // Sonarr's parse API knows the episodes in a file, including multi-episode, daily and anime
-// absolute names; only episodes of the series we refreshed are kept.
+// absolute names; only episodes of the series we refreshed are kept. A failed parse returns none.
 const getEpisodesFromParse = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
 ): Promise<IEpisode[]> => {
-  try {
-    const res = await args.deps.axios({
-      method: 'get',
-      url: `${arrApp.host}/api/v3/parse?title=${encodeURIComponent(getFileName(filePath))}`,
-      headers: arrApp.headers,
-    });
-    const episodes: Partial<IEpisode & { seriesId: number }>[] = Array.isArray(res?.data?.episodes)
-      ? res.data.episodes
-      : [];
-    return episodes.filter((e): e is IEpisode & { seriesId?: number } => Number.isInteger(e?.id)
-      && (e.seriesId === undefined || e.seriesId === seriesId));
-  } catch (err) {
-    const e = err as { message?: string, response?: { status?: number } };
-    const status = e?.response?.status;
-    const reason = `${status !== undefined ? `HTTP ${status} ` : ''}${e?.message || String(err)}`;
-    args.jobLog(`Sonarr: parse failed (${reason}), falling back to SxxEyy in the file name`);
-    return [];
-  }
+  const res: IParseResponse | undefined = await arrRequest(args, arrApp, {
+    method: 'get',
+    path: '/api/v3/parse',
+    query: `?title=${encodeURIComponent(getFileName(filePath))}`,
+  }).catch(() => undefined);
+  const episodes = res?.data?.episodes;
+  return (Array.isArray(episodes) ? episodes : []).filter((e) => Number.isInteger(e?.id)
+    && (e.seriesId === undefined || e.seriesId === seriesId));
 };
 
 // Fallback when parse matches nothing: SxxEyy from the file name, including S01E01E02 and S01E01-E02
@@ -289,11 +279,11 @@ const getEpisodesFromFileName = async (
   arrApp: IArrApp,
   seriesId: number,
   filePath: string,
-): Promise<IEpisode[] | null> => {
+): Promise<IEpisode[]> => {
   const sxe = /S(\d{1,2})((?:[-_ ]?E\d{1,3})+)/i.exec(getFileName(filePath));
   if (!sxe) {
     args.jobLog(`Sonarr: cannot unmonitor – SxxEyy not detected in "${getFileName(filePath)}"`);
-    return null;
+    return [];
   }
   const season = Number(sxe[1]);
   const episodeNumbers = (sxe[2].match(/\d{1,3}/g) ?? []).map(Number);
@@ -320,7 +310,8 @@ const unmonitorSonarrEpisode = async (
 ): Promise<void> => {
   let episodes = await getEpisodesFromParse(args, arrApp, seriesId, filePath);
   if (episodes.length === 0) {
-    episodes = await getEpisodesFromFileName(args, arrApp, seriesId, filePath) ?? [];
+    args.jobLog('Sonarr: no episodes from parse, falling back to SxxEyy in the file name');
+    episodes = await getEpisodesFromFileName(args, arrApp, seriesId, filePath);
   }
   if (episodes.length === 0) {
     return;
