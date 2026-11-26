@@ -17,7 +17,25 @@ const details = ():IpluginDetails => ({
   requiresVersion: '2.11.01',
   sidebarPosition: -1,
   icon: 'faExclamationTriangle',
-  inputs: [],
+  inputs: [
+    {
+      label: 'Reason',
+      name: 'reason',
+      type: 'string',
+      defaultValue: 'Forcing flow to fail!',
+      inputUI: {
+        type: 'text',
+      },
+      tooltip: `The error to fail the flow with. It's shown in the job report and in the
+      Error Reason column of the Transcode: Error/Cancelled table, after this plugin's name.
+
+      \\nExample\\n
+      Video is longer than 2 hours
+
+      \\nExample\\n
+      Duration is {{{args.inputFileObj.ffProbeData.format.duration}}} seconds`,
+    },
+  ],
   outputs: [],
 });
 
@@ -27,7 +45,7 @@ const plugin = (args:IpluginInputArgs):IpluginOutputArgs => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
   args.inputs = lib.loadDefaultValues(args.inputs, details);
 
-  throw new Error('Forcing flow to fail!');
+  throw new Error(String(args.inputs.reason));
 
   return {
     outputFileObj: args.inputFileObj,

@@ -14,7 +14,18 @@ var details = function () { return ({
     requiresVersion: '2.11.01',
     sidebarPosition: -1,
     icon: 'faExclamationTriangle',
-    inputs: [],
+    inputs: [
+        {
+            label: 'Reason',
+            name: 'reason',
+            type: 'string',
+            defaultValue: 'Forcing flow to fail!',
+            inputUI: {
+                type: 'text',
+            },
+            tooltip: "The error to fail the flow with. It's shown in the job report and in the\n      Error Reason column of the Transcode: Error/Cancelled table, after this plugin's name.\n\n      \\nExample\\n\n      Video is longer than 2 hours\n\n      \\nExample\\n\n      Duration is {{{args.inputFileObj.ffProbeData.format.duration}}} seconds",
+        },
+    ],
     outputs: [],
 }); };
 exports.details = details;
@@ -23,7 +34,7 @@ var plugin = function (args) {
     var lib = require('../../../../../methods/lib')();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-param-reassign
     args.inputs = lib.loadDefaultValues(args.inputs, details);
-    throw new Error('Forcing flow to fail!');
+    throw new Error(String(args.inputs.reason));
     return {
         outputFileObj: args.inputFileObj,
         outputNumber: 1,
