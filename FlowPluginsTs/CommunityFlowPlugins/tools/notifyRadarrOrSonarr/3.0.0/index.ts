@@ -376,9 +376,12 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
   args.jobLog('Going to force scan');
   args.jobLog(`Refreshing ${arrApp.name}...`);
 
-  let id = await getId(args, arrApp, originalFileName);
+  // Unmonitor works on the file the arr matched
+  let matchedFileName = originalFileName;
+  let id = await getId(args, arrApp, matchedFileName);
   if (id === -1 && currentFileName !== originalFileName) {
-    id = await getId(args, arrApp, currentFileName);
+    matchedFileName = currentFileName;
+    id = await getId(args, arrApp, matchedFileName);
   }
 
   if (id !== -1) {
@@ -402,7 +405,7 @@ const plugin = async (args: IpluginInputArgs): Promise<IpluginOutputArgs> => {
           if (arr === 'radarr') {
             await unmonitorRadarr(args, arrApp, id);
           } else {
-            await unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName);
+            await unmonitorSonarrEpisode(args, arrApp, id, matchedFileName);
           }
         } catch (e) {
           args.jobLog(`Unmonitor error (non-fatal): ${(e as Error)?.message || String(e)}`);

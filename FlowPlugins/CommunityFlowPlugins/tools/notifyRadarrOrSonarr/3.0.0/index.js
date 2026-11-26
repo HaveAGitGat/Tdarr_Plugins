@@ -350,7 +350,7 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { retur
     });
 }); };
 var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function () {
-    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, id, commandResponse, commandId, e_1;
+    var lib, refreshed, arr, arr_host, arrHost, unmonitorAfterRefresh, originalFileName, currentFileName, headers, arrApp, matchedFileName, id, commandResponse, commandId, e_1;
     var _a, _b, _c, _d;
     return __generator(this, function (_e) {
         switch (_e.label) {
@@ -393,11 +393,13 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
                     };
                 args.jobLog('Going to force scan');
                 args.jobLog("Refreshing ".concat(arrApp.name, "..."));
-                return [4 /*yield*/, getId(args, arrApp, originalFileName)];
+                matchedFileName = originalFileName;
+                return [4 /*yield*/, getId(args, arrApp, matchedFileName)];
             case 1:
                 id = _e.sent();
                 if (!(id === -1 && currentFileName !== originalFileName)) return [3 /*break*/, 3];
-                return [4 /*yield*/, getId(args, arrApp, currentFileName)];
+                matchedFileName = currentFileName;
+                return [4 /*yield*/, getId(args, arrApp, matchedFileName)];
             case 2:
                 id = _e.sent();
                 _e.label = 3;
@@ -429,7 +431,7 @@ var plugin = function (args) { return __awaiter(void 0, void 0, void 0, function
             case 8:
                 _e.sent();
                 return [3 /*break*/, 11];
-            case 9: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, originalFileName || currentFileName)];
+            case 9: return [4 /*yield*/, unmonitorSonarrEpisode(args, arrApp, id, matchedFileName)];
             case 10:
                 _e.sent();
                 _e.label = 11;

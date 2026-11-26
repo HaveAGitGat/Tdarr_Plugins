@@ -306,6 +306,9 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
     });
 
     const parseEpisodes = (...episodes: unknown[]) => ({ data: { series: { id: 42 }, episodes } });
+    const parseUrls = () => mockAxios.mock.calls
+      .map(([req]) => req.url)
+      .filter((url) => url.includes('/api/v3/parse'));
 
     it('unmonitors the episode from the parse API via PUT /episode/monitor', async () => {
       mockRefresh({ data: [{ id: 42 }] })
@@ -332,6 +335,24 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       expect(mockAxios).not.toHaveBeenCalledWith(
         expect.objectContaining({ url: 'http://192.168.1.1:8989/api/v3/episode?seriesId=42' }),
       );
+      expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
+    });
+
+    it('unmonitors from the current file when only it is known to Sonarr', async () => {
+      baseArgs.originalLibraryFile._id = 'C:/old/Old Name S01E05.mkv';
+      baseArgs.inputFileObj._id = 'C:/TV Shows/Test Series/Season 01/Test Series S01E05.mkv';
+      const found = parseEpisodes({
+        id: 99, seriesId: 42, seasonNumber: 1, episodeNumber: 5,
+      });
+      mockRefresh({ data: {} }, found).mockResolvedValueOnce(found).mockResolvedValueOnce({});
+
+      await plugin(baseArgs);
+
+      expect(parseUrls()).toEqual([
+        'http://192.168.1.1:8989/api/v3/parse?title=Old%20Name%20S01E05',
+        'http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05',
+        'http://192.168.1.1:8989/api/v3/parse?title=Test%20Series%20S01E05',
+      ]);
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
     });
 
