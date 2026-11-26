@@ -125,9 +125,9 @@ var details = function () { return ({
 exports.details = details;
 var POLL_INTERVAL_SECONDS = 5;
 var TIMEOUT_SECONDS = 120;
-// Lookup, parse and refresh requests: a failure is logged with the arr, status, method and path,
-// then rethrown so the flow fails as before (use Reset Flow Error after this plugin to carry on).
-// Headers (and so the API key) are never logged.
+// Every arr request goes through here: a failure is logged with the arr, status, method and path, then
+// rethrown. Refresh failures fail the flow as before (use Reset Flow Error after this plugin to carry on);
+// unmonitor failures are non-fatal. Headers (and so the API key) are never logged.
 var arrRequest = function (args, arrApp, req) { return __awaiter(void 0, void 0, void 0, function () {
     var err_1, e, arrName, status_1;
     var _a, _b;
@@ -251,10 +251,9 @@ var unmonitorRadarr = function (args, arrApp, movieId) { return __awaiter(void 0
         switch (_a.label) {
             case 0: 
             // Editor endpoint only changes the monitored flag, avoiding a full-object PUT
-            return [4 /*yield*/, args.deps.axios({
+            return [4 /*yield*/, arrRequest(args, arrApp, {
                     method: 'put',
-                    url: "".concat(arrApp.host, "/api/v3/movie/editor"),
-                    headers: arrApp.headers,
+                    path: '/api/v3/movie/editor',
                     data: JSON.stringify({ movieIds: [movieId], monitored: false }),
                 })];
             case 1:
@@ -311,11 +310,10 @@ var getEpisodesFromFileName = function (args, arrApp, seriesId, filePath) { retu
                 }
                 season = Number(sxe[1]);
                 episodeNumbers = ((_a = sxe[2].match(/\d{1,3}/g)) !== null && _a !== void 0 ? _a : []).map(Number);
-                return [4 /*yield*/, args.deps.axios({
+                return [4 /*yield*/, arrRequest(args, arrApp, {
                         method: 'get',
-                        url: "".concat(arrApp.host, "/api/v3/episode"),
-                        headers: arrApp.headers,
-                        params: { seriesId: seriesId },
+                        path: '/api/v3/episode',
+                        query: "?seriesId=".concat(seriesId),
                     })];
             case 1:
                 episodes = (_b.sent()).data;
@@ -347,10 +345,9 @@ var unmonitorSonarrEpisode = function (args, arrApp, seriesId, filePath) { retur
                     return [2 /*return*/];
                 }
                 episodeIds = episodes.map(function (e) { return e.id; });
-                return [4 /*yield*/, args.deps.axios({
+                return [4 /*yield*/, arrRequest(args, arrApp, {
                         method: 'put',
-                        url: "".concat(arrApp.host, "/api/v3/episode/monitor"),
-                        headers: arrApp.headers,
+                        path: '/api/v3/episode/monitor',
                         data: JSON.stringify({ monitored: false, episodeIds: episodeIds }),
                     })];
             case 4:

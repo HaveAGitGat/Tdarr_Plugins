@@ -287,6 +287,9 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       const result = await plugin(baseArgs);
 
       expect(result.outputNumber).toBe(1);
+      expect(baseArgs.jobLog).toHaveBeenCalledWith(
+        '✖ Radarr request failed: on PUT /api/v3/movie/editor: PUT movie/editor failed',
+      );
       expect(baseArgs.jobLog).toHaveBeenCalledWith('Unmonitor error (non-fatal): PUT movie/editor failed');
     });
   });
@@ -327,7 +330,7 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
       });
       // parse matched, so the episode list is never fetched
       expect(mockAxios).not.toHaveBeenCalledWith(
-        expect.objectContaining({ url: 'http://192.168.1.1:8989/api/v3/episode' }),
+        expect.objectContaining({ url: 'http://192.168.1.1:8989/api/v3/episode?seriesId=42' }),
       );
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
     });
@@ -394,9 +397,8 @@ describe('notifyRadarrOrSonarr 3.0.0 Plugin', () => {
 
       expect(mockAxios).toHaveBeenCalledWith({
         method: 'get',
-        url: 'http://192.168.1.1:8989/api/v3/episode',
+        url: 'http://192.168.1.1:8989/api/v3/episode?seriesId=42',
         headers,
-        params: { seriesId: 42 },
       });
       expect(baseArgs.jobLog).toHaveBeenCalledWith('✔ Sonarr: unmonitored S1E5 (episodeId=99)');
     });

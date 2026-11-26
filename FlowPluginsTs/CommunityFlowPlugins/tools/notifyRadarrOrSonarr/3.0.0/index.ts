@@ -115,7 +115,7 @@ interface IEpisode {
 }
 
 interface IArrRequest {
-  method: 'get' | 'post',
+  method: 'get' | 'post' | 'put',
   path: string,
   query?: string,
   data?: string,
@@ -124,9 +124,9 @@ interface IArrRequest {
 const POLL_INTERVAL_SECONDS = 5;
 const TIMEOUT_SECONDS = 120;
 
-// Lookup, parse and refresh requests: a failure is logged with the arr, status, method and path,
-// then rethrown so the flow fails as before (use Reset Flow Error after this plugin to carry on).
-// Headers (and so the API key) are never logged.
+// Every arr request goes through here: a failure is logged with the arr, status, method and path, then
+// rethrown. Refresh failures fail the flow as before (use Reset Flow Error after this plugin to carry on);
+// unmonitor failures are non-fatal. Headers (and so the API key) are never logged.
 const arrRequest = async (
   args: IpluginInputArgs,
   arrApp: IArrApp,
@@ -247,10 +247,9 @@ const unmonitorRadarr = async (
   movieId: number,
 ): Promise<void> => {
   // Editor endpoint only changes the monitored flag, avoiding a full-object PUT
-  await args.deps.axios({
+  await arrRequest(args, arrApp, {
     method: 'put',
-    url: `${arrApp.host}/api/v3/movie/editor`,
-    headers: arrApp.headers,
+    path: '/api/v3/movie/editor',
     data: JSON.stringify({ movieIds: [movieId], monitored: false }),
   });
   args.jobLog(`✔ Radarr: movie id=${movieId} unmonitored`);
@@ -299,11 +298,10 @@ const getEpisodesFromFileName = async (
   const season = Number(sxe[1]);
   const episodeNumbers = (sxe[2].match(/\d{1,3}/g) ?? []).map(Number);
 
-  const { data: episodes }: { data: IEpisode[] } = await args.deps.axios({
+  const { data: episodes }: { data: IEpisode[] } = await arrRequest(args, arrApp, {
     method: 'get',
-    url: `${arrApp.host}/api/v3/episode`,
-    headers: arrApp.headers,
-    params: { seriesId },
+    path: '/api/v3/episode',
+    query: `?seriesId=${seriesId}`,
   });
   const matches = (Array.isArray(episodes) ? episodes : []).filter((e) => e.seasonNumber === season
     && episodeNumbers.includes(e.episodeNumber));
@@ -329,10 +327,9 @@ const unmonitorSonarrEpisode = async (
   }
 
   const episodeIds = episodes.map((e) => e.id);
-  await args.deps.axios({
+  await arrRequest(args, arrApp, {
     method: 'put',
-    url: `${arrApp.host}/api/v3/episode/monitor`,
-    headers: arrApp.headers,
+    path: '/api/v3/episode/monitor',
     data: JSON.stringify({ monitored: false, episodeIds }),
   });
   const names = episodes.map((e) => `S${e.seasonNumber}E${e.episodeNumber}`).join(', ');
